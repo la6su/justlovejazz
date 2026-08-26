@@ -125,6 +125,23 @@ describe('WorksPlaneStage async lifecycle', () => {
     expect(motion.unsubscribe).toHaveBeenCalledTimes(1)
   })
 
+  it('settles active reveals and layout on a live reduced-motion change', async () => {
+    mocks.loadCaseTexture.mockImplementation(async () => new THREE.Texture())
+    const stage = new WorksPlaneStage()
+    await stage.init()
+    stage.setCamera(new THREE.PerspectiveCamera())
+    stage.setActive(true, 0)
+    stage.update(0.03)
+
+    motion.listener?.(true)
+
+    const reveal = (stage as unknown as { _reveal: Map<THREE.Object3D, number> })._reveal
+    expect([...reveal.values()].filter((value) => value > 0)).toHaveLength(2)
+    expect([...reveal.values()].every((value) => value === 0 || value === 1)).toBe(true)
+    expect(stage.isAnimating).toBe(false)
+    stage.dispose()
+  })
+
   it('reuses the scaled layout scratch object across viewport calculations', () => {
     const stage = new WorksPlaneStage()
     stage.setCamera(new THREE.PerspectiveCamera())

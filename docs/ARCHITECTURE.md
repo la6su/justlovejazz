@@ -135,6 +135,9 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `BakuCarousel.setReducedMotion(true)` settles morph, scroll and drag state
   before the coordinator skips decorative updates; a half-finished carousel
   cannot keep `isAnimating` true or strand the demand-driven loop.
+- `WorksPlaneStage.setReducedMotion(true)` settles route-local reveal values and
+  active card layout before the lazy owner stops advancing; reduced motion does
+  not leave a partially revealed card or a stale render reason.
 - `WorksPlaneStage` snapshots reduced-motion state once per media-query change;
   its per-card frame path no longer calls `matchMedia()` for every card. The
   observer is released with the stage, preserving the lazy route owner's

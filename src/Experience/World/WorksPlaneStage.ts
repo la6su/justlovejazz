@@ -70,10 +70,25 @@ export class WorksPlaneStage extends THREE.Group {
     this.visible = false
     this.renderOrder = 3
     this._reducedMotionUnsub = observeReducedMotion((reduced) => {
-      if (this._disposed) return
-      this._reducedMotion = reduced
-      this.cards.forEach((card) => card.setReducedMotion(reduced))
+      this.setReducedMotion(reduced)
     })
+  }
+
+  /** Settle route-local reveals and card transforms at the owner boundary. */
+  setReducedMotion(reduced: boolean): void {
+    if (this._disposed) return
+    this._reducedMotion = reduced
+    this.cards.forEach((card) => card.setReducedMotion(reduced))
+    if (!reduced) return
+
+    const activeProjects = SECTION_PROJECTS[this._sectionIndex]!
+    this.cards.forEach((card) => {
+      const projectIndex = card.userData.projectIndex as number
+      const targetReveal = activeProjects.some((project) => project === projectIndex) ? 1 : 0
+      this._reveal.set(card, targetReveal)
+      card.setReveal(targetReveal)
+    })
+    if (this._active && this._camera) this.update(0)
   }
 
   get isAnimating(): boolean {
@@ -269,7 +284,11 @@ export class WorksPlaneStage extends THREE.Group {
 
       // Snap cards to their layout target on first appearance (reveal was 0)
       // so they never fly out from the camera-local origin.
-      if (reveal < 0.01 && targetReveal > 0.5) {
+      if (this._reducedMotion) {
+        card.position.set(scaledLayout.x, scaledLayout.y, scaledLayout.z)
+        card.rotation.set(isSecondary ? -0.018 : 0.006, isSecondary ? -0.07 : 0.025, 0)
+        card.scale.setScalar(scaledLayout.scale)
+      } else if (reveal < 0.01 && targetReveal > 0.5) {
         card.position.set(scaledLayout.x, scaledLayout.y, scaledLayout.z)
         card.rotation.set(isSecondary ? -0.018 : 0.006, isSecondary ? -0.07 : 0.025, 0)
         card.scale.setScalar(scaledLayout.scale)

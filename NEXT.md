@@ -211,6 +211,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
       now finish morph/scroll state, cancel momentum and release drag demand
       before SceneCoordinator pauses decorative updates.
 
+- [x] **Settle WorksPlaneStage on reduced-motion changes** — lazy card reveals
+      and camera-local layouts now snap before the route owner stops advancing,
+      preventing an intermediate Works frame from retaining demand.
+
 - [x] **Pool SceneCoordinator transform results** — per-frame camera/world
       metadata now reuses one owner-scoped result graph.
 
