@@ -237,6 +237,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Skip settled BakuCarousel rewrites** — preserve one reconciliation pass
       while avoiding repeated 12-card transform/uniform writes on demand frames
       caused by other active scene owners.
+- [x] **Skip settled WorksPlaneStage rewrites** — preserve route/card
+      reconciliation while avoiding repeated camera-local layout and uniform
+      writes until camera, viewport, section or motion state changes.
 
 - [x] **Cache CinematicNav scroll policy** — programmatic section navigation
       reads the owner-local reduced-motion snapshot instead of re-querying the

@@ -60,6 +60,12 @@ export class WorksPlaneStage extends THREE.Group {
   private _tmpCameraPosition = new THREE.Vector3()
   private _tmpTargetPosition = new THREE.Vector3()
   private _tmpTargetRotation = new THREE.Euler()
+  // Keep one layout reconciliation after a state/camera change, then avoid
+  // rewriting all route cards while another scene owner keeps demand frames
+  // flowing through the shared renderer.
+  private _layoutDirty = true
+  private _lastCameraPosition = new THREE.Vector3(Number.NaN, Number.NaN, Number.NaN)
+  private _lastCameraQuaternion = new THREE.Quaternion(Number.NaN, Number.NaN, Number.NaN, Number.NaN)
   // Reused per-frame layout result; visible cards are laid out every frame and
   // must not allocate a fresh object for each viewport calculation.
   private _tmpScaledLayout: CaseLayout = { x: 0, y: 0, z: 0, scale: 0 }
@@ -78,11 +84,12 @@ export class WorksPlaneStage extends THREE.Group {
   setReducedMotion(reduced: boolean): void {
     if (this._disposed) return
     this._reducedMotion = reduced
+    this._layoutDirty = true
     this.cards.forEach((card) => card.setReducedMotion(reduced))
     if (!reduced) return
 
     const activeProjects = SECTION_PROJECTS[this._sectionIndex]!
-    this.cards.forEach((card) => {
+      this.cards.forEach((card) => {
       const projectIndex = card.userData.projectIndex as number
       const targetReveal = activeProjects.some((project) => project === projectIndex) ? 1 : 0
       this._reveal.set(card, targetReveal)
@@ -99,8 +106,14 @@ export class WorksPlaneStage extends THREE.Group {
       const projectIndex = card.userData.projectIndex as number
       const shouldBeVisible =
         activeProjects[0] === projectIndex || activeProjects[1] === projectIndex
-      if (!shouldBeVisible) return false
-      return card.isAnimating || (this._reveal.get(card) ?? 0) < 0.995
+      const reveal = this._reveal.get(card) ?? 0
+      // Include departing cards and their cloth pulses: hidden cards still
+      // need a few passes to settle their reveal/animation state before the
+      // stage can take the settled fast path.
+      return (
+        card.isAnimating ||
+        (shouldBeVisible ? reveal < 0.995 : reveal > 0.005)
+      )
     })
     return cardsAnimating
   }
@@ -148,6 +161,7 @@ export class WorksPlaneStage extends THREE.Group {
         this.add(plane)
       })
       this.cards = stagedCards
+      this._layoutDirty = true
     } catch (error) {
       stagedCards.forEach((card) => {
         card.removeFromParent()
@@ -186,6 +200,7 @@ export class WorksPlaneStage extends THREE.Group {
   setCamera(camera: THREE.Camera): void {
     if (this._disposed) return
     this._camera = camera
+    this._layoutDirty = true
   }
 
   /**
@@ -198,14 +213,17 @@ export class WorksPlaneStage extends THREE.Group {
     this._stackedLayout = width < 960
     const aspect = width / height
     this._viewportAspect = aspect
+    this._layoutDirty = true
   }
 
   setActive(active: boolean, sectionIndex: number): void {
     if (this._disposed) return
     const nextSection = THREE.MathUtils.clamp(sectionIndex, 0, SECTION_PROJECTS.length - 1)
+    const changed = active !== this._active || nextSection !== this._sectionIndex
     this._active = active
     this._sectionIndex = nextSection
     this.visible = active
+    if (changed) this._layoutDirty = true
   }
 
   /** Open project overlay with unified wobble pulse (same as BakuCarousel).
@@ -249,6 +267,10 @@ export class WorksPlaneStage extends THREE.Group {
 
     // Keep the stage in camera-local space while remaining a child of World.
     this._camera.getWorldPosition(this._tmpCameraPosition)
+    const cameraChanged =
+      !this._lastCameraPosition.equals(this._tmpCameraPosition) ||
+      !this._lastCameraQuaternion.equals(this._camera.quaternion)
+    if (!this._layoutDirty && !cameraChanged && !this.isAnimating) return
     this.position.copy(this._tmpCameraPosition)
     this.quaternion.copy(this._camera.quaternion)
 
@@ -307,6 +329,9 @@ export class WorksPlaneStage extends THREE.Group {
       card.setTransition(0)
       card.update(dt, this._active)
     })
+    this._lastCameraPosition.copy(this._tmpCameraPosition)
+    this._lastCameraQuaternion.copy(this._camera.quaternion)
+    this._layoutDirty = false
 
     // The text has its own delayed wipe: it is intentionally independent of card opacity.
   }

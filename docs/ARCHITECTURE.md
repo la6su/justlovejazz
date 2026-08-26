@@ -228,6 +228,9 @@ under `src/builder/`; the public builds do not import the editor graph.
   required by motion or reduced-motion reconciliation, then skips settled card
   transform and uniform writes even when another visible owner keeps demand
   frames flowing.
+- `WorksPlaneStage` uses the same settled-layout contract with camera world-pose
+  tracking: route cards reconcile once, then remain untouched until camera,
+  viewport, section, reduced-motion or card animation state invalidates the pass.
 - `CinematicLights` applies the same reduced-motion boundary to section light
   transitions: colors, intensities and key position snap to their targets and
   skip interpolation/orbit work; normal motion retains authored lerp timing.
