@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as THREE from 'three'
+import { eventBus } from '../core/EventBus'
 
 const mocks = vi.hoisted(() => ({
   create: vi.fn(),
@@ -85,6 +86,11 @@ describe('Renderer device-loss lifecycle', () => {
     mocks.deviceLostAction.mockReset()
     mocks.deviceLostAction.mockReturnValue('recover')
     mocks.pipelineCreate.mockClear()
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+    document.querySelectorAll('.renderer-unsupported').forEach((el) => el.remove())
   })
 
   it('disposes a late init candidate instead of reviving after teardown', async () => {
@@ -179,12 +185,14 @@ describe('Renderer device-loss lifecycle', () => {
     const error = new Error('recreation failed')
     mocks.create.mockRejectedValueOnce(error)
     const renderer = makeRenderer(oldInstance, vi.fn())
+    const emit = vi.spyOn(eventBus, 'emit')
 
     await renderer.recoverFromDeviceLost()
 
     const state = renderer as unknown as { _recoveryFailed: boolean; _loopCallback: unknown }
     expect(state._recoveryFailed).toBe(true)
     expect(state._loopCallback).toBeNull()
+    expect(emit).toHaveBeenCalledWith('jlz:webgl-failed')
     expect(oldInstance.dispose).toHaveBeenCalledOnce()
     expect(oldInstance.setAnimationLoop).toHaveBeenCalledWith(null)
     expect(() => {
@@ -214,6 +222,7 @@ describe('Renderer device-loss lifecycle', () => {
     })
     const originalOnDeviceLost = instance.onDeviceLost
     const renderer = makeRenderer(instance, vi.fn())
+    const emit = vi.spyOn(eventBus, 'emit')
     const showUnsupported = vi.spyOn(
       renderer as unknown as { showUnsupportedMessage: () => void },
       'showUnsupportedMessage',
@@ -227,6 +236,7 @@ describe('Renderer device-loss lifecycle', () => {
     const state = renderer as unknown as { _recoveryFailed: boolean; _loopCallback: unknown }
     expect(state._recoveryFailed).toBe(true)
     expect(state._loopCallback).toBeNull()
+    expect(emit).toHaveBeenCalledWith('jlz:webgl-failed')
     expect(instance.setAnimationLoop).toHaveBeenCalledWith(null)
     expect(showUnsupported).toHaveBeenCalledOnce()
     expect(originalOnDeviceLost).toHaveBeenCalledOnce()

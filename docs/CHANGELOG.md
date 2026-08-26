@@ -24,6 +24,8 @@
   cannot strand the renderer loop; explicit recovery invalidation can retry.
 - SceneCoordinator now invalidates derived route caches on reinitialization,
   preventing stale page-specific config lookups after route reuse.
+- Renderer terminal device-loss paths now publish `jlz:webgl-failed`, allowing
+  bootstrap/UI failure state to follow the actual renderer lifecycle.
 
 - Renderer device-loss fallback now clears the retired software-adapter
   replacement before forced-WebGL recreation; a failed second initialization

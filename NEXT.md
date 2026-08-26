@@ -131,6 +131,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Refresh coordinator route caches** — reinitializing the shared
   SceneCoordinator now invalidates page-specific config and range caches.
 
+- [x] **Publish terminal renderer failure** — exhausted or failed device-loss
+  recovery now emits the typed bootstrap failure event before surfacing the
+  fallback UI.
+
 - [x] **Align WebGLBackend quality state** — direct-render fallback no longer
   advertises or updates the unused TSL post graph; native WebGPU retains the
   crossfade and post parameter path.

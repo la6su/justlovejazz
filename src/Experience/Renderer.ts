@@ -287,6 +287,7 @@ export class Renderer {
           }
         ).setAnimationLoop?.(null)
         console.error('[Renderer] device-loss recovery budget exhausted — surfacing failure state')
+        eventBus.emit('jlz:webgl-failed')
         this.showUnsupportedMessage()
         orig(info)
         return
@@ -377,6 +378,7 @@ export class Renderer {
           setAnimationLoop?: (cb: ((time: number) => void) | null) => void
         }
       ).setAnimationLoop?.(null)
+      eventBus.emit('jlz:webgl-failed')
       this.showUnsupportedMessage()
       console.error('[Renderer] device-loss recovery failed:', e)
     } finally {

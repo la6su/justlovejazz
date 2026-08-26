@@ -3521,6 +3521,18 @@ Works and verifies the correct page-specific config set. Rollback: remove the
 cache invalidation lines and restore the previous reuse behavior; renderer
 ownership is unchanged.
 
+#### Renderer terminal failure event — 2026-08-26
+
+Both bounded device-loss terminal paths now emit the existing typed
+`jlz:webgl-failed` event before displaying the fallback overlay. The bootstrap
+state machine can therefore transition from ready/entered to failed instead of
+remaining semantically ready after the renderer has stopped.
+
+Acceptance: `Renderer.deviceLossLifecycle.test.ts` covers failed recreation and
+exhausted recovery budget, asserting the typed event and loop shutdown.
+Rollback: remove the two event emissions and restore the prior overlay-only
+failure behavior; renderer recovery budget and backend policy remain unchanged.
+
 ### Removal ledger
 
 | Legacy element                           | Remove after                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Status |
