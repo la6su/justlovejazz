@@ -112,4 +112,25 @@ describe('WorksPlaneStage async lifecycle', () => {
     expect(second).toBe(first)
     stage.dispose()
   })
+
+  it('ignores late public calls after terminal teardown', async () => {
+    const stage = new WorksPlaneStage()
+    stage.setCamera(new THREE.PerspectiveCamera())
+    stage.setActive(true, 0)
+    const overlay = vi.fn()
+
+    stage.dispose()
+    stage.dispose()
+    stage.setCamera(new THREE.PerspectiveCamera())
+    stage.resize(320, 640)
+    stage.setActive(true, 1)
+    await stage.prewarmShaders({} as never)
+
+    expect(stage.openProject(0, overlay)).toBe(false)
+    expect(stage.handleTap(20, 20, overlay)).toBe(false)
+    expect(stage.hitTest(20, 20)).toBe(-1)
+    stage.update(1 / 60)
+    expect(overlay).not.toHaveBeenCalled()
+    expect(stage.isAnimating).toBe(false)
+  })
 })

@@ -3782,6 +3782,20 @@ Acceptance: `BakuCarousel.lifecycle.test.ts` covers repeated teardown and late
 public calls; focused type-check/lint pass. Rollback: revert this bounded
 carousel lifecycle slice if route transitions or drag settling regress.
 
+### WorksPlaneStage terminal teardown — 2026-08-26
+
+`WorksPlaneStage` now guards every public route/interaction entry point after
+its existing terminal disposal boundary. Late camera/resize bindings,
+hit-tests, overlay opens, prewarm calls and render updates cannot touch a
+retired stage; the async texture generation guard remains the owner of late
+load cleanup.
+
+Worker review: Qwen3.8 returned `SAFE`. Acceptance:
+`WorksPlaneStage.lifecycle.test.ts` covers double teardown and all public late
+calls; full release gate remains required for milestone admission. Rollback:
+revert this bounded Works-stage lifecycle slice if route media transitions
+regress.
+
 ## Definition of done
 
 The migration is done when the target topology is the only production path;

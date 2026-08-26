@@ -451,6 +451,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Make BakuCarousel teardown terminal** — late controls, updates and
   snap callbacks become inert after disposal; the shared demand loop cannot
   be woken or mutated by a retired carousel.
+- [x] **Make WorksPlaneStage teardown terminal** — late route controls,
+  hit-tests, updates and prewarm calls become inert after disposal while the
+  existing async texture cancellation boundary remains intact.
 - [x] **Release the WorksPortfolio owner** — `ExperienceUI.destroy()` now calls
       the portfolio disposer before dropping its reference; disposal clears the
       project/callback references and navigation becomes a safe no-op.

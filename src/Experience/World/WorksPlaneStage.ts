@@ -70,7 +70,7 @@ export class WorksPlaneStage extends THREE.Group {
   }
 
   get isAnimating(): boolean {
-    if (!this._active) return false
+    if (this._disposed || !this._active) return false
 
     const activeProjects = SECTION_PROJECTS[this._sectionIndex]!
     const cardsAnimating = this.cards.some((card) => {
@@ -108,9 +108,7 @@ export class WorksPlaneStage extends THREE.Group {
     }
 
     if (this._disposed) {
-      textures.forEach((texture, index) =>
-        releaseCaseTexture(PROJECTS[index]!.textureUrl, texture),
-      )
+      textures.forEach((texture, index) => releaseCaseTexture(PROJECTS[index]!.textureUrl, texture))
       this._initialized = false
       return
     }
@@ -133,9 +131,7 @@ export class WorksPlaneStage extends THREE.Group {
         card.dispose()
       })
       this._reveal.clear()
-      textures.forEach((texture, index) =>
-        releaseCaseTexture(PROJECTS[index]!.textureUrl, texture),
-      )
+      textures.forEach((texture, index) => releaseCaseTexture(PROJECTS[index]!.textureUrl, texture))
       this._initialized = false
       throw error
     }
@@ -160,10 +156,12 @@ export class WorksPlaneStage extends THREE.Group {
    * WebGL2-only renderer that supports KHR_parallel_shader_compile.
    */
   prewarmShaders(_renderer: RenderSurface): Promise<void> {
+    if (this._disposed) return Promise.resolve()
     return Promise.resolve()
   }
 
   setCamera(camera: THREE.Camera): void {
+    if (this._disposed) return
     this._camera = camera
   }
 
@@ -173,12 +171,14 @@ export class WorksPlaneStage extends THREE.Group {
    * visual media continue to describe one object on mobile and tablet.
    */
   resize(width: number, height: number): void {
+    if (this._disposed) return
     this._stackedLayout = width < 960
     const aspect = width / height
     this._viewportAspect = aspect
   }
 
   setActive(active: boolean, sectionIndex: number): void {
+    if (this._disposed) return
     const nextSection = THREE.MathUtils.clamp(sectionIndex, 0, SECTION_PROJECTS.length - 1)
     this._active = active
     this._sectionIndex = nextSection
@@ -188,7 +188,7 @@ export class WorksPlaneStage extends THREE.Group {
   /** Open project overlay with unified wobble pulse (same as BakuCarousel).
    *  Returns false when no matching plane exists. */
   openProject(index: number, openOverlay: (index: number) => void): boolean {
-    if (!this._active) return false
+    if (this._disposed || !this._active) return false
     const card = this.cards[index]
     if (!card || !card.visible) return false
 
@@ -200,7 +200,7 @@ export class WorksPlaneStage extends THREE.Group {
 
   /** Pointer interaction for the visual plane itself, outside DOM hit targets. */
   handleTap(clientX: number, clientY: number, openOverlay: (index: number) => void): boolean {
-    if (!this._camera || !this._active) return false
+    if (this._disposed || !this._camera || !this._active) return false
     const idx = this.hitTest(clientX, clientY)
     if (idx < 0) return false
     return this.openProject(idx, openOverlay)
@@ -208,7 +208,7 @@ export class WorksPlaneStage extends THREE.Group {
 
   /** Raycast against visible planes. Returns the project index or -1 on miss. */
   hitTest(clientX: number, clientY: number): number {
-    if (!this._camera || !this._active) return -1
+    if (this._disposed || !this._camera || !this._active) return -1
     this._ndc.x = (clientX / window.innerWidth) * 2 - 1
     this._ndc.y = -(clientY / window.innerHeight) * 2 + 1
     this._raycaster.setFromCamera(this._ndc, this._camera)
@@ -222,7 +222,7 @@ export class WorksPlaneStage extends THREE.Group {
   }
 
   update(dt: number): void {
-    if (!this._camera || !this._active) return
+    if (this._disposed || !this._camera || !this._active) return
 
     // Keep the stage in camera-local space while remaining a child of World.
     this._camera.getWorldPosition(this._tmpCameraPosition)

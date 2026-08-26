@@ -181,6 +181,10 @@ under `src/builder/`; the public builds do not import the editor graph.
   scheduled snapping and late render updates are inert after route teardown;
   `isAnimating` settles false and no retired carousel can wake the shared
   demand scheduler.
+- `WorksPlaneStage.dispose()` is terminal and idempotent. Route controls,
+  resize/camera binding, hit-tests, shader prewarm and frame updates are inert
+  afterward; async texture setup still re-checks disposal before creating
+  cards or retaining cache references.
 - Native WebGPU post processing is conditional on the selected quality policy;
   low-tier instances render the scene directly and do not construct a TSL
   `PassNode` graph whose effects are disabled.
