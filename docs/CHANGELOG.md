@@ -81,6 +81,12 @@
 - Carousel and Works texture cleanup now passes acquired texture identities in
   teardown and load-failure paths, protecting replacement cache generations.
 
+- LabGamepad teardown now clears its disposed mesh graph, avoiding stale route
+  owners retaining the released geometry/material tree.
+
+- DrawTrail teardown now clears its disposed ribbon and activity state, avoiding
+  stale persistent owners retaining the released cursor mesh.
+
 - `useJlzPage` now disposes the module-level `WorkCards` registry during route
   owner teardown as well as before route replacement, releasing delegated grid
   listeners and pending card timers on full unmount.

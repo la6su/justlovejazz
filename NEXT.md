@@ -113,6 +113,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
   stages clear camera/active state and child graphs when disposed.
 - [x] **Keep carousel texture releases generation-safe** — Baku and Works
   teardown/catch paths now release by acquired texture identity, not URL alone.
+- [x] **Clear the Lab object graph on teardown** — LabGamepad now removes its
+  disposed mesh children as well as releasing their GPU resources.
+- [x] **Clear the cursor-trail object graph on teardown** — DrawTrail removes
+  its disposed ribbon from the owner group and resets activity state.
 - [x] **Dispose route WorkCards on owner teardown** — `useJlzPage` now releases
   the module-level card/grid registry on full unmount as well as before route
   replacement, with lifecycle coverage for both paths.

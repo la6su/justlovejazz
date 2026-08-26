@@ -258,6 +258,10 @@ according to their current measured policy.
 - BakuCarousel and WorksPlaneStage release shared case textures with the
   acquired texture identity; retired cache generations cannot decrement a
   replacement URL entry.
+- LabGamepad clears its child graph after disposing geometry and materials, so
+  stale route owners cannot retain disposed mesh trees.
+- DrawTrail clears its ribbon child and activity state during disposal, so the
+  persistent scene owner cannot retain a disposed cursor mesh.
 - Contact section activation captures the same Cyprus request generation before
   awaiting lazy initialization; a stale route callback cannot call `setActive`
   or raise render demand on a newer stage.

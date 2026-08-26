@@ -246,6 +246,10 @@ export class DrawTrail {
   }
 
   dispose(): void {
+    this._energy = 0
+    this.initialized = false
+    this._geometryDirty = false
+    this.group.clear()
     this.geometry.dispose()
     ;(this.mesh.material as THREE.Material).dispose()
   }
