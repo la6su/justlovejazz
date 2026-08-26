@@ -98,6 +98,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
   WebGPU texture cannot be decremented by an older generation.
 - [x] **Suppress stale renderer recovery failure UI** — a rejected device-loss
   recreation after renderer teardown no longer mutates the removed DOM owner.
+- [x] **Restore renderer tone mapping after post failure** — a thrown TSL post
+  render cannot leave the live WebGPU renderer in a permanently altered color
+  transform state.
 - [x] **Dispose route WorkCards on owner teardown** — `useJlzPage` now releases
   the module-level card/grid registry on full unmount as well as before route
   replacement, with lifecycle coverage for both paths.

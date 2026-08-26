@@ -244,6 +244,8 @@ according to their current measured policy.
 - Renderer recovery checks its lifecycle generation in the failure path too;
   a teardown-raced rejection cannot surface unsupported UI or touch a disposed
   renderer instance.
+- WebGPU post rendering restores the renderer's prior tone-mapping state in a
+  `finally` block, including when TSL render throws during device loss.
 - Contact section activation captures the same Cyprus request generation before
   awaiting lazy initialization; a stale route callback cannot call `setActive`
   or raise render demand on a newer stage.

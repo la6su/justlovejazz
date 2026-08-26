@@ -62,6 +62,9 @@
 - Device-loss recovery now drops stale rejection side effects after teardown,
   preventing unsupported-state DOM mutation from a disposed renderer owner.
 
+- TSL post-processing now restores the previous renderer tone-mapping mode even
+  when a WebGPU render throws.
+
 - `useJlzPage` now disposes the module-level `WorkCards` registry during route
   owner teardown as well as before route replacement, releasing delegated grid
   listeners and pending card timers on full unmount.

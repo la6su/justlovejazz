@@ -183,8 +183,11 @@ export class RenderPipeline {
       // only applies sRGB encode (exact sRGBTransferOETF), no tone mapping.
       const toneMappingBackup = (this._renderer as any).toneMapping
       ;(this._renderer as any).toneMapping = THREE.NoToneMapping
-      this._webgpuPipeline.render()
-      ;(this._renderer as any).toneMapping = toneMappingBackup
+      try {
+        this._webgpuPipeline.render()
+      } finally {
+        ;(this._renderer as any).toneMapping = toneMappingBackup
+      }
       return
     }
 
