@@ -182,6 +182,9 @@ under `src/builder/`; the public builds do not import the editor graph.
   per-card NodeMaterial is released, late reveal/motion/frame calls are inert;
   the shared card geometry and cache-managed texture are never disposed by the
   card owner.
+- `Section` has a terminal, idempotent StateBus boundary. Once its state and
+  opacity channels/listener are removed, late transitions cannot recreate or
+  mutate those channels, and the detached section cannot re-enter the scene.
 - `Cursor.drawCircle()` reuses one owner-scoped ring-point buffer and color
   view. The active pointer path remains allocation-free while theme refreshes
   mutate only the cached values.

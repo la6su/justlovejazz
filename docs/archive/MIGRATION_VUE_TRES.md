@@ -3890,6 +3890,18 @@ per-instance material disposal and shared-geometry preservation; focused
 type-check/lint pass. Rollback: revert this bounded card-owner lifecycle slice
 if carousel or Works-stage motion parity regresses.
 
+### Section terminal teardown — 2026-08-26
+
+`Section` now rejects late `switchState`, `fadeIn` and `forceState` calls after
+removing its StateBus channels and completion listener. Disposal is idempotent,
+detaches the section from its parent and preserves the existing recursive
+mesh-resource release and reduced-motion state behavior.
+
+Acceptance: `Section.lifecycle.test.ts` covers repeated teardown, removed
+channels, detached parent and all late transition calls; focused type-check/
+lint pass. Rollback: revert this bounded state-machine lifecycle slice if
+section opacity or completion synchronization regresses.
+
 ## Definition of done
 
 The migration is done when the target topology is the only production path;

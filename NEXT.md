@@ -478,6 +478,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Make CasePlane teardown terminal** — late reveal, pulse, motion, warp and
   frame calls become inert after per-card material release; shared geometry and
   texture ownership remain with their existing owners.
+- [x] **Make Section teardown terminal** — late StateBus transitions become inert
+  after owner channels/listeners are removed; repeated disposal detaches the
+  section without reintroducing channels.
 - [x] **Release the WorksPortfolio owner** — `ExperienceUI.destroy()` now calls
       the portfolio disposer before dropping its reference; disposal clears the
       project/callback references and navigation becomes a safe no-op.
