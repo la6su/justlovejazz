@@ -189,6 +189,10 @@ under `src/builder/`; the public builds do not import the editor graph.
   material and frame callbacks cannot mutate freed cube resources; all three
   animation predicates return false after teardown so the persistent scene
   host cannot retain demand.
+- `ContactCyprusStage.dispose()` is terminal and idempotent. Camera binding,
+  route activation, prewarm, resize and update calls are inert after Contact
+  teardown; its async Draco/GLTF load still disposes a late scene before it
+  can attach to the route owner.
 - Native WebGPU post processing is conditional on the selected quality policy;
   low-tier instances render the scene directly and do not construct a TSL
   `PassNode` graph whose effects are disabled.

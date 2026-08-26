@@ -457,6 +457,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Make SplashCube teardown terminal** — late section/theme/material
   callbacks and frame updates become inert after persistent scene teardown;
   animation predicates settle false and disposal is idempotent.
+- [x] **Make ContactCyprusStage teardown terminal** — late camera, route,
+  prewarm, resize and frame calls become inert after Contact teardown while
+  the existing late Draco/GLTF cleanup remains authoritative.
 - [x] **Release the WorksPortfolio owner** — `ExperienceUI.destroy()` now calls
       the portfolio disposer before dropping its reference; disposal clears the
       project/callback references and navigation becomes a safe no-op.

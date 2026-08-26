@@ -120,10 +120,12 @@ export class ContactCyprusStage extends THREE.Group {
   }
 
   setCamera(camera: THREE.Camera): void {
+    if (this._disposed) return
     this._camera = camera
   }
 
   setActive(active: boolean): void {
+    if (this._disposed) return
     this._active = active
     const target = active ? 1 : 0
     if (target === this._targetOpacity && !this.isAnimating) return
@@ -157,6 +159,7 @@ export class ContactCyprusStage extends THREE.Group {
   /** True while the map is fading between Contact frames. */
   get isAnimating(): boolean {
     return (
+      !this._disposed &&
       this._model !== null &&
       (this._fadeElapsed < FADE_DURATION_SECONDS || this._prewarmFramePending)
     )
@@ -168,23 +171,25 @@ export class ContactCyprusStage extends THREE.Group {
    * off the attached stage instead of a separate World flag.
    */
   get isActive(): boolean {
-    return this._active
+    return !this._disposed && this._active
   }
 
   /** Render one fully transparent frame after loading to compile the physical material before Agros. */
   prewarm(): void {
+    if (this._disposed) return
     if (!this._model || this._targetOpacity > 0) return
     this._prewarmFramePending = true
     this.visible = true
   }
 
   resize(width: number, height: number): void {
+    if (this._disposed) return
     const scale = THREE.MathUtils.clamp(width / height / 1.78, 0.78, 1.2)
     this.scale.setScalar(scale)
   }
 
   update(dt: number): void {
-    if (!this._model) return
+    if (this._disposed || !this._model) return
 
     if (prefersReducedMotion()) {
       this._fadeElapsed = FADE_DURATION_SECONDS

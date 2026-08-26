@@ -131,4 +131,22 @@ describe('ContactCyprusStage async lifecycle', () => {
     expect(internals._active).toBe(false)
     expect(stage.isActive).toBe(false)
   })
+
+  it('ignores late public calls after terminal teardown', async () => {
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))
+    const stage = new ContactCyprusStage()
+    stage.dispose()
+    stage.dispose()
+    stage.setCamera(new THREE.PerspectiveCamera())
+    stage.setActive(true)
+    stage.setReducedMotion(true)
+    stage.prewarm()
+    stage.resize(320, 640)
+    stage.update(1 / 60)
+    await stage.load()
+
+    expect(stage.isActive).toBe(false)
+    expect(stage.isAnimating).toBe(false)
+    expect(stage.children).toHaveLength(0)
+  })
 })

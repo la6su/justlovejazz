@@ -3808,6 +3808,18 @@ public calls; focused type-check/lint pass. Rollback: revert this bounded
 persistent-cube lifecycle slice if opener, face or reduced-motion behavior
 regresses.
 
+### ContactCyprusStage terminal teardown — 2026-08-26
+
+`ContactCyprusStage` now guards every route/interaction entry point after its
+existing terminal disposal boundary. Late camera, activation, prewarm, resize
+and frame callbacks cannot mutate the retired physical-material stage; the
+Draco/GLTF generation check continues to dispose a late model before attach.
+
+Acceptance: `ContactCyprusStage.lifecycle.test.ts` covers repeated disposal,
+all late public calls and async load completion; focused type-check/lint pass.
+Rollback: revert this bounded Contact-stage lifecycle slice if Agros fade or
+asset handoff regresses.
+
 ## Definition of done
 
 The migration is done when the target topology is the only production path;
