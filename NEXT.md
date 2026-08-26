@@ -153,6 +153,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Remove Works layout frame allocations** — WorksPlaneStage reuses its
   scaled viewport layout scratch object for visible cards.
 
+- [x] **Pool SceneCoordinator transform results** — per-frame camera/world
+  metadata now reuses one owner-scoped result graph.
+
 - [x] **Align WebGLBackend quality state** — direct-render fallback no longer
   advertises or updates the unused TSL post graph; native WebGPU retains the
   crossfade and post parameter path.

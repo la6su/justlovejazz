@@ -3610,6 +3610,17 @@ Acceptance: `WorksPlaneStage.lifecycle.test.ts` verifies stable layout identity
 across repeated calculations. Rollback: revert this bounded performance slice
 if responsive placement regresses.
 
+### SceneCoordinator result pooling — 2026-08-26
+
+`SceneCoordinator.updateTransform()` now mutates one owner-scoped
+`WorldTransformResult` graph. `Experience.update()` consumes the result
+synchronously, so pooling removes per-frame metadata allocations without
+changing the renderer or scheduler ownership boundary.
+
+Acceptance: full unit/E2E and budget gates pass; rollback: revert this bounded
+coordinator performance slice if transform consumers retain results across
+frames.
+
 ## Definition of done
 
 The migration is done when the target topology is the only production path;

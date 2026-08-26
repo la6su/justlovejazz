@@ -149,6 +149,8 @@ under `src/builder/`; the public builds do not import the editor graph.
   render-loop path does not allocate transient basis objects per frame.
 - WorksPlaneStage reuses its scaled viewport layout scratch object while
   updating visible cards, keeping per-frame layout allocation-free.
+- SceneCoordinator returns one synchronously-consumed pooled transform result;
+  camera/world metadata does not allocate a nested object graph per frame.
 - Direct scene owners such as `EnvSphere` and `SplashCube` detach themselves
   before disposing geometry/material resources; a destroyed owner cannot
   remain as a child of the Tres-owned scene with invalid GPU state.

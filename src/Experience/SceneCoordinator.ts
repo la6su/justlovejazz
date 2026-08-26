@@ -110,6 +110,24 @@ export class SceneCoordinator {
   private _poolBakuColor = new THREE.Color()
   private _poolBakuEmissive = new THREE.Color()
   private _poolEnvColor = new THREE.Color()
+  // The transform result is consumed synchronously by Experience.update().
+  // Pool its nested metadata too; otherwise the vectors/colors above still
+  // sat inside a fresh object graph on every demand-driven frame.
+  private _poolResult: WorldTransformResult = {
+    cameraTarget: { position: this._poolPos, lookAt: this._poolLookAt, fov: 0 },
+    worldState: {
+      currentPhase: '',
+      phaseProgress: 0,
+      bakuMaterial: {
+        role: BakuRole.NORMAL,
+        color: this._poolBakuColor,
+        emissive: this._poolBakuEmissive,
+        roughness: 0,
+        metalness: 0,
+      },
+      envColor: this._poolEnvColor,
+    },
+  }
 
   constructor(scene: THREE.Scene, owners: SceneCoordinatorOwners, page: () => PageId) {
     this.sceneRef = scene
@@ -616,39 +634,39 @@ export class SceneCoordinator {
     this._poolPos.y += parallaxY
     this._poolPos.z += parallaxZ
 
-    return {
-      cameraTarget: {
-        position: this._poolPos,
-        lookAt: this._poolLookAt.lerpVectors(fromCam.target, toCam.target, t),
-        fov: THREE.MathUtils.lerp(fromCam.fov, toCam.fov, t),
-      },
-      worldState: {
-        // Arrival metadata drives discrete systems (theme, post, cube) while
-        // the transform/material values above remain a continuous from→to blend.
-        currentPhase: this.configs[activeIndex]!.id,
-        phaseProgress: t,
-        bakuMaterial: {
-          role: toBaku.role,
-          color: this._poolBakuColor.lerpColors(fromBaku.material.color, toBaku.material.color, t),
-          emissive: this._poolBakuEmissive.lerpColors(
-            fromBaku.material.emissive,
-            toBaku.material.emissive,
-            t,
-          ),
-          roughness: THREE.MathUtils.lerp(
-            fromBaku.material.roughness,
-            toBaku.material.roughness,
-            t,
-          ),
-          metalness: THREE.MathUtils.lerp(
-            fromBaku.material.metalness,
-            toBaku.material.metalness,
-            t,
-          ),
-        },
-        envColor: this._poolEnvColor.lerpColors(fromLight.ambientColor, toLight.ambientColor, t),
-      },
-    }
+    const result = this._poolResult
+    const cameraTarget = result.cameraTarget
+    const worldState = result.worldState
+    const bakuMaterial = worldState.bakuMaterial
+    cameraTarget.lookAt = this._poolLookAt.lerpVectors(fromCam.target, toCam.target, t)
+    cameraTarget.fov = THREE.MathUtils.lerp(fromCam.fov, toCam.fov, t)
+    // Arrival metadata drives discrete systems (theme, post, cube) while the
+    // transform/material values remain a continuous from→to blend.
+    worldState.currentPhase = this.configs[activeIndex]!.id
+    worldState.phaseProgress = t
+    bakuMaterial.role = toBaku.role
+    bakuMaterial.color = this._poolBakuColor.lerpColors(
+      fromBaku.material.color,
+      toBaku.material.color,
+      t,
+    )
+    bakuMaterial.emissive = this._poolBakuEmissive.lerpColors(
+      fromBaku.material.emissive,
+      toBaku.material.emissive,
+      t,
+    )
+    bakuMaterial.roughness = THREE.MathUtils.lerp(
+      fromBaku.material.roughness,
+      toBaku.material.roughness,
+      t,
+    )
+    bakuMaterial.metalness = THREE.MathUtils.lerp(
+      fromBaku.material.metalness,
+      toBaku.material.metalness,
+      t,
+    )
+    worldState.envColor = this._poolEnvColor.lerpColors(fromLight.ambientColor, toLight.ambientColor, t)
+    return result
   }
 
   public resize(width: number, height: number): void {
