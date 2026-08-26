@@ -203,7 +203,10 @@ export class Experience {
   private labGamepad: LabExperimentObject | null = null
   private _labGamepadPromise: Promise<void> | null = null
   private _labGamepadRequest = 0
-  private bus!: StateBus
+  // Resolve the animation state owner before any async renderer/Tres setup can
+  // raise demand. Renderer initialization may emit a resize/invalidation
+  // before `init()` reaches the world-build handoff.
+  private bus: StateBus = StateBus.getInstance()
 
   // Phase 7 slice 4: the former UI features (cinematic nav, menu, overlay,
   // Works portfolio, UI-facing window handlers) live in ExperienceUI.
@@ -964,8 +967,6 @@ export class Experience {
     if (!this.isLifecycleCurrent(token)) return
     await this.buildWorld(token)
     if (!this.isLifecycleCurrent(token)) return
-    this.bus = StateBus.getInstance()
-
     // ── 3D ↔ theme sync: EnvSphere follows per-section theme ──
     // ContentReveal dispatches jlz:theme-applied on every section change with
     // the resolved sectionIndex + isLight. Each section has its own dark/light

@@ -9,6 +9,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
 
 ## Active engineering queue
 
+- [x] **Initialize StateBus before renderer demand** — the animation state
+      owner is constructed before async renderer/Tres setup, so an early resize
+      invalidation cannot enter `Experience.update()` with an undefined bus.
+
 - [x] **Harden the renderer-recovered handoff** — `Experience` installs its
       recovery listener before async initialization, ignores late events after
       destroy, and swaps PMREM environment textures only after replacement

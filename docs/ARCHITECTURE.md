@@ -76,6 +76,9 @@ under `src/builder/`; the public builds do not import the editor graph.
 - One renderer-loop driver exists. `RenderScheduler` owns demand policy and
   requests bounded work from the one bounded renderer loop adapter;
   settled idle performs no draw work and hidden tabs pause.
+- `StateBus` is initialized before renderer/Tres async setup can emit resize or
+  other demand signals; the first scheduled `Experience.update()` therefore
+  always has a valid animation-state owner.
 - Terminal renderer recovery failure is a hard loop boundary: later scheduler
   invalidation cannot reattach a callback to the failed renderer. The
   WebGLBackend direct-draw fallback temporarily clears scene fog and restores
