@@ -40,6 +40,7 @@ class ThemeManager {
   }
 
   setMode(mode: ThemeMode): void {
+    if (mode === this._mode) return
     this._mode = mode
     this._saveMode(mode)
     // Notify ContentReveal to re-apply per-section theme

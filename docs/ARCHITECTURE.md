@@ -83,6 +83,8 @@ under `src/builder/`; the public builds do not import the editor graph.
   DOM and inline animation styles.
 - `NoiseText.finalize()` restores clean text only after a non-empty reveal has
   established source state; hiding an unstarted owner preserves authored DOM.
+- `ThemeManager.setMode()` is idempotent; unchanged mode requests do not emit
+  theme re-application or trigger scene synchronization work.
 - `Experience` observes the live reduced-motion media query for the lifetime
   of the runtime. Enabling it cancels ambient breathing and settles the single
   render scheduler; disabling it raises one `motion-preference` invalidation.

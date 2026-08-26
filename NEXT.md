@@ -121,6 +121,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
   longer erases authored content while finalization remains clean for active
   reveals.
 
+- [x] **Make theme mode writes idempotent** — same-mode requests no longer
+  persist or emit redundant theme-change work across DOM and scene owners.
+
 - [x] **Align WebGLBackend quality state** — direct-render fallback no longer
   advertises or updates the unused TSL post graph; native WebGPU retains the
   crossfade and post parameter path.

@@ -3485,6 +3485,18 @@ preservation alongside the existing teardown cases. Rollback: remove the
 guard and restore unconditional finalization; no renderer boundary changes are
 required.
 
+#### ThemeManager idempotent mode updates — 2026-08-26
+
+`ThemeManager.setMode()` now returns when the requested mode already matches
+the current mode. Same-mode calls therefore avoid localStorage writes and the
+typed `jlz:theme-change` fan-out that would otherwise reapply DOM theme state
+and resynchronize scene owners.
+
+Acceptance: `ThemeManager.test.ts` covers no-op persistence/event behavior;
+existing toggle tests continue to require one event per actual mode change.
+Rollback: remove the early return and restore the previous always-publish
+behavior; no renderer boundary changes are involved.
+
 ### Removal ledger
 
 | Legacy element                           | Remove after                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Status |

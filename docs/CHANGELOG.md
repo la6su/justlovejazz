@@ -18,6 +18,8 @@
   of retaining per-character animation spans in hidden route content.
 - NoiseText no longer clears authored content when hidden before its first
   reveal; active finalization behavior is unchanged.
+- ThemeManager now skips redundant same-mode persistence and theme-change
+  events, avoiding unnecessary DOM and scene re-synchronization.
 
 - Renderer device-loss fallback now clears the retired software-adapter
   replacement before forced-WebGL recreation; a failed second initialization

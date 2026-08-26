@@ -30,6 +30,16 @@ describe('ThemeManager', () => {
   })
 
   describe('setMode', () => {
+    it('does not persist or emit when the mode is unchanged', () => {
+      const setItemSpy = vi.spyOn(Storage.prototype, 'setItem')
+
+      themeManager.setMode('auto')
+
+      expect(themeChangeCalls()).toHaveLength(0)
+      expect(setItemSpy).not.toHaveBeenCalled()
+      setItemSpy.mockRestore()
+    })
+
     it('sets mode to inverse and updates isInverse', () => {
       themeManager.setMode('inverse')
       expect(themeManager.mode).toBe('inverse')
