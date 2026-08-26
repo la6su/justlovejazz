@@ -150,8 +150,8 @@ export class PostProcessingManager {
     )
   }
 
-  /** Get display values for shader uniforms */
-  get postParams(): PostParams {
+  /** Get display values for shader uniforms without exposing mutable ownership. */
+  get postParams(): Readonly<PostParams> {
     return this.display
   }
 }

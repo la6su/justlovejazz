@@ -65,6 +65,9 @@
 - TSL post-processing now restores the previous renderer tone-mapping mode even
   when a WebGPU render throws.
 
+- Post-processing display parameters are now exposed read-only, preventing
+  accidental crossfade-state mutation without adding a per-frame copy.
+
 - `useJlzPage` now disposes the module-level `WorkCards` registry during route
   owner teardown as well as before route replacement, releasing delegated grid
   listeners and pending card timers on full unmount.

@@ -101,6 +101,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Restore renderer tone mapping after post failure** — a thrown TSL post
   render cannot leave the live WebGPU renderer in a permanently altered color
   transform state.
+- [x] **Expose post parameters as a read-only view** — consumers can no longer
+  mutate the crossfade manager's live display state through its getter, without
+  adding a per-frame object copy.
 - [x] **Dispose route WorkCards on owner teardown** — `useJlzPage` now releases
   the module-level card/grid registry on full unmount as well as before route
   replacement, with lifecycle coverage for both paths.
