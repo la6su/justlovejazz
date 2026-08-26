@@ -412,9 +412,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [ ] **Profile the next runtime owner on real backends** — capture a bounded
       WebGPU/WebGLBackend frame trace and draw/resource counters before changing
       an owner whose motion is intentional; headless unit coverage alone is not
-      sufficient evidence for the next performance slice. The phase7 gate now
-      captures the trace on the local WebGLBackend path; a hardware WebGPU run
-      remains required before this item can close.
+      sufficient evidence for the next performance slice. The latest local
+      WebGLBackend trace is recorded in
+      [`docs/evidence/phase7-live-gate/2026-08-26T17-11-30-611Z-report.json`](docs/evidence/phase7-live-gate/2026-08-26T17-11-30-611Z-report.json);
+      a hardware WebGPU run remains required before this item can close.
 
 - [ ] **Verify browser device-loss recovery on WebGLBackend** — the e2e probe
       now drives a real `WEBGL_lose_context` event and checks the production

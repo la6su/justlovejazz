@@ -325,17 +325,29 @@ export class Renderer {
    * post pipeline, and re-attach the animation loop. Bounded by
    * MAX_DEVICE_LOST_RECOVERIES (see deviceLostAction).
    */
-  private async waitForWebGLContextRestore(canvas: HTMLCanvasElement): Promise<void> {
+  private async waitForWebGLContextRestore(
+    canvas: HTMLCanvasElement,
+    restoreContext?: { restoreContext: () => void },
+  ): Promise<void> {
     await new Promise<void>((resolve) => {
       let settled = false
       const finish = () => {
         if (settled) return
         settled = true
+        if (restoreContext) canvas.removeEventListener('webglcontextlost', onLost)
         canvas.removeEventListener('webglcontextrestored', finish)
         clearTimeout(timeout)
         resolve()
       }
+      const onLost = (event: Event) => {
+        // WebGLBackend.dispose() deliberately loses the context after it has
+        // removed its own listener. Keep the temporary lifecycle listener in
+        // place so the browser permits restoration of the same canvas.
+        event.preventDefault()
+        restoreContext?.restoreContext()
+      }
       const timeout = window.setTimeout(finish, 5000)
+      if (restoreContext) canvas.addEventListener('webglcontextlost', onLost, { once: true })
       canvas.addEventListener('webglcontextrestored', finish, { once: true })
     })
   }
@@ -370,9 +382,11 @@ export class Renderer {
         info?.api === 'WebGL'
           ? canvas.getContext('webgl2')?.getExtension('WEBGL_lose_context')
           : null
+      const restoredAfterDispose = restoreContext
+        ? this.waitForWebGLContextRestore(canvas, restoreContext)
+        : null
       this.instance.dispose()
-      if (restoreContext) {
-        const restoredAfterDispose = this.waitForWebGLContextRestore(canvas)
+      if (restoreContext && restoredAfterDispose) {
         restoreContext.restoreContext()
         await restoredAfterDispose
         await new Promise<void>((resolve) => window.setTimeout(resolve, 0))
