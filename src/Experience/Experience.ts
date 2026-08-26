@@ -373,6 +373,17 @@ export class Experience {
     return !this._destroyed && token === this._lifecycleGeneration
   }
 
+  private installRendererRecovery(): void {
+    if (this._onRendererRecovered) return
+    this._onRendererRecovered = () => {
+      if (this._destroyed) return
+      this.setupEnvironment()
+      if (this._destroyed) return
+      this._raiseRenderDemand('recovery')
+    }
+    eventBus.on('jlz:renderer-recovered', this._onRendererRecovered)
+  }
+
   private _handleReducedMotionChange(reduced: boolean): void {
     if (reduced === this._reducedMotion || this._destroyed) return
     this._reducedMotion = reduced
@@ -784,13 +795,9 @@ export class Experience {
     // gives strong directional highlights like day34 reference.
     let envTex: THREE.CanvasTexture | null = null
     let pmrem: WebGPUPMREMGenerator | null = null
+    let nextEnvironment: THREE.Texture | null = null
+    const previousEnvironment = this.scene.environment
     try {
-      // Re-entrant: on device-loss recovery the previous PMREM texture died
-      // with the lost device — release the stale binding before regenerating.
-      if (this.scene.environment) {
-        this.scene.environment.dispose()
-        this.scene.environment = null
-      }
       // Procedural grayscale texture (sky-to-ground tonal contrast + soft spots).
       // 512×256 is sufficient for the deliberately soft PMREM reflections and
       // quarters the synchronous startup work of the previous 1024×512 source.
@@ -843,7 +850,7 @@ export class Experience {
       // generator.
       pmrem = new WebGPUPMREMGenerator(this.renderer.instance)
       const envRT = pmrem.fromEquirectangular(envTex)
-      this.scene.environment = envRT.texture
+      nextEnvironment = envRT.texture
       // Set environmentIntensity explicitly (day34 pattern). Without this,
       // WebGPU MeshPhysicalNodeMaterial and WebGL2 MeshPhysicalMaterial can
       // apply scene.environment at different strengths → parity drift
@@ -855,13 +862,31 @@ export class Experience {
       // reliably through the TSL post-pipeline (PassNode RT caching drift).
       // Explicit mat.envMap guarantees the glass sees the environment on BOTH
       // paths → parity. Shared texture, no extra VRAM.
-      this.baku?.bindEnvironment(envRT.texture)
+      // Generate completely before replacing the live binding. A recovery
+      // failure must preserve the previous environment rather than leaving
+      // the scene without reflections.
+      this.scene.environment = nextEnvironment
+      try {
+        this.baku?.bindEnvironment(nextEnvironment)
+      } catch (error) {
+        this.scene.environment = previousEnvironment ?? null
+        nextEnvironment.dispose()
+        nextEnvironment = null
+        throw error
+      }
+      if (previousEnvironment && previousEnvironment !== nextEnvironment) {
+        previousEnvironment.dispose()
+      }
       if (import.meta.env.DEV) {
         console.info(
           '[Experience] Procedural env map (gradient + sun spots) set — glass reflections active (PMREM via renderer-native TSL generator)',
         )
       }
     } catch (e) {
+      if (nextEnvironment) {
+        this.scene.environment = previousEnvironment ?? null
+        nextEnvironment.dispose()
+      }
       if (import.meta.env.DEV) {
         console.warn('[Experience] Procedural env map generation failed:', e)
       }
@@ -874,6 +899,9 @@ export class Experience {
   async init() {
     if (this._destroyed) return
     const token = this.lifecycleToken()
+    // Install recovery ownership before the first renderer/world await. A
+    // device-loss event can arrive during any async initialization gap.
+    this.installRendererRecovery()
     // `input` is a module singleton shared by Camera and DrawTrail. Reattach
     // its listener when a new Experience follows an explicit teardown/HMR.
     input.start()
@@ -1080,19 +1108,6 @@ export class Experience {
     // WebGPU backend still paces through setAnimationLoop (swap-chain sync) —
     // the driver, not the start/stop policy, is unchanged from Phase 6.
     this._scheduler.invalidate('first-frame')
-
-    // Bounded WebGPU device-loss recovery: the Renderer re-creates the
-    // renderer on the same canvas and rebuilds the post pipeline. The PMREM
-    // environment texture dies with the lost device, so regenerate + re-bind
-    // it on the replacement renderer.
-    this._onRendererRecovered = () => {
-      this.setupEnvironment()
-      // The loop may have been settled/stopped when the device was lost; a
-      // typed recovery invalidation re-arms the single driver on the
-      // replacement renderer.
-      this._raiseRenderDemand('recovery')
-    }
-    eventBus.on('jlz:renderer-recovered', this._onRendererRecovered)
 
     // ── DrawTrail: trigger render on mousemove (Works section only) ──
     // DrawTrail.update() runs inside world.update(needsRender) — if

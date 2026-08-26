@@ -52,6 +52,10 @@ under `src/builder/`; the public builds do not import the editor graph.
 - Device-loss recovery retains the replacement renderer under a local owner
   until sizing, post-pipeline creation, loop reattachment and SceneHost bridge
   callbacks complete; a post-swap failure disposes it before terminal failure.
+- `Experience` subscribes to renderer recovery before its initialization awaits;
+  destroyed instances ignore late recovery events. Environment regeneration is
+  generate-then-swap, preserving the live PMREM binding if replacement setup
+  fails.
 - TSL post quality is enabled only for a non-low native `WebGPUBackend`.
   `WebGLBackend` is an explicit direct-render parity path and does not update
   unused post uniforms or advertise post processing.

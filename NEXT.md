@@ -9,6 +9,11 @@ Do not reopen completed migration phases. Current runtime contracts are in
 
 ## Active engineering queue
 
+- [x] **Harden the renderer-recovered handoff** — `Experience` installs its
+      recovery listener before async initialization, ignores late events after
+      destroy, and swaps PMREM environment textures only after replacement
+      generation succeeds.
+
 - [x] **Restore tone mapping after TSL graph build failure** — the shared
       renderer state is restored even when `TSLRenderPipeline` construction throws.
 
