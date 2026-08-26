@@ -21,6 +21,7 @@ import type { FinalMode } from '../core/rendererBackend'
 // worldDNA.ts removed — TSL node system never attached (attachWorldDNA never
 // called). updateWorldDNAAudio set uniforms nobody read. All dead.
 import { observeReducedMotion, prefersReducedMotion } from '../core/motionPolicy'
+import { FrameTiming } from '../core/FrameTiming'
 import { WORLD_SLOT_COUNT, worldSlotIndex } from '../core/worldSlots'
 import { DEFAULT_CAMERA_SMOOTHING } from '../core/WorldConfig'
 import {
@@ -139,6 +140,7 @@ export class Experience {
   private _themeAppliedUnsub: (() => void) | null = null
   private _splashEnteredUnsub: (() => void) | null = null
   private devPanel: DevPanel | null = null
+  private _frameTiming: FrameTiming | null = null
   // Phase 8 slice 10: the scene-coordination engine (six-section state machine,
   // scroll transform, per-frame coordination) left the legacy `World` into the
   // SceneCoordinator owner. Experience creates it (buildWorld) and is the
@@ -1003,6 +1005,7 @@ export class Experience {
     // DevPanel — created AFTER nav so it can read current section
     if (import.meta.env.DEV) {
       try {
+        this._frameTiming = new FrameTiming()
         const { DevPanel: DevPanelCtor } = await import('../core/DevPanel')
         this.devPanel = new DevPanelCtor(this)
         // Dev-only runtime probe: resource snapshot PLUS the single loop
@@ -1018,6 +1021,7 @@ export class Experience {
                 cursorSettled: boolean | null
                 activity: Record<string, boolean>
               }
+              timing: ReturnType<FrameTiming['snapshot']>
             } | null
           }
         ).__jlzRuntimeSnapshot = () => {
@@ -1033,6 +1037,7 @@ export class Experience {
               cursorSettled: this.cursor?.isSettled ?? null,
               activity: { ...this._lastActivity },
             },
+            timing: this._frameTiming?.snapshot() ?? null,
           }
         }
         console.log('[Experience] DevPanel ready — press ` or ~ or Ctrl+D to toggle')
@@ -1210,6 +1215,8 @@ export class Experience {
   private _updateFailed = false
 
   private _updateInner(time: number) {
+    const frameTiming = this._frameTiming
+    const frameStart = frameTiming ? performance.now() : 0
     this.time.update(time)
     const dt = this.time.delta / 1000
     // ── Render-budget FPS tracker (rolling 60-frame window) ──
@@ -1318,8 +1325,10 @@ export class Experience {
 
     // Always update navigation + world state (cheap), but only render when needed
     const ns = this._storyNav?.getOverallProgress() ?? 0
+    const sceneStart = frameTiming ? performance.now() : 0
     const { cameraTarget, worldState } = this.coordinator.updateTransform(ns)
     this.coordinator.update(dt, this._needsRender)
+    const sceneDuration = frameTiming ? performance.now() - sceneStart : 0
     // Update showreel button shader (TSL uniforms + hover/click animation)
 
     // Drive worldDNA section blend — from→to colors + phaseProgress (scroll t).
@@ -1467,12 +1476,22 @@ export class Experience {
     // above already raised the flag for any active source.
     if (shouldRender(this._needsRender, activity)) {
       const smoothing = cfg?.camSmoothing ?? DEFAULT_CAMERA_SMOOTHING
+      const cameraStart = frameTiming ? performance.now() : 0
       this.camera.updateSmooth(cameraTarget, dt, smoothing)
       this.lights.update(dt)
       this.camera.update(dt)
+      const cameraDuration = frameTiming ? performance.now() - cameraStart : 0
       // (AudioSystem.update() removed — AudioSystem deleted, was dead code)
+      const rendererStart = frameTiming ? performance.now() : 0
       this.renderer.update(this.scene, this.camera.instance, dt, worldState)
+      const rendererDuration = frameTiming ? performance.now() - rendererStart : 0
       this.devPanel?.recordRenderFrame()
+      frameTiming?.record({
+        scene: sceneDuration,
+        camera: cameraDuration,
+        renderer: rendererDuration,
+        total: performance.now() - frameStart,
+      })
       // Phase 7 readiness: the initial World's FIRST SUCCESSFUL RENDER — a
       // frame that threw in renderer.update() never resolves the gate
       // (update() catches and keeps booting), so `jlz:webgl-ready` can only

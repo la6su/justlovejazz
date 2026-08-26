@@ -246,6 +246,11 @@ Do not reopen completed migration phases. Current runtime contracts are in
       settled sibling from advancing its time uniform during another card's
       pulse; layout, reveal and camera invalidations remain full reconciliation
       boundaries.
+
+- [x] **Expose DEV frame-owner timing evidence** — the existing runtime
+      snapshot now includes a fixed-size CPU timing ring for scene,
+      camera/lights, renderer and total rendered frames; GPU timing remains
+      explicitly hardware-gated and is not inferred from CPU measurements.
 - [x] **Short-circuit settled DrawTrail work** — identical pointer/camera
       demand frames no longer perform basis extraction, unprojection or trail
       uniform writes; pointer and camera changes still wake the owner.

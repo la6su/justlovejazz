@@ -249,6 +249,10 @@ under `src/builder/`; the public builds do not import the editor graph.
   the stage treats the same camera identity as an idempotent binding, so that
   handoff does not re-dirty a settled layout. A real camera replacement still
   invalidates reconciliation.
+- Development builds expose a fixed-size `FrameTiming` ring through the
+  existing runtime snapshot. It records CPU p50/p95 for scene, camera/lights,
+  renderer and total rendered frames only; it is never a production loop
+  driver and never substitutes CPU time for a GPU timestamp.
 - `SceneCoordinator.updateTransform()` caches the pooled result for identical
   story progress and route-owner revision. Route/section/reduced-motion setters
   invalidate that cache, so unrelated demand frames do not repeat six-group

@@ -156,6 +156,10 @@ materials and textures, renderer counters when exposed, post-pipeline
 targets/passes, the single loop driver's diagnostics (`loopActive`, `frames`)
 and the exact demand state behind the settle decision (`needsRender`,
 cursor-settled, the 12-flag `renderDemand.ts` activity snapshot). It
+also exposes a bounded DEV-only CPU timing ring for rendered frames: p50/p95
+and latest durations for scene coordination, camera/lights, renderer and the
+whole frame. The ring is empty until a real draw occurs and does not claim GPU
+time; backend timestamp evidence remains a separate hardware-gated measurement.
 intentionally does not invent driver-level WebGPU memory metrics. The soak
 tool records one snapshot after each route cycle (warm-up + steady) plus a
 root-destroy snapshot, writes a machine-readable report to
