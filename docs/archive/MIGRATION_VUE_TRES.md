@@ -3580,6 +3580,17 @@ Acceptance: `BakuCarousel.lifecycle.test.ts` proves pointer drag and controls
 wake the loop and mutate the target. Rollback: revert this bounded carousel
 owner slice if input scheduling regresses.
 
+### Works visual tap owner path — 2026-08-26
+
+The `/works` visual-plane pointer handler now delegates to
+`WorksPlaneStage.openProject` instead of bypassing the stage with a direct
+overlay call. This preserves the CasePlane pulse and raises one shared dirty
+demand after an idle tap.
+
+Acceptance: `ExperienceUI.lifecycle.test.ts` verifies stage delegation and the
+dirty wake. Rollback: revert this bounded route-owner slice if tap behavior
+regresses.
+
 ## Definition of done
 
 The migration is done when the target topology is the only production path;

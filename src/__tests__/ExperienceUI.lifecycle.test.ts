@@ -117,4 +117,33 @@ describe('ExperienceUI portfolio lifecycle', () => {
     expect(raise).toHaveBeenCalledWith('nav')
     experienceUI.destroy()
   })
+
+  it('routes visual Works taps through the stage owner and wakes its pulse', async () => {
+    const raise = vi.fn()
+    const openProject = vi.fn((_index: number, open: (index: number) => void) => {
+      open(0)
+      return true
+    })
+    const host = {
+      ...createHost([{}]),
+      page: () => 'works' as const,
+      raise,
+      sfx: () => ({ setMuted: vi.fn() }) as never,
+      coordinator: () => ({ sections: [{}], worksPlaneStage: { hitTest: () => 0, openProject } }) as never,
+    }
+    const experienceUI = new ExperienceUI(host)
+    experienceUI.init()
+    experienceUI.portfolio = { projects: [{}], dispose: vi.fn() } as never
+    experienceUI.overlay = { isOpen: false, open: vi.fn() } as never
+
+    document.body.dispatchEvent(
+      new PointerEvent('pointerup', { bubbles: true, clientX: 20, clientY: 20 }),
+    )
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(openProject).toHaveBeenCalledOnce()
+    expect(raise).toHaveBeenCalledWith('dirty')
+    experienceUI.destroy()
+  })
 })

@@ -305,7 +305,11 @@ export class ExperienceUI {
         const stage = this.host.coordinator().worksPlaneStage
         if (!stage) return
         const idx = stage.hitTest(e.clientX, e.clientY)
-        if (idx >= 0) this.onProjectSelect(idx)
+        if (idx >= 0 && stage.openProject(idx, (projectIndex) => this.onProjectSelect(projectIndex))) {
+          // The visual plane owns the wobble pulse; wake the shared loop so
+          // the pulse receives frames after an idle touch/pointer tap.
+          this.host.raise('dirty')
+        }
       })
     }
     window.addEventListener('pointerup', this._worksPlaneTapHandler)

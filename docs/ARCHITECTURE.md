@@ -143,6 +143,8 @@ under `src/builder/`; the public builds do not import the editor graph.
   remaining in the animation registry.
 - BakuCarousel exposes a typed activity wake port to Experience; pointer/touch
   target changes cannot strand the shared render loop in its settled state.
+- Works visual-plane taps route through `WorksPlaneStage.openProject`, so the
+  stage remains the sole owner of card pulse state and the shared loop is woken.
 - Direct scene owners such as `EnvSphere` and `SplashCube` detach themselves
   before disposing geometry/material resources; a destroyed owner cannot
   remain as a child of the Tres-owned scene with invalid GPU state.
