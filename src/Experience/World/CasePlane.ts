@@ -53,6 +53,7 @@ export const CLOTH_PARAMS = {
 } as const
 
 export class CasePlane extends THREE.Mesh {
+  private _disposed = false
   private _wobbleValue = 0
   private _wobbleTarget = 0
   private _motionValue = 0
@@ -153,6 +154,7 @@ export class CasePlane extends THREE.Mesh {
   }
 
   get isAnimating(): boolean {
+    if (this._disposed) return false
     return (
       this._wobbleValue > 0.002 ||
       this._wobbleTarget > 0.002 ||
@@ -163,30 +165,36 @@ export class CasePlane extends THREE.Mesh {
   }
 
   setReveal(value: number): void {
+    if (this._disposed) return
     this._myReveal = THREE.MathUtils.clamp(value, 0, 1)
     this._stateUni.value.y = this._myReveal
     this.visible = value > 0.001
   }
 
   pulse(amount = CLOTH_PARAMS.pulseAmount): void {
+    if (this._disposed) return
     if (prefersReducedMotion()) return
     this._wobbleTarget = Math.max(this._wobbleTarget, amount)
   }
 
   setMotion(amount: number, _direction: number): void {
+    if (this._disposed) return
     this._motionTarget = THREE.MathUtils.clamp(amount, 0, 1)
   }
 
   setEdgeWarp(amount: number): void {
+    if (this._disposed) return
     this._edgeWarpTarget = THREE.MathUtils.clamp(amount, 0, 1)
   }
 
   setTransition(value: number): void {
+    if (this._disposed) return
     this._myTransition = THREE.MathUtils.clamp(value, 0, 1)
     this._stateUni.value.x = this._myTransition
   }
 
   update(dt: number, active: boolean): void {
+    if (this._disposed) return
     if (
       !active &&
       this._wobbleValue < 0.002 &&
@@ -231,6 +239,8 @@ export class CasePlane extends THREE.Mesh {
   }
 
   dispose(): void {
+    if (this._disposed) return
+    this._disposed = true
     // Dispose per-instance material (geometry is shared — don't dispose).
     const mat = this.material as MeshBasicNodeMaterial
     mat.dispose()

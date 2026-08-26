@@ -3878,6 +3878,18 @@ material disposal, repeated teardown and late lookup; focused type-check/lint
 pass. Rollback: revert this bounded section-owner lifecycle slice if route
 group disposal or carousel handoff regresses.
 
+### CasePlane terminal teardown — 2026-08-26
+
+`CasePlane` now rejects late reveal, pulse, motion, edge-warp, transition and
+frame updates after disposing its per-instance TSL material. The owner remains
+idempotent and detached, while shared `PlaneGeometry` and cache-managed
+textures stay with their existing owners and are not double-disposed.
+
+Acceptance: `CasePlane.lifecycle.test.ts` verifies late mutation guards,
+per-instance material disposal and shared-geometry preservation; focused
+type-check/lint pass. Rollback: revert this bounded card-owner lifecycle slice
+if carousel or Works-stage motion parity regresses.
+
 ## Definition of done
 
 The migration is done when the target topology is the only production path;

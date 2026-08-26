@@ -475,6 +475,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Make SectionGroups teardown terminal** — late group lookup becomes inert
   after recursive scene-resource disposal; carousel-first ordering and repeated
   teardown remain safe.
+- [x] **Make CasePlane teardown terminal** — late reveal, pulse, motion, warp and
+  frame calls become inert after per-card material release; shared geometry and
+  texture ownership remain with their existing owners.
 - [x] **Release the WorksPortfolio owner** — `ExperienceUI.destroy()` now calls
       the portfolio disposer before dropping its reference; disposal clears the
       project/callback references and navigation becomes a safe no-op.

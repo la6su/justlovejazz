@@ -178,6 +178,10 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `SectionGroups` has a terminal, idempotent teardown boundary. After its
   recursive scene-resource disposal completes, late slot lookup returns no
   owner; carousel-first disposal ordering remains authoritative.
+- `CasePlane` has a terminal, idempotent teardown boundary. After its
+  per-card NodeMaterial is released, late reveal/motion/frame calls are inert;
+  the shared card geometry and cache-managed texture are never disposed by the
+  card owner.
 - `Cursor.drawCircle()` reuses one owner-scoped ring-point buffer and color
   view. The active pointer path remains allocation-free while theme refreshes
   mutate only the cached values.
