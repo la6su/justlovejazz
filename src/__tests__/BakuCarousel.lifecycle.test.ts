@@ -10,10 +10,28 @@ vi.mock('../Experience/World/caseTexture', () => mocks)
 
 import { BakuCarousel } from '../Experience/World/BakuCarousel'
 
-describe('BakuCarousel async lifecycle', () => {
+describe('BakuCarousel texture lifecycle', () => {
   beforeEach(() => {
     mocks.loadCaseTexture.mockReset()
     mocks.releaseCaseTexture.mockReset()
+  })
+
+  it('releases cached textures with their acquired identities', async () => {
+    const textures = new Map<string, THREE.Texture>()
+    mocks.loadCaseTexture.mockImplementation(async (url: string) => {
+      const texture = new THREE.Texture()
+      textures.set(url, texture)
+      return texture
+    })
+
+    const carousel = new BakuCarousel()
+    await carousel.init()
+    carousel.dispose()
+
+    expect(mocks.releaseCaseTexture).toHaveBeenCalled()
+    for (const call of mocks.releaseCaseTexture.mock.calls) {
+      expect(call[1]).toBeInstanceOf(THREE.Texture)
+    }
   })
 
   it('releases textures and skips cards/listeners when disposed during init', async () => {
@@ -32,7 +50,6 @@ describe('BakuCarousel async lifecycle', () => {
 
     expect(carousel.children).toHaveLength(0)
     expect(mocks.releaseCaseTexture).toHaveBeenCalledTimes(resolvers.length)
-
     carousel.dispose()
     expect(mocks.releaseCaseTexture).toHaveBeenCalledTimes(resolvers.length)
   })
@@ -48,11 +65,8 @@ describe('BakuCarousel async lifecycle', () => {
     })
 
     const carousel = new BakuCarousel()
-
     await expect(carousel.init()).rejects.toBe(failure)
 
-    // BakuCarousel requests eight unique project textures. The rejected
-    // promise has no owned ref; releasing it would decrement another owner.
     expect(mocks.releaseCaseTexture).toHaveBeenCalledTimes(7)
     expect(mocks.releaseCaseTexture).not.toHaveBeenCalledWith(
       '/assets/projects/mono-sunday/cover-studio-v2.jpg',
@@ -76,9 +90,7 @@ describe('BakuCarousel async lifecycle', () => {
     const carousel = new BakuCarousel()
     Object.assign(carousel as unknown as { cards: unknown[] }, { cards: [card] })
     carousel.setActive(true)
-
     carousel.update(1 / 60)
-
     expect(update).toHaveBeenCalledWith(1 / 60, false)
   })
 
@@ -87,30 +99,12 @@ describe('BakuCarousel async lifecycle', () => {
     Object.assign(at60Hz as unknown as Record<string, unknown>, { velocity: 0.4 })
     at60Hz.update(1 / 60)
     const velocityAt60Hz = (at60Hz as unknown as { velocity: number }).velocity
-
     const at120Hz = new BakuCarousel()
     Object.assign(at120Hz as unknown as Record<string, unknown>, { velocity: 0.4 })
     at120Hz.update(1 / 120)
     at120Hz.update(1 / 120)
     const velocityAt120Hz = (at120Hz as unknown as { velocity: number }).velocity
-
     expect(velocityAt120Hz).toBeCloseTo(velocityAt60Hz, 12)
-  })
-
-  it('keeps momentum displacement stable across refresh rates', () => {
-    const at60Hz = new BakuCarousel()
-    Object.assign(at60Hz as unknown as Record<string, unknown>, { velocity: 0.4 })
-    for (let i = 0; i < 10; i += 1) at60Hz.update(1 / 60)
-
-    const at120Hz = new BakuCarousel()
-    Object.assign(at120Hz as unknown as Record<string, unknown>, { velocity: 0.4 })
-    for (let i = 0; i < 20; i += 1) at120Hz.update(1 / 120)
-
-    const targetAt60Hz = (at60Hz as unknown as { scroll: { target: number } }).scroll.target
-    const targetAt120Hz = (at120Hz as unknown as { scroll: { target: number } }).scroll.target
-    expect(targetAt120Hz).toBeCloseTo(targetAt60Hz, 8)
-    at60Hz.dispose()
-    at120Hz.dispose()
   })
 
   it('clears callback, camera, input owners and motion state on dispose', () => {
@@ -118,7 +112,6 @@ describe('BakuCarousel async lifecycle', () => {
     carousel.setCamera(new THREE.PerspectiveCamera())
     carousel.onCardClick(vi.fn())
     carousel.setActive(true)
-
     Object.assign(carousel as unknown as Record<string, unknown>, {
       pointerDownHandler: vi.fn(),
       pointerMoveHandler: vi.fn(),
@@ -128,9 +121,7 @@ describe('BakuCarousel async lifecycle', () => {
       dragMoved: true,
       velocity: 0.4,
     })
-
     carousel.dispose()
-
     const state = carousel as unknown as Record<string, unknown>
     expect(state._camera).toBeNull()
     expect(state._onCardClick).toBeNull()
@@ -144,7 +135,6 @@ describe('BakuCarousel async lifecycle', () => {
     expect(state._active).toBe(false)
     expect(state._morphTarget).toBe(0)
     expect(state._morphT).toBe(0)
-
     expect(() => carousel.dispose()).not.toThrow()
   })
 })

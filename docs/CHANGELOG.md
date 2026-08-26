@@ -78,6 +78,9 @@
 - Route-owned Works and Contact stages now release camera references, active
   state and child graphs during teardown, reducing stale-owner retention.
 
+- Carousel and Works texture cleanup now passes acquired texture identities in
+  teardown and load-failure paths, protecting replacement cache generations.
+
 - `useJlzPage` now disposes the module-level `WorkCards` registry during route
   owner teardown as well as before route replacement, releasing delegated grid
   listeners and pending card timers on full unmount.

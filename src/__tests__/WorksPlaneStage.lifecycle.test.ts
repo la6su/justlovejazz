@@ -62,4 +62,19 @@ describe('WorksPlaneStage async lifecycle', () => {
     expect(internals._active).toBe(false)
     expect(stage.children).toHaveLength(0)
   })
+
+  it('releases each card texture with its acquired identity', async () => {
+    const textures = Array.from({ length: 8 }, () => new THREE.Texture())
+    let nextTexture = 0
+    mocks.loadCaseTexture.mockImplementation(async () => textures[nextTexture++]!)
+
+    const stage = new WorksPlaneStage()
+    await stage.init()
+    stage.dispose()
+
+    expect(mocks.releaseCaseTexture).toHaveBeenCalled()
+    for (const call of mocks.releaseCaseTexture.mock.calls) {
+      expect(call[1]).toBeInstanceOf(THREE.Texture)
+    }
+  })
 })

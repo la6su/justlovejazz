@@ -255,6 +255,9 @@ according to their current measured policy.
   consume animation updates.
 - Route-owned Works and Contact stages clear camera references, active flags and
   child graphs during disposal so stale async owners cannot retain scene state.
+- BakuCarousel and WorksPlaneStage release shared case textures with the
+  acquired texture identity; retired cache generations cannot decrement a
+  replacement URL entry.
 - Contact section activation captures the same Cyprus request generation before
   awaiting lazy initialization; a stale route callback cannot call `setActive`
   or raise render demand on a newer stage.

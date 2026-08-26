@@ -303,7 +303,7 @@ export class WorksPlaneStage extends THREE.Group {
     this._camera = null
     this.cards.forEach((card) => {
       const url = card.userData.texUrl as string | undefined
-      if (url) releaseCaseTexture(url)
+      if (url) releaseCaseTexture(url, card.texture ?? undefined)
       card.dispose()
     })
     this.cards = []

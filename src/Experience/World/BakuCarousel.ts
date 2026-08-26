@@ -133,7 +133,7 @@ export class BakuCarousel extends THREE.Group {
     // Load only the UNIQUE project textures once (8, not 12) — cards reference
     // them by index, avoiding duplicate GPU textures + HTTP requests.
     const uniqueUrls = [...new Set(CARD_TEXTURE_URLS)]
-    const acquiredUrls = new Set<string>()
+    const acquiredTextures = new Map<string, THREE.Texture>()
     let initFailed = false
     let uniqueTextures: THREE.Texture[]
     try {
@@ -144,14 +144,14 @@ export class BakuCarousel extends THREE.Group {
             // late success immediately instead of over-releasing a shared
             // cache entry in the catch path.
             if (initFailed) releaseCaseTexture(url, texture)
-            else acquiredUrls.add(url)
+            else acquiredTextures.set(url, texture)
             return texture
           }),
         ),
       )
     } catch (error) {
       initFailed = true
-      acquiredUrls.forEach((url) => releaseCaseTexture(url))
+      acquiredTextures.forEach((texture, url) => releaseCaseTexture(url, texture))
       this.initialized = false
       throw error
     }
@@ -460,7 +460,7 @@ export class BakuCarousel extends THREE.Group {
     for (const card of this.cards) {
       const url = card.userData.texUrl as string | undefined
       if (url && !releasedUrls.has(url)) {
-        releaseCaseTexture(url)
+        releaseCaseTexture(url, card.texture ?? undefined)
         releasedUrls.add(url)
       }
       card.dispose()
