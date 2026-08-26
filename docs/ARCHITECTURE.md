@@ -153,6 +153,8 @@ under `src/builder/`; the public builds do not import the editor graph.
   camera/world metadata does not allocate a nested object graph per frame.
 - Experience reuses one `RenderActivity` snapshot for demand predicates; the
   scheduler-facing activity flags do not allocate a new object per frame.
+- Renderer reuses one `PostParams` wrapper when forwarding display values to
+  the WebGPU pipeline; WebGL direct rendering performs no post work.
 - Direct scene owners such as `EnvSphere` and `SplashCube` detach themselves
   before disposing geometry/material resources; a destroyed owner cannot
   remain as a child of the Tres-owned scene with invalid GPU state.

@@ -50,6 +50,15 @@ export class Renderer {
   pipeline: RenderPipeline | null = null
   // Pipeline config is built after backend initialization, when fallback is known.
   private _pipelineConfig!: RenderPipelineConfig
+  /** Reused wrapper passed to RenderPipeline on each WebGPU frame. */
+  private _postParams: PostParams = {
+    bloom: 0,
+    vignette: 0,
+    grain: 0,
+    chromatic: 0,
+    bloomRadius: 0,
+    bloomThreshold: 0,
+  }
 
   // Phase 6 device-loss recovery state (bounded — see rendererBackend.ts).
   private _deviceLostAttempts = 0
@@ -409,15 +418,14 @@ export class Renderer {
 
       // Apply to pipeline (typed, no `any`)
       if (this.pipeline) {
-        const pp: PostParams = {
-          bloom: this.capabilities.scaleIntensity(params.bloom),
-          vignette: this.capabilities.scaleIntensity(params.vignette),
-          grain: this.capabilities.scaleIntensity(params.grain),
-          chromatic: this.capabilities.scaleIntensity(params.chromatic),
-          // Track B: per-section bloom shape (NOT intensity-scaled — shape params)
-          bloomRadius: params.bloomRadius,
-          bloomThreshold: params.bloomThreshold,
-        }
+        const pp = this._postParams
+        pp.bloom = this.capabilities.scaleIntensity(params.bloom)
+        pp.vignette = this.capabilities.scaleIntensity(params.vignette)
+        pp.grain = this.capabilities.scaleIntensity(params.grain)
+        pp.chromatic = this.capabilities.scaleIntensity(params.chromatic)
+        // Track B: per-section bloom shape (NOT intensity-scaled — shape params)
+        pp.bloomRadius = params.bloomRadius
+        pp.bloomThreshold = params.bloomThreshold
         this.pipeline.updateParams(pp)
       }
     }

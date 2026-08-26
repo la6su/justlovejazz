@@ -3630,6 +3630,15 @@ flag set are unchanged; only transient object allocation is removed.
 Acceptance: full unit/E2E and budget gates pass. Rollback: revert this bounded
 render-demand performance slice if a consumer requires historical snapshots.
 
+### Renderer post-parameter pooling — 2026-08-26
+
+The real-WebGPU `Renderer.update()` now mutates one owner-scoped `PostParams`
+wrapper before forwarding it to `RenderPipeline.updateParams()`. The pipeline
+copies values into its own TSL cache, so no consumer retains the wrapper.
+
+Acceptance: full unit/E2E and budget gates pass; rollback: revert this bounded
+renderer performance slice if parameter ownership changes.
+
 ## Definition of done
 
 The migration is done when the target topology is the only production path;

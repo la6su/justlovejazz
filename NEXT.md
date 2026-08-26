@@ -159,6 +159,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Pool Experience activity snapshots** — render-demand flags now reuse
   one owner-scoped snapshot instead of allocating per frame.
 
+- [x] **Pool renderer post parameters** — real-WebGPU `Renderer.update()` now
+  reuses its `PostParams` wrapper per frame.
+
 - [x] **Align WebGLBackend quality state** — direct-render fallback no longer
   advertises or updates the unused TSL post graph; native WebGPU retains the
   crossfade and post parameter path.
