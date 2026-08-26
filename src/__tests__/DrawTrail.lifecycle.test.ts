@@ -50,4 +50,26 @@ describe('DrawTrail lifecycle', () => {
     first.dispose()
     second.dispose()
   })
+
+  it('settles energy and motion uniforms when reduced motion is enabled', () => {
+    const trail = new DrawTrail()
+    const internals = trail as unknown as {
+      _energy: number
+      _velocity: number
+      _uniforms: { uEnergy: { value: number }; uVelocity: { value: number } }
+    }
+    internals._energy = 1
+    internals._velocity = 0.4
+    internals._uniforms.uEnergy.value = 1
+    internals._uniforms.uVelocity.value = 0.4
+
+    trail.setReducedMotion(true)
+
+    expect(trail.isAnimating).toBe(false)
+    expect(internals._energy).toBe(0)
+    expect(internals._velocity).toBe(0)
+    expect(internals._uniforms.uEnergy.value).toBe(0)
+    expect(internals._uniforms.uVelocity.value).toBe(0)
+    trail.dispose()
+  })
 })

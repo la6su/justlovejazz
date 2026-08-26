@@ -11,6 +11,7 @@ import * as THREE from 'three'
 import { MeshBasicNodeMaterial } from 'three/webgpu'
 import { Fn, vec3, float, uniform, uv, sin, mix, smoothstep } from 'three/tsl'
 import { input } from '../Input'
+import { prefersReducedMotion } from '../../core/motionPolicy'
 
 const TRAIL_LENGTH = 36
 const RIBBON_WIDTH = 0.115
@@ -82,9 +83,22 @@ export class DrawTrail {
   private _velocity = 0
   private _energy = 0
   private _geometryDirty = true
+  private _reducedMotion = prefersReducedMotion()
 
   public get isAnimating(): boolean {
-    return this._energy > 0.008
+    return !this._reducedMotion && this._energy > 0.008
+  }
+
+  /** Settle the cursor trail at the owner boundary when motion is reduced. */
+  setReducedMotion(reduced: boolean): void {
+    this._reducedMotion = reduced
+    if (!reduced) return
+    this._energy = 0
+    this._velocity = 0
+    this._uniforms.uEnergy.value = 0
+    this._uniforms.uVelocity.value = 0
+    this.initialized = false
+    this._geometryDirty = false
   }
 
   constructor() {
@@ -154,6 +168,10 @@ export class DrawTrail {
   }
 
   update(_dt: number, camera: THREE.Camera): void {
+    if (this._reducedMotion) {
+      this.setReducedMotion(true)
+      return
+    }
     const mouse = input.getMouse()
 
     // Track velocity (NDC units per frame).
@@ -256,6 +274,7 @@ export class DrawTrail {
   }
 
   dispose(): void {
+    this._reducedMotion = true
     this._energy = 0
     this.initialized = false
     this._geometryDirty = false

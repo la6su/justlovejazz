@@ -215,6 +215,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
       and camera-local layouts now snap before the route owner stops advancing,
       preventing an intermediate Works frame from retaining demand.
 
+- [x] **Settle DrawTrail on reduced-motion changes** — cursor ribbon energy and
+      uniforms now clear at the GPU owner boundary, so a paused coordinator
+      cannot leave a stale trail activity flag keeping the loop alive.
+
 - [x] **Pool SceneCoordinator transform results** — per-frame camera/world
       metadata now reuses one owner-scoped result graph.
 

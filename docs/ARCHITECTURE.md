@@ -138,6 +138,9 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `WorksPlaneStage.setReducedMotion(true)` settles route-local reveal values and
   active card layout before the lazy owner stops advancing; reduced motion does
   not leave a partially revealed card or a stale render reason.
+- `DrawTrail.setReducedMotion(true)` clears ribbon energy and motion uniforms at
+  the owner boundary; stopping trail updates cannot strand `isAnimating` or
+  demand after a live preference change.
 - `WorksPlaneStage` snapshots reduced-motion state once per media-query change;
   its per-card frame path no longer calls `matchMedia()` for every card. The
   observer is released with the stage, preserving the lazy route owner's
