@@ -17,6 +17,10 @@
   reattachment, and the WebGLBackend fallback restores the shared scene fog
   after direct draws, including thrown draws.
 
+- WebGLBackend quality state now matches its direct-render implementation:
+  unused TSL post crossfade and parameter writes are skipped, while native
+  WebGPU keeps the existing post path.
+
 - Contact section activation now validates the Cyprus request generation after
   lazy initialization, preventing a stale route callback from activating a
   newer stage or raising redundant render demand.

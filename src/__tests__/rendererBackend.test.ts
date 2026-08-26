@@ -6,6 +6,17 @@ import {
   planUnifiedBackend,
 } from '../core/rendererBackend'
 import { inspectUnifiedBackend } from '../core/unifiedRenderer'
+import { supportsPostProcessing } from '../core/DeviceCapability'
+
+describe('supportsPostProcessing', () => {
+  it('enables TSL post only for non-low native WebGPU', () => {
+    expect(supportsPostProcessing('webgpu', 'high')).toBe(true)
+    expect(supportsPostProcessing('webgpu', 'medium')).toBe(true)
+    expect(supportsPostProcessing('webgpu', 'low')).toBe(false)
+    expect(supportsPostProcessing('webgl', 'high')).toBe(false)
+    expect(supportsPostProcessing('unsupported', 'high')).toBe(false)
+  })
+})
 
 describe('planUnifiedBackend (Phase 6 unified renderer policy)', () => {
   it('keeps a real WebGPUBackend as webgpu mode', () => {

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import * as THREE from 'three'
 
 const mocks = vi.hoisted(() => ({
   create: vi.fn(),
@@ -176,5 +177,26 @@ describe('Renderer device-loss lifecycle', () => {
 
     expect(instance.setAnimationLoop).toHaveBeenCalledWith(null)
     expect((renderer as unknown as { _loopCallback: unknown })._loopCallback).toBeNull()
+  })
+
+  it('skips unused post parameter work on the WebGLBackend direct path', () => {
+    const postUpdate = vi.fn()
+    const updateParams = vi.fn()
+    const render = vi.fn()
+    const renderer = Object.assign(Object.create(Renderer.prototype), {
+      _recovering: false,
+      _recoveryFailed: false,
+      _disposed: false,
+      capabilities: { isRealWebGPU: false, scaleIntensity: vi.fn((value: number) => value) },
+      postManager: { update: postUpdate, postParams: {} },
+      pipeline: { updateParams, render },
+      instance: { render },
+    }) as unknown as Renderer
+
+    renderer.update(new THREE.Scene(), new THREE.PerspectiveCamera(), 1 / 60)
+
+    expect(postUpdate).not.toHaveBeenCalled()
+    expect(updateParams).not.toHaveBeenCalled()
+    expect(render).toHaveBeenCalledOnce()
   })
 })

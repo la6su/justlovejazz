@@ -9,6 +9,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
 
 ## Active engineering queue
 
+- [x] **Align WebGLBackend quality state** — direct-render fallback no longer
+  advertises or updates the unused TSL post graph; native WebGPU retains the
+  crossfade and post parameter path.
+
 - [x] **Keep renderer failure terminal** — device-loss recovery failure now
   rejects later loop reattachment, and WebGLBackend fog clearing is restored
   after each direct fallback draw.

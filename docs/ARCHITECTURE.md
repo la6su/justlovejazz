@@ -47,6 +47,9 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `EnvSphere` owns the ambient background. The contact state owns the ground.
 - Actual initialized backend determines renderer capability, DPR and post
   quality.
+- TSL post quality is enabled only for a non-low native `WebGPUBackend`.
+  `WebGLBackend` is an explicit direct-render parity path and does not update
+  unused post uniforms or advertise post processing.
 - One renderer-loop driver exists. `RenderScheduler` owns demand policy and
   requests bounded work from the one bounded renderer loop adapter;
   settled idle performs no draw work and hidden tabs pause.

@@ -391,22 +391,25 @@ export class Renderer {
     // NodeMaterial — classic fog uniforms work fine on WebGLRenderer, and
     // WebGPURenderer handles fog via TSL internally).
 
-    // Crossfade post-processing params (delta-time aware — SPEC.md motion rules)
-    this.postManager.update(dt)
-    const params = this.postManager.postParams
+    // Native WebGPU owns the TSL post graph. WebGLBackend is a direct-render
+    // parity path, so skip the otherwise-unused crossfade and uniform writes.
+    if (this.capabilities.isRealWebGPU) {
+      this.postManager.update(dt)
+      const params = this.postManager.postParams
 
-    // Apply to pipeline (typed, no `any`)
-    if (this.pipeline) {
-      const pp: PostParams = {
-        bloom: this.capabilities.scaleIntensity(params.bloom),
-        vignette: this.capabilities.scaleIntensity(params.vignette),
-        grain: this.capabilities.scaleIntensity(params.grain),
-        chromatic: this.capabilities.scaleIntensity(params.chromatic),
-        // Track B: per-section bloom shape (NOT intensity-scaled — shape params)
-        bloomRadius: params.bloomRadius,
-        bloomThreshold: params.bloomThreshold,
+      // Apply to pipeline (typed, no `any`)
+      if (this.pipeline) {
+        const pp: PostParams = {
+          bloom: this.capabilities.scaleIntensity(params.bloom),
+          vignette: this.capabilities.scaleIntensity(params.vignette),
+          grain: this.capabilities.scaleIntensity(params.grain),
+          chromatic: this.capabilities.scaleIntensity(params.chromatic),
+          // Track B: per-section bloom shape (NOT intensity-scaled — shape params)
+          bloomRadius: params.bloomRadius,
+          bloomThreshold: params.bloomThreshold,
+        }
+        this.pipeline.updateParams(pp)
       }
-      this.pipeline.updateParams(pp)
     }
 
     // Render scene → post → screen
