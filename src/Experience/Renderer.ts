@@ -328,16 +328,16 @@ export class Renderer {
   private async waitForWebGLContextRestore(
     canvas: HTMLCanvasElement,
     restoreContext?: { restoreContext: () => void },
-  ): Promise<void> {
-    await new Promise<void>((resolve) => {
+  ): Promise<boolean> {
+    return new Promise<boolean>((resolve) => {
       let settled = false
-      const finish = () => {
+      const finish = (restored: boolean) => {
         if (settled) return
         settled = true
         if (restoreContext) canvas.removeEventListener('webglcontextlost', onLost)
-        canvas.removeEventListener('webglcontextrestored', finish)
+        canvas.removeEventListener('webglcontextrestored', onRestored)
         clearTimeout(timeout)
-        resolve()
+        resolve(restored)
       }
       const onLost = (event: Event) => {
         // WebGLBackend.dispose() deliberately loses the context after it has
@@ -346,10 +346,20 @@ export class Renderer {
         event.preventDefault()
         restoreContext?.restoreContext()
       }
-      const timeout = window.setTimeout(finish, 5000)
+      const onRestored = () => finish(true)
+      const timeout = window.setTimeout(() => finish(false), 5000)
       if (restoreContext) canvas.addEventListener('webglcontextlost', onLost, { once: true })
-      canvas.addEventListener('webglcontextrestored', finish, { once: true })
+      canvas.addEventListener('webglcontextrestored', onRestored, { once: true })
     })
+  }
+
+  private isWebGLContextUsable(canvas: HTMLCanvasElement): boolean {
+    try {
+      const gl = canvas.getContext('webgl2')
+      return gl !== null && !gl.isContextLost() && gl.getParameter(gl.VIEWPORT) !== null
+    } catch {
+      return false
+    }
   }
 
   private async recoverFromDeviceLost(info?: { api?: string }): Promise<void> {
@@ -365,10 +375,13 @@ export class Renderer {
       // initialized again; otherwise the replacement may fail immediately
       // against the still-lost context. WebGPU loss has no DOM restore event.
       if (info?.api === 'WebGL') {
-        await this.waitForWebGLContextRestore(canvas)
+        const restored = await this.waitForWebGLContextRestore(canvas)
         // Chromium may dispatch `webglcontextrestored` before the restored
         // default framebuffer parameters are queryable again.
         await new Promise<void>((resolve) => window.setTimeout(resolve, 0))
+        if (!restored || !this.isWebGLContextUsable(canvas)) {
+          throw new Error('WebGL context could not be restored by the browser')
+        }
       }
       if (this._disposed || generation !== this._lifecycleGeneration) return
       this.pipeline?.dispose()
@@ -388,8 +401,11 @@ export class Renderer {
       this.instance.dispose()
       if (restoreContext && restoredAfterDispose) {
         restoreContext.restoreContext()
-        await restoredAfterDispose
+        const restored = await restoredAfterDispose
         await new Promise<void>((resolve) => window.setTimeout(resolve, 0))
+        if (!restored || !this.isWebGLContextUsable(canvas)) {
+          throw new Error('WebGL context could not be restored after backend disposal')
+        }
       }
       if (this._disposed || generation !== this._lifecycleGeneration) return
 
