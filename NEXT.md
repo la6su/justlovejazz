@@ -78,6 +78,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
   colors, intensities and key position now settle to their authored targets
   immediately, while normal motion retains the existing interpolation.
 
+- [x] **Settle EnvSphere on live motion-policy changes** — an active ambient
+  palette crossfade now snaps to its target before the scheduler is stopped.
+
 - [x] **Align WebGLBackend quality state** — direct-render fallback no longer
   advertises or updates the unused TSL post graph; native WebGPU retains the
   crossfade and post parameter path.

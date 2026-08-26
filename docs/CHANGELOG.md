@@ -32,6 +32,8 @@
   cleanup, recovery replacement and failed initialization paths.
 - Cinematic section lights now settle synchronously under reduced motion,
   avoiding intermediate lerp work and stale render demand.
+- EnvSphere palette crossfades now settle synchronously when reduced motion is
+  enabled while a section transition is already active.
 
 - `Experience` now observes live `prefers-reduced-motion` changes instead of
   caching the preference only at startup. Enabling reduction cancels ambient

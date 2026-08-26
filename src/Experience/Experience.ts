@@ -372,6 +372,7 @@ export class Experience {
   private _handleReducedMotionChange(reduced: boolean): void {
     if (reduced === this._reducedMotion || this._destroyed) return
     this._reducedMotion = reduced
+    this.envSphere?.setReducedMotion(reduced)
     this.lights?.setReducedMotion(reduced)
     this.contactTypographyStage?.setReducedMotion(reduced)
     if (reduced) {

@@ -159,6 +159,13 @@ export class EnvSphere extends THREE.Group {
     this._applyColor(true)
   }
 
+  /** Settle an active palette crossfade synchronously on a live policy change. */
+  setReducedMotion(reduced: boolean): void {
+    if (!reduced) return
+    this._sectionWeights = this._targetWeights.slice()
+    this._applyColor(true)
+  }
+
   update(dt: number): void {
     for (let i = 0; i < SECTION_PATTERNS.length; i++) {
       const diff = this._targetWeights[i]! - this._sectionWeights[i]!

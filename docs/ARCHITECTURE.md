@@ -79,6 +79,8 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `EnvSphere.changeSection()` snaps its palette when reduced motion is active;
   normal motion retains the authored interpolation, while reduced-motion
   teardown cannot leave the background between section colors.
+- `EnvSphere` also settles an already-running palette crossfade synchronously
+  when the live reduced-motion preference changes, before the scheduler pause.
 - `CinematicLights` applies the same reduced-motion boundary to section light
   transitions: colors, intensities and key position snap to their targets and
   skip interpolation/orbit work; normal motion retains authored lerp timing.

@@ -3335,6 +3335,20 @@ Rollback: restore the previous `CinematicLights.changeSection()` and `update()`
 lerp-only behavior if visual review rejects the synchronous reduced-motion
 settling.
 
+#### EnvSphere live reduced-motion settlement — 2026-08-26
+
+`EnvSphere` now exposes the same live-policy boundary as the other long-lived
+scene owners. If reduced motion is enabled during a palette crossfade,
+`Experience` copies the target weights and applies the final pavilion colors
+before stopping the render scheduler. Normal-motion section changes retain the
+existing interpolation. Focused lifecycle coverage proves the active
+crossfade cannot remain intermediate after the preference change.
+
+Acceptance: a live reduced-motion change leaves section weights and materials
+at the target without requiring another render; normal interpolation remains
+unchanged. Rollback: remove the owner callback and restore the prior
+frame-driven settlement if the visual policy is revised.
+
 ### Removal ledger
 
 | Legacy element                           | Remove after                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Status |
