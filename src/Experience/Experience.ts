@@ -1420,7 +1420,7 @@ export class Experience {
       )
       this.camera.setFovOffset(cfg.camFovOffset, cfg.camFovDuration)
       // Subtle camera shake on section transition — softer (was 0.04, 0.4)
-      if (!prefersReducedMotion()) this.camera.shake(0.02, 0.6)
+      if (!this._reducedMotion) this.camera.shake(0.02, 0.6)
       this.currentSectionContext = cfg.context
       // A-009: Apply Baku material from worldState (was computed but never applied)
       if (this.baku) {

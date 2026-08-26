@@ -127,6 +127,8 @@ under `src/builder/`; the public builds do not import the editor graph.
   crossfade, so later route changes cannot re-query policy out of band.
 - The lazy Contact typography stage uses its propagated motion snapshot when
   reactivating glyphs; route entry cannot bypass the shared preference boundary.
+- `Experience` uses its synchronized motion snapshot when triggering section
+  camera shake, so context transitions cannot diverge from live owner policy.
 - `WorksPlaneStage` snapshots reduced-motion state once per media-query change;
   its per-card frame path no longer calls `matchMedia()` for every card. The
   observer is released with the stage, preserving the lazy route owner's
