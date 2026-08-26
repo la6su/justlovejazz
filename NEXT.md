@@ -240,6 +240,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
       reuse one Baku and one Contact Cyprus owner read while preserving the
       same update/visibility ordering and lazy owner boundary.
 
+- [x] **Snapshot scene groups per update pass** — carousel visibility and
+      particle drift now reuse one stable `SectionGroups.groups` reference
+      instead of re-reading the group owner in the same active frame.
+
 - [x] **Snapshot SceneCoordinator route owners per transform pass** — the
       six-group visibility loop now reuses one route page and carousel owner
       read, preserving the live getter boundary while removing repeated reads

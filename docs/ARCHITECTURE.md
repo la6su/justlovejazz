@@ -155,6 +155,9 @@ under `src/builder/`; the public builds do not import the editor graph.
 - The same active update pass snapshots `SplashCube` and Contact Cyprus owners
   once before their update/visibility branches; lazy getters remain the source
   of truth across subsequent route frames.
+- Carousel visibility and particle drift share one `SectionGroups.groups`
+  snapshot per active update; group identity remains owner-stable within the
+  synchronous frame.
 - `SceneCoordinator.updateTransform()` snapshots the current route page and
   carousel owner once per synchronous pass before applying six-group visibility;
   the getter boundary remains live across route transitions without repeating

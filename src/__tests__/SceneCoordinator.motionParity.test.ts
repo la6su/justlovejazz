@@ -127,15 +127,16 @@ describe('SceneCoordinator reduced-motion particle parity', () => {
     expect(cyprusUpdate).not.toHaveBeenCalled()
   })
 
-  it('snapshots the route page once per active update pass', () => {
+  it('snapshots route and scene owners once per active update pass', () => {
     const pageReader = vi.fn(() => 'works' as const)
     const worksSetActive = vi.fn()
     const worksUpdate = vi.fn()
     const bakuReader = vi.fn(() => null)
     const cyprusReader = vi.fn(() => null)
+    const groupsReader = vi.fn(() => ({ groups: [] }) as unknown as SectionGroups)
     const owners = {
       ground: () => null,
-      sectionGroups: () => ({ groups: [] }) as unknown as SectionGroups,
+      sectionGroups: groupsReader,
       envSphere: () => null,
       baku: bakuReader,
       particleBurst: () => null,
@@ -159,6 +160,7 @@ describe('SceneCoordinator reduced-motion particle parity', () => {
     expect(pageReader).toHaveBeenCalledOnce()
     expect(bakuReader).toHaveBeenCalledOnce()
     expect(cyprusReader).toHaveBeenCalledOnce()
+    expect(groupsReader).toHaveBeenCalledOnce()
     expect(worksSetActive).toHaveBeenCalledWith(true, 0)
     expect(worksUpdate).toHaveBeenCalledWith(0.25)
   })
