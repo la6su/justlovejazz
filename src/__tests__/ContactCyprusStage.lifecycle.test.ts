@@ -97,6 +97,41 @@ describe('ContactCyprusStage async lifecycle', () => {
     stage.dispose()
   })
 
+  it('skips settled camera pose writes until the camera actually moves', () => {
+    const stage = new ContactCyprusStage()
+    const model = new THREE.Group()
+    model.add(new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshPhysicalMaterial()))
+    stage.add(model)
+    const internals = stage as unknown as {
+      _model: THREE.Group | null
+      _materials: THREE.MeshPhysicalMaterial[]
+    }
+    internals._model = model
+    internals._materials = [
+      (model.children[0] as THREE.Mesh).material as THREE.MeshPhysicalMaterial,
+    ]
+
+    const camera = new THREE.PerspectiveCamera()
+    stage.setCamera(camera)
+    stage.setReducedMotion(true)
+    stage.setActive(true)
+    const positionCopy = vi.spyOn(stage.position, 'copy')
+    const quaternionCopy = vi.spyOn(stage.quaternion, 'copy')
+
+    stage.update(1 / 60)
+    positionCopy.mockClear()
+    quaternionCopy.mockClear()
+    stage.update(1 / 60)
+    expect(positionCopy).not.toHaveBeenCalled()
+    expect(quaternionCopy).not.toHaveBeenCalled()
+
+    camera.position.x = 1
+    stage.update(1 / 60)
+    expect(positionCopy).toHaveBeenCalled()
+    expect(quaternionCopy).toHaveBeenCalled()
+    stage.dispose()
+  })
+
   it('hides an inactive target synchronously on reduced motion', () => {
     vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))
     const stage = new ContactCyprusStage()

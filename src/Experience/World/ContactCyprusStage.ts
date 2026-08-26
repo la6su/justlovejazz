@@ -34,6 +34,8 @@ export class ContactCyprusStage extends THREE.Group {
   private _disposed = false
   private _reducedMotion = prefersReducedMotion()
   private _cameraPosition = new THREE.Vector3()
+  private _lastCameraPosition = new THREE.Vector3(Number.NaN, Number.NaN, Number.NaN)
+  private _lastCameraQuaternion = new THREE.Quaternion(Number.NaN, Number.NaN, Number.NaN, Number.NaN)
 
   constructor() {
     super()
@@ -124,7 +126,10 @@ export class ContactCyprusStage extends THREE.Group {
 
   setCamera(camera: THREE.Camera): void {
     if (this._disposed) return
+    if (this._camera === camera) return
     this._camera = camera
+    this._lastCameraPosition.set(Number.NaN, Number.NaN, Number.NaN)
+    this._lastCameraQuaternion.set(Number.NaN, Number.NaN, Number.NaN, Number.NaN)
   }
 
   setActive(active: boolean): void {
@@ -223,8 +228,14 @@ export class ContactCyprusStage extends THREE.Group {
       return
     }
     this._camera.getWorldPosition(this._cameraPosition)
+    const cameraChanged =
+      !this._lastCameraPosition.equals(this._cameraPosition) ||
+      !this._lastCameraQuaternion.equals(this._camera.quaternion)
+    if (!this.isAnimating && !cameraChanged) return
     this.position.copy(this._cameraPosition)
     this.quaternion.copy(this._camera.quaternion)
+    this._lastCameraPosition.copy(this._cameraPosition)
+    this._lastCameraQuaternion.copy(this._camera.quaternion)
 
     if (this._prewarmFramePending) {
       this._prewarmFramePending = false
@@ -255,6 +266,8 @@ export class ContactCyprusStage extends THREE.Group {
     this._active = false
     this._prewarmFramePending = false
     this._camera = null
+    this._lastCameraPosition.set(Number.NaN, Number.NaN, Number.NaN)
+    this._lastCameraQuaternion.set(Number.NaN, Number.NaN, Number.NaN, Number.NaN)
     if (this._model) this.disposeModel(this._model)
     this._model = null
     this._materials = []

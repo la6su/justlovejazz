@@ -259,6 +259,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
       disposal clears its owner reference and cannot prevent the remaining TSL
       graph cleanup or a later idempotent dispose.
 
+- [x] **Skip settled Contact camera pose writes** — the lazy Cyprus stage now
+      tracks camera position/quaternion and only reapplies its camera-local
+      transform while the pose or authored fade/prewarm state changes.
+
 - [x] **Cache CinematicNav scroll policy** — programmatic section navigation
       reads the owner-local reduced-motion snapshot instead of re-querying the
       media preference on every scroll request.
