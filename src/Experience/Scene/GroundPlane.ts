@@ -39,6 +39,9 @@ export class GroundPlane {
   private _targetOpacity = 0
   // GC-free lerp pool (the legacy `_poolGroundColor` — zero allocs/frame).
   private readonly _poolColor = new THREE.Color()
+  private _lastFrom: GroundConfig | null = null
+  private _lastTo: GroundConfig | null = null
+  private _lastT = Number.NaN
 
   constructor(scene: THREE.Scene) {
     // Built-in MeshStandardMaterial (NOT NodeMaterial) — reduces uniform group
@@ -73,6 +76,9 @@ export class GroundPlane {
     this.object.material.color.set(ground.color)
     this.object.material.opacity = ground.opacity
     this._targetOpacity = ground.opacity
+    this._lastFrom = null
+    this._lastTo = null
+    this._lastT = Number.NaN
   }
 
   /** `jlz:theme-applied` step (legacy `World.syncGroundTheme`). */
@@ -88,6 +94,9 @@ export class GroundPlane {
       this._themeOpacity = 0.3
     }
     this._themeActive = true
+    this._lastFrom = null
+    this._lastTo = null
+    this._lastT = Number.NaN
     // Apply immediately (in case applyTransform doesn't run soon)
     this.applyMaterialState(this._themeColor, this._themeOpacity)
     this._targetOpacity = this._themeOpacity
@@ -103,6 +112,15 @@ export class GroundPlane {
       this._targetOpacity = this._themeOpacity
       this.applyMaterialState(this._themeColor, this._themeOpacity)
     } else {
+      if (this._lastFrom === from && this._lastTo === to && Object.is(this._lastT, t)) {
+        // Keep material reconciliation even when inputs are unchanged: an
+        // external owner may have mutated this material between frames.
+        this.applyMaterialState(this._poolColor, this._targetOpacity)
+        return
+      }
+      this._lastFrom = from
+      this._lastTo = to
+      this._lastT = t
       const color = this._poolColor.lerpColors(from.color, to.color, t)
       this._targetOpacity = THREE.MathUtils.lerp(from.opacity, to.opacity, t)
       this.applyMaterialState(color, this._targetOpacity)

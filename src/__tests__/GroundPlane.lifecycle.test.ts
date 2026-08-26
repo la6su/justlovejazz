@@ -9,24 +9,39 @@ describe('GroundPlane lifecycle', () => {
     const scene = new THREE.Scene()
     const ground = new GroundPlane(scene)
     const colorCopy = vi.spyOn(ground.object.material.color, 'copy')
+    const lerpColors = vi.spyOn(THREE.Color.prototype, 'lerpColors')
     const next = { color: new THREE.Color(0xabcdef), opacity: 0.9 }
 
-    ground.applyTransform(config, config, 0)
-    const writesAfterFirstTransform = colorCopy.mock.calls.length
-    ground.applyTransform(config, config, 0)
+    try {
+      ground.applyTransform(config, config, 0)
+      const writesAfterFirstTransform = colorCopy.mock.calls.length
+      lerpColors.mockClear()
+      ground.applyTransform(config, config, 0)
 
-    expect(colorCopy).toHaveBeenCalledTimes(writesAfterFirstTransform)
-    ground.applyTransform(config, next, 1)
-    expect(ground.object.material.color.getHex()).toBe(0xabcdef)
-    expect(ground.object.material.opacity).toBe(0.9)
+      expect(colorCopy).toHaveBeenCalledTimes(writesAfterFirstTransform)
+      expect(lerpColors).not.toHaveBeenCalled()
+      ground.object.material.color.set(0xff0000)
+      ground.object.material.opacity = 0.1
+      ground.applyTransform(config, config, 0)
+      expect(ground.object.material.color.getHex()).toBe(0x123456)
+      expect(ground.object.material.opacity).toBe(0.5)
 
-    ground.syncTheme(true)
-    expect(ground.object.material.color.getHex()).toBe(0x161616)
-    expect(ground.object.material.opacity).toBe(0.4)
-    const writesAfterTheme = colorCopy.mock.calls.length
-    ground.applyTransform(config, next, 1)
-    expect(colorCopy).toHaveBeenCalledTimes(writesAfterTheme)
-    ground.dispose()
+      ground.applyTransform(config, config, 0.5)
+      expect(lerpColors).toHaveBeenCalledOnce()
+      ground.applyTransform(config, next, 1)
+      expect(ground.object.material.color.getHex()).toBe(0xabcdef)
+      expect(ground.object.material.opacity).toBe(0.9)
+
+      ground.syncTheme(true)
+      expect(ground.object.material.color.getHex()).toBe(0x161616)
+      expect(ground.object.material.opacity).toBe(0.4)
+      const writesAfterTheme = colorCopy.mock.calls.length
+      ground.applyTransform(config, next, 1)
+      expect(colorCopy).toHaveBeenCalledTimes(writesAfterTheme)
+    } finally {
+      lerpColors.mockRestore()
+      ground.dispose()
+    }
   })
 
   it('ignores late theme, transform and visibility calls after teardown', () => {

@@ -212,6 +212,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
       preserve missing-channel and animation semantics while avoiding redundant
       Map writes during settled opacity reconciliation.
 
+- [x] **Cache settled ground transform inputs** — the ground owner skips even
+      the lerp calculation when the same section pair and eased `t` recur; theme
+      sync and changed transitions remain immediate.
+
 - [x] **Cache CinematicNav scroll policy** — programmatic section navigation
       reads the owner-local reduced-motion snapshot instead of re-querying the
       media preference on every scroll request.
