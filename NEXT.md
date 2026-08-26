@@ -53,6 +53,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
   failure and teardown, preventing detached render targets from surviving a
   route change or renderer recovery.
 
+- [x] **Stop the loop after an update failure** — an exception in the frame
+  owner clears pending demand and makes the current scheduler window settle;
+  a later invalidation may still perform one diagnostic or recovery attempt.
+
 - [x] **Align WebGLBackend quality state** — direct-render fallback no longer
   advertises or updates the unused TSL post graph; native WebGPU retains the
   crossfade and post parameter path.

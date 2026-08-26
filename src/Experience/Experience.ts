@@ -1132,7 +1132,8 @@ export class Experience {
    */
   private _isLoopSettled(): boolean {
     return (
-      !this._needsRender && demandSettles(this._lastActivity) && this.cursor?.isSettled !== false
+      this._updateFailed ||
+      (!this._needsRender && demandSettles(this._lastActivity) && this.cursor?.isSettled !== false)
     )
   }
 
@@ -1174,9 +1175,15 @@ export class Experience {
   }
 
   update(time: number) {
+    // A later invalidation is allowed to make one diagnostic/recovery attempt
+    // after a failed frame; the failed frame itself must not keep the loop
+    // alive indefinitely.
+    this._updateFailed = false
     try {
       this._updateInner(time)
     } catch (err) {
+      this._needsRender = false
+      this._updateFailed = true
       if (!this._updateErrorLogged) {
         this._updateErrorLogged = true
         console.error('[Experience] update() threw:', err)
@@ -1185,6 +1192,7 @@ export class Experience {
   }
 
   private _updateErrorLogged = false
+  private _updateFailed = false
 
   private _updateInner(time: number) {
     this.time.update(time)

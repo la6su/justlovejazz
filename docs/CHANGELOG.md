@@ -14,6 +14,10 @@
   rebuild, graph-construction failure and teardown, releasing its render target
   instead of leaving a detached GPU allocation behind.
 
+- A failed `Experience` frame now clears pending demand and settles the current
+  render-loop window, preventing an exception from creating an infinite retry
+  loop while preserving a later diagnostic or recovery invalidation.
+
 - `Experience` now observes live `prefers-reduced-motion` changes instead of
   caching the preference only at startup. Enabling reduction cancels ambient
   breathing and settles the scheduler; disabling it raises one typed catch-up

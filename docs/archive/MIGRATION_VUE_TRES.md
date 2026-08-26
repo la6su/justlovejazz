@@ -994,6 +994,18 @@ Acceptance: focused post-owner lifecycle coverage proves exactly-once scene
 pass disposal; type checks, production build, budget and serial E2E gates pass.
 Rollback: restore the prior untracked scene pass ownership.
 
+#### Phase 10 bounded frame-error demand — 2026-08-26
+
+When the frame owner throws, the outer `Experience.update()` boundary now
+clears pending demand and marks that scheduler window failed. The scheduler
+settles after the failed frame instead of repeatedly invoking the same broken
+frame; a later typed invalidation resets the marker for one diagnostic or
+recovery attempt.
+
+Acceptance: lifecycle coverage proves failed-frame settlement and later retry;
+type checks, production build, budget and serial E2E gates pass. Rollback:
+restore the previous catch-only logging path.
+
 #### Phase 5/7 StoryController source bridge — 2026-08-25
 
 `src/core/storyController.ts` is now the runtime owner that translates a

@@ -86,6 +86,9 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `WebGPUPostPipeline` retains the TSL scene `PassNode` separately from the
   `RenderPipeline` because the pass owns its own render target. Rebuild,
   construction failure and teardown dispose that pass exactly once.
+- If the frame owner throws, `Experience` clears the pending demand and marks
+  that scheduler window failed, so the loop settles instead of retrying the
+  same broken frame indefinitely. A subsequent typed invalidation may retry.
 - Route resources, listeners, timers, async work and GPU allocations have one
   owner and one terminal cleanup path.
 - `RouteTransition` owns both cover and reveal timers. Cancellation clears the

@@ -77,4 +77,28 @@ describe('Experience async lifecycle guard', () => {
     expect(sizes.destroy).toHaveBeenCalledOnce()
     expect(sfx.dispose).toHaveBeenCalledOnce()
   })
+
+  it('stops the demand loop after an update failure without losing a later retry', () => {
+    const experience = Object.assign(Object.create(Experience.prototype), {
+      _needsRender: true,
+      _updateFailed: false,
+      _updateErrorLogged: false,
+      _updateInner: vi.fn(() => {
+        throw new Error('frame failed')
+      }),
+    }) as Experience
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+
+    experience.update(1)
+
+    expect((experience as unknown as { _needsRender: boolean })._needsRender).toBe(false)
+    expect((experience as unknown as { _updateFailed: boolean })._updateFailed).toBe(true)
+    expect((experience as unknown as { _isLoopSettled: () => boolean })._isLoopSettled()).toBe(true)
+
+    ;(experience as unknown as { _updateInner: () => void })._updateInner = vi.fn()
+    experience.update(2)
+
+    expect((experience as unknown as { _updateFailed: boolean })._updateFailed).toBe(false)
+    expect(error).toHaveBeenCalledOnce()
+  })
 })
