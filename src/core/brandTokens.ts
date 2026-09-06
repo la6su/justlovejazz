@@ -32,35 +32,39 @@
 
 type Token = string
 
-// ── Color (dark console polarity — Neon Stage identity, ADR 0007) ──
+// ── Color (dark console polarity — Neuro Console identity, ADR 0007) ──
 const COLOR: Record<string, Token> = {
-  'color-bg': '#08090b',
-  'color-bg-elevated': '#0d1015',
-  'color-surface': '#0f131a',
-  'color-surface-hover': '#1a2130',
-  'color-border': 'rgba(238, 241, 245, 0.14)',
-  'color-border-strong': 'rgba(238, 241, 245, 0.3)',
-  'color-text': '#eef1f5',
-  'color-text-muted': 'rgba(238, 241, 245, 0.66)',
-  'color-text-subtle': 'rgba(238, 241, 245, 0.4)',
+  'color-bg': '#0b0e14',
+  'color-bg-elevated': '#11151e',
+  'color-surface': '#161b26',
+  'color-surface-hover': '#1d2432',
+  'color-border': 'rgba(230, 237, 243, 0.08)',
+  'color-border-strong': 'rgba(230, 237, 243, 0.16)',
+  'color-text': '#e6edf3',
+  'color-text-muted': 'rgba(230, 237, 243, 0.62)',
+  'color-text-subtle': 'rgba(230, 237, 243, 0.38)',
   'color-text-inverse': '#0a0c10',
   'color-accent': '#ffd60a',
   'color-accent-hover': '#ffe85c',
   // Secondary action accent (see BRAND_TOKEN_ALIASES).
-  'color-accent-secondary': '#5eb0ff',
+  'color-accent-secondary': '#58e6a9',
   'color-accent-glow': 'rgba(255, 214, 10, 0.35)',
-  'color-signal-cool': '#5eb0ff',
-  'color-signal-cool-muted': 'rgba(94, 176, 255, 0.22)',
-  // Alias of signal-cool (see BRAND_TOKEN_ALIASES).
-  'color-signal-teal': '#5eb0ff',
-  'color-signal-teal-muted': 'rgba(94, 176, 255, 0.22)',
-  'color-signal-ember': '#ff6b5e',
+  // Phosphor is the interface voice of the TUI chrome; yellow stays the
+  // brand/display funk accent.
+  'color-signal-phosphor': '#58e6a9',
+  'color-signal-phosphor-muted': 'rgba(88, 230, 169, 0.1)',
+  'color-signal-cool': '#79c0ff',
+  'color-signal-cool-muted': 'rgba(121, 192, 255, 0.22)',
+  // Alias of signal-phosphor (see BRAND_TOKEN_ALIASES).
+  'color-signal-teal': '#58e6a9',
+  'color-signal-teal-muted': 'rgba(88, 230, 169, 0.1)',
+  'color-signal-ember': '#ff7b72',
   // Semantic status — the only success/warning/danger source.
-  'color-status-success': '#45d68c',
-  // Alias of color-accent (see BRAND_TOKEN_ALIASES).
-  'color-status-warning': '#ffd60a',
+  // Alias of signal-phosphor (see BRAND_TOKEN_ALIASES).
+  'color-status-success': '#58e6a9',
+  'color-status-warning': '#f0883e',
   // Alias of signal-ember (see BRAND_TOKEN_ALIASES).
-  'color-status-danger': '#ff6b5e',
+  'color-status-danger': '#ff7b72',
   // Inverse (cool paper) polarity — authored independently by the builder.
   'inverse-bg': '#e9eef5',
   'inverse-surface': '#f5f8fc',
@@ -71,9 +75,9 @@ const COLOR: Record<string, Token> = {
 
 // ── Typography ──
 const TYPOGRAPHY: Record<string, Token> = {
-  'font-display': "'Commissioner', -apple-system, BlinkMacSystemFont, sans-serif",
+  'font-display': "'JetBrains Mono', 'SFMono-Regular', 'Cascadia Code', 'Consolas', monospace",
   'font-body': "'Commissioner', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-  'font-mono': "'SFMono-Regular', 'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace",
+  'font-mono': "'JetBrains Mono', 'SFMono-Regular', 'Cascadia Code', 'Consolas', monospace",
   'weight-light': '300',
   'weight-regular': '400',
   'weight-medium': '500',
@@ -114,17 +118,16 @@ const RADIUS: Record<string, Token> = {
   'button-radius': '0',
   'card-radius': '0',
   'card-shadow': 'none',
-  'nav-control-shadow': '0 1.4rem 3rem rgba(0, 0, 0, 0.22)',
-  'form-border': 'rgba(238, 241, 245, 0.14)',
-  'navbar-surface': '#08090b',
+  'form-border': 'rgba(230, 237, 243, 0.08)',
+  'navbar-surface': '#0b0e14',
 }
 
 // ── Console interface surfaces ──
 const SURFACE: Record<string, Token> = {
-  'color-fluid-surface': '#0b0e14',
-  'color-fluid-surface-strong': '#141a24',
-  'color-fluid-border': 'rgba(120, 140, 180, 0.22)',
-  'color-fluid-highlight': 'rgba(255, 214, 10, 0.1)',
+  'color-fluid-surface': '#11151e',
+  'color-fluid-surface-strong': '#161b26',
+  'color-fluid-border': 'rgba(230, 237, 243, 0.12)',
+  'color-fluid-highlight': 'rgba(88, 230, 169, 0.1)',
   'color-fluid-warm': '#ffd60a',
   'color-telegram': '#2aabee',
 }
@@ -181,10 +184,10 @@ export const BRAND_TOKEN_PREFIX = 'jlz'
  * relation so it is a documented fact, not a silent duplicate.
  */
 export const BRAND_TOKEN_ALIASES: Readonly<Record<string, string>> = {
-  'color-accent-secondary': 'color-signal-cool',
-  'color-signal-teal': 'color-signal-cool',
-  'color-signal-teal-muted': 'color-signal-cool-muted',
-  'color-status-warning': 'color-accent',
+  'color-accent-secondary': 'color-signal-phosphor',
+  'color-signal-teal': 'color-signal-phosphor',
+  'color-signal-teal-muted': 'color-signal-phosphor-muted',
+  'color-status-success': 'color-signal-phosphor',
   'color-status-danger': 'color-signal-ember',
   'color-fluid-warm': 'color-accent',
   'button-radius': 'radius-md',

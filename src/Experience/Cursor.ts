@@ -50,7 +50,7 @@ export class Cursor {
   // Avoids 4× getComputedStyle per redraw (was a per-frame allocation hotspot).
   private _cachedAccent = '#ffd60a'
   private _cachedAccentGlow = 'rgba(255, 214, 10, 0.35)'
-  private _cachedTeal = '#5eb0ff'
+  private _cachedTeal = '#58e6a9'
   private readonly _themeColors: CursorThemeColors = {
     accent: this._cachedAccent,
     accentGlow: this._cachedAccentGlow,
@@ -70,7 +70,7 @@ export class Cursor {
     this._cachedAccent = styles.getPropertyValue('--jlz-color-accent').trim() || '#ffd60a'
     this._cachedAccentGlow =
       styles.getPropertyValue('--jlz-color-accent-glow').trim() || 'rgba(255, 214, 10, 0.35)'
-    this._cachedTeal = styles.getPropertyValue('--jlz-color-signal-teal').trim() || '#5eb0ff'
+    this._cachedTeal = styles.getPropertyValue('--jlz-color-signal-teal').trim() || '#58e6a9'
     this._themeColors.accent = this._cachedAccent
     this._themeColors.accentGlow = this._cachedAccentGlow
     this._themeColors.teal = this._cachedTeal

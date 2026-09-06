@@ -77,10 +77,10 @@ describe('Page Builder document', () => {
   it('compiles global, inverse and component decisions into whitelisted Less', () => {
     const less = generateBuilderThemeLess(DEFAULT_BUILDER_DOCUMENT)
     expect(less).toContain('@jlz-inverse-bg: #e9eef5;')
-    expect(less).toContain('@jlz-color-accent-secondary: #5eb0ff;')
-    expect(less).toContain('@link-muted-color: #b7c0c9;')
+    expect(less).toContain('@jlz-color-accent-secondary: #58e6a9;')
+    expect(less).toContain('@link-muted-color: #8b949e;')
     expect(less).toContain('@list-margin-top: 8px;')
-    expect(less).toContain('@base-hr-border: #262e3a;')
+    expect(less).toContain('@base-hr-border: #2a313c;')
     expect(less).toContain('@base-hr-margin-vertical: 32px;')
     expect(less).toContain('@button-line-height: 44px;')
     expect(less).toContain('@card-body-padding-horizontal: 32px;')
