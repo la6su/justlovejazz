@@ -12,17 +12,27 @@ interface PostParams {
   chromatic: number // 0–1, chromatic aberration strength
   bloomRadius: number // 0–1, bloom blur radius (Track B: per-section)
   bloomThreshold: number // 0–1, luminance gate for bloom (Track B)
+  refract: number // 0–1, screen-space glass refraction strength
+  border: number // 0–1, screen border intensity
+  gradeShadows: [number, number, number] // shadow tint multipliers
+  gradeHighlights: [number, number, number] // highlight tint multipliers
 }
 
 /**
  * Values authored in WorldConfig. Keeping them separate from bloom shape
  * prevents a second, stale set of visual intensities from overriding a scene.
+ * The grade channels default to neutral so legacy callers that author only
+ * the four intensity values keep their current look.
  */
 export interface SectionPostParams {
   bloom: number
   vignette: number
   grain: number
   chromatic: number
+  refract?: number
+  border?: number
+  gradeShadows?: [number, number, number]
+  gradeHighlights?: [number, number, number]
 }
 
 interface BloomShape {
@@ -66,6 +76,8 @@ const DEFAULT_SECTION_POST: SectionPostParams = {
   chromatic: 0,
 }
 
+const NEUTRAL_TINT: [number, number, number] = [1, 1, 1]
+
 /** Quality tier scalers */
 const QUALITY_SCALARS: Record<QualityTier, Partial<PostParams>> = {
   high: {}, // No scaling — full pipeline
@@ -84,6 +96,10 @@ export class PostProcessingManager {
     chromatic: 0,
     bloomRadius: 0.6,
     bloomThreshold: 0.5,
+    refract: 0,
+    border: 0,
+    gradeShadows: [1, 1, 1],
+    gradeHighlights: [1, 1, 1],
   }
 
   // Display values (lerped toward current each frame)
@@ -94,6 +110,10 @@ export class PostProcessingManager {
     chromatic: 0,
     bloomRadius: 0.6,
     bloomThreshold: 0.5,
+    refract: 0,
+    border: 0,
+    gradeShadows: [1, 1, 1],
+    gradeHighlights: [1, 1, 1],
   }
 
   // Crossfade speed (seconds) — 0.5s between section changes
@@ -117,7 +137,20 @@ export class PostProcessingManager {
     this.phase = phase
     this.sectionPost = sectionPost
     const bloomShape = PHASE_BLOOM_SHAPES[phase] ?? PHASE_BLOOM_SHAPES['sec_intro']!
-    this.current = { ...sectionPost, ...bloomShape }
+    this.current = {
+      bloom: sectionPost.bloom,
+      vignette: sectionPost.vignette,
+      grain: sectionPost.grain,
+      chromatic: sectionPost.chromatic,
+      ...bloomShape,
+      // Grade channels: authored per section, neutral when a caller omits them.
+      refract: sectionPost.refract ?? 0,
+      border: sectionPost.border ?? 0,
+      gradeShadows: sectionPost.gradeShadows ? [...sectionPost.gradeShadows] : [...NEUTRAL_TINT],
+      gradeHighlights: sectionPost.gradeHighlights
+        ? [...sectionPost.gradeHighlights]
+        : [...NEUTRAL_TINT],
+    }
 
     // Apply quality tier scaling
     const scaler = QUALITY_SCALARS[this.tier]
@@ -127,6 +160,8 @@ export class PostProcessingManager {
     this.current.chromatic *= scaler.chromatic ?? 1
     // bloomRadius + bloomThreshold are NOT scaled by quality tier (they are
     // shape parameters, not intensity — scaling would distort the look).
+    // The grade channels stay unscaled for the same reason: they are authored
+    // look parameters consumed only by the capability-gated TSL post graph.
     this._crossfadeActive = !this.displayMatchesCurrent()
   }
 
@@ -139,6 +174,10 @@ export class PostProcessingManager {
     this.display.chromatic = this.current.chromatic
     this.display.bloomRadius = this.current.bloomRadius
     this.display.bloomThreshold = this.current.bloomThreshold
+    this.display.refract = this.current.refract
+    this.display.border = this.current.border
+    this.display.gradeShadows = [...this.current.gradeShadows]
+    this.display.gradeHighlights = [...this.current.gradeHighlights]
     this._crossfadeActive = false
   }
 
@@ -163,6 +202,10 @@ export class PostProcessingManager {
       this.current.bloomThreshold,
       factor,
     )
+    this.display.refract = lerp(this.display.refract, this.current.refract, factor)
+    this.display.border = lerp(this.display.border, this.current.border, factor)
+    this.lerpTint(this.display.gradeShadows, this.current.gradeShadows, factor)
+    this.lerpTint(this.display.gradeHighlights, this.current.gradeHighlights, factor)
     if (this.displayMatchesCurrent(0.001)) {
       this.display.bloom = this.current.bloom
       this.display.vignette = this.current.vignette
@@ -170,8 +213,23 @@ export class PostProcessingManager {
       this.display.chromatic = this.current.chromatic
       this.display.bloomRadius = this.current.bloomRadius
       this.display.bloomThreshold = this.current.bloomThreshold
+      this.display.refract = this.current.refract
+      this.display.border = this.current.border
+      this.display.gradeShadows = [...this.current.gradeShadows]
+      this.display.gradeHighlights = [...this.current.gradeHighlights]
       this._crossfadeActive = false
     }
+  }
+
+  /** In-place tuple lerp — no per-frame allocation. */
+  private lerpTint(
+    target: [number, number, number],
+    to: [number, number, number],
+    t: number,
+  ): void {
+    target[0] = lerp(target[0], to[0], t)
+    target[1] = lerp(target[1], to[1], t)
+    target[2] = lerp(target[2], to[2], t)
   }
 
   private displayMatchesCurrent(epsilon = 0): boolean {
@@ -181,7 +239,11 @@ export class PostProcessingManager {
       Math.abs(this.display.grain - this.current.grain) <= epsilon &&
       Math.abs(this.display.chromatic - this.current.chromatic) <= epsilon &&
       Math.abs(this.display.bloomRadius - this.current.bloomRadius) <= epsilon &&
-      Math.abs(this.display.bloomThreshold - this.current.bloomThreshold) <= epsilon
+      Math.abs(this.display.bloomThreshold - this.current.bloomThreshold) <= epsilon &&
+      Math.abs(this.display.refract - this.current.refract) <= epsilon &&
+      Math.abs(this.display.border - this.current.border) <= epsilon &&
+      tupleMatches(this.display.gradeShadows, this.current.gradeShadows, epsilon) &&
+      tupleMatches(this.display.gradeHighlights, this.current.gradeHighlights, epsilon)
     )
   }
 
@@ -193,4 +255,16 @@ export class PostProcessingManager {
 
 function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t
+}
+
+function tupleMatches(
+  a: [number, number, number],
+  b: [number, number, number],
+  epsilon: number,
+): boolean {
+  return (
+    Math.abs(a[0] - b[0]) <= epsilon &&
+    Math.abs(a[1] - b[1]) <= epsilon &&
+    Math.abs(a[2] - b[2]) <= epsilon
+  )
 }

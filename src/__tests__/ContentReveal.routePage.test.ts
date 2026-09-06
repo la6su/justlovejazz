@@ -64,12 +64,12 @@ describe('ContentReveal typed page port', () => {
     expect(update).toHaveBeenCalledTimes(1)
     expect(update).toHaveBeenCalledWith(active)
     expect(active.classList.contains('section-active')).toBe(true)
-    expect(document.querySelector('[data-section="intro"]')?.classList.contains('section-active')).toBe(
-      false,
-    )
-    expect(document.querySelector('[data-outside-root]')?.classList.contains('section-active')).toBe(
-      true,
-    )
+    expect(
+      document.querySelector('[data-section="intro"]')?.classList.contains('section-active'),
+    ).toBe(false)
+    expect(
+      document.querySelector('[data-outside-root]')?.classList.contains('section-active'),
+    ).toBe(true)
     update.mockRestore()
   })
 

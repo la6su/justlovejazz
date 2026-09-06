@@ -7,13 +7,13 @@ test, the command, environment/viewport, backend and result.
 
 ## Producers
 
-| Directory | Producer | Purpose |
-| --- | --- | --- |
-| `phase7-live-gate/` | `bun scripts/phase7-live-gate.ts` | representative WebGPU/WebGLBackend readiness, rendering, pacing and teardown |
-| `phase10-route-cycle-soak/` | `bun scripts/phase10-route-cycle-soak.ts` | route-cycle resource plateau and root-destroy baseline |
-| `mobile-resize-gate/` | mobile resize/viewport gate | real mobile DPR and resize propagation |
-| `visual-parity/` | `bun scripts/visual-parity.ts` | backend screenshots, masks, diffs and metadata |
-| `bundle-breakdown/` | `bun scripts/bundle-breakdown.ts` | chunk and delivery budget observations |
+| Directory                   | Producer                                  | Purpose                                                                      |
+| --------------------------- | ----------------------------------------- | ---------------------------------------------------------------------------- |
+| `phase7-live-gate/`         | `bun scripts/phase7-live-gate.ts`         | representative WebGPU/WebGLBackend readiness, rendering, pacing and teardown |
+| `phase10-route-cycle-soak/` | `bun scripts/phase10-route-cycle-soak.ts` | route-cycle resource plateau and root-destroy baseline                       |
+| `mobile-resize-gate/`       | mobile resize/viewport gate               | real mobile DPR and resize propagation                                       |
+| `visual-parity/`            | `bun scripts/visual-parity.ts`            | backend screenshots, masks, diffs and metadata                               |
+| `bundle-breakdown/`         | `bun scripts/bundle-breakdown.ts`         | chunk and delivery budget observations                                       |
 
 JSON reports are the source for numeric claims. PNGs and their `.meta.json`
 files are visual evidence, not substitutes for a report. `docs/` links to

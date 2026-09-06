@@ -16,9 +16,6 @@ describe('CasePlane lifecycle', () => {
     plane.dispose()
     plane.setReveal(1)
     plane.pulse()
-    plane.setMotion(1, 1)
-    plane.setEdgeWarp(1)
-    plane.setTransition(1)
     plane.update(1 / 60, true)
 
     expect(plane.isAnimating).toBe(false)

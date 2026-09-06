@@ -52,7 +52,10 @@ function fakeRenderer() {
   }
 }
 
-function makeRenderer(oldInstance: ReturnType<typeof fakeRenderer>, onInstanceReplaced: ReturnType<typeof vi.fn>) {
+function makeRenderer(
+  oldInstance: ReturnType<typeof fakeRenderer>,
+  onInstanceReplaced: ReturnType<typeof vi.fn>,
+) {
   return Object.assign(Object.create(Renderer.prototype), {
     instance: oldInstance,
     pipeline: { dispose: vi.fn() },
@@ -133,11 +136,15 @@ describe('Renderer device-loss lifecycle', () => {
   it('does not surface a late recovery failure after teardown', async () => {
     let rejectCreate!: (error: Error) => void
     mocks.create.mockImplementationOnce(
-      () => new Promise<ReturnType<typeof fakeRenderer>>((_resolve, reject) => (rejectCreate = reject)),
+      () =>
+        new Promise<ReturnType<typeof fakeRenderer>>((_resolve, reject) => (rejectCreate = reject)),
     )
     mocks.init.mockResolvedValue(undefined)
     const renderer = makeRenderer(fakeRenderer(), vi.fn())
-    const showUnsupported = vi.spyOn(renderer as unknown as { showUnsupportedMessage: () => void }, 'showUnsupportedMessage')
+    const showUnsupported = vi.spyOn(
+      renderer as unknown as { showUnsupportedMessage: () => void },
+      'showUnsupportedMessage',
+    )
 
     const recovery = renderer.recoverFromDeviceLost()
     renderer.dispose()
@@ -250,9 +257,9 @@ describe('Renderer device-loss lifecycle', () => {
       renderer as unknown as { showUnsupportedMessage: () => void },
       'showUnsupportedMessage',
     )
-    ;(renderer as unknown as { attachDeviceLossRecovery: (value: unknown) => void }).attachDeviceLossRecovery(
-      instance,
-    )
+    ;(
+      renderer as unknown as { attachDeviceLossRecovery: (value: unknown) => void }
+    ).attachDeviceLossRecovery(instance)
 
     instance.onDeviceLost({ reason: 'lost' })
 
@@ -268,7 +275,8 @@ describe('Renderer device-loss lifecycle', () => {
 
   it('keeps the unsupported overlay idempotent and disposes its DOM owner', () => {
     const renderer = makeRenderer(fakeRenderer(), vi.fn())
-    const showUnsupported = (renderer as unknown as { showUnsupportedMessage: () => void }).showUnsupportedMessage
+    const showUnsupported = (renderer as unknown as { showUnsupportedMessage: () => void })
+      .showUnsupportedMessage
 
     showUnsupported.call(renderer)
     showUnsupported.call(renderer)
@@ -313,6 +321,10 @@ describe('Renderer device-loss lifecycle', () => {
       chromatic: 0,
       bloomRadius: 0.6,
       bloomThreshold: 0.5,
+      refract: 0.1,
+      border: 0.2,
+      gradeShadows: [0.9, 1, 1.1] as [number, number, number],
+      gradeHighlights: [1, 0.95, 1.05] as [number, number, number],
     }
     const renderer = Object.assign(Object.create(Renderer.prototype), {
       _recovering: false,
@@ -329,6 +341,10 @@ describe('Renderer device-loss lifecycle', () => {
         chromatic: 0,
         bloomRadius: 0,
         bloomThreshold: 0,
+        refract: 0,
+        border: 0,
+        gradeShadows: [1, 1, 1] as [number, number, number],
+        gradeHighlights: [1, 1, 1] as [number, number, number],
       },
       _postSource: {
         bloom: Number.NaN,
@@ -337,6 +353,10 @@ describe('Renderer device-loss lifecycle', () => {
         chromatic: Number.NaN,
         bloomRadius: Number.NaN,
         bloomThreshold: Number.NaN,
+        refract: Number.NaN,
+        border: Number.NaN,
+        gradeShadows: [Number.NaN, Number.NaN, Number.NaN] as [number, number, number],
+        gradeHighlights: [Number.NaN, Number.NaN, Number.NaN] as [number, number, number],
       },
       _postParamsDirty: true,
     }) as unknown as Renderer
@@ -345,11 +365,17 @@ describe('Renderer device-loss lifecycle', () => {
     renderer.update(new THREE.Scene(), new THREE.PerspectiveCamera(), 1 / 60)
     expect(postUpdate).toHaveBeenCalledTimes(2)
     expect(updateParams).toHaveBeenCalledOnce()
-    expect((renderer as unknown as { capabilities: { scaleIntensity: ReturnType<typeof vi.fn> } }).capabilities.scaleIntensity).toHaveBeenCalledTimes(4)
+    expect(
+      (renderer as unknown as { capabilities: { scaleIntensity: ReturnType<typeof vi.fn> } })
+        .capabilities.scaleIntensity,
+    ).toHaveBeenCalledTimes(4)
 
     params.bloom = 0.8
     renderer.update(new THREE.Scene(), new THREE.PerspectiveCamera(), 1 / 60)
     expect(updateParams).toHaveBeenCalledTimes(2)
-    expect((renderer as unknown as { capabilities: { scaleIntensity: ReturnType<typeof vi.fn> } }).capabilities.scaleIntensity).toHaveBeenCalledTimes(8)
+    expect(
+      (renderer as unknown as { capabilities: { scaleIntensity: ReturnType<typeof vi.fn> } })
+        .capabilities.scaleIntensity,
+    ).toHaveBeenCalledTimes(8)
   })
 })

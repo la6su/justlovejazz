@@ -55,8 +55,10 @@ export interface ExperienceUIHost {
   disposeWorksPlaneStage: () => void
   ensureContactTypographyStageInitialized: () => Promise<void>
   ensureContactCyprusStageInitialized: () => Promise<void>
+  ensureContactHaloStageInitialized: () => Promise<void>
   disposeContactTypographyStage: () => void
   disposeContactCyprusStage: () => void
+  disposeContactHaloStage: () => void
   setContactCyprusStageSection: (index: number) => void
   /** Phase 8 slice 9: the Experience-owned lazy Lab object lifecycle. */
   ensureLabGamepad: () => Promise<void>
@@ -239,6 +241,7 @@ export class ExperienceUI {
         void Promise.all([
           this.host.ensureContactTypographyStageInitialized(),
           this.host.ensureContactCyprusStageInitialized(),
+          this.host.ensureContactHaloStageInitialized(),
         ]).then(() => {
           if (!continuationIsCurrent()) return
           this.host.raise('nav')
@@ -246,6 +249,7 @@ export class ExperienceUI {
       } else {
         this.host.disposeContactTypographyStage()
         this.host.disposeContactCyprusStage()
+        this.host.disposeContactHaloStage()
         coordinator.setContactSceneSection(0)
       }
       // Phase 8 slice 9: the Lab object's lazy creation moved to Experience
@@ -305,7 +309,10 @@ export class ExperienceUI {
         const stage = this.host.coordinator().worksPlaneStage
         if (!stage) return
         const idx = stage.hitTest(e.clientX, e.clientY)
-        if (idx >= 0 && stage.openProject(idx, (projectIndex) => this.onProjectSelect(projectIndex))) {
+        if (
+          idx >= 0 &&
+          stage.openProject(idx, (projectIndex) => this.onProjectSelect(projectIndex))
+        ) {
           // The visual plane owns the wobble pulse; wake the shared loop so
           // the pulse receives frames after an idle touch/pointer tap.
           this.host.raise('dirty')

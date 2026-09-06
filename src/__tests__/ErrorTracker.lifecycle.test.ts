@@ -20,7 +20,9 @@ describe('ErrorTracker listener lifecycle', () => {
 
     expect(report).toHaveBeenCalledTimes(2)
     expect(report.mock.calls[0]?.[0]).toEqual(expect.objectContaining({ message: 'first failure' }))
-    expect(report.mock.calls[1]?.[0]).toEqual(expect.objectContaining({ message: 'second failure' }))
+    expect(report.mock.calls[1]?.[0]).toEqual(
+      expect.objectContaining({ message: 'second failure' }),
+    )
   })
 
   it('keeps init idempotent while active', () => {

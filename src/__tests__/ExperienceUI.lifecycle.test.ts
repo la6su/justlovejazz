@@ -16,8 +16,10 @@ const createHost = (sections: unknown[], carousel: unknown = null): ExperienceUI
     disposeWorksPlaneStage: vi.fn(),
     ensureContactTypographyStageInitialized: vi.fn(async () => undefined),
     ensureContactCyprusStageInitialized: vi.fn(async () => undefined),
+    ensureContactHaloStageInitialized: vi.fn(async () => undefined),
     disposeContactTypographyStage: vi.fn(),
     disposeContactCyprusStage: vi.fn(),
+    disposeContactHaloStage: vi.fn(),
     setContactCyprusStageSection: vi.fn(),
     ensureLabGamepad: vi.fn(async () => undefined),
   }
@@ -129,7 +131,8 @@ describe('ExperienceUI portfolio lifecycle', () => {
       page: () => 'works' as const,
       raise,
       sfx: () => ({ setMuted: vi.fn() }) as never,
-      coordinator: () => ({ sections: [{}], worksPlaneStage: { hitTest: () => 0, openProject } }) as never,
+      coordinator: () =>
+        ({ sections: [{}], worksPlaneStage: { hitTest: () => 0, openProject } }) as never,
     }
     const experienceUI = new ExperienceUI(host)
     experienceUI.init()

@@ -50,6 +50,7 @@ import { DrawTrail } from './World/DrawTrail'
 import type { BakuCarousel } from './World/BakuCarousel'
 import { WorksPlaneStage } from './World/WorksPlaneStage'
 import type { ContactTypographyStage } from './World/ContactTypographyStage'
+import type { ContactHaloStage } from './World/ContactHaloStage'
 import type { ContactCyprusStage } from './World/ContactCyprusStage'
 import { getLabExperiment, type LabExperimentObject } from './Lab/manifest'
 import { disposeAllCaseTextures } from './World/caseTexture'
@@ -187,10 +188,13 @@ export class Experience {
   // `contactCyprusStage.isActive` off the attached stage.
   private contactTypographyStage: ContactTypographyStage | null = null
   private contactCyprusStage: ContactCyprusStage | null = null
+  private contactHaloStage: ContactHaloStage | null = null
   private _contactTypographyStagePromise: Promise<void> | null = null
   private _contactTypographyStageRequest = 0
   private _contactCyprusStagePromise: Promise<void> | null = null
   private _contactCyprusStageRequest = 0
+  private _contactHaloStagePromise: Promise<void> | null = null
+  private _contactHaloStageRequest = 0
   // Phase 8 slice 8 (moved from World): the target Cyprus-active state (the
   // Agros frame replaces the shared cube) + the effective text polarity
   // cached so a lazy Contact stage cannot miss it.
@@ -329,8 +333,10 @@ export class Experience {
       // the UI reaches it through the port.
       ensureContactTypographyStageInitialized: () => this.ensureContactTypographyStageInitialized(),
       ensureContactCyprusStageInitialized: () => this.ensureContactCyprusStageInitialized(),
+      ensureContactHaloStageInitialized: () => this.ensureContactHaloStageInitialized(),
       disposeContactTypographyStage: () => this.disposeContactTypographyStage(),
       disposeContactCyprusStage: () => this.disposeContactCyprusStage(),
+      disposeContactHaloStage: () => this.disposeContactHaloStage(),
       setContactCyprusStageSection: (index: number) => this.setContactCyprusStageSection(index),
       // Phase 8 slice 9: the lazy Lab object lifecycle moved to Experience;
       // the UI reaches it through the port.
@@ -402,6 +408,7 @@ export class Experience {
     this.camera?.setReducedMotion(reduced)
     this.contactCyprusStage?.setReducedMotion(reduced)
     this.contactTypographyStage?.setReducedMotion(reduced)
+    this.contactHaloStage?.setReducedMotion(reduced)
     this._storyNav?.setReducedMotion(reduced)
     if (reduced) {
       this._cancelBreath()
@@ -432,6 +439,7 @@ export class Experience {
         worksPlaneStage: () => this.worksPlaneStage,
         contactTypographyStage: () => this.contactTypographyStage,
         contactCyprusStage: () => this.contactCyprusStage,
+        contactHaloStage: () => this.contactHaloStage,
         labGamepad: () => this.labGamepad,
       },
       () => this.currentPage(),
@@ -507,6 +515,7 @@ export class Experience {
     // no first-use model decode or shader-compile hitch.
     if (this.currentPage() === 'contact') {
       void this.ensureContactTypographyStageInitialized()
+      void this.ensureContactHaloStageInitialized()
       // `ensureContactCyprusStageInitialized()` owns the prewarm after its
       // request/identity guard. Do not attach a second continuation here: a
       // stale entry-route promise could otherwise prewarm a newer stage.
@@ -632,26 +641,26 @@ export class Experience {
   public ensureContactTypographyStageInitialized(): Promise<void> {
     if (this._contactTypographyStagePromise) return this._contactTypographyStagePromise
     const request = ++this._contactTypographyStageRequest
-    this._contactTypographyStagePromise = import('./World/ContactTypographyStage').then(
-      ({ ContactTypographyStage }) => {
+    this._contactTypographyStagePromise = import('./World/ContactTypographyStage')
+      .then(({ ContactTypographyStage }) => {
         if (request !== this._contactTypographyStageRequest) return
         const stage = new ContactTypographyStage()
         this.contactTypographyStage = stage
         this.scene.add(stage)
         stage.setActive(this.currentPage() === 'contact')
         stage.setTheme(this._contactIsLight)
-      },
-    ).catch((error: unknown) => {
-      if (request === this._contactTypographyStageRequest) {
-        this.contactTypographyStage?.removeFromParent()
-        this.contactTypographyStage?.dispose()
-        this.contactTypographyStage = null
-        this._contactTypographyStagePromise = null
-      }
-      if (import.meta.env.DEV) {
-        console.error('[Experience] ContactTypographyStage init failed:', error)
-      }
-    })
+      })
+      .catch((error: unknown) => {
+        if (request === this._contactTypographyStageRequest) {
+          this.contactTypographyStage?.removeFromParent()
+          this.contactTypographyStage?.dispose()
+          this.contactTypographyStage = null
+          this._contactTypographyStagePromise = null
+        }
+        if (import.meta.env.DEV) {
+          console.error('[Experience] ContactTypographyStage init failed:', error)
+        }
+      })
     return this._contactTypographyStagePromise
   }
 
@@ -663,10 +672,48 @@ export class Experience {
     this._contactTypographyStagePromise = null
   }
 
+  /** Lazily load the Contact ink halo so the TSL graph stays out of the
+   * shared initial scene graph. */
+  public ensureContactHaloStageInitialized(): Promise<void> {
+    if (this._contactHaloStagePromise) return this._contactHaloStagePromise
+    const request = ++this._contactHaloStageRequest
+    this._contactHaloStagePromise = import('./World/ContactHaloStage')
+      .then(({ ContactHaloStage }) => {
+        if (request !== this._contactHaloStageRequest) return
+        const stage = new ContactHaloStage()
+        this.contactHaloStage = stage
+        this.scene.add(stage)
+        stage.setTheme(this._contactIsLight)
+        stage.setReducedMotion(this._reducedMotion)
+        stage.setActive(this.currentPage() === 'contact')
+      })
+      .catch((error: unknown) => {
+        if (request === this._contactHaloStageRequest) {
+          this.contactHaloStage?.removeFromParent()
+          this.contactHaloStage?.dispose()
+          this.contactHaloStage = null
+          this._contactHaloStagePromise = null
+        }
+        if (import.meta.env.DEV) {
+          console.error('[Experience] ContactHaloStage init failed:', error)
+        }
+      })
+    return this._contactHaloStagePromise
+  }
+
+  public disposeContactHaloStage(): void {
+    this._contactHaloStageRequest++
+    this.contactHaloStage?.removeFromParent()
+    this.contactHaloStage?.dispose()
+    this.contactHaloStage = null
+    this._contactHaloStagePromise = null
+  }
+
   /** Cache the effective polarity so a lazy Contact stage cannot miss it. */
   public syncContactTheme(isLight: boolean): void {
     this._contactIsLight = isLight
     this.contactTypographyStage?.setTheme(isLight)
+    this.contactHaloStage?.setTheme(isLight)
   }
 
   /** Lazily load the Contact location asset instead of keeping it in the home
@@ -967,7 +1014,7 @@ export class Experience {
             mode: host.mode,
             onInstanceReplaced: (instance) => host.replaceRenderer(instance),
           }
-      : undefined,
+        : undefined,
     )
     if (!this.isLifecycleCurrent(token)) return
     await this.buildWorld(token)
@@ -1292,6 +1339,7 @@ export class Experience {
     const carouselActive = this._bakuCarouselActive
     const worksPlaneActive = this.worksPlaneStage?.isAnimating ?? false
     const contactCyprusActive = this.contactCyprusStage?.isAnimating ?? false
+    const contactHaloActive = this.contactHaloStage?.isAnimating ?? false
     const drawTrailActive = this.drawTrail?.isAnimating ?? false
     const baku = this.baku
     const openerActive = baku?.isOpenerActive ?? false
@@ -1322,6 +1370,7 @@ export class Experience {
     activity.carousel = carouselActive
     activity.worksPlane = worksPlaneActive
     activity.contactCyprus = contactCyprusActive
+    activity.contactHalo = contactHaloActive
     activity.drawTrail = drawTrailActive
     activity.opener = openerActive
     activity.burst = burstActive
@@ -1448,14 +1497,10 @@ export class Experience {
     if (cfg && cfg.context !== this.currentSectionContext) {
       // Fog is now managed by World.updateTransform() on section index change —
       // no need to set it here. PostProcessing + FOV still triggered on context change.
+      // applyPreset also targets the section grade channels (refraction, border,
+      // shadow/highlight tints) — Renderer.update() crossfades them into the
+      // pipeline, so section transitions no longer snap the grade.
       this.renderer.postManager.applyPreset(cfg.id, cfg.post)
-      // Section-driven screen-space refraction + color grading (glass + LUT-like tint).
-      this.renderer.pipeline?.setSectionGrade(
-        cfg.post.refract,
-        new THREE.Vector3(...cfg.post.gradeShadows),
-        new THREE.Vector3(...cfg.post.gradeHighlights),
-        cfg.post.border,
-      )
       this.camera.setFovOffset(cfg.camFovOffset, cfg.camFovDuration)
       // Subtle camera shake on section transition — softer (was 0.04, 0.4)
       if (!this._reducedMotion) this.camera.shake(0.02, 0.6)
@@ -1630,6 +1675,7 @@ export class Experience {
     // scene).
     this.disposeContactTypographyStage()
     this.disposeContactCyprusStage()
+    this.disposeContactHaloStage()
     // Phase 8 slice 9: the Lab experiment object (created once on the first
     // /lab visit; a direct child of the Tres-owned scene, never disposed per
     // route leave).

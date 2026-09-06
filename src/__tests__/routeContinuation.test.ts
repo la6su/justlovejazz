@@ -45,9 +45,7 @@ describe('isCurrentRouteContinuation', () => {
     const capturedGeneration = generation
     const capturedPage = page
     const initializer = Promise.resolve().then(() => {
-      if (
-        isCurrentRouteContinuation(capturedGeneration, generation, capturedPage, page)
-      ) {
+      if (isCurrentRouteContinuation(capturedGeneration, generation, capturedPage, page)) {
         raise('nav')
       }
     })

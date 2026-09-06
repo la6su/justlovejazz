@@ -164,9 +164,7 @@ function counterOf(r: Record<string, unknown>): SoakCounter {
   // Prefer the `.canvas`-scoped DOM count (the one-canvas invariant); fall
   // back to the owner-backed renderer count when the probe is unavailable.
   const canvas =
-    typeof r.canvas === 'number'
-      ? (r.canvas as number)
-      : (resources?.rendererCanvasCount ?? -1)
+    typeof r.canvas === 'number' ? (r.canvas as number) : (resources?.rendererCanvasCount ?? -1)
   return {
     canvas,
     domNodes: n(r.domNodes as number | null),

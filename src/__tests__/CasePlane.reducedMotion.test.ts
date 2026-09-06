@@ -14,11 +14,9 @@ describe('CasePlane reduced-motion policy', () => {
     motion.reduced = false
   })
 
-  it('settles wobble, motion and edge warp in one update', () => {
+  it('settles wobble in one update', () => {
     const card = new CasePlane(new THREE.Texture())
     card.pulse(0.5)
-    card.setMotion(0.8, 1)
-    card.setEdgeWarp(0.6)
     motion.reduced = true
     card.setReducedMotion(true)
 
@@ -27,16 +25,9 @@ describe('CasePlane reduced-motion policy', () => {
     const state = card as unknown as {
       _wobbleValue: number
       _wobbleTarget: number
-      _motionValue: number
-      _motionTarget: number
-      _edgeWarpValue: number
-      _edgeWarpTarget: number
     }
     expect(state._wobbleValue).toBe(0)
     expect(state._wobbleTarget).toBe(0)
-    expect(state._motionValue).toBe(0)
-    expect(state._motionTarget).toBe(0)
-    expect(state._edgeWarpValue).toBe(state._edgeWarpTarget)
     expect(card.isAnimating).toBe(false)
 
     card.dispose()

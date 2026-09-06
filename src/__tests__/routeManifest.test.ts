@@ -5,6 +5,7 @@ import {
   resolveRoute,
   resolvePage,
   isRoutePath,
+  isCaseStudyPath,
   pathForPage,
 } from '../core/routeManifest'
 import type { PageId } from '../sections/_shared/constants'
@@ -43,8 +44,17 @@ describe('route manifest', () => {
 
   it('strict lookup rejects unknown paths', () => {
     expect(resolveRoute('/does-not-exist')).toBeUndefined()
+    expect(isRoutePath('/does-not-exist')).toBe(false)
+  })
+
+  it('owns case-study detail paths without a manifest page mapping', () => {
+    // A /works/:projectId path is a real route (CaseStudyView) but the page
+    // mapping stays SPA-only: the manifest owns the six story pages.
     expect(resolveRoute('/works/case-1')).toBeUndefined()
-    expect(isRoutePath('/works/case-1')).toBe(false)
+    expect(isRoutePath('/works/case-1')).toBe(true)
+    expect(isCaseStudyPath('/works/case-1')).toBe(true)
+    expect(isCaseStudyPath('/works/')).toBe(false)
+    expect(isCaseStudyPath('/works/till_at_night')).toBe(false)
   })
 
   it('lenient resolution falls back to home for unknown paths', () => {

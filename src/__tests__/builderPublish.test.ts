@@ -287,7 +287,9 @@ describe('renderBuilderPageLess', () => {
 
   it('does not duplicate the card component owned by the application baseline', () => {
     const less = renderBuilderPageLess(approvedDocument())
-    expect(less).not.toContain("@import '../../../node_modules/uikit/src/less/components/card.less';")
+    expect(less).not.toContain(
+      "@import '../../../node_modules/uikit/src/less/components/card.less';",
+    )
   })
 
   it('keeps separate card and button radius tokens in the generated theme', () => {

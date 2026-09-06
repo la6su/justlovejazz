@@ -376,10 +376,11 @@ export function initMenuNav(): () => void {
   const nav = contentRoot.querySelector('.jlz-menu-nav')
   const abortController = new AbortController()
   let disposed = false
-  if (!nav) return () => {
-    disposed = true
-    abortController.abort()
-  }
+  if (!nav)
+    return () => {
+      disposed = true
+      abortController.abort()
+    }
 
   // UIkit owns `aria-expanded` and `hidden`. When the sheet itself was hidden
   // during its initial update, UIkit can retain `hidden` after it has already
@@ -397,26 +398,30 @@ export function initMenuNav(): () => void {
   toggles.forEach((toggle) => {
     if (toggle.dataset.jlzVisibilityBound === '1') return
     toggle.dataset.jlzVisibilityBound = '1'
-    toggle.addEventListener('click', () => {
-      cancelPendingFrames(toggle)
-      const routeRoot = toggle.closest('#spa-content')
-      const first = requestAnimationFrame(() => {
-        if (disposed) return
-        // UIkit may reconcile an initially hidden sheet on the first frame.
-        // Read its authoritative aria state on the following frame, after that
-        // update has settled, then mirror only the native `hidden` attribute.
-        const second = requestAnimationFrame(() => {
-          pendingVisibilityFrames.delete(toggle)
+    toggle.addEventListener(
+      'click',
+      () => {
+        cancelPendingFrames(toggle)
+        const routeRoot = toggle.closest('#spa-content')
+        const first = requestAnimationFrame(() => {
           if (disposed) return
-          if (!toggle.isConnected || !routeRoot?.contains(toggle)) return
-          const content = toggle.nextElementSibling
-          if (!(content instanceof HTMLElement) || toggle.ariaExpanded !== 'true') return
-          content.hidden = false
+          // UIkit may reconcile an initially hidden sheet on the first frame.
+          // Read its authoritative aria state on the following frame, after that
+          // update has settled, then mirror only the native `hidden` attribute.
+          const second = requestAnimationFrame(() => {
+            pendingVisibilityFrames.delete(toggle)
+            if (disposed) return
+            if (!toggle.isConnected || !routeRoot?.contains(toggle)) return
+            const content = toggle.nextElementSibling
+            if (!(content instanceof HTMLElement) || toggle.ariaExpanded !== 'true') return
+            content.hidden = false
+          })
+          pendingVisibilityFrames.set(toggle, [first, second])
         })
-        pendingVisibilityFrames.set(toggle, [first, second])
-      })
-      pendingVisibilityFrames.set(toggle, [first])
-    }, { signal: abortController.signal })
+        pendingVisibilityFrames.set(toggle, [first])
+      },
+      { signal: abortController.signal },
+    )
 
     const syncPreview = () => {
       const previewNumber = contentRoot.querySelector<HTMLElement>('.jlz-menu-preview__number')
@@ -439,33 +444,37 @@ export function initMenuNav(): () => void {
     // Skip already-bound links (initMenuNav is called on every renderView)
     if (link.dataset.jlzBound === '1') return
     link.dataset.jlzBound = '1'
-    link.addEventListener('click', (e) => {
-      const href = link.getAttribute('data-nav-href') || link.getAttribute('href') || ''
-      if (!href) return
+    link.addEventListener(
+      'click',
+      (e) => {
+        const href = link.getAttribute('data-nav-href') || link.getAttribute('href') || ''
+        if (!href) return
 
-      // Parse path + hash (e.g. "/services#section-services-02")
-      const url = new URL(href, window.location.origin)
-      if (url.origin !== window.location.origin) return // external link, let it pass
+        // Parse path + hash (e.g. "/services#section-services-02")
+        const url = new URL(href, window.location.origin)
+        if (url.origin !== window.location.origin) return // external link, let it pass
 
-      e.preventDefault()
+        e.preventDefault()
 
-      const path = url.pathname
-      const hash = url.hash
+        const path = url.pathname
+        const hash = url.hash
 
-      if (path !== window.location.pathname) {
-        // Cross-page: close Menu first (restore the current story frame), then
-        // dispatch jlz:navigate so the router can run the page transition.
-        eventBus.emit('jlz:close-nav')
-        eventBus.emit('jlz:navigate', { path: path + (hash || '') })
-      } else {
-        // Same-page: scroll to hash + close menu (return to previous section)
-        if (hash) {
-          const target = contentRoot.querySelector(hash)
-          target?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' })
+        if (path !== window.location.pathname) {
+          // Cross-page: close Menu first (restore the current story frame), then
+          // dispatch jlz:navigate so the router can run the page transition.
+          eventBus.emit('jlz:close-nav')
+          eventBus.emit('jlz:navigate', { path: path + (hash || '') })
+        } else {
+          // Same-page: scroll to hash + close menu (return to previous section)
+          if (hash) {
+            const target = contentRoot.querySelector(hash)
+            target?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' })
+          }
+          eventBus.emit('jlz:close-nav')
         }
-        eventBus.emit('jlz:close-nav')
-      }
-    }, { signal: abortController.signal })
+      },
+      { signal: abortController.signal },
+    )
   })
 
   return () => {
