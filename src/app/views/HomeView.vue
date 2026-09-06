@@ -68,12 +68,19 @@ useJlzPage('home', () => rootEl.value)
               <div class="uk-margin-top">
                 <button
                   type="button"
-                  class="uk-button uk-button-default uk-button-small"
+                  class="jlz-showreel-btn"
                   id="jlz-showreel-trigger"
                   data-cursor="play"
+                  aria-haspopup="dialog"
                 >
-                  <span uk-icon="icon: play; ratio: 0.7" aria-hidden="true"></span>
-                  <span data-i18n="home.studio.showreel">Play showreel</span>
+                  <span class="jlz-showreel-btn__bracket" aria-hidden="true">[</span>
+                  <span class="jlz-showreel-btn__glyph" aria-hidden="true">▶</span>
+                  <span class="jlz-showreel-btn__label" data-i18n="home.studio.showreel"
+                    >Showreel</span
+                  >
+                  <span class="jlz-showreel-btn__meta" aria-hidden="true">MP4·2026</span>
+                  <span class="jlz-showreel-btn__bracket" aria-hidden="true">]</span>
+                  <span class="jlz-showreel-btn__cursor" aria-hidden="true"></span>
                 </button>
               </div>
             </div>
