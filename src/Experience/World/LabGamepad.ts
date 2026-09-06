@@ -222,8 +222,10 @@ export class LabGamepad extends THREE.Group {
 
     const mouse = input.getMouse()
     this._pointerTarget.set(mouse.x, mouse.y)
-    this._pointerSmooth.x += (this._pointerTarget.x - this._pointerSmooth.x) * Math.min(1, dt * POINTER_DAMP)
-    this._pointerSmooth.y += (this._pointerTarget.y - this._pointerSmooth.y) * Math.min(1, dt * POINTER_DAMP)
+    this._pointerSmooth.x +=
+      (this._pointerTarget.x - this._pointerSmooth.x) * Math.min(1, dt * POINTER_DAMP)
+    this._pointerSmooth.y +=
+      (this._pointerTarget.y - this._pointerSmooth.y) * Math.min(1, dt * POINTER_DAMP)
 
     this._clock += dt
 
