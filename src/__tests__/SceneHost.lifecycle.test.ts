@@ -105,11 +105,20 @@ describe('SceneHost async lifecycle', () => {
     const wrapper = mount(SceneHost, { attachTo: document.body })
     await flushPromises()
 
+<<<<<<< HEAD
     const replacement = { dispose: vi.fn() } as unknown as import('../core/unifiedRenderer').UnifiedRenderSurface
+=======
+    const replacement = {
+      dispose: vi.fn(),
+    } as unknown as import('../core/unifiedRenderer').UnifiedRenderSurface
+>>>>>>> main
     sceneHost.replaceRenderer(replacement)
     wrapper.unmount()
 
     expect(replacement.dispose).toHaveBeenCalledOnce()
   })
+<<<<<<< HEAD
 
+=======
+>>>>>>> main
 })

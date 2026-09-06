@@ -4,6 +4,7 @@
   "status": "PASS",
   "repository": "justlovejazz-tres-vue-dev",
   "coverage": {
+<<<<<<< HEAD
     "direct_entry": { "status": "covered", "source": "tests/e2e.spec.ts: direct content-route entry" },
     "in_app_route": { "status": "covered", "source": "tests/e2e.spec.ts: in-app route changes; repeated in-app routes" },
     "popstate": { "status": "covered", "source": "tests/e2e.spec.ts: browser history handoff" },
@@ -13,6 +14,39 @@
     "reduced_motion": { "status": "covered", "source": "tests/e2e.spec.ts: reduced-motion context; src/__tests__/motionPolicy.test.ts" }
   },
   "verification": { "unit_tests": "48 files / 398 tests passed", "serial_e2e": "22 / 22 passed", "build": "passed" },
+=======
+    "direct_entry": {
+      "status": "covered",
+      "source": "tests/e2e.spec.ts: direct content-route entry"
+    },
+    "in_app_route": {
+      "status": "covered",
+      "source": "tests/e2e.spec.ts: in-app route changes; repeated in-app routes"
+    },
+    "popstate": { "status": "covered", "source": "tests/e2e.spec.ts: browser history handoff" },
+    "backend_fallback": {
+      "status": "covered",
+      "source": "src/__tests__/rendererBackend.test.ts; docs/PERFORMANCE_BASELINE.md; docs/evidence/visual-parity/"
+    },
+    "theme_polarity": {
+      "status": "covered",
+      "source": "tests/e2e.spec.ts: theme toggle; src/__tests__/ThemeManager.test.ts"
+    },
+    "narrow_layout": {
+      "status": "covered",
+      "source": "tests/e2e.spec.ts: mobile story and Works layout"
+    },
+    "reduced_motion": {
+      "status": "covered",
+      "source": "tests/e2e.spec.ts: reduced-motion context; src/__tests__/motionPolicy.test.ts"
+    }
+  },
+  "verification": {
+    "unit_tests": "48 files / 398 tests passed",
+    "serial_e2e": "22 / 22 passed",
+    "build": "passed"
+  },
+>>>>>>> main
   "next_slice": null,
   "notes": "Records existing coverage; backend parity remains limited to documented WebGPUBackend/WebGLBackend evidence."
 }

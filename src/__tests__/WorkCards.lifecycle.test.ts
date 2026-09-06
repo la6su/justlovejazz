@@ -17,9 +17,18 @@ describe('WorkCards route ownership', () => {
 
     initWorkCards()
 
+<<<<<<< HEAD
     expect(document.querySelector('#spa-content .jlz-work-card')?.getAttribute('tabindex')).toBe('0')
     expect(document.querySelector('body > .jlz-works-grid .jlz-work-card')?.getAttribute('tabindex')).toBe(
       null,
     )
+=======
+    expect(document.querySelector('#spa-content .jlz-work-card')?.getAttribute('tabindex')).toBe(
+      '0',
+    )
+    expect(
+      document.querySelector('body > .jlz-works-grid .jlz-work-card')?.getAttribute('tabindex'),
+    ).toBe(null)
+>>>>>>> main
   })
 })

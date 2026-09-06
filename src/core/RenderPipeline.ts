@@ -21,6 +21,13 @@ import * as THREE from 'three'
 import { WebGPURenderer } from 'three/webgpu'
 import { WebGPUPostPipeline } from './WebGPUPostPipeline'
 import { withNoToneMapping } from './toneMappingGuard'
+<<<<<<< HEAD
+=======
+
+function tupleIs(a: [number, number, number], b: [number, number, number]): boolean {
+  return Object.is(a[0], b[0]) && Object.is(a[1], b[1]) && Object.is(a[2], b[2])
+}
+>>>>>>> main
 
 // ─── Configuration ───────────────────────────────────────────────
 
@@ -41,6 +48,14 @@ export interface PostParams {
   bloomRadius?: number
   /** Bloom luminance threshold (0–1). Track B: per-section. */
   bloomThreshold?: number
+  /** Screen-space glass refraction strength (0–1), crossfaded per section. */
+  refract?: number
+  /** Screen border intensity (0–1), crossfaded per section. */
+  border?: number
+  /** Shadow tint multipliers, crossfaded per section. */
+  gradeShadows?: [number, number, number]
+  /** Highlight tint multipliers, crossfaded per section. */
+  gradeHighlights?: [number, number, number]
 }
 
 // ─── RenderPipeline Class ──────────────────────────────────────
@@ -52,6 +67,7 @@ export interface PostParams {
  * reclaimed when the pipeline (or the renderer) is disposed.
  */
 export class RenderPipeline {
+<<<<<<< HEAD
   private _params!: PostParams & { chromatic: number; bloomRadius: number; bloomThreshold: number }
 
   private _sectionRefract = 0.05
@@ -59,6 +75,18 @@ export class RenderPipeline {
   private _sectionShadows = new THREE.Vector3(1, 1, 1)
   private _sectionHighlights = new THREE.Vector3(1, 1, 1)
 
+=======
+  private _params!: PostParams & {
+    chromatic: number
+    bloomRadius: number
+    bloomThreshold: number
+    refract: number
+    border: number
+    gradeShadows: [number, number, number]
+    gradeHighlights: [number, number, number]
+  }
+
+>>>>>>> main
   private _renderer!: WebGPURenderer
   private _webgpuPipeline: WebGPUPostPipeline | null = null
   private _postProcessingEnabled = true
@@ -101,6 +129,10 @@ export class RenderPipeline {
       chromatic: 0,
       bloomRadius: 0.6,
       bloomThreshold: 0.5,
+      refract: 0,
+      border: 0,
+      gradeShadows: [1, 1, 1],
+      gradeHighlights: [1, 1, 1],
     }
   }
 
@@ -129,18 +161,38 @@ export class RenderPipeline {
 
   // ─── Public API ────────────────────────────────────────────────
 
-  /** Update post-processing parameters (cross-fade from PostProcessingManager) */
+  /** Update post-processing parameters (cross-faded by PostProcessingManager).
+   *  The grade channels ride the same crossfade as the intensity channels, so
+   *  section transitions no longer snap refraction, border and color tints. */
   public updateParams(params: PostParams): void {
+<<<<<<< HEAD
     const nextChromatic = params.chromatic ?? this._params.chromatic ?? 0
     const nextBloomRadius = params.bloomRadius ?? this._params.bloomRadius
     const nextBloomThreshold = params.bloomThreshold ?? this._params.bloomThreshold
+=======
+    const nextChromatic = params.chromatic ?? this._params.chromatic
+    const nextBloomRadius = params.bloomRadius ?? this._params.bloomRadius
+    const nextBloomThreshold = params.bloomThreshold ?? this._params.bloomThreshold
+    const nextRefract = params.refract ?? this._params.refract
+    const nextBorder = params.border ?? this._params.border
+    const nextShadows = params.gradeShadows ?? this._params.gradeShadows
+    const nextHighlights = params.gradeHighlights ?? this._params.gradeHighlights
+>>>>>>> main
     if (
       Object.is(this._params.bloom, params.bloom) &&
       Object.is(this._params.vignette, params.vignette) &&
       Object.is(this._params.grain, params.grain) &&
       Object.is(this._params.chromatic, nextChromatic) &&
       Object.is(this._params.bloomRadius, nextBloomRadius) &&
+<<<<<<< HEAD
       Object.is(this._params.bloomThreshold, nextBloomThreshold)
+=======
+      Object.is(this._params.bloomThreshold, nextBloomThreshold) &&
+      Object.is(this._params.refract, nextRefract) &&
+      Object.is(this._params.border, nextBorder) &&
+      tupleIs(this._params.gradeShadows, nextShadows) &&
+      tupleIs(this._params.gradeHighlights, nextHighlights)
+>>>>>>> main
     ) {
       return
     }
@@ -150,6 +202,7 @@ export class RenderPipeline {
     this._params.chromatic = nextChromatic
     this._params.bloomRadius = nextBloomRadius
     this._params.bloomThreshold = nextBloomThreshold
+<<<<<<< HEAD
     this._webgpuParamsDirty = true
   }
 
@@ -164,6 +217,12 @@ export class RenderPipeline {
     this._sectionBorder = border
     this._sectionShadows.copy(shadowTint)
     this._sectionHighlights.copy(highlightTint)
+=======
+    this._params.refract = nextRefract
+    this._params.border = nextBorder
+    this._params.gradeShadows = [nextShadows[0], nextShadows[1], nextShadows[2]]
+    this._params.gradeHighlights = [nextHighlights[0], nextHighlights[1], nextHighlights[2]]
+>>>>>>> main
     this._webgpuParamsDirty = true
   }
 
@@ -199,6 +258,7 @@ export class RenderPipeline {
             p.vignette = this._params.vignette
             p.grain = this._params.grain
             p.chromatic = this._params.chromatic
+<<<<<<< HEAD
             p.refract = this._sectionRefract
             p.border = this._sectionBorder
             p.gradeShadows[0] = this._sectionShadows.x
@@ -207,6 +267,16 @@ export class RenderPipeline {
             p.gradeHighlights[0] = this._sectionHighlights.x
             p.gradeHighlights[1] = this._sectionHighlights.y
             p.gradeHighlights[2] = this._sectionHighlights.z
+=======
+            p.refract = this._params.refract
+            p.border = this._params.border
+            p.gradeShadows[0] = this._params.gradeShadows[0]
+            p.gradeShadows[1] = this._params.gradeShadows[1]
+            p.gradeShadows[2] = this._params.gradeShadows[2]
+            p.gradeHighlights[0] = this._params.gradeHighlights[0]
+            p.gradeHighlights[1] = this._params.gradeHighlights[1]
+            p.gradeHighlights[2] = this._params.gradeHighlights[2]
+>>>>>>> main
             this._webgpuPipeline.updateParams(p)
             this._webgpuParamsDirty = false
           }

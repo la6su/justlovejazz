@@ -35,7 +35,16 @@ export class ContactCyprusStage extends THREE.Group {
   private _reducedMotion = prefersReducedMotion()
   private _cameraPosition = new THREE.Vector3()
   private _lastCameraPosition = new THREE.Vector3(Number.NaN, Number.NaN, Number.NaN)
+<<<<<<< HEAD
   private _lastCameraQuaternion = new THREE.Quaternion(Number.NaN, Number.NaN, Number.NaN, Number.NaN)
+=======
+  private _lastCameraQuaternion = new THREE.Quaternion(
+    Number.NaN,
+    Number.NaN,
+    Number.NaN,
+    Number.NaN,
+  )
+>>>>>>> main
 
   constructor() {
     super()

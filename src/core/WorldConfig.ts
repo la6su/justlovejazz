@@ -328,28 +328,67 @@ type ContentPalette = {
   bakuEmissive: number
   fogColor: number
   groundColor: number
+  /** Authored restrained bloom for the page family (WebGPU post graph only;
+   * WebGLBackend direct-renders without post, so values must read as polish,
+   * never as the primary content carrier). Bounded by home's authored range
+   * (sec_contact 0.2 … sec_about 0.4). */
+  postBloom: number
+  /** Ink-tinted grade channels — the page's voice in the shared crossfaded
+   * post graph. Shadows tint dark areas, highlights tint bright areas
+   * (1 = neutral), mirroring sec_menu's authored duotone at lower strength. */
+  postGradeShadows: [number, number, number]
+  postGradeHighlights: [number, number, number]
 }
 
+// Per-page post voices are derived from the same family hue as the baku
+// palette so a route reads as one authored atmosphere, not a random preset.
+// Strengths stay below home's peak (0.4) — content pages carry meaning in
+// their DOM first; the scene is a backing grade.
 const PALETTES: Record<string, ContentPalette> = {
   services: {
     bakuColor: 0xc0b0a0,
     bakuEmissive: 0x8a7a5a,
     fogColor: 0x0a0805,
     groundColor: 0x1a1208,
+    postBloom: 0.12,
+    postGradeShadows: [0.96, 0.94, 1.0],
+    postGradeHighlights: [1.0, 0.985, 0.94],
   },
   manifesto: {
     bakuColor: 0xaac4cc,
     bakuEmissive: 0x6a9aaa,
     fogColor: 0x051015,
     groundColor: 0x081a1a,
+    postBloom: 0.14,
+    postGradeShadows: [0.88, 0.96, 1.0],
+    postGradeHighlights: [1.0, 1.0, 0.98],
   },
-  works: { bakuColor: 0xb0b0ce, bakuEmissive: 0x7a7aaa, fogColor: 0x080814, groundColor: 0x101020 },
-  lab: { bakuColor: 0xc0b0a0, bakuEmissive: 0x8a7a5a, fogColor: 0x0a0805, groundColor: 0x1a1408 },
+  works: {
+    bakuColor: 0xb0b0ce,
+    bakuEmissive: 0x7a7aaa,
+    fogColor: 0x080814,
+    groundColor: 0x101020,
+    postBloom: 0.18,
+    postGradeShadows: [0.9, 0.9, 1.0],
+    postGradeHighlights: [1.0, 1.0, 1.0],
+  },
+  lab: {
+    bakuColor: 0xc0b0a0,
+    bakuEmissive: 0x8a7a5a,
+    fogColor: 0x0a0805,
+    groundColor: 0x1a1408,
+    postBloom: 0.1,
+    postGradeShadows: [1.0, 0.96, 0.9],
+    postGradeHighlights: [1.0, 0.99, 0.94],
+  },
   contact: {
     bakuColor: 0xa0c0cc,
     bakuEmissive: 0x6a8a9a,
     fogColor: 0x050a0f,
     groundColor: 0x08141a,
+    postBloom: 0.16,
+    postGradeShadows: [0.88, 0.95, 1.0],
+    postGradeHighlights: [1.0, 1.0, 0.97],
   },
 }
 
@@ -374,9 +413,12 @@ function makeContentScenes(pageId: string): PhaseConfig[] {
       sectionTheme: themes[idx]!,
       bakuColor: p.bakuColor,
       bakuEmissive: p.bakuEmissive,
-      postBloom: 0,
-      postGradeShadows: [1.0, 1.0, 1.0],
-      postGradeHighlights: [1.0, 1.0, 1.0],
+      // Authored per-page voice instead of hard zeros: the route switch now
+      // crossfades bloom + grade channels between home sections and content
+      // palettes through the existing PostProcessingManager machinery.
+      postBloom: p.postBloom,
+      postGradeShadows: [...p.postGradeShadows],
+      postGradeHighlights: [...p.postGradeHighlights],
       fogColor: p.fogColor,
       groundColor: p.groundColor,
       groundOpacity: 0.05,

@@ -55,8 +55,18 @@ export interface ExperienceUIHost {
   disposeWorksPlaneStage: () => void
   ensureContactTypographyStageInitialized: () => Promise<void>
   ensureContactCyprusStageInitialized: () => Promise<void>
+<<<<<<< HEAD
   disposeContactTypographyStage: () => void
   disposeContactCyprusStage: () => void
+=======
+  ensureContactHaloStageInitialized: () => Promise<void>
+  /** The Experience-owned lazy /manifesto ink-wash stage lifecycle. */
+  ensureManifestoInkStageInitialized: () => Promise<void>
+  disposeManifestoInkStage: () => void
+  disposeContactTypographyStage: () => void
+  disposeContactCyprusStage: () => void
+  disposeContactHaloStage: () => void
+>>>>>>> main
   setContactCyprusStageSection: (index: number) => void
   /** Phase 8 slice 9: the Experience-owned lazy Lab object lifecycle. */
   ensureLabGamepad: () => Promise<void>
@@ -239,6 +249,10 @@ export class ExperienceUI {
         void Promise.all([
           this.host.ensureContactTypographyStageInitialized(),
           this.host.ensureContactCyprusStageInitialized(),
+<<<<<<< HEAD
+=======
+          this.host.ensureContactHaloStageInitialized(),
+>>>>>>> main
         ]).then(() => {
           if (!continuationIsCurrent()) return
           this.host.raise('nav')
@@ -246,8 +260,22 @@ export class ExperienceUI {
       } else {
         this.host.disposeContactTypographyStage()
         this.host.disposeContactCyprusStage()
+<<<<<<< HEAD
         coordinator.setContactSceneSection(0)
       }
+=======
+        this.host.disposeContactHaloStage()
+        coordinator.setContactSceneSection(0)
+      }
+      if (newPage === 'manifesto') {
+        void this.host.ensureManifestoInkStageInitialized().then(() => {
+          if (!continuationIsCurrent()) return
+          this.host.raise('nav')
+        })
+      } else {
+        this.host.disposeManifestoInkStage()
+      }
+>>>>>>> main
       // Phase 8 slice 9: the Lab object's lazy creation moved to Experience
       // (created once on the first /lab visit; never disposed per route leave —
       // the World's `syncRouteVisuals` already hides it off-route).
@@ -305,7 +333,14 @@ export class ExperienceUI {
         const stage = this.host.coordinator().worksPlaneStage
         if (!stage) return
         const idx = stage.hitTest(e.clientX, e.clientY)
+<<<<<<< HEAD
         if (idx >= 0 && stage.openProject(idx, (projectIndex) => this.onProjectSelect(projectIndex))) {
+=======
+        if (
+          idx >= 0 &&
+          stage.openProject(idx, (projectIndex) => this.onProjectSelect(projectIndex))
+        ) {
+>>>>>>> main
           // The visual plane owns the wobble pulse; wake the shared loop so
           // the pulse receives frames after an idle touch/pointer tap.
           this.host.raise('dirty')

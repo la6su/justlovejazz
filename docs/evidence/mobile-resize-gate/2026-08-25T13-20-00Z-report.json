@@ -5,6 +5,7 @@
   "browser": "Chrome Android 151",
   "route": "http://127.0.0.1:5182/",
   "source": "tres-vue-dev on pct104",
+<<<<<<< HEAD
   "initial": {"viewport": "392x766", "dpr": 2.75, "backend": "WebGPUBackend"},
   "resize": [
     {"viewport": "360x740", "dpr": 2.5, "resizeEvents": 1, "lastInvalidation": "resize"},
@@ -13,6 +14,16 @@
   "resources": {
     "scene": {"geometries": 13, "materials": 24, "textures": 9},
     "renderer": {"geometries": 11, "textures": 27},
+=======
+  "initial": { "viewport": "392x766", "dpr": 2.75, "backend": "WebGPUBackend" },
+  "resize": [
+    { "viewport": "360x740", "dpr": 2.5, "resizeEvents": 1, "lastInvalidation": "resize" },
+    { "viewport": "392x766", "dpr": 2.75, "resizeEvents": 2, "lastInvalidation": "resize" }
+  ],
+  "resources": {
+    "scene": { "geometries": 13, "materials": 24, "textures": 9 },
+    "renderer": { "geometries": 11, "textures": 27 },
+>>>>>>> main
     "stableAcrossResize": true
   },
   "settled": true,

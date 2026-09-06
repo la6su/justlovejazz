@@ -109,7 +109,12 @@ describe('SceneCoordinator reduced-motion particle parity', () => {
       carousel: () => null,
       worksPlaneStage: () =>
         ({ setActive: worksSetActive, update: worksUpdate }) as unknown as WorksPlaneStage,
+<<<<<<< HEAD
       contactTypographyStage: () => ({ update: typographyUpdate }) as unknown as ContactTypographyStage,
+=======
+      contactTypographyStage: () =>
+        ({ update: typographyUpdate }) as unknown as ContactTypographyStage,
+>>>>>>> main
       contactCyprusStage: () => ({ update: cyprusUpdate }) as unknown as ContactCyprusStage,
       labGamepad: () => null,
     } satisfies SceneCoordinatorOwners

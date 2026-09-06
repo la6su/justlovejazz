@@ -32,9 +32,15 @@ describe('initial route hash lifecycle', () => {
     expect(emit).toHaveBeenCalledWith('jlz:goto-section-by-hash', {
       hash: '#section-current',
     })
+<<<<<<< HEAD
     expect(
       emit.mock.calls.filter(([event]) => event === 'jlz:goto-section-by-hash'),
     ).toHaveLength(1)
+=======
+    expect(emit.mock.calls.filter(([event]) => event === 'jlz:goto-section-by-hash')).toHaveLength(
+      1,
+    )
+>>>>>>> main
   })
 
   it('cancels and invalidates a superseded hash-navigation frame', () => {

@@ -31,11 +31,19 @@ describe('RenderPipeline failure lifecycle', () => {
         chromatic: 0,
         bloomRadius: 0.6,
         bloomThreshold: 0.5,
+<<<<<<< HEAD
       },
       _sectionRefract: 0.05,
       _sectionBorder: 0,
       _sectionShadows: new THREE.Vector3(1, 1, 1),
       _sectionHighlights: new THREE.Vector3(1, 1, 1),
+=======
+        refract: 0.05,
+        border: 0,
+        gradeShadows: [1, 1, 1],
+        gradeHighlights: [1, 1, 1],
+      },
+>>>>>>> main
       _webgpuParamsCache: {
         bloom: 0,
         bloomRadius: 0,
@@ -127,11 +135,19 @@ describe('RenderPipeline failure lifecycle', () => {
         chromatic: 0,
         bloomRadius: 0.6,
         bloomThreshold: 0.5,
+<<<<<<< HEAD
       },
       _sectionRefract: 0.05,
       _sectionBorder: 0,
       _sectionShadows: new THREE.Vector3(1, 1, 1),
       _sectionHighlights: new THREE.Vector3(1, 1, 1),
+=======
+        refract: 0.05,
+        border: 0,
+        gradeShadows: [1, 1, 1],
+        gradeHighlights: [1, 1, 1],
+      },
+>>>>>>> main
       _webgpuParamsCache: {
         bloom: 0,
         bloomRadius: 0,

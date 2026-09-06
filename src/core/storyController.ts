@@ -30,7 +30,14 @@ export function storySideForSlot(
 export class StoryController {
   private readonly publisher: StoryPublisher
 
+<<<<<<< HEAD
   constructor(private readonly source: StorySource, private readonly resolveSide: StorySideResolver) {
+=======
+  constructor(
+    private readonly source: StorySource,
+    private readonly resolveSide: StorySideResolver,
+  ) {
+>>>>>>> main
     this.publisher = new StoryPublisher(this.read())
   }
 

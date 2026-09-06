@@ -83,9 +83,12 @@ describe('BakuCarousel texture lifecycle', () => {
       rotation: new THREE.Euler(),
       scale: new THREE.Vector3(1, 1, 1),
       setReveal: vi.fn(),
+<<<<<<< HEAD
       setMotion: vi.fn(),
       setEdgeWarp: vi.fn(),
       setTransition: vi.fn(),
+=======
+>>>>>>> main
       update,
     }
     const carousel = new BakuCarousel()
@@ -104,9 +107,12 @@ describe('BakuCarousel texture lifecycle', () => {
       rotation: new THREE.Euler(),
       scale: new THREE.Vector3(1, 1, 1),
       setReveal: vi.fn(),
+<<<<<<< HEAD
       setMotion: vi.fn(),
       setEdgeWarp: vi.fn(),
       setTransition: vi.fn(),
+=======
+>>>>>>> main
       update: vi.fn(),
       dispose: vi.fn(),
     }
@@ -122,17 +128,23 @@ describe('BakuCarousel texture lifecycle', () => {
     carousel.update(1 / 60)
     const firstPass = {
       reveal: card.setReveal.mock.calls.length,
+<<<<<<< HEAD
       motion: card.setMotion.mock.calls.length,
       edgeWarp: card.setEdgeWarp.mock.calls.length,
       transition: card.setTransition.mock.calls.length,
+=======
+>>>>>>> main
       update: card.update.mock.calls.length,
     }
     carousel.update(1 / 60)
 
     expect(card.setReveal).toHaveBeenCalledTimes(firstPass.reveal)
+<<<<<<< HEAD
     expect(card.setMotion).toHaveBeenCalledTimes(firstPass.motion)
     expect(card.setEdgeWarp).toHaveBeenCalledTimes(firstPass.edgeWarp)
     expect(card.setTransition).toHaveBeenCalledTimes(firstPass.transition)
+=======
+>>>>>>> main
     expect(card.update).toHaveBeenCalledTimes(firstPass.update)
     expect(carousel.isAnimating).toBe(false)
     card.isAnimating = true

@@ -1,7 +1,7 @@
 // CasePlane — shared 3D project surface for Works.
 //
-// A real 3D plane (not a CSS card). BakuCarousel gives it a drag velocity;
-// the TSL vertex field turns that into a brief wobble across the surface.
+// A real 3D plane (not a CSS card). The TSL vertex field turns an explicit
+// pulse (card tap/open) into a brief wobble across the surface.
 //
 // PER-INSTANCE MATERIALS: Each CasePlane creates its own MeshBasicNodeMaterial
 // with its own uniform buffers and texture binding. This is required because
@@ -19,7 +19,11 @@
 
 import * as THREE from 'three'
 import { MeshBasicNodeMaterial } from 'three/webgpu'
+<<<<<<< HEAD
 import { Fn, float, positionLocal, sin, smoothstep, uniform, vec3, abs, max } from 'three/tsl'
+=======
+import { Fn, positionLocal, sin, smoothstep, uniform, vec3, abs, max } from 'three/tsl'
+>>>>>>> main
 import { prefersReducedMotion } from '../../core/motionPolicy'
 
 // Shared geometry — reused by all CasePlane instances (GPU buffer, not uniforms).
@@ -34,33 +38,16 @@ const sharedGeometry = new THREE.PlaneGeometry(1, 9 / 16, 20, 12)
 export const CLOTH_PARAMS = {
   /** Wobble amplitude multiplier on card open/tap. */
   pulseAmount: 0.5,
-  /** Wobble amplitude on scroll drag (per card). */
-  scrollDragAmount: 0.25,
   /** Exponential decay rate for wobble (higher = faster fade). */
   wobbleDecay: 4.5,
   /** Smoothing speed for wobble value (higher = snappier). */
   wobbleSmoothing: 8.0,
-  /** Exponential decay rate for scroll-induced motion. */
-  motionDecay: 10.0,
-  /** Smoothing speed for motion value. */
-  motionSmoothing: 16.0,
-  /** Smoothing speed for edge warp value. */
-  edgeWarpSmoothing: 8.0,
-  /** Scroll motion bend strength (quadratic Z). */
-  motionBend: -0.02,
-  /** Edge warp strength (quadratic Z at card edges). */
-  edgeWarpBend: -0.12,
 } as const
 
 export class CasePlane extends THREE.Mesh {
   private _disposed = false
   private _wobbleValue = 0
   private _wobbleTarget = 0
-  private _motionValue = 0
-  private _motionTarget = 0
-  private _edgeWarpValue = 0
-  private _edgeWarpTarget = 0
-  private _myTransition = 0
   private _myReveal = 0
   private _texture: THREE.Texture
   private _reducedMotion = prefersReducedMotion()
@@ -70,15 +57,13 @@ export class CasePlane extends THREE.Mesh {
   // TypeScript can't infer through parameter passing. The actual TSL API
   // calls (.x, .y, .z, .mul(), .value) work correctly at runtime.
   private readonly _timeUni: any
-  private readonly _stateUni: any // x=transition, y=reveal, z=wobble
-  private readonly _state2Uni: any // x=motion, y=edgeWarp
+  private readonly _stateUni: any // x=reveal, y=wobble
 
   constructor(mapTexture: THREE.Texture) {
     // Per-instance uniforms — created here so TSL closures capture the
     // correct typed references (not shared across instances).
     const time = uniform(0)
-    const state = uniform(new THREE.Vector3(0, 0, 0)) // x=transition, y=reveal, z=wobble
-    const state2 = uniform(new THREE.Vector3(0, 0, 0)) // x=motion, y=edgeWarp
+    const state = uniform(new THREE.Vector2(0, 0)) // x=reveal, y=wobble
 
     const mat = new MeshBasicNodeMaterial({
       transparent: true,
@@ -100,9 +85,7 @@ export class CasePlane extends THREE.Mesh {
     // Z gets 25% depth for subtle parallax.
     mat.positionNode = Fn(() => {
       const local = positionLocal
-      const wobble = state.z
-      const motion = state2.x
-      const edgeWarp = state2.y
+      const wobble = state.y
 
       // Edge distance from center (0 at center, 1 at edges/corners)
       const edgeDist = max(abs(local.x), abs(local.y.mul(1.78))).clamp(0.0, 1.0)
@@ -124,23 +107,15 @@ export class CasePlane extends THREE.Mesh {
         .mul(0.022) // visible amplitude
         .mul(clothMask)
 
-      // Scroll-induced parallax bend (quadratic Z displacement)
-      const travel = local.x.mul(local.x).mul(motion).mul(float(CLOTH_PARAMS.motionBend))
-      // Edge warp for transition (card edges curl during fullscreen open)
-      const edgeBend = local.x.mul(local.x).mul(edgeWarp).mul(float(CLOTH_PARAMS.edgeWarpBend))
-
-      const rippleZ = ripple.mul(0.25).add(travel).add(edgeBend)
+      const rippleZ = ripple.mul(0.25)
       return vec3(local.x, local.y.add(ripple) as any, local.z.add(rippleZ) as any)
     })()
 
-    // Opacity: clean fade driven by reveal + transition. No radial mask —
-    // a center-out circle read as a directional wipe from whichever corner
-    // the plane happened to occupy. A straight opacity fade is neutral.
+    // Opacity: a straight reveal fade. No radial mask — a center-out circle
+    // read as a directional wipe from whichever corner the plane happened
+    // to occupy. A plain opacity fade is neutral.
     ;(mat as any).opacityNode = Fn(() => {
-      const reveal = state.y
-      const transition = state.x
-      const fadeOut = float(1.0).sub(transition.mul(0.3))
-      return reveal.mul(fadeOut)
+      return state.x
     })()
 
     super(sharedGeometry, mat)
@@ -151,11 +126,11 @@ export class CasePlane extends THREE.Mesh {
 
     this._timeUni = time
     this._stateUni = state
-    this._state2Uni = state2
   }
 
   get isAnimating(): boolean {
     if (this._disposed) return false
+<<<<<<< HEAD
     return (
       this._wobbleValue > 0.002 ||
       this._wobbleTarget > 0.002 ||
@@ -163,6 +138,9 @@ export class CasePlane extends THREE.Mesh {
       this._motionTarget > 0.002 ||
       Math.abs(this._edgeWarpValue - this._edgeWarpTarget) > 0.002
     )
+=======
+    return this._wobbleValue > 0.002 || this._wobbleTarget > 0.002
+>>>>>>> main
   }
 
   setReveal(value: number): void {
@@ -173,7 +151,11 @@ export class CasePlane extends THREE.Mesh {
       return
     }
     this._myReveal = nextReveal
+<<<<<<< HEAD
     this._stateUni.value.y = this._myReveal
+=======
+    this._stateUni.value.x = this._myReveal
+>>>>>>> main
     this.visible = nextReveal > 0.001
   }
 
@@ -190,6 +172,7 @@ export class CasePlane extends THREE.Mesh {
     if (!reduced) return
     this._wobbleValue = 0
     this._wobbleTarget = 0
+<<<<<<< HEAD
     this._motionValue = 0
     this._motionTarget = 0
     this._edgeWarpValue = this._edgeWarpTarget
@@ -216,10 +199,14 @@ export class CasePlane extends THREE.Mesh {
     if (Math.abs(nextTransition - this._myTransition) < 0.0001) return
     this._myTransition = nextTransition
     this._stateUni.value.x = this._myTransition
+=======
+    this._stateUni.value.y = 0
+>>>>>>> main
   }
 
   update(dt: number, active: boolean): void {
     if (this._disposed) return
+<<<<<<< HEAD
     if (
       !active &&
       this._wobbleValue < 0.002 &&
@@ -228,6 +215,14 @@ export class CasePlane extends THREE.Mesh {
       this._motionTarget < 0.002 &&
       Math.abs(this._edgeWarpValue - this._edgeWarpTarget) < 0.002
     ) {
+=======
+    if (!active && this._wobbleValue < 0.002 && this._wobbleTarget < 0.002) {
+      return
+    }
+
+    if (this._reducedMotion) {
+      this.setReducedMotion(true)
+>>>>>>> main
       return
     }
 
@@ -240,16 +235,8 @@ export class CasePlane extends THREE.Mesh {
     this._wobbleTarget *= Math.exp(-dt * CLOTH_PARAMS.wobbleDecay)
     this._wobbleValue +=
       (this._wobbleTarget - this._wobbleValue) * Math.min(1, dt * CLOTH_PARAMS.wobbleSmoothing)
-    this._motionTarget *= Math.exp(-dt * CLOTH_PARAMS.motionDecay)
-    this._motionValue +=
-      (this._motionTarget - this._motionValue) * Math.min(1, dt * CLOTH_PARAMS.motionSmoothing)
-    this._edgeWarpValue +=
-      (this._edgeWarpTarget - this._edgeWarpValue) *
-      Math.min(1, dt * CLOTH_PARAMS.edgeWarpSmoothing)
 
-    this._stateUni.value.z = this._wobbleValue
-    this._state2Uni.value.x = this._motionValue
-    this._state2Uni.value.y = this._edgeWarpValue
+    this._stateUni.value.y = this._wobbleValue
   }
 
   get texture(): THREE.Texture | null {

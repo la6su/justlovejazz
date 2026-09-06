@@ -601,6 +601,7 @@
   "capsSource": "first-pass established (baseline + 5 warm-up cycles + first steady visit per route; scene materials/geometry ±2 churn tolerance; heap +10% GC tolerance)",
   "trend": {
     "canvas": {
+<<<<<<< HEAD
       "series": [
         1,
         1,
@@ -623,12 +624,16 @@
         1,
         1
       ],
+=======
+      "series": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+>>>>>>> main
       "increases": 0,
       "decreases": 19,
       "withinCap": true
     },
     "domNodes": {
       "series": [
+<<<<<<< HEAD
         604,
         641,
         634,
@@ -649,12 +654,17 @@
         617,
         604,
         641
+=======
+        604, 641, 634, 607, 628, 617, 604, 641, 634, 607, 628, 617, 604, 641, 634, 607, 628, 617,
+        604, 641
+>>>>>>> main
       ],
       "increases": 7,
       "decreases": 12,
       "withinCap": true
     },
     "sceneGeometries": {
+<<<<<<< HEAD
       "series": [
         21,
         21,
@@ -677,11 +687,15 @@
         21,
         21
       ],
+=======
+      "series": [21, 21, 21, 21, 21, 28, 21, 21, 21, 21, 21, 28, 21, 21, 21, 21, 21, 28, 21, 21],
+>>>>>>> main
       "increases": 3,
       "decreases": 16,
       "withinCap": true
     },
     "sceneMaterials": {
+<<<<<<< HEAD
       "series": [
         28,
         28,
@@ -704,11 +718,15 @@
         28,
         28
       ],
+=======
+      "series": [28, 28, 36, 28, 28, 31, 28, 28, 36, 28, 28, 31, 28, 28, 36, 28, 28, 31, 28, 28],
+>>>>>>> main
       "increases": 6,
       "decreases": 13,
       "withinCap": true
     },
     "sceneTextures": {
+<<<<<<< HEAD
       "series": [
         9,
         9,
@@ -731,11 +749,15 @@
         9,
         9
       ],
+=======
+      "series": [9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9],
+>>>>>>> main
       "increases": 0,
       "decreases": 19,
       "withinCap": true
     },
     "rendererGeometries": {
+<<<<<<< HEAD
       "series": [
         19,
         19,
@@ -758,11 +780,15 @@
         19,
         19
       ],
+=======
+      "series": [19, 19, 19, 19, 19, 24, 19, 19, 19, 19, 19, 24, 19, 19, 19, 19, 19, 24, 19, 19],
+>>>>>>> main
       "increases": 3,
       "decreases": 16,
       "withinCap": true
     },
     "rendererTextures": {
+<<<<<<< HEAD
       "series": [
         14,
         14,
@@ -785,11 +811,15 @@
         14,
         14
       ],
+=======
+      "series": [14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14],
+>>>>>>> main
       "increases": 0,
       "decreases": 19,
       "withinCap": true
     },
     "rendererPrograms": {
+<<<<<<< HEAD
       "series": [
         -1,
         -1,
@@ -812,11 +842,15 @@
         -1,
         -1
       ],
+=======
+      "series": [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+>>>>>>> main
       "increases": 0,
       "decreases": 0,
       "withinCap": true
     },
     "postRenderTargets": {
+<<<<<<< HEAD
       "series": [
         0,
         0,
@@ -839,12 +873,16 @@
         0,
         0
       ],
+=======
+      "series": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+>>>>>>> main
       "increases": 0,
       "decreases": 19,
       "withinCap": true
     },
     "heapUsed": {
       "series": [
+<<<<<<< HEAD
         60300000,
         60300000,
         60300000,
@@ -865,27 +903,40 @@
         60300000,
         60300000,
         60300000
+=======
+        60300000, 60300000, 60300000, 60300000, 60300000, 60300000, 60300000, 60300000, 60300000,
+        60300000, 60300000, 60300000, 60300000, 60300000, 60300000, 60300000, 60300000, 60300000,
+        60300000, 60300000
+>>>>>>> main
       ],
       "increases": 0,
       "decreases": 19,
       "withinCap": true
     },
     "frameDelta(/works)": {
+<<<<<<< HEAD
       "series": [
         202,
         203,
         202
       ],
+=======
+      "series": [202, 203, 202],
+>>>>>>> main
       "increases": 1,
       "decreases": 1,
       "withinCap": true
     },
     "frameDelta(/contact)": {
+<<<<<<< HEAD
       "series": [
         203,
         202,
         203
       ],
+=======
+      "series": [203, 202, 203],
+>>>>>>> main
       "increases": 1,
       "decreases": 1,
       "withinCap": true

@@ -18,6 +18,10 @@ const ALL_FLAGS: (keyof RenderActivity)[] = [
   'carousel',
   'worksPlane',
   'contactCyprus',
+<<<<<<< HEAD
+=======
+  'contactHalo',
+>>>>>>> main
   'drawTrail',
   'opener',
   'burst',
@@ -28,13 +32,21 @@ const ALL_FLAGS: (keyof RenderActivity)[] = [
   'ambientScene',
 ]
 
+<<<<<<< HEAD
 // The 9 flags the ambient-breath idle check actually reads. The other three
+=======
+// The 10 flags the ambient-breath idle check actually reads. The other three
+>>>>>>> main
 // (drawTrail, cubeRotating and camPulsing) are deliberately excluded.
 const BREATH_RELEVANT: (keyof RenderActivity)[] = [
   'nav',
   'carousel',
   'worksPlane',
   'contactCyprus',
+<<<<<<< HEAD
+=======
+  'contactHalo',
+>>>>>>> main
   'opener',
   'burst',
   'camShaking',
@@ -42,6 +54,7 @@ const BREATH_RELEVANT: (keyof RenderActivity)[] = [
   'ambientScene',
 ]
 
+<<<<<<< HEAD
 const BREATH_EXCLUDED: (keyof RenderActivity)[] = [
   'drawTrail',
   'cubeRotating',
@@ -49,6 +62,11 @@ const BREATH_EXCLUDED: (keyof RenderActivity)[] = [
 ]
 
 describe('anyActivity (the 12-flag OR)', () => {
+=======
+const BREATH_EXCLUDED: (keyof RenderActivity)[] = ['drawTrail', 'cubeRotating', 'camPulsing']
+
+describe('anyActivity (the 13-flag OR)', () => {
+>>>>>>> main
   it('is false for no activity', () => {
     expect(anyActivity(NO_ACTIVITY)).toBe(false)
   })
@@ -64,8 +82,13 @@ describe('anyActivity (the 12-flag OR)', () => {
   })
 })
 
+<<<<<<< HEAD
 describe('idleForAmbientBreath (the narrower 9-flag idle check)', () => {
   it('is true when reduced motion is off and the 9 breath flags are clear', () => {
+=======
+describe('idleForAmbientBreath (the narrower 10-flag idle check)', () => {
+  it('is true when reduced motion is off and the 10 breath flags are clear', () => {
+>>>>>>> main
     expect(idleForAmbientBreath(NO_ACTIVITY, false)).toBe(true)
   })
 
@@ -73,7 +96,11 @@ describe('idleForAmbientBreath (the narrower 9-flag idle check)', () => {
     expect(idleForAmbientBreath(NO_ACTIVITY, true)).toBe(false)
   })
 
+<<<<<<< HEAD
   it('every one of the 9 breath-relevant flags blocks the breath', () => {
+=======
+  it('every one of the 10 breath-relevant flags blocks the breath', () => {
+>>>>>>> main
     for (const f of BREATH_RELEVANT) {
       expect(idleForAmbientBreath(withOnly([f]), false), `flag ${f}`).toBe(false)
     }

@@ -25,11 +25,23 @@ function initSoundToggle(): void {
     btn.title = soundOn ? 'Sound: On (click to mute)' : 'Sound: Off (click to enable)'
   }
   update()
+<<<<<<< HEAD
   btn.addEventListener('click', () => {
     soundOn = !soundOn
     setSoundMutedPreference(!soundOn)
     update()
   }, { signal: _bootstrapAbort.signal })
+=======
+  btn.addEventListener(
+    'click',
+    () => {
+      soundOn = !soundOn
+      setSoundMutedPreference(!soundOn)
+      update()
+    },
+    { signal: _bootstrapAbort.signal },
+  )
+>>>>>>> main
 }
 
 // ── Config: language toggle EN/RU ──
@@ -47,7 +59,11 @@ import { initI18n, toggleLang, getLang } from './core/i18n'
 // over the public, typed `eventBus.emit` and adds no new capability surface
 // (the equivalent raw dispatch existed in production pre-migration).
 // Installed at module scope — the moment entry-app.ts loads, which is before
+<<<<<<< HEAD
   // the Vue router mounts and before the splash Enter button
+=======
+// the Vue router mounts and before the splash Enter button
+>>>>>>> main
 // is ever enabled (`jlz:webgl-ready`) — so it is always present for the splash
 // and for navigation tests regardless of whether `experience.init()` succeeds.
 ;(window as unknown as { __jlzEmit?: (event: string, detail?: unknown) => void }).__jlzEmit = (
@@ -68,10 +84,21 @@ function initLangToggle(): void {
     btn.title = `Language: ${lang} (click to switch)`
   }
   update()
+<<<<<<< HEAD
   btn.addEventListener('click', () => {
     toggleLang()
     update()
   }, { signal: _bootstrapAbort.signal })
+=======
+  btn.addEventListener(
+    'click',
+    () => {
+      toggleLang()
+      update()
+    },
+    { signal: _bootstrapAbort.signal },
+  )
+>>>>>>> main
 }
 
 // ── Enter button click is wired by inline script in index.html ──
@@ -420,7 +447,12 @@ async function boot(): Promise<BootResult> {
     )
     await runtime.init()
     if (import.meta.env.DEV) {
+<<<<<<< HEAD
       ;(window as unknown as { __jlzRuntimeDestroy?: () => void }).__jlzRuntimeDestroy = () => runtime.destroy()
+=======
+      ;(window as unknown as { __jlzRuntimeDestroy?: () => void }).__jlzRuntimeDestroy = () =>
+        runtime.destroy()
+>>>>>>> main
     }
     // Phase 6 evidence (fixed 2026-08-22): the unified `WebGPURenderer` on
     // `WebGLBackend` keeps the direct-WebGL path (no TSL post) by design; TSL
@@ -509,14 +541,23 @@ async function startAppOnce(): Promise<void> {
 
   // ── Works page 3D cards: bind tilt + click on every route change ──
   // initWorkCards() is idempotent (skips already-bound cards).
+<<<<<<< HEAD
   _bootstrapUnsubs.push(eventBus.on('jlz:route-change', () => {
     initWorkCards()
   }))
+=======
+  _bootstrapUnsubs.push(
+    eventBus.on('jlz:route-change', () => {
+      initWorkCards()
+    }),
+  )
+>>>>>>> main
   initWorkCards()
 
   // jlz:webgl-ready fires when Experience.init() completes — show Enter button.
   // Animations (BlurFade + NoiseText) are DELAYED until jlz:splash-entered
   // (Enter click) so user sees them as 3D scene reveals, not behind splash.
+<<<<<<< HEAD
   _bootstrapUnsubs.push(eventBus.on('jlz:webgl-ready', () => {
     clearReadyWatchdog()
     clearSplashRevealTimer()
@@ -531,15 +572,45 @@ async function startAppOnce(): Promise<void> {
     if (_bootstrapState !== 'failed') transitionBootstrap('failed')
     showLoadError()
   }))
+=======
+  _bootstrapUnsubs.push(
+    eventBus.on('jlz:webgl-ready', () => {
+      clearReadyWatchdog()
+      clearSplashRevealTimer()
+      showEnterButton()
+    }),
+  )
+
+  // jlz:webgl-failed fires if Experience.init() throws — show an error message
+  // instead of the Enter button, so the user knows the 3D failed (not just slow).
+  _bootstrapUnsubs.push(
+    eventBus.on('jlz:webgl-failed', () => {
+      clearReadyWatchdog()
+      clearSplashRevealTimer()
+      if (_bootstrapState !== 'failed') transitionBootstrap('failed')
+      showLoadError()
+    }),
+  )
+>>>>>>> main
 
   // jlz:splash-entered fires when user clicks Enter — splash starts fading.
   // Let the active title answer the opening curtain, rather than animating
   // every title in the document behind the splash.
+<<<<<<< HEAD
   _bootstrapUnsubs.push(eventBus.on('jlz:splash-entered', () => {
     transitionBootstrap('entered')
     // Let the curtain begin to split, then reveal the title inside that gap.
     scheduleSplashRevealTimer(90)
   }))
+=======
+  _bootstrapUnsubs.push(
+    eventBus.on('jlz:splash-entered', () => {
+      transitionBootstrap('entered')
+      // Let the curtain begin to split, then reveal the title inside that gap.
+      scheduleSplashRevealTimer(90)
+    }),
+  )
+>>>>>>> main
 
   // Fallback: if jlz:webgl-ready doesn't fire within 60s (Experience.init
   // crashed or hung), show a load error. The Enter button stays DISABLED
@@ -556,6 +627,7 @@ async function startAppOnce(): Promise<void> {
   }, 60000)
 
   // ── Animate titles on section change (home: data-section) ──
+<<<<<<< HEAD
   _bootstrapUnsubs.push(eventBus.on('jlz:section-change', (payload) => {
     if (!payload?.sectionId) return
     if (prefersReducedMotion()) return
@@ -587,6 +659,43 @@ async function startAppOnce(): Promise<void> {
       if (text) NoiseText.for(eyebrow).show(0.6, text)
     }
   }))
+=======
+  _bootstrapUnsubs.push(
+    eventBus.on('jlz:section-change', (payload) => {
+      if (!payload?.sectionId) return
+      if (prefersReducedMotion()) return
+      const section = contentRoot().querySelector(`[data-section="${payload.sectionId}"]`)
+      if (!section) return
+      const title = section.querySelector<HTMLElement>('.studio-title')
+      if (title && title.dataset.blurFade !== 'off') {
+        const text = title.textContent?.trim() || ''
+        if (text) BlurFade.for(title).show(1.5)
+      }
+    }),
+  )
+
+  // ── Animate titles on page section change (content: data-page-section) ──
+  _bootstrapUnsubs.push(
+    eventBus.on('jlz:page-section-change', ({ index }) => {
+      if (prefersReducedMotion()) return
+      const sections = contentRoot().querySelectorAll<HTMLElement>('[data-page-section]')
+      const el = sections[index]
+      if (!el) return
+      // BlurFade on title
+      const title = el.querySelector<HTMLElement>('.studio-title')
+      if (title && title.dataset.blurFade !== 'off') {
+        const text = title.textContent?.trim() || ''
+        if (text) BlurFade.for(title).show(1.5)
+      }
+      // NoiseText on eyebrow
+      const eyebrow = el.querySelector<HTMLElement>('[data-eyebrow]')
+      if (eyebrow) {
+        const text = eyebrow.getAttribute('data-eyebrow-text') ?? eyebrow.textContent ?? ''
+        if (text) NoiseText.for(eyebrow).show(0.6, text)
+      }
+    }),
+  )
+>>>>>>> main
 
   const result = await boot()
   if (_bootstrapState === 'failed' && result.retryable) {
@@ -612,7 +721,13 @@ function setupTitleObserver(): void {
   _titleObserver?.disconnect()
   if (prefersReducedMotion()) return
 
+<<<<<<< HEAD
   const titles = contentRoot().querySelectorAll<HTMLElement>('.studio-title:not([data-blur-fade="off"])')
+=======
+  const titles = contentRoot().querySelectorAll<HTMLElement>(
+    '.studio-title:not([data-blur-fade="off"])',
+  )
+>>>>>>> main
   if (titles.length === 0) return
   const observer = new IntersectionObserver(
     (entries) => {

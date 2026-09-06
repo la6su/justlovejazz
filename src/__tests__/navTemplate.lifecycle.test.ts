@@ -103,6 +103,7 @@ describe('initMenuNav visibility reconciliation', () => {
 
     initMenuNav()
 
+<<<<<<< HEAD
     expect(routeNav.querySelector('.jlz-menu-nav__toggle')?.getAttribute('data-jlz-visibility-bound')).toBe(
       '1',
     )
@@ -113,5 +114,19 @@ describe('initMenuNav visibility reconciliation', () => {
     expect(detachedNav.querySelector('.jlz-menu-nav__sub-link')?.hasAttribute('data-jlz-bound')).toBe(
       false,
     )
+=======
+    expect(
+      routeNav.querySelector('.jlz-menu-nav__toggle')?.getAttribute('data-jlz-visibility-bound'),
+    ).toBe('1')
+    expect(routeNav.querySelector('.jlz-menu-nav__sub-link')?.getAttribute('data-jlz-bound')).toBe(
+      '1',
+    )
+    expect(
+      detachedNav.querySelector('.jlz-menu-nav__toggle')?.hasAttribute('data-jlz-visibility-bound'),
+    ).toBe(false)
+    expect(
+      detachedNav.querySelector('.jlz-menu-nav__sub-link')?.hasAttribute('data-jlz-bound'),
+    ).toBe(false)
+>>>>>>> main
   })
 })

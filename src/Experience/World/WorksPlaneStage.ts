@@ -335,12 +335,19 @@ export class WorksPlaneStage extends THREE.Group {
         card.scale.setScalar(nextScale)
       }
       card.setReveal(nextReveal)
+<<<<<<< HEAD
       card.setMotion(0, 0)
       card.setTransition(0)
       // A visible card with no own cloth activity does not need its time
       // uniform advanced while a sibling is pulsing. Layout/reveal changes
       // remain explicit wake boundaries; card.isAnimating keeps its own
       // wobble/motion/edge decay progressing until it settles.
+=======
+      // A visible card with no own cloth activity does not need its time
+      // uniform advanced while a sibling is pulsing. Layout/reveal changes
+      // remain explicit wake boundaries; card.isAnimating keeps its own
+      // wobble decay progressing until it settles.
+>>>>>>> main
       card.update(dt, layoutDirty || revealChanged || card.isAnimating)
     }
     this._lastCameraPosition.copy(this._tmpCameraPosition)

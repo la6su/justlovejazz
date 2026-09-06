@@ -782,8 +782,22 @@ Do not reopen completed migration phases. Current runtime contracts are in
       matrix with an `x-default` alternate while keeping canonical
       self-referential; remote/network sources remain deferred until an explicit
       security and caching design exists.
+<<<<<<< HEAD
 - [ ] **Extend the cinematic brand language** — tune motion and TSL response
       across every route while preserving backend and reduced-motion parity.
+=======
+- [x] **Extend the cinematic brand language** — tune motion and TSL response
+      across every route while preserving backend and reduced-motion parity.
+  - [x] Content palettes author their own restrained bloom + ink-tinted grade
+        voice (bounded by home's peak) instead of hard zeros, so route switches
+        crossfade the full post graph through the existing machinery.
+  - [x] The Lab gamepad carries authored pointer-reactive settle motion
+        (damped tilt, hover clock, crank spin) under the optional
+        `LabExperimentObject` motion contract, feeding `hasVisibleAmbientMotion`.
+  - [x] `/manifesto` gains the pointer-reactive TSL ink wash
+        (`ManifestoInkStage`) under the ContactHaloStage lifecycle contract,
+        riding the `ambientScene` signal with reduced-motion + theme parity.
+>>>>>>> main
 - [x] **Cross-backend runtime baseline** — desktop and physical Android
       resize/DPR evidence is recorded under `docs/evidence/`.
 - [x] **Finish the UIkit-first style ownership split** — keep component,

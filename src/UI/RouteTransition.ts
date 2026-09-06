@@ -55,6 +55,56 @@ export class RouteTransition {
       this.coverTimer = { id, resolve }
     })
     if (sequence !== this.sequence) return
+<<<<<<< HEAD
+=======
+  }
+
+  reveal(): void {
+    const sequence = this.sequence
+    if (prefersReducedMotion()) {
+      if (this.overlay) this.overlay.dataset.state = 'idle'
+      return
+    }
+    this.cancelRevealTimer()
+    const overlay = this.getOverlay()
+    overlay.dataset.state = 'revealing'
+    this.revealTimer = window.setTimeout(() => {
+      this.revealTimer = null
+      if (sequence !== this.sequence) return
+      if (overlay.isConnected) overlay.dataset.state = 'idle'
+    }, REVEAL_MS)
+  }
+
+  /** Abort a failed navigation and return the transition surface to idle. */
+  cancel(): void {
+    this.sequence += 1
+    this.cancelCoverTimer()
+    this.cancelRevealTimer()
+    if (this.overlay) this.overlay.dataset.state = 'idle'
+  }
+
+  /** Release the transition DOM owner and every pending timer. */
+  dispose(): void {
+    this.cancel()
+    if (this.overlay?.isConnected) this.overlay.remove()
+    this.overlay = null
+  }
+
+  private cancelCoverTimer(): void {
+    if (this.coverTimer !== null) {
+      clearTimeout(this.coverTimer.id)
+      const { resolve } = this.coverTimer
+      this.coverTimer = null
+      resolve()
+    }
+  }
+
+  private cancelRevealTimer(): void {
+    if (this.revealTimer !== null) {
+      clearTimeout(this.revealTimer)
+      this.revealTimer = null
+    }
+>>>>>>> main
   }
 
   reveal(): void {

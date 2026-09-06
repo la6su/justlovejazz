@@ -21,6 +21,27 @@ import {
 
 export type RenderSurface = WebGPURenderer
 
+<<<<<<< HEAD
+=======
+const NEUTRAL_GRADE: [number, number, number] = [1, 1, 1]
+
+function tupleIs(a: [number, number, number], b?: [number, number, number]): boolean {
+  const src = b ?? NEUTRAL_GRADE
+  return Object.is(a[0], src[0]) && Object.is(a[1], src[1]) && Object.is(a[2], src[2])
+}
+
+function copyTuple(
+  target: [number, number, number] | undefined,
+  from?: [number, number, number],
+): void {
+  if (!target) return
+  const src = from ?? NEUTRAL_GRADE
+  target[0] = src[0]
+  target[1] = src[1]
+  target[2] = src[2]
+}
+
+>>>>>>> main
 /**
  * Phase 7 adoption input: the SceneHost custom renderer factory already
  * created + init'd the instance and inspected the actual backend. The
@@ -46,7 +67,6 @@ export class Renderer {
   public postManager = new PostProcessingManager()
 
   // Junni-style multi-pass post-processing pipeline (typed, explicit fallback)
-  /** Public for Experience to call setSectionGrade (refraction + color grade). */
   pipeline: RenderPipeline | null = null
   // Pipeline config is built after backend initialization, when fallback is known.
   private _pipelineConfig!: RenderPipelineConfig
@@ -58,6 +78,13 @@ export class Renderer {
     chromatic: 0,
     bloomRadius: 0,
     bloomThreshold: 0,
+<<<<<<< HEAD
+=======
+    refract: 0,
+    border: 0,
+    gradeShadows: [1, 1, 1],
+    gradeHighlights: [1, 1, 1],
+>>>>>>> main
   }
   private _postSource = {
     bloom: Number.NaN,
@@ -66,6 +93,13 @@ export class Renderer {
     chromatic: Number.NaN,
     bloomRadius: Number.NaN,
     bloomThreshold: Number.NaN,
+<<<<<<< HEAD
+=======
+    refract: Number.NaN,
+    border: Number.NaN,
+    gradeShadows: [Number.NaN, Number.NaN, Number.NaN] as [number, number, number],
+    gradeHighlights: [Number.NaN, Number.NaN, Number.NaN] as [number, number, number],
+>>>>>>> main
   }
   private _postParamsDirty = true
 
@@ -148,8 +182,12 @@ export class Renderer {
     this._recoveryFailed = false
     this._lifecycleGeneration += 1
     const generation = this._lifecycleGeneration
+<<<<<<< HEAD
     const isCurrent = (): boolean =>
       !this._disposed && generation === this._lifecycleGeneration
+=======
+    const isCurrent = (): boolean => !this._disposed && generation === this._lifecycleGeneration
+>>>>>>> main
     if (adopted) {
       // ── Phase 7 adoption path ──────────────────────────────────────────
       // The SceneHost custom renderer factory owns construction + the single
@@ -516,7 +554,15 @@ export class Renderer {
         !Object.is(source.grain, params.grain) ||
         !Object.is(source.chromatic, params.chromatic) ||
         !Object.is(source.bloomRadius, params.bloomRadius) ||
+<<<<<<< HEAD
         !Object.is(source.bloomThreshold, params.bloomThreshold)
+=======
+        !Object.is(source.bloomThreshold, params.bloomThreshold) ||
+        !Object.is(source.refract, params.refract) ||
+        !Object.is(source.border, params.border) ||
+        !tupleIs(source.gradeShadows, params.gradeShadows) ||
+        !tupleIs(source.gradeHighlights, params.gradeHighlights)
+>>>>>>> main
       if (this.pipeline && changed) {
         const pp = this._postParams
         pp.bloom = this.capabilities.scaleIntensity(params.bloom)
@@ -526,6 +572,15 @@ export class Renderer {
         // Track B: per-section bloom shape (NOT intensity-scaled — shape params)
         pp.bloomRadius = params.bloomRadius
         pp.bloomThreshold = params.bloomThreshold
+<<<<<<< HEAD
+=======
+        // Grade channels ride the same crossfade; they are authored look
+        // parameters, so they are not intensity-scaled either.
+        pp.refract = params.refract
+        pp.border = params.border
+        copyTuple(pp.gradeShadows, params.gradeShadows)
+        copyTuple(pp.gradeHighlights, params.gradeHighlights)
+>>>>>>> main
         this.pipeline.updateParams(pp)
         source.bloom = params.bloom
         source.vignette = params.vignette
@@ -533,6 +588,13 @@ export class Renderer {
         source.chromatic = params.chromatic ?? Number.NaN
         source.bloomRadius = params.bloomRadius ?? Number.NaN
         source.bloomThreshold = params.bloomThreshold ?? Number.NaN
+<<<<<<< HEAD
+=======
+        source.refract = params.refract ?? Number.NaN
+        source.border = params.border ?? Number.NaN
+        copyTuple(source.gradeShadows, params.gradeShadows)
+        copyTuple(source.gradeHighlights, params.gradeHighlights)
+>>>>>>> main
         this._postParamsDirty = false
       }
     }

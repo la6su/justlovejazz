@@ -90,10 +90,20 @@ export function useJlzPage(page: PageId, rootEl: () => HTMLElement | null): void
     // Typed EventBus emission bridges to window automatically.
     eventBus.emit('jlz:route-change', { page })
     if ('requestIdleCallback' in window) {
+<<<<<<< HEAD
       idleHandle = requestIdleCallback(() => {
         idleHandle = null
         if (mounted && rootEl() === el) uiKitUpdate(el)
       }, { timeout: 100 })
+=======
+      idleHandle = requestIdleCallback(
+        () => {
+          idleHandle = null
+          if (mounted && rootEl() === el) uiKitUpdate(el)
+        },
+        { timeout: 100 },
+      )
+>>>>>>> main
     }
   }
 

@@ -38,7 +38,11 @@ describe('SectionGroups lifecycle', () => {
 
     const particleDispose = vi.spyOn(particles, 'dispose')
     const geometryDispose = vi.spyOn(particles.geometry, 'dispose')
+<<<<<<< HEAD
     const materialDispose = vi.spyOn((particles.material as THREE.Material), 'dispose')
+=======
+    const materialDispose = vi.spyOn(particles.material as THREE.Material, 'dispose')
+>>>>>>> main
 
     owner.dispose()
     owner.dispose()

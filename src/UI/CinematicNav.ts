@@ -422,9 +422,15 @@ export class CinematicNav {
   goToSectionByHash(hash: string): void {
     const targetId = hash.replace(/^#/, '')
     const target = this._track
+<<<<<<< HEAD
       ? [...this._track.querySelectorAll<HTMLElement>('[id]')].find(
           (candidate) => candidate.id === targetId,
         ) ?? null
+=======
+      ? ([...this._track.querySelectorAll<HTMLElement>('[id]')].find(
+          (candidate) => candidate.id === targetId,
+        ) ?? null)
+>>>>>>> main
       : null
     if (!target) return
 
