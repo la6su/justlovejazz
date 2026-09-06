@@ -6,7 +6,7 @@
 // an editorial composition sized by UIkit's responsive grid. The DOM
 // carries the index header and semantic card buttons; the route's visible
 // media is owned by WorksPlaneStage (scene side, untouched by navigation).
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import { PROJECTS } from '../../Data/Projects'
@@ -14,9 +14,20 @@ import { CASE_STUDY_BY_PROJECT } from '../../Data/CaseStudies'
 import { useJlzPage } from '../useJlzPage'
 import ContactFooter from './ContactFooter.vue'
 import NavMenu from './NavMenu.vue'
+import WorksHero from './works/WorksHero.vue'
+import CaseStudyCard from './works/CaseStudyCard.vue'
 
 const rootEl = ref<HTMLElement | null>(null)
 useJlzPage('works', () => rootEl.value)
+const activeFilter = ref('all')
+const visibleSections = computed(() =>
+  SECTIONS.filter(
+    (sec) =>
+      activeFilter.value === 'all' ||
+      (activeFilter.value === 'Digital products' && sec.index <= 2) ||
+      (activeFilter.value === 'Creative technology' && sec.index >= 3),
+  ),
+)
 
 type WorksLayout = 'feature' | 'equal' | 'reverse' | 'cinematic'
 
@@ -63,41 +74,13 @@ const meta = (idx: number): string =>
   >
     <article class="jlz-page jlz-works-page" data-page-view="works">
       <ContactFooter mode="content" />
-      <header class="jlz-works-hero uk-container uk-container-expand uk-padding uk-padding-large@m">
-        <div class="uk-grid-large uk-flex-middle" uk-grid>
-          <div class="uk-width-2-3@m">
-            <p class="jlz-eyebrow">Selected systems · 2022—2026</p>
-            <h1 class="studio-title uk-heading-large uk-margin-small-top">
-              Work that makes complex technology feel clear.
-            </h1>
-            <p class="uk-text-lead uk-margin-medium-top">
-              Digital products, realtime 3D and creative technology for teams that need a
-              distinctive result and a reliable path to launch.
-            </p>
-          </div>
-          <div class="uk-width-1-3@m">
-            <div class="jlz-works-proof uk-flex uk-flex-column">
-              <span>08</span><small>selected projects</small><span>03</span
-              ><small>case notes ready to share</small>
-            </div>
-          </div>
-        </div>
-        <nav
-          class="jlz-works-filters uk-flex uk-flex-wrap uk-grid-small uk-margin-large-top"
-          aria-label="Work filters"
-          uk-grid
-        >
-          <a href="#section-works-01" class="uk-button uk-button-default uk-button-small"
-            >All work</a
-          >
-          <a href="#section-works-02" class="uk-button uk-button-default uk-button-small"
-            >Digital products</a
-          >
-          <a href="#section-works-03" class="uk-button uk-button-default uk-button-small"
-            >Creative technology</a
-          >
-        </nav>
-      </header>
+      <!-- Dedicated Works surface: editorial hero + case index, separate from generic pages. -->
+      <WorksHero
+        :project-count="PROJECTS.length"
+        :ready-count="CASE_STUDY_BY_PROJECT.size"
+        :active-filter="activeFilter"
+        @filter="activeFilter = $event"
+      />
       <section
         class="jlz-case-index uk-container uk-container-expand uk-padding uk-padding-large@m"
         aria-labelledby="case-index-title"
@@ -115,22 +98,13 @@ const meta = (idx: number): string =>
             ]"
             :key="study?.projectId"
           >
-            <article v-if="study" class="jlz-case-index__card">
-              <p class="uk-text-meta uk-text-uppercase">{{ study.disclosure }}</p>
-              <h3 class="uk-h4 uk-margin-small-top">
-                {{ PROJECTS.find((item) => item.id === study.projectId)?.title }}
-              </h3>
-              <p>{{ study.outcome }}</p>
-              <RouterLink class="uk-link-text" :to="`/works/${study.projectId}`"
-                >Read case note →</RouterLink
-              >
-            </article>
+            <CaseStudyCard v-if="study" :study="study" />
           </template>
         </div>
       </section>
 
       <section
-        v-for="sec in SECTIONS"
+        v-for="sec in visibleSections"
         :key="sec.index"
         :class="[
           'jlz-page-section',
