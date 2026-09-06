@@ -632,26 +632,26 @@ export class Experience {
   public ensureContactTypographyStageInitialized(): Promise<void> {
     if (this._contactTypographyStagePromise) return this._contactTypographyStagePromise
     const request = ++this._contactTypographyStageRequest
-    this._contactTypographyStagePromise = import('./World/ContactTypographyStage').then(
-      ({ ContactTypographyStage }) => {
+    this._contactTypographyStagePromise = import('./World/ContactTypographyStage')
+      .then(({ ContactTypographyStage }) => {
         if (request !== this._contactTypographyStageRequest) return
         const stage = new ContactTypographyStage()
         this.contactTypographyStage = stage
         this.scene.add(stage)
         stage.setActive(this.currentPage() === 'contact')
         stage.setTheme(this._contactIsLight)
-      },
-    ).catch((error: unknown) => {
-      if (request === this._contactTypographyStageRequest) {
-        this.contactTypographyStage?.removeFromParent()
-        this.contactTypographyStage?.dispose()
-        this.contactTypographyStage = null
-        this._contactTypographyStagePromise = null
-      }
-      if (import.meta.env.DEV) {
-        console.error('[Experience] ContactTypographyStage init failed:', error)
-      }
-    })
+      })
+      .catch((error: unknown) => {
+        if (request === this._contactTypographyStageRequest) {
+          this.contactTypographyStage?.removeFromParent()
+          this.contactTypographyStage?.dispose()
+          this.contactTypographyStage = null
+          this._contactTypographyStagePromise = null
+        }
+        if (import.meta.env.DEV) {
+          console.error('[Experience] ContactTypographyStage init failed:', error)
+        }
+      })
     return this._contactTypographyStagePromise
   }
 
@@ -967,7 +967,7 @@ export class Experience {
             mode: host.mode,
             onInstanceReplaced: (instance) => host.replaceRenderer(instance),
           }
-      : undefined,
+        : undefined,
     )
     if (!this.isLifecycleCurrent(token)) return
     await this.buildWorld(token)
@@ -1448,14 +1448,10 @@ export class Experience {
     if (cfg && cfg.context !== this.currentSectionContext) {
       // Fog is now managed by World.updateTransform() on section index change —
       // no need to set it here. PostProcessing + FOV still triggered on context change.
+      // applyPreset also targets the section grade channels (refraction, border,
+      // shadow/highlight tints) — Renderer.update() crossfades them into the
+      // pipeline, so section transitions no longer snap the grade.
       this.renderer.postManager.applyPreset(cfg.id, cfg.post)
-      // Section-driven screen-space refraction + color grading (glass + LUT-like tint).
-      this.renderer.pipeline?.setSectionGrade(
-        cfg.post.refract,
-        new THREE.Vector3(...cfg.post.gradeShadows),
-        new THREE.Vector3(...cfg.post.gradeHighlights),
-        cfg.post.border,
-      )
       this.camera.setFovOffset(cfg.camFovOffset, cfg.camFovDuration)
       // Subtle camera shake on section transition — softer (was 0.04, 0.4)
       if (!this._reducedMotion) this.camera.shake(0.02, 0.6)

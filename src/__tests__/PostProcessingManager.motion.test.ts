@@ -86,4 +86,80 @@ describe('PostProcessingManager reduced-motion settlement', () => {
     expect(manager.postParams).toEqual(state.current)
     expect(state._crossfadeActive).toBe(false)
   })
+
+  it('crossfades the section grade channels instead of snapping them', () => {
+    const manager = new PostProcessingManager()
+    manager.applyPreset('sec_intro', {
+      bloom: 0.3,
+      vignette: 0.5,
+      grain: 0.02,
+      chromatic: 0,
+      refract: 0,
+      border: 0,
+      gradeShadows: [1, 1, 1],
+      gradeHighlights: [1, 1, 1],
+    })
+    manager.update(1)
+
+    manager.applyPreset('sec_contact', {
+      bloom: 0.3,
+      vignette: 0.5,
+      grain: 0.02,
+      chromatic: 0,
+      refract: 0.2,
+      border: 0.6,
+      gradeShadows: [0.8, 0.9, 1.1],
+      gradeHighlights: [1.05, 1, 0.95],
+    })
+    // A tiny step must move the grade display part-way toward the target…
+    manager.update(0.01)
+
+    const state = manager as unknown as {
+      display: {
+        refract: number
+        border: number
+        gradeShadows: [number, number, number]
+        gradeHighlights: [number, number, number]
+      }
+      current: {
+        refract: number
+        border: number
+        gradeShadows: [number, number, number]
+        gradeHighlights: [number, number, number]
+      }
+      _crossfadeActive: boolean
+    }
+    expect(state.display.refract).toBeGreaterThan(0)
+    expect(state.display.refract).toBeLessThan(state.current.refract)
+    expect(state.display.border).toBeGreaterThan(0)
+    // Each tint channel sits between its neutral start and the authored target.
+    expect(state.display.gradeShadows[0]).toBeLessThan(1)
+    expect(state.display.gradeShadows[0]).toBeGreaterThan(state.current.gradeShadows[0])
+    expect(state.display.gradeHighlights[2]).toBeLessThan(1)
+    expect(state.display.gradeHighlights[2]).toBeGreaterThan(state.current.gradeHighlights[2])
+    expect(state._crossfadeActive).toBe(true)
+
+    // …and the settled frame must land exactly on the authored grade.
+    manager.update(1)
+    expect(manager.postParams).toEqual(state.current)
+    expect(state._crossfadeActive).toBe(false)
+  })
+
+  it('defaults omitted grade channels to neutral and still applies them', () => {
+    const manager = new PostProcessingManager()
+    manager.applyPreset('sec_lab', {
+      bloom: 0.5,
+      vignette: 0.4,
+      grain: 0.03,
+      chromatic: 0.1,
+      refract: 0.3,
+      border: 0.4,
+    })
+    manager.update(1)
+
+    expect(manager.postParams.refract).toBe(0.3)
+    expect(manager.postParams.border).toBe(0.4)
+    expect(manager.postParams.gradeShadows).toEqual([1, 1, 1])
+    expect(manager.postParams.gradeHighlights).toEqual([1, 1, 1])
+  })
 })
