@@ -409,17 +409,13 @@ Do not reopen completed migration phases. Current runtime contracts are in
       explicitly superseded by ADR 0010, and historical classic-renderer
       measurements are marked as superseded in `PERFORMANCE_BASELINE.md`.
 
-- [ ] **Profile the next runtime owner on real backends** — capture a bounded
-      WebGPU/WebGLBackend frame trace and draw/resource counters before changing
-      an owner whose motion is intentional; headless unit coverage alone is not
-      sufficient evidence for the next performance slice. The latest local
-      WebGLBackend trace is recorded in
-      [`docs/evidence/phase7-live-gate/2026-08-26T17-11-30-611Z-report.json`](docs/evidence/phase7-live-gate/2026-08-26T17-11-30-611Z-report.json);
-      a hardware WebGPU run remains required before this item can close. The
-      separately launched flagged Chrome was inspected through its live page:
-      `navigator.gpu.requestAdapter()` returned the Google SwiftShader adapter,
-      so its current `WebGLBackend` result is still software, not native GPU
-      evidence.
+- [x] **Profile the next runtime owner on real backends** — bounded traces now
+      cover the WebGLBackend fallback and native RTX 4060 Ti WebGPUBackend.
+      The hardware report
+      [`docs/evidence/phase7-live-gate/2026-09-06T09-01-40-525Z-report.json`](docs/evidence/phase7-live-gate/2026-09-06T09-01-40-525Z-report.json)
+      records the active TSL post graph, one renderer canvas, settled normal and
+      reduced-motion demand, resource counters, teardown and fatal-error-free
+      runtime. Headless unit coverage remains supplementary evidence only.
 
 - [x] **Make resource evidence name both canvas boundaries** — runtime
       snapshots and DevPanel diagnostics now distinguish the single
@@ -436,6 +432,11 @@ Do not reopen completed migration phases. Current runtime contracts are in
       display now uses a fixed typed-array ring and reusable percentile scratch;
       idle gaps clear the ring and reset displayed percentiles without `shift()`
       or spread allocations.
+
+- [x] **Remove hot-path scene callback allocations** — Works and Baku frame
+      predicates/updates now use indexed loops, preserving card order,
+      reduced-motion behavior and lifecycle ownership without per-frame
+      `.forEach()`/`.some()` closures.
 
 - [ ] **Verify browser device-loss recovery on WebGLBackend** — the e2e probe
       now drives a real `WEBGL_lose_context` event and checks the production

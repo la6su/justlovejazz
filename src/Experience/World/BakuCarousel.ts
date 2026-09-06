@@ -147,7 +147,13 @@ export class BakuCarousel extends THREE.Group {
     const scrolling = Math.abs(this.scroll.target - this.scroll.current) > 0.001
     // Active drag
     const dragging = this.isDown
-    const planeMotion = this.cards.some((card) => card.isAnimating)
+    let planeMotion = false
+    for (let index = 0; index < this.cards.length; index += 1) {
+      if (this.cards[index]!.isAnimating) {
+        planeMotion = true
+        break
+      }
+    }
     return morphing || scrolling || dragging || planeMotion
   }
 

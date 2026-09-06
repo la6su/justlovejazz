@@ -94,12 +94,15 @@ export class WorksPlaneStage extends THREE.Group {
     if (!reduced) return
 
     const activeProjects = SECTION_PROJECTS[this._sectionIndex]!
-    this.cards.forEach((card) => {
+    const cardCount = this.cards.length
+    for (let index = 0; index < cardCount; index += 1) {
+      const card = this.cards[index]!
       const projectIndex = card.userData.projectIndex as number
-      const targetReveal = activeProjects.some((project) => project === projectIndex) ? 1 : 0
+      const targetReveal =
+        activeProjects[0] === projectIndex || activeProjects[1] === projectIndex ? 1 : 0
       this._reveal.set(card, targetReveal)
       card.setReveal(targetReveal)
-    })
+    }
     if (this._active && this._camera) this.update(0)
   }
 
@@ -107,7 +110,8 @@ export class WorksPlaneStage extends THREE.Group {
     if (this._disposed || !this._active) return false
 
     const activeProjects = SECTION_PROJECTS[this._sectionIndex]!
-    const cardsAnimating = this.cards.some((card) => {
+    for (let index = 0; index < this.cards.length; index += 1) {
+      const card = this.cards[index]!
       const projectIndex = card.userData.projectIndex as number
       const shouldBeVisible =
         activeProjects[0] === projectIndex || activeProjects[1] === projectIndex
@@ -115,9 +119,9 @@ export class WorksPlaneStage extends THREE.Group {
       // Include departing cards and their cloth pulses: hidden cards still
       // need a few passes to settle their reveal/animation state before the
       // stage can take the settled fast path.
-      return card.isAnimating || (shouldBeVisible ? reveal < 0.995 : reveal > 0.005)
-    })
-    return cardsAnimating
+      if (card.isAnimating || (shouldBeVisible ? reveal < 0.995 : reveal > 0.005)) return true
+    }
+    return false
   }
 
   async init(): Promise<void> {
@@ -279,7 +283,8 @@ export class WorksPlaneStage extends THREE.Group {
     this.quaternion.copy(this._camera.quaternion)
 
     const activeProjects = SECTION_PROJECTS[this._sectionIndex]!
-    this.cards.forEach((card) => {
+    for (let index = 0; index < this.cards.length; index += 1) {
+      const card = this.cards[index]!
       const projectIndex = card.userData.projectIndex as number
       const isPrimary = activeProjects[0] === projectIndex
       const isSecondary = activeProjects[1] === projectIndex
@@ -302,7 +307,7 @@ export class WorksPlaneStage extends THREE.Group {
           card.setReveal(nextReveal)
           card.update(dt, false)
         }
-        return
+        continue
       }
 
       const layouts = this._stackedLayout ? STACKED_LAYOUT : WIDE_LAYOUT
@@ -337,7 +342,7 @@ export class WorksPlaneStage extends THREE.Group {
       // remain explicit wake boundaries; card.isAnimating keeps its own
       // wobble/motion/edge decay progressing until it settles.
       card.update(dt, layoutDirty || revealChanged || card.isAnimating)
-    })
+    }
     this._lastCameraPosition.copy(this._tmpCameraPosition)
     this._lastCameraQuaternion.copy(this._camera.quaternion)
     this._layoutDirty = false

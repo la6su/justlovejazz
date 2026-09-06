@@ -606,7 +606,9 @@ test.describe('JustLoveJazz — runtime health', () => {
     test.setTimeout(120000)
     const errors: string[] = []
     attachErrorCapture(page, errors)
-    await page.goto('/')
+    await page.goto(
+      process.env.JLZ_WEBGL_RECOVERY_CHROME === '1' ? '/?force-webgl-backend=1' : '/',
+    )
     await expect(page.locator('main#spa-content')).toBeAttached({ timeout: 20000 })
     await expect(page.locator('#jlz-splash-enter')).toHaveClass(/is-ready/, { timeout: 90000 })
 
@@ -614,6 +616,9 @@ test.describe('JustLoveJazz — runtime health', () => {
       .poll(() => page.evaluate(() => window.__jlzHost?.backend ?? null), { timeout: 5000 })
       .not.toBeNull()
     const backend = await page.evaluate(() => window.__jlzHost?.backend ?? null)
+    if (process.env.JLZ_WEBGL_RECOVERY_CHROME === '1') {
+      console.info(`[WebGL recovery gate] backend=${backend ?? 'unreported'}`)
+    }
     test.skip(
       backend !== 'WebGLBackend',
       `WebGLBackend probe skipped: ${backend ?? 'backend was not reported'}`,
@@ -637,10 +642,14 @@ test.describe('JustLoveJazz — runtime health', () => {
           settled = true
           resolve(value)
         }
-        preflightCanvas.addEventListener('webglcontextlost', (event) => {
-          event.preventDefault()
-          preflightLose.restoreContext()
-        }, { once: true })
+        preflightCanvas.addEventListener(
+          'webglcontextlost',
+          (event) => {
+            event.preventDefault()
+            preflightLose.restoreContext()
+          },
+          { once: true },
+        )
         preflightCanvas.addEventListener('webglcontextrestored', () => finish(true), { once: true })
         preflightLose.loseContext()
         window.setTimeout(() => finish(false), 2000)
@@ -691,6 +700,10 @@ test.describe('JustLoveJazz — runtime health', () => {
 
       return { available: true, lost }
     })
+
+    if (process.env.JLZ_WEBGL_RECOVERY_CHROME === '1' && !probe.available) {
+      console.info(`[WebGL recovery gate] skipped: ${probe.reason}`)
+    }
 
     test.skip(!probe.available, `WebGLBackend probe skipped: ${probe.reason}`)
     expect(probe.lost, 'WEBGL_lose_context did not dispatch webglcontextlost').toBe(true)

@@ -70,7 +70,8 @@ afterEach(() => {
 describe('jlzRouteRecords', () => {
   it('derives one record per manifest entry plus the catch-all fallback', () => {
     const records = jlzRouteRecords()
-    expect(records).toHaveLength(ROUTE_MANIFEST.length + 1)
+    expect(records).toHaveLength(ROUTE_MANIFEST.length + 2)
+    expect(records.find((r) => r.path === '/works/:projectId')?.name).toBe('case-study')
     for (const entry of ROUTE_MANIFEST) {
       const record = records.find((r) => r.path === entry.path)
       expect(record?.name).toBe(entry.page)

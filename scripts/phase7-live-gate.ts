@@ -36,6 +36,18 @@
  * Usage:
  *   bun run dev            # terminal 1 (http://127.0.0.1:5173)
  *   bun scripts/phase7-live-gate.ts
+ *   JLZ_CDP_URL=http://127.0.0.1:9222 JLZ_CDP_ORIGIN=devtools://devtools \
+ *     bun scripts/phase7-live-gate.ts
+ *   JLZ_HARDWARE_CHROME=1 bun scripts/phase7-live-gate.ts
+ *
+ * When JLZ_CDP_URL is set, the gate attaches to the existing Chromium/Chrome
+ * DevTools session instead of launching headless Chromium. This is the
+ * hardware-evidence path for Hermes Chrome; the session must expose a
+ * localhost CDP endpoint and have the app available at BASE.
+ *
+ * JLZ_HARDWARE_CHROME launches the installed stable Chrome headfully instead
+ * of Playwright's headless Chromium. It is the fallback hardware-evidence
+ * path when an existing Chrome profile refuses browser-level CDP attachment.
  *
  * A machine-readable report is written to
  * docs/evidence/phase7-live-gate/<utc>-report.json and printed to stdout.
@@ -78,6 +90,11 @@ interface RuntimeSnapshot {
     renderer: { p50: number; p95: number; latest: number }
     total: { p50: number; p95: number; latest: number }
   } | null
+  demand: {
+    needsRender: boolean
+    cursorSettled: boolean | null
+    activity: Record<string, boolean>
+  }
 }
 
 interface RunResult {
@@ -94,6 +111,7 @@ interface RunResult {
   loop: LoopDiagnostics | null
   resources: RuntimeSnapshot['resources'] | null
   timing: RuntimeSnapshot['timing']
+  demand: RuntimeSnapshot['demand'] | null
   timingCaptured: boolean
   destroy: { fatalErrors: string[]; canvasSurvives: boolean }
   fatalErrors: string[]
@@ -140,6 +158,7 @@ async function run(
     path: string
     reducedMotion?: boolean
     settledIdleRequired?: boolean
+    attachedContext?: import('@playwright/test').BrowserContext
   },
 ): Promise<RunResult> {
   const url = BASE + opts.path
@@ -156,6 +175,7 @@ async function run(
     loop: null,
     resources: null,
     timing: null,
+    demand: null,
     timingCaptured: false,
     destroy: { fatalErrors: [], canvasSurvives: false },
     fatalErrors: [],
@@ -163,11 +183,17 @@ async function run(
     notes: [],
   }
 
-  const context = await browser.newContext({
-    viewport: { width: 1280, height: 800 },
-    reducedMotion: opts.reducedMotion ? 'reduce' : 'no-preference',
-  })
+  const context =
+    opts.attachedContext ??
+    (await browser.newContext({
+      viewport: { width: 1280, height: 800 },
+      reducedMotion: opts.reducedMotion ? 'reduce' : 'no-preference',
+    }))
   const page = await context.newPage()
+  if (opts.attachedContext) {
+    await page.setViewportSize({ width: 1280, height: 800 })
+    await page.emulateMedia({ reducedMotion: opts.reducedMotion ? 'reduce' : 'no-preference' })
+  }
   const errors: string[] = []
   page.on('console', (m) => {
     const text = m.text()
@@ -257,6 +283,7 @@ async function run(
     if (snapshot) {
       result.loop = snapshot.loop
       result.resources = snapshot.resources
+      result.demand = snapshot.demand
       result.timing ??= snapshot.timing
       result.timingCaptured ||= (snapshot.timing?.samples ?? 0) > 0
     } else {
@@ -281,8 +308,7 @@ async function run(
     // gate on a GPU-less software host — was removed in Phase 10.)
     const settledOk =
       !result.settledIdleRequired || (result.loop !== null && result.loop.loopActive === false)
-    const rendererCanvasOk =
-      result.resources === null || result.resources.rendererCanvasCount === 1
+    const rendererCanvasOk = result.resources === null || result.resources.rendererCanvasCount === 1
     result.passed =
       result.ready &&
       result.canvasCount === 1 &&
@@ -295,7 +321,7 @@ async function run(
       result.fatalErrors.length === 0
     if (!result.passed) {
       result.notes.push(
-        `loop=${JSON.stringify(result.loop)} timing=${JSON.stringify(result.timing)} fatal=${JSON.stringify(result.fatalErrors)}`,
+        `loop=${JSON.stringify(result.loop)} demand=${JSON.stringify(result.demand)} timing=${JSON.stringify(result.timing)} fatal=${JSON.stringify(result.fatalErrors)}`,
       )
     }
   } catch (e) {
@@ -303,16 +329,42 @@ async function run(
     result.fatalErrors = errors.filter(isFatalError)
     result.passed = false
   } finally {
-    await context.close()
+    await page.close()
+    if (!opts.attachedContext) await context.close()
   }
   return result
 }
 
 async function main(): Promise<void> {
-  const browser = await chromium.launch()
+  const cdpUrl = process.env.JLZ_CDP_URL
+  const hardwareChrome = process.env.JLZ_HARDWARE_CHROME === '1'
+  if (cdpUrl && hardwareChrome) {
+    throw new Error('Set only one of JLZ_CDP_URL or JLZ_HARDWARE_CHROME=1')
+  }
+  const browser = cdpUrl
+    ? await chromium.connectOverCDP(cdpUrl, {
+        timeout: 120_000,
+        headers: { Origin: process.env.JLZ_CDP_ORIGIN ?? 'devtools://devtools' },
+      })
+    : await chromium.launch(
+        hardwareChrome
+          ? {
+              channel: 'chrome',
+              headless: false,
+              args: ['--enable-features=UseOzonePlatform', '--ozone-platform=wayland'],
+            }
+          : undefined,
+      )
+  const attachedContext = cdpUrl ? browser.contexts()[0] : undefined
+  if (cdpUrl && !attachedContext) throw new Error(`No browser context available at ${cdpUrl}`)
   const runs: RunResult[] = []
   runs.push(
-    await run(browser, { label: 'unified (auto backend)', path: '/', settledIdleRequired: true }),
+    await run(browser, {
+      label: 'unified (auto backend)',
+      path: '/',
+      settledIdleRequired: true,
+      attachedContext,
+    }),
   )
   runs.push(
     await run(browser, {
@@ -320,9 +372,10 @@ async function main(): Promise<void> {
       path: '/',
       reducedMotion: true,
       settledIdleRequired: true,
+      attachedContext,
     }),
   )
-  await browser.close()
+  if (!cdpUrl) await browser.close()
 
   const allPassed = runs.every((r) => r.passed)
   const report = {

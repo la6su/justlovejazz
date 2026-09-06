@@ -39,6 +39,12 @@ import {
 import { sceneHost } from './sceneHost'
 
 const noScene = new URLSearchParams(window.location.search).has('no-scene')
+// Dev-only physical recovery seam. It preserves the shipped single-renderer
+// topology (`WebGPURenderer` with its WebGLBackend), but lets the browser gate
+// exercise a real WebGL context loss on hardware even when Chrome exposes
+// native WebGPU. Vite folds this branch out of production builds.
+const forceWebGLBackendForTest =
+  import.meta.env.DEV && new URLSearchParams(window.location.search).has('force-webgl-backend')
 
 // Tres owns the canvas size manager and reapplies its `dpr` option after
 // renderer readiness. Keep that manager on the same initial cap as the
@@ -57,7 +63,7 @@ const camera = markRaw(new PerspectiveCamera(75, window.innerWidth / window.inne
 // the dev-forced classic `?renderer=webgl` QA owner was removed in Phase 10).
 const rendererFactory = (ctx: TresRendererSetupContext): UnifiedRenderSurface => {
   const canvas = toValue(ctx.canvas) ?? document.createElement('canvas')
-  const renderer = createUnifiedWebGPUInstance(canvas, false)
+  const renderer = createUnifiedWebGPUInstance(canvas, forceWebGLBackendForTest)
   // Tres may report an initialization error before `onReady`; retain the
   // created owner so that the error path can release it as well.
   createdRenderer = renderer
