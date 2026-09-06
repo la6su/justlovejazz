@@ -533,6 +533,10 @@ export class Experience {
       // stale entry-route promise could otherwise prewarm a newer stage.
       void this.ensureContactCyprusStageInitialized()
     }
+    // The /manifesto ink wash follows the same entry-route contract: the
+    // initial deep-link fires jlz:route-change before this subscription
+    // exists, so the entry route must ensure its own lazy stage here.
+    if (this.currentPage() === 'manifesto') void this.ensureManifestoInkStageInitialized()
     if (!this.isLifecycleCurrent(token)) return
     // Phase 8 slice 9: the Lab object's lazy creation moved out of
     // World.syncRouteVisuals() to this same boundary (created once on the first
