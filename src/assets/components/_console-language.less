@@ -887,34 +887,25 @@ body[data-cinematic-sheet] .jlz-console-bar {
 }
 
 // ── Canonical control banks ──
-// One tactile language for the lower navigation island and the top menu bank.
+// One tactile language for the lower navigation island and the top menu
+// bank. Square housings with a phosphor corner-tick bezel (the TUI frame),
+// keys composed from the shared bank mixins.
 .jlz-console-bar {
   right: max(1.15rem, calc(env(safe-area-inset-right) + 0.9rem));
   bottom: max(1.1rem, calc(env(safe-area-inset-bottom) + 0.9rem));
   left: auto;
+  display: grid;
   width: 15.2rem;
   height: 2.65rem;
   min-height: 0;
-  display: grid;
   grid-template-columns: 0.92fr 1.08fr;
   gap: 0.24rem;
   padding: 0.2rem;
-  background: var(--jlz-color-bg-elevated);
-  border: 1px solid color-mix(in srgb, var(--jlz-color-border-strong) 70%, transparent);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--jlz-color-text) 7%, transparent),
-    0 0.35rem 0.8rem color-mix(in srgb, #000 18%, transparent);
-  clip-path: polygon(
-    0.25rem 0,
-    100% 0,
-    100% calc(100% - 0.25rem),
-    calc(100% - 0.25rem) 100%,
-    0 100%,
-    0 0.25rem
-  );
+  .jlz-control-bank();
+  clip-path: none;
+  .jlz-tui-frame();
 }
 
-.jlz-console-bar::before,
 .jlz-console-bar__signal,
 .jlz-contact-launcher__button::before,
 .jlz-storyline__item::before {
@@ -942,24 +933,9 @@ body[data-cinematic-sheet] .jlz-console-bar {
 .jlz-contact-launcher__button,
 .jlz-storyline__item {
   position: relative;
-  box-sizing: border-box;
   height: 100%;
   min-height: 0;
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--jlz-color-border-strong) 54%, transparent);
-  border-radius: 0.14rem;
-  background: var(--jlz-color-surface);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--jlz-color-text) 12%, transparent),
-    inset 0 -1px 0 color-mix(in srgb, #000 24%, transparent),
-    0 1px 0 color-mix(in srgb, #000 18%, transparent);
-  transform: translateY(0);
-  transition:
-    color 140ms ease,
-    border-color 140ms ease,
-    background-color 140ms ease,
-    box-shadow 120ms ease,
-    transform 100ms ease;
+  .jlz-bank-key();
 }
 
 .jlz-contact-launcher__button {
@@ -979,12 +955,12 @@ body[data-cinematic-sheet] .jlz-console-bar {
 }
 
 .jlz-storyline__item {
+  display: grid;
   flex: 1 1 0;
   width: auto;
   min-width: 0;
-  display: grid;
-  place-items: center;
   padding: 0;
+  place-items: center;
   font-size: 0.56rem;
   letter-spacing: 0.08em;
 }
@@ -994,23 +970,19 @@ body[data-cinematic-sheet] .jlz-console-bar {
 .jlz-storyline__item:hover,
 .jlz-storyline__item:focus-visible,
 .jlz-storyline__item.is-active {
-  border-color: var(--jlz-color-signal-phosphor);
-  color: var(--jlz-color-signal-phosphor);
-  background: var(--jlz-color-surface);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--jlz-color-signal-phosphor) 24%, transparent),
-    inset 0 -1px 0 color-mix(in srgb, #000 24%, transparent),
-    0 1px 0 color-mix(in srgb, #000 18%, transparent);
+  .jlz-bank-key-active();
+}
+
+.jlz-contact-launcher__button:focus-visible,
+.jlz-storyline__item:focus-visible {
+  .jlz-focus-ring();
 }
 
 .jlz-contact-launcher__button:active,
 .jlz-contact-launcher__button[aria-expanded='true'],
 .jlz-storyline__item:active,
 .jlz-storyline__item.is-active {
-  transform: translateY(1px);
-  box-shadow:
-    inset 0 1px 2px color-mix(in srgb, #000 32%, transparent),
-    0 0 0 transparent;
+  .jlz-bank-key-pressed();
 }
 
 .jlz-contact-launcher__channel {
@@ -1041,38 +1013,24 @@ body[data-cinematic-sheet] .jlz-console-bar {
 .jlz-topbar-controls {
   gap: 0.24rem;
   padding: 0.2rem;
-  background: var(--jlz-color-bg-elevated);
-  border: 1px solid color-mix(in srgb, var(--jlz-color-border-strong) 70%, transparent);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--jlz-color-text) 7%, transparent),
-    0 0.35rem 0.8rem color-mix(in srgb, #000 18%, transparent);
-  clip-path: polygon(
-    0.25rem 0,
-    100% 0,
-    100% calc(100% - 0.25rem),
-    calc(100% - 0.25rem) 100%,
-    0 100%,
-    0 0.25rem
-  );
+  .jlz-control-bank();
+  clip-path: none;
+  .jlz-tui-frame();
+}
+
+// A live key lights the bank bezel: ticks go full phosphor.
+.jlz-topbar-controls:has(:hover),
+.jlz-topbar-controls:has(:focus-visible),
+.jlz-topbar-controls:has([aria-expanded='true']),
+.jlz-console-bar:has(:hover),
+.jlz-console-bar:has(:focus-visible) {
+  .jlz-tui-frame-active();
 }
 
 .jlz-topbar-controls .uk-icon-button,
 .jlz-topbar-controls .jlz-menu-launcher {
-  box-sizing: border-box;
   min-height: 2.2rem;
-  border: 1px solid color-mix(in srgb, var(--jlz-color-border-strong) 54%, transparent);
-  border-radius: 0.14rem;
-  background: var(--jlz-color-surface);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--jlz-color-text) 12%, transparent),
-    inset 0 -1px 0 color-mix(in srgb, #000 24%, transparent),
-    0 1px 0 color-mix(in srgb, #000 18%, transparent);
-  transition:
-    color 140ms ease,
-    border-color 140ms ease,
-    background-color 140ms ease,
-    box-shadow 120ms ease,
-    transform 100ms ease;
+  .jlz-bank-key();
 }
 
 .jlz-topbar-controls .uk-icon-button {
@@ -1091,22 +1049,18 @@ body[data-cinematic-sheet] .jlz-console-bar {
 .jlz-topbar-controls .jlz-menu-launcher:hover,
 .jlz-topbar-controls .jlz-menu-launcher:focus-visible,
 .is-menu-open .jlz-topbar-controls .jlz-menu-launcher {
-  border-color: var(--jlz-color-signal-phosphor);
-  color: var(--jlz-color-signal-phosphor);
-  background: var(--jlz-color-surface);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--jlz-color-signal-phosphor) 24%, transparent),
-    inset 0 -1px 0 color-mix(in srgb, #000 24%, transparent),
-    0 1px 0 color-mix(in srgb, #000 18%, transparent);
+  .jlz-bank-key-active();
+}
+
+.jlz-topbar-controls .uk-icon-button:focus-visible,
+.jlz-topbar-controls .jlz-menu-launcher:focus-visible {
+  .jlz-focus-ring();
 }
 
 .jlz-topbar-controls .uk-icon-button:active,
 .jlz-topbar-controls .jlz-menu-launcher:active,
 .is-menu-open .jlz-topbar-controls .jlz-menu-launcher {
-  transform: translateY(1px);
-  box-shadow:
-    inset 0 1px 2px color-mix(in srgb, #000 32%, transparent),
-    0 0 0 transparent;
+  .jlz-bank-key-pressed();
 }
 
 .jlz-topbar-controls .jlz-menu-launcher::before {
@@ -1116,6 +1070,131 @@ body[data-cinematic-sheet] .jlz-console-bar {
 .jlz-topbar-controls .jlz-lang-toggle {
   font: 600 0.58rem/1 var(--jlz-font-mono);
   letter-spacing: 0.08em;
+}
+
+// ── Screen-corner bezel: sheets read as terminal frames ──
+.jlz-menu-overlay {
+  .jlz-tui-frame(@len: 1.1rem);
+}
+
+[data-contact-footer] {
+  .jlz-tui-frame(@len: 1.1rem);
+}
+
+// ── Boot gate: the console failure state ──
+// Shared by the splash 3D gate (entry-app) and the shell fallback
+// (entry-shell). Mono readout, ember signal, square retry control.
+.jlz-boot-gate {
+  position: relative;
+  display: grid;
+  max-width: 22rem;
+  padding: 1.4rem 1.5rem 1.5rem;
+  gap: 0.55rem;
+  border: 1px solid var(--jlz-color-border-strong);
+  color: var(--jlz-color-text-muted);
+  background: color-mix(in srgb, var(--jlz-color-bg) 92%, #000);
+  font-family: var(--jlz-font-mono);
+  text-align: left;
+  .jlz-tui-frame(@color: color-mix(in srgb, var(--jlz-color-signal-ember) 62%, transparent));
+}
+
+.jlz-boot-gate__head {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  color: var(--jlz-color-status-danger);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.jlz-boot-gate__head::before {
+  width: 0.3rem;
+  height: 0.3rem;
+  background: currentColor;
+  content: '';
+}
+
+.jlz-boot-gate__text {
+  margin: 0;
+  color: var(--jlz-color-text-muted);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.jlz-boot-gate__code {
+  color: var(--jlz-color-text-subtle);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+}
+
+.jlz-boot-gate__action {
+  justify-self: start;
+  margin-top: 0.35rem;
+  padding: 0.55rem 1.1rem;
+  border: 1px solid var(--jlz-color-border-strong);
+  color: var(--jlz-color-text);
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--jlz-font-mono);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition:
+    color 140ms ease,
+    border-color 140ms ease,
+    background-color 140ms ease;
+}
+
+.jlz-boot-gate__action:hover,
+.jlz-boot-gate__action:focus-visible {
+  border-color: var(--jlz-color-signal-phosphor);
+  color: var(--jlz-color-signal-phosphor);
+  background: var(--jlz-color-signal-phosphor-muted);
+}
+
+.jlz-boot-gate__action:focus-visible {
+  .jlz-focus-ring();
+}
+
+// ── Terminal details ──
+// Menu grid scrolls like a terminal pane: hairline thumb, phosphor on hover.
+.jlz-menu-overlay .jlz-menu-grid {
+  scrollbar-width: thin;
+  scrollbar-color: var(--jlz-color-border-strong) transparent;
+}
+
+.jlz-menu-overlay .jlz-menu-grid::-webkit-scrollbar {
+  width: 4px;
+}
+
+.jlz-menu-overlay .jlz-menu-grid::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.jlz-menu-overlay .jlz-menu-grid::-webkit-scrollbar-thumb {
+  background: var(--jlz-color-border-strong);
+}
+
+.jlz-menu-overlay .jlz-menu-grid::-webkit-scrollbar-thumb:hover {
+  background: var(--jlz-color-signal-phosphor);
+}
+
+// The system readout speaks with a blinking block cursor.
+.jlz-topbar__mode {
+  .jlz-blink-cursor(0.55em);
+}
+
+.jlz-menu-preview__cursor {
+  animation: jlz-cursor-blink 1.1s steps(1) infinite;
+}
+
+// Hairline separators restore the console index rows in the menu field.
+.jlz-menu-overlay .jlz-menu-nav__item + .jlz-menu-nav__item {
+  border-top: 1px solid var(--jlz-color-border);
 }
 
 @media (max-width: 639px) {
@@ -1144,5 +1223,13 @@ body[data-cinematic-sheet] .jlz-console-bar {
     height: 2.1rem;
     min-height: 2.1rem;
     padding-inline: 0.58rem;
+  }
+}
+
+// Motion settles: the cursor holds steady under reduced motion.
+@media (prefers-reduced-motion: reduce) {
+  .jlz-topbar__mode::after,
+  .jlz-menu-preview__cursor {
+    animation: none;
   }
 }

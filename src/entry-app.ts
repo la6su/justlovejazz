@@ -105,15 +105,20 @@ function showLoadError(): void {
   const enterBtn = document.getElementById('jlz-splash-enter')
   const loader = document.getElementById('jlz-app-loader')
   if (!loader) return
-  // Replace the Enter button area with an error message
+  // Replace the Enter button area with the console boot gate (styles live in
+  // _console-language.less — the persistent chrome owner).
   if (enterBtn) {
     const parent = enterBtn.parentElement
     if (parent) {
       parent.innerHTML = `
-        <div style="text-align:center; color: var(--jlz-color-text-muted, rgba(255,255,255,0.7)); font-family:Commissioner,sans-serif; max-width: 320px;">
-          <p style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--jlz-color-status-danger, rgba(255,100,100,0.8)); margin:0 0 0.5rem;">3D Failed</p>
-          <p style="font-size:0.8rem; line-height:1.4; margin:0 0 1rem;">The 3D experience couldn't load. Your browser may not support WebGL2, or the GPU is unavailable.</p>
-          <a href="/" style="font-size:0.7rem; font-weight:600; text-transform:uppercase; color:var(--jlz-color-signal-cool, #6b78a3); text-decoration:none; border:1px solid color-mix(in srgb, var(--jlz-color-signal-cool, #6b78a3) 30%, transparent); padding:0.5rem 1rem; border-radius:999px;">Retry</a>
+        <div class="jlz-boot-gate" role="alert">
+          <p class="jlz-boot-gate__head">Signal lost</p>
+          <p class="jlz-boot-gate__text">
+            The 3D experience couldn't load. Your browser may not support
+            WebGL2, or the GPU is unavailable.
+          </p>
+          <span class="jlz-boot-gate__code">ERR:GPU — WEBGL2 ADAPTER NOT REACHABLE</span>
+          <a class="jlz-boot-gate__action" href="/">Retry</a>
         </div>
       `
     }
