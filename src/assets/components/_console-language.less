@@ -418,6 +418,7 @@ body[data-cinematic-sheet='menu'] .jlz-menu-field__pulse {
   box-sizing: border-box;
   width: auto;
   max-width: 100%;
+  gap: 1.5rem;
   margin-bottom: clamp(1rem, 3vh, 2.5rem) !important;
   padding-inline: 0.1rem;
   color: var(--jlz-color-text-subtle);
@@ -554,12 +555,13 @@ body[data-cinematic-sheet='menu'] .jlz-menu-preview {
 }
 
 // The prompt glyph: a phosphor '>' slides in on hover and stays while open.
+// The `/ ''` alt keeps the glyph out of the accessibility tree.
 .jlz-menu-overlay .jlz-menu-nav__toggle::before {
   position: absolute;
   top: 50%;
   left: 0;
   color: var(--jlz-color-signal-phosphor);
-  content: '>';
+  content: '>' / '';
   font-family: var(--jlz-font-mono);
   font-size: 0.85rem;
   font-weight: 600;
