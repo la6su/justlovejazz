@@ -7,6 +7,7 @@
 
 import * as THREE from 'three'
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js'
+import { prefersReducedMotion } from '../../core/motionPolicy'
 
 interface SectionPattern {
   dark: number
@@ -36,9 +37,11 @@ const PAVILION_THICKNESS = 6
  * boundary stable while the implementation supplies a rounded pavilion.
  */
 export class EnvSphere extends THREE.Group {
+  private _disposed = false
   private _sectionWeights: number[] = [0, 1, 0, 0, 0, 0]
   private _targetWeights: number[] = [0, 1, 0, 0, 0, 0]
   private _isLight = false
+  private _reducedMotion = prefersReducedMotion()
   private readonly _backMaterial: THREE.MeshBasicMaterial
   private readonly _leftMaterial: THREE.MeshBasicMaterial
   private readonly _rightMaterial: THREE.MeshBasicMaterial
@@ -138,23 +141,52 @@ export class EnvSphere extends THREE.Group {
   }
 
   changeSection(idx: number, isLight: boolean): void {
+    if (this._disposed) return
     if (idx < 0 || idx >= SECTION_PATTERNS.length) return
-    this._targetWeights = new Array(SECTION_PATTERNS.length).fill(0)
+    if (this._reducedMotion) {
+      this.snapToSection(idx, isLight)
+      return
+    }
+    this._targetWeights.fill(0)
     this._targetWeights[idx] = 1
     this._isLight = isLight
     this._dirty = true
   }
 
   snapToSection(idx: number, isLight: boolean): void {
+    if (this._disposed) return
     if (idx < 0 || idx >= SECTION_PATTERNS.length) return
-    this._sectionWeights = new Array(SECTION_PATTERNS.length).fill(0)
+    this._sectionWeights.fill(0)
     this._sectionWeights[idx] = 1
-    this._targetWeights = this._sectionWeights.slice()
+    for (let i = 0; i < this._sectionWeights.length; i++) {
+      this._targetWeights[i] = this._sectionWeights[i]!
+    }
     this._isLight = isLight
     this._applyColor(true)
   }
 
+  /** Settle an active palette crossfade synchronously on a live policy change. */
+  setReducedMotion(reduced: boolean): void {
+    if (this._disposed) return
+    this._reducedMotion = reduced
+    if (!reduced) return
+    for (let i = 0; i < this._targetWeights.length; i++) {
+      this._sectionWeights[i] = this._targetWeights[i]!
+    }
+    this._applyColor(true)
+  }
+
+  /** True while a normal-motion palette crossfade still needs frames. */
+  get isAnimating(): boolean {
+    if (this._disposed || this._reducedMotion) return false
+    for (let i = 0; i < this._targetWeights.length; i++) {
+      if (this._sectionWeights[i] !== this._targetWeights[i]) return true
+    }
+    return false
+  }
+
   update(dt: number): void {
+    if (this._disposed) return
     for (let i = 0; i < SECTION_PATTERNS.length; i++) {
       const diff = this._targetWeights[i]! - this._sectionWeights[i]!
       if (Math.abs(diff) > 0.001) {
@@ -227,6 +259,9 @@ export class EnvSphere extends THREE.Group {
   }
 
   dispose(): void {
+    if (this._disposed) return
+    this._disposed = true
+    this.removeFromParent()
     this._geometries.forEach((geometry) => geometry.dispose())
     this._backMaterial.dispose()
     this._leftMaterial.dispose()

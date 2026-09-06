@@ -2,6 +2,420 @@
 
 ## Unreleased
 
+- Reduced-motion settlement now covers Works `CasePlane` deformation and
+  `WorksPlaneStage` card reveals, preventing avoidable render-demand tails.
+- Story navigation now clears decorative CSS parallax shifts on live
+  reduced-motion changes without altering semantic section state.
+- Route-transition teardown now removes its temporary overlay and timers on
+  router errors, closing a short-lived DOM-owner leak.
+- Image-only FullscreenOverlay preloads no longer reinitialize a source-less
+  video element, avoiding redundant media events and work.
+- UIMenu now refreshes the UIkit sound icon after external sound-toggle events,
+  keeping the visible control aligned with persisted mute state.
+- SFX teardown is now terminal, preventing late UI events from recreating an
+  unowned Web Audio context after `Experience` disposal.
+- BlurFade now restores authored text and accessibility state on hide instead
+  of retaining per-character animation spans in hidden route content.
+- NoiseText no longer clears authored content when hidden before its first
+  reveal; active finalization behavior is unchanged.
+- ThemeManager now skips redundant same-mode persistence and theme-change
+  events, avoiding unnecessary DOM and scene re-synchronization.
+- RenderScheduler now stops after a host frame exception so a failed owner
+  cannot strand the renderer loop; explicit recovery invalidation can retry.
+- SceneCoordinator now invalidates derived route caches on reinitialization,
+  preventing stale page-specific config lookups after route reuse.
+- Renderer terminal device-loss paths now publish `jlz:webgl-failed`, allowing
+  bootstrap/UI failure state to follow the actual renderer lifecycle.
+- Cursor click bump now wakes the settled render scheduler, preventing a frozen
+  cursor after idle.
+- FullscreenOverlay teardown now cancels hidden/preloaded title reveals so
+  detached overlay DOM is not retained by BlurFade.
+- BakuCarousel pointer and control input now wakes the shared demand scheduler,
+  preserving touch-drag feedback when no mousemove event is available.
+- Works visual-plane taps now use the stage's unified open path, restoring its
+  wobble pulse and scheduler wake contract.
+- DrawTrail now reuses camera-basis scratch vectors, removing three per-frame
+  allocations from the ribbon rebuild path.
+- WorksPlaneStage now reuses its scaled viewport layout scratch object instead
+  of allocating one per visible card on every frame.
+- SceneCoordinator now pools its per-frame transform result and nested metadata,
+  removing a recurring object graph allocation from scroll/render updates.
+- Experience now pools its per-frame `RenderActivity` snapshot, removing a
+  recurring allocation from demand/settle evaluation.
+- Renderer now pools the real-WebGPU `PostParams` wrapper passed to the TSL
+  pipeline on each frame.
+- EnvSphere now reuses section transition weight arrays instead of allocating
+  replacement arrays on every palette change.
+
+- Renderer device-loss fallback now clears the retired software-adapter
+  replacement before forced-WebGL recreation; a failed second initialization
+  no longer double-disposes the first replacement.
+
+- A failed native-WebGPU TSL post graph now transitions its `RenderPipeline`
+  to a direct-render fallback instead of retrying graph construction on every
+  demand frame and preventing the scheduler from settling.
+
+- The WebGPU post owner now retains and disposes the TSL scene `PassNode` on
+  rebuild, graph-construction failure and teardown, releasing its render target
+  instead of leaving a detached GPU allocation behind.
+
+- A failed `Experience` frame now clears pending demand and settles the current
+  render-loop window, preventing an exception from creating an infinite retry
+  loop while preserving a later diagnostic or recovery invalidation.
+
+- Exhausting device-loss recovery now fails closed like other terminal recovery
+  errors: the current animation loop is detached before the failure overlay is
+  shown.
+
+- `EnvSphere` and `SplashCube` now remove themselves from the Tres-owned scene
+  before disposing their GPU resources, closing the direct-owner teardown gap.
+
+- Low-tier native WebGPU now honors the disabled post-processing policy by
+  skipping TSL graph construction and rendering the scene directly.
+
+- Tres renderer teardown is now idempotent across manager unmount, SceneHost
+  cleanup, recovery replacement and failed initialization paths.
+- Cinematic section lights now settle synchronously under reduced motion,
+  avoiding intermediate lerp work and stale render demand.
+- EnvSphere palette crossfades now settle synchronously when reduced motion is
+  enabled while a section transition is already active.
+- SplashCube face, jelly and opener reactions now settle synchronously on a
+  live reduced-motion change.
+- ContactCyprusStage fade and scale transitions now settle synchronously on a
+  live reduced-motion change.
+- Camera now preserves section FOV framing while cancelling transient pulse,
+  shake and cursor displacement on a live reduced-motion change.
+
+- `Experience` now observes live `prefers-reduced-motion` changes instead of
+  caching the preference only at startup. Enabling reduction cancels ambient
+  breathing and settles the scheduler; disabling it raises one typed catch-up
+  demand. The listener is removed during teardown.
+
+- `SplashCube` now snaps to the requested face when reduced motion is enabled;
+  section changes no longer leave a skipped cube animation active forever or
+  retain the demand-driven render loop.
+
+- Contact typography now receives live reduced-motion changes while mounted;
+  glyphs settle immediately when reduction is enabled and resume authored
+  motion after it is disabled without a route re-entry.
+
+- Removed an unowned idle sine rotation from `SplashCube`; demand frames no
+  longer advance a decorative transform that was absent from the activity
+  contract and could jump after settled idle. Jelly, face and opener reactions
+  retain their authored motion.
+
+- `EnvSphere` now snaps to the target section palette under reduced motion;
+  ambient background colors cannot remain stranded at an intermediate lerp
+  value after the scheduler settles.
+
+- SceneHost now follows device-loss renderer replacements through the typed
+  bridge; Vue teardown disposes the recovered live renderer rather than only
+  the initial instance.
+
+- Contact Cyprus lazy initialization now has a single request-owned prewarm
+  continuation; stale entry-route promises cannot prewarm a newer stage or
+  schedule an unnecessary render frame.
+
+- Builder card CSS now has one real UIkit owner in the application baseline;
+  generated page deltas omit the duplicate import and parity-test the artifact.
+
+- Camera smoothing now has one shared `WorldConfig` fallback; per-section
+  authored overrides remain unchanged and `Experience` no longer duplicates the
+  transition default.
+
+- Renderer terminal recovery failure now rejects later animation-loop
+  reattachment, and the WebGLBackend fallback restores the shared scene fog
+  after direct draws, including thrown draws.
+
+- WebGLBackend quality state now matches its direct-render implementation:
+  unused TSL post crossfade and parameter writes are skipped, while native
+  WebGPU keeps the existing post path.
+
+- WebGPU TSL post-graph construction now restores the renderer tone mapping
+  even when graph creation throws.
+
+- Contact section activation now validates the Cyprus request generation after
+  lazy initialization, preventing a stale route callback from activating a
+  newer stage or raising redundant render demand.
+
+- ContactCyprusStage now rejects a pending Draco/GLTF result after disposal and
+  releases the late model without attaching it or creating detached materials.
+
+- Idle `SceneCoordinator` updates no longer advance Works/Contact animation
+  clocks without rendering, preventing invisible-time reveal jumps under the
+  demand-driven scheduler.
+
+- `BakuCarousel` now releases only successfully acquired shared texture refs
+  when one texture load fails, preventing partial initialization from
+  over-releasing a URL still owned by another scene owner.
+
+- `BakuCarousel` momentum damping is now elapsed-time based, keeping post-drag
+  travel consistent across 60/90/120 Hz displays.
+
+- Removed the obsolete `/works` back-text render-demand flag after its pixel
+  text owner was deleted; settled Works now returns to the demand-driven idle
+  loop instead of rendering continuously.
+
+- `ContactTypographyStage` now rejects post-dispose activation, theme and
+  update calls, making lazy route teardown safe against late callbacks and
+  repeated disposal.
+
+- `SceneHost` now disposes its resolved live renderer on Vue unmount, closing
+  the construction owner's GPU resource path in addition to late fallback
+  cleanup.
+
+- `WireframeTypography` disposal is now terminal and idempotent; late route
+  callbacks cannot reactivate disposed glyph meshes or retain their registry.
+
+- Renderer recovery now fails closed when replacement creation fails: the old
+  animation loop is cleared, failure is surfaced, and disposed-renderer calls
+  are blocked.
+
+- `WorksPortfolio.goTo()` now rejects non-finite indices, preventing malformed
+  overlay events from corrupting carousel navigation state.
+
+- `FullscreenOverlay` now owns one autoplay timer across duplicate show/shown
+  callbacks and media replacement, preventing stale video-play callbacks from
+  surviving modal teardown or changing the active media mode.
+
+- Camera shake and organic motion now use the actual high-refresh frame delta
+  instead of a 120 Hz minimum, preserving wall-clock pacing on 144/240 Hz.
+
+- BakuCarousel momentum now scales displacement as well as damping by elapsed
+  time, keeping fling travel consistent across refresh rates.
+
+- Late case-texture releases now verify the acquired texture identity, avoiding
+  cross-generation refcount corruption during HMR or root teardown races.
+
+- Device-loss recovery now drops stale rejection side effects after teardown,
+  preventing unsupported-state DOM mutation from a disposed renderer owner.
+
+- TSL post-processing now restores the previous renderer tone-mapping mode even
+  when a WebGPU render throws.
+
+- Post-processing display parameters are now exposed read-only, preventing
+  accidental crossfade-state mutation without adding a per-frame copy.
+
+- Typed EventBus dispatch now snapshots subscribers, preserving the current
+  event's listener set when route teardown mutates registrations mid-flight.
+
+- Hidden Contact particle groups no longer report render activity or receive
+  drift updates, allowing the quiet Agros section to settle without continuous
+  GPU draws or needless CPU work.
+
+- Route-owned Works and Contact stages now release camera references, active
+  state and child graphs during teardown, reducing stale-owner retention.
+
+- Carousel and Works texture cleanup now passes acquired texture identities in
+  teardown and load-failure paths, protecting replacement cache generations.
+
+- LabGamepad teardown now clears its disposed mesh graph, avoiding stale route
+  owners retaining the released geometry/material tree.
+
+- DrawTrail teardown now clears its disposed ribbon and activity state, avoiding
+  stale persistent owners retaining the released cursor mesh.
+
+- Published builder styles no longer import UIkit `card.less` twice; the
+  application baseline remains the single owner of that component CSS.
+
+- `useJlzPage` now disposes the module-level `WorkCards` registry during route
+  owner teardown as well as before route replacement, releasing delegated grid
+  listeners and pending card timers on full unmount.
+
+- `BakuCarousel.dispose()` now releases its camera and card callback, clears
+  input/timer handler references, and resets interaction/morph state after
+  texture and card disposal.
+
+- `ContentReveal.destroy()` now restores the pre-existing `uk-light` state on
+  `html` and `body`, preventing a disposed runtime from leaking its global
+  theme into a retry or HMR instance.
+
+- `Renderer.init()` now rejects and disposes late unified WebGPU candidates when
+  teardown wins the async race, preventing post-dispose pipeline and recovery
+  owners from being recreated.
+
+- `SceneHost` now invalidates asynchronous fallback renderer swaps on Vue
+  unmount and disposes a late candidate instead of resolving a removed Tres
+  root.
+
+- `WorksPlaneStage` now cancels stale texture-to-card setup after disposal,
+  releasing pending texture references without creating detached GPU/TSL card
+  resources during rapid route changes.
+
+- Disposed `WorksPlaneStage` instances now reject re-initialization before
+  starting texture loads, avoiding redundant route-local network and decode
+  work.
+
+- `CinematicNav` now retains and removes its generated button handlers during
+  teardown, preventing retained navigation DOM from invoking a disposed
+  controller.
+
+- Bootstrap teardown now tolerates renderer/world failure before all
+  `Experience` owners exist; optional UI/coordinator/StateBus cleanup no longer
+  masks the original error with a secondary exception.
+
+- Open `FullscreenOverlay` instances now execute idempotent hide cleanup before
+  UIkit destruction, preventing stale body-scroll/focus state and ensuring the
+  per-open close callback fires once during runtime teardown.
+
+- `Experience` now invalidates an async lifecycle generation at teardown and
+  checks it after renderer/world/prewarm awaits, preventing late scene-owner
+  creation or readiness work after a runtime has been destroyed.
+
+- The shared `Input` singleton now reattaches its mouse listener at
+  `Experience.init()`, so explicit teardown/HMR followed by a new Experience
+  does not leave Camera and DrawTrail permanently frozen.
+
+- `ExperienceUI.destroy()` now disposes `WorksPortfolio` before releasing it;
+  the portfolio clears project/callback references and makes post-teardown
+  navigation a no-op.
+
+- `Experience.destroy()` now drains active `NoiseText` and `BlurFade` animation
+  owners, cancelling their RAF and safety timers before scene/UI teardown.
+  Connected route DOM is restored to its authored final state without retaining
+  background animation work.
+
+- Route transition cancellation now clears and settles the owned 260 ms cover
+  timer, preventing stale navigation promises and queued work from surviving
+  a failed or superseded route.
+
+- Bootstrap retry cleanup now replaces the injected Less style instead of
+  accumulating duplicate `<style>` nodes, and `ErrorTracker` can remove its
+  window listeners so HMR/retry does not retain stale module closures.
+
+- The delayed `jlz:webgl-ready` handoff is now an owned, generation-guarded
+  timer and is cancelled on bootstrap reset/failure, including the
+  reduced-motion zero-delay path.
+
+- The single renderer-loop scheduler now rejects late callbacks after
+  `destroy()` or settled-stop, closing the post-dispose path to freed scene,
+  DOM and GPU resources.
+
+- Bootstrap failures now clean up attempt-local `Experience` and `UIManager`
+  owners, and Vue mount rejection explicitly rejects the one-shot SceneHost
+  bridge. Retry is limited to the pre-SceneHost boundary; post-bridge failures
+  remain terminal so a disposed renderer cannot be recreated over the same
+  canvas.
+
+- In-app hash navigation now cancels its superseded RAF at the router owner;
+  rapid route changes do not leave stale section-dispatch callbacks to wake on
+  the next frame.
+
+- Route-menu lifecycle now owns and cancels pending two-frame visibility
+  reconciliation and app-owned listeners before Vue removes the route root;
+  detached menu DOM no longer leaves avoidable frame work behind.
+
+- Application bootstrap now has a single-flight start gate. Concurrent
+  `startApp()` calls cannot create duplicate Vue/scene owners, and failed
+  attempts reset cleanly for retry after their listeners, timers and observers
+  are released.
+
+- Hardened async lifecycle ownership across renderer recovery, route/carousel
+  wakes, UIkit hydration, overlay/content/submenu reveals and detached
+  `NoiseText`/`BlurFade` animations; lazy portfolio initialization is now
+  cancelled on UI teardown, and stale hash navigation callbacks are
+  invalidated by the next route transition. Contact's lazy Cyprus load now
+  contains failures after cleanup instead of producing unhandled rejections.
+  The lazy Lab experiment owner follows the same handled-failure and retry
+  policy. Final Experience teardown now routes Contact Cyprus cleanup through
+  its invalidating owner method, so late Draco results cannot re-enter a
+  disposed scene. The Works stage now follows the same invalidating owner
+  boundary during final Experience teardown.
+  Contact Typography initialization now has the same contained-failure and
+  retryable owner policy. Environment PMREM staging now releases temporary
+  CanvasTexture and generator resources on both success and failure.
+  Contact Cyprus GLTF/material preparation now rolls back partially processed
+  scenes before propagating a load failure. BakuCarousel card staging now
+  rolls back partial CasePlane construction and releases shared texture refs
+  when material setup fails. The lazy WorksPlaneStage now applies the same
+  transactional card staging and refcount rollback.
+  The shared case-texture cache now isolates new consumers from in-flight
+  entries already claimed by global teardown.
+  First-frame readiness now owns and clears its bounded fallback timer; final
+  Experience teardown cancels that gate without publishing readiness from a
+  destroyed instance.
+  Camera home-route tuning now reads the typed route-page port instead of the
+  body dataset, closing the remaining scene-owner route-state projection.
+  Route-root teardown now cancels the deferred route-announcer RAF, preventing
+  stale title writes after a fast navigation.
+  ExperienceUI portfolio loading now uses a single-flight owner promise and
+  contains import failures so concurrent entry points cannot duplicate UI or
+  leak an unhandled rejection.
+  Failed home-carousel initialization now clears its cached promise, allowing
+  a later route wake to retry while successful initialization stays idempotent.
+  ExperienceUI teardown now cancels the deferred portfolio readiness RAF and
+  resolves its owner wait without creating late UI resources.
+  CinematicNav route rebinding now cancels pending scroll and focus RAFs before
+  attaching the next route track, preventing stale callbacks on new DOM.
+  ExperienceUI now consumes the existing static Projects dependency; the
+  ineffective dynamic import was removed from the build graph.
+  Contact's lazy typography stage now keeps `TextGeometry` in a dedicated
+  route-local chunk, and the build-budget check measures only the shared
+  Three.js vendor asset.
+  UIMenu now owns one delegated click listener and removes it explicitly on
+  teardown, reducing the persistent shell's listener surface.
+  FullscreenOverlay now scopes its media, control and poster listeners under
+  one abortable owner, so teardown cannot leave detached callbacks behind.
+  The entry bootstrap now cancels its 60-second readiness watchdog on ready,
+  failure or retry instead of retaining an unnecessary timer after startup.
+  WorkCards now delegates activation to one listener per grid while retaining
+  per-card debounce state and deterministic disposal.
+  Secondary route views now load through explicit route-level chunks, keeping
+  non-landing semantic pages out of the startup app graph; `app` measured
+  3.37 kB gzip versus 10.00 kB before the split.
+  A scoped `three` compatibility entry now routes bare imports through
+  `three/webgpu` while preserving TresJS's unreachable `WebGLRenderer` symbol;
+  shared Three delivery fell to 298.43 kB gzip and the delivery budget passes.
+  FullscreenOverlay now cancels first-frame poster reveal callbacks during
+  media replacement, modal hide and disposal instead of relying only on a
+  generation guard.
+  Persistent UIMenu now owns its scoped UIkit hydration; the bootstrap no
+  longer schedules a duplicate global idle update over `#spa-content`, and
+  `entry-app` measures 6.99 kB gzip versus 7.30 kB before the change.
+  ContentReveal now scopes section activation and UIkit refresh to the active
+  route root, preventing unrelated document sections from being traversed or
+  deactivated during route transitions.
+  Experience's section eyebrow and initial activation lookups now use the same
+  route-root boundary, keeping scene/UI synchronization out of persistent DOM.
+  Bootstrap section/page-section signals and title observers now use that same
+  route root, while splash and persistent-shell controls remain global by
+  ownership.
+  WorkCards now discovers cards and delegated grid owners inside that route
+  root, preventing detached or persistent-shell grids from receiving route
+  listeners or roving-tabindex state.
+  Menu template bindings now resolve the active nav, preview elements and
+  same-page hash targets inside that route root as well.
+  Fullscreen project Prev/Next now raises the shared `nav` demand after
+  changing the carousel target, preventing a settled renderer from waiting for
+  unrelated input before advancing the 3D selection.
+  BakuCarousel now preserves CasePlane's idle guard for hidden cards, avoiding
+  unnecessary per-frame cloth-uniform advancement while retaining visible and
+  in-flight card animation.
+  CinematicNav hash resolution now searches the active route track, preventing
+  detached duplicate IDs from intercepting story navigation.
+  The delayed splash title reveal now has an explicit cancellable owner;
+  repeated Enter events coalesce and retry/failure paths cannot animate stale
+  route DOM.
+  RouteTransition now exposes a cancellation path wired to Vue Router errors,
+  returning a covering overlay to idle when a lazy route rejects.
+  Deferred direct-entry section hashes now use a cancellable generation gate,
+  so a later route or failed boot cannot dispatch stale navigation after
+  `jlz:webgl-ready`.
+  BlurFade now creates its character spans through DOM APIs, keeping translated
+  or editorial markup inert and avoiding an innerHTML parse per animation.
+  RouteTransition now clears the pending reveal timer on cancellation or
+  replacement, removing stale delayed work rather than only ignoring it.
+- Scoped bootstrap UIkit refresh to `#spa-content`, removing the remaining
+  document-wide traversal from the application shell.
+- Established the staged Vue 3, Vue Router and TresJS migration architecture,
+  including a representative WebGPU/WebGLBackend gate, persistent scene root,
+  demand-render scheduler, explicit GPU resource ownership and rollback points.
+- Added architecture decisions and an internal collaboration protocol for
+  bounded delegated work without sharing integration authority or secrets.
+- Defined migration budgets for framework delivery, idle rendering, route
+  resource soaks, dependency admission and removal of superseded production
+  paths.
+
 - Moved the pixel-rasterised route title from `/works` to the lazy `/contact`
   scene. The standalone Works route now presents case planes without the Baku
   cube or a competing text layer; Contact owns the title's reveal, language and
@@ -48,9 +462,9 @@
 - Project case studies now open as full-screen still-image overlays; video is
   reserved for the explicit Showreel action.
 
-This is a concise release-level record. Implementation decisions belong in
-[`WORKLOG.md`](../WORKLOG.md); completed plans remain available through Git
-history.
+This is a concise release-level record. Architecture decisions belong in
+[`adr/`](adr/), active outcomes in [`NEXT.md`](../NEXT.md), and completed plans
+remain available through Git history.
 
 ## 2026-07-25 — Revert to flat plane (junni approach) — text now visible (PR #181)
 

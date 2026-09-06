@@ -97,6 +97,7 @@ const SECTION_PRESETS: Record<string, SectionLightPreset> = {
 const DEFAULT_PRESET = SECTION_PRESETS['sec_about']!
 
 export class CinematicLights {
+  private _disposed = false
   private keyLight: THREE.DirectionalLight
   private fillLight: THREE.DirectionalLight
   private rimLight: THREE.DirectionalLight
@@ -114,6 +115,9 @@ export class CinematicLights {
   private _targetRimIntensity = 1.2
   private _targetVolumetricIntensity = 0.6
   private _targetHemiIntensity = 0.3
+  private _reducedMotionSettled = false
+  private _reducedMotion = prefersReducedMotion()
+  private _transitionActive = false
 
   // Speed multiplier for lerp — higher = faster transition (junni: ~0.5s)
   private static readonly LERP_SPEED = 3.0
@@ -163,8 +167,27 @@ export class CinematicLights {
    * Called by World.changeSection() / updateTransform() on index change.
    */
   public changeSection(config: PhaseConfig): void {
+    if (this._disposed) return
     const preset = SECTION_PRESETS[config.id] ?? DEFAULT_PRESET
     this._applyPresetToTargets(preset)
+    if (this._reducedMotion) {
+      this._snapToTargets()
+      this._reducedMotionSettled = true
+      this._transitionActive = false
+    } else {
+      this._transitionActive = true
+    }
+  }
+
+  /** Reconcile a live preference change without waiting for another frame. */
+  public setReducedMotion(reduced: boolean): void {
+    if (this._disposed) return
+    this._reducedMotion = reduced
+    this._reducedMotionSettled = reduced
+    if (reduced) {
+      this._snapToTargets()
+      this._transitionActive = false
+    }
   }
 
   /**
@@ -172,27 +195,43 @@ export class CinematicLights {
    * Uses framerate-independent exponential decay (~0.5s transition).
    */
   public update(dt: number): void {
-    const t = Math.min(dt * CinematicLights.LERP_SPEED, 1)
+    if (this._disposed) return
+    if (this._reducedMotion) {
+      if (!this._reducedMotionSettled) {
+        this._snapToTargets()
+        this._reducedMotionSettled = true
+      }
+      return
+    }
+    this._reducedMotionSettled = false
+    if (this._transitionActive) {
+      const t = Math.min(dt * CinematicLights.LERP_SPEED, 1)
 
-    // Colors
-    this.keyLight.color.lerp(this._targetKeyColor, t)
-    this.fillLight.color.lerp(this._targetFillColor, t)
-    this.rimLight.color.lerp(this._targetRimColor, t)
+      // Colors
+      this.keyLight.color.lerp(this._targetKeyColor, t)
+      this.fillLight.color.lerp(this._targetFillColor, t)
+      this.rimLight.color.lerp(this._targetRimColor, t)
 
-    // Intensities
-    this.keyLight.intensity += (this._targetKeyIntensity - this.keyLight.intensity) * t
-    this.fillLight.intensity += (this._targetFillIntensity - this.fillLight.intensity) * t
-    this.rimLight.intensity += (this._targetRimIntensity - this.rimLight.intensity) * t
-    this.volumetricLight.intensity +=
-      (this._targetVolumetricIntensity - this.volumetricLight.intensity) * t
-    this.hemiLight.intensity += (this._targetHemiIntensity - this.hemiLight.intensity) * t
+      // Intensities
+      this.keyLight.intensity += (this._targetKeyIntensity - this.keyLight.intensity) * t
+      this.fillLight.intensity += (this._targetFillIntensity - this.fillLight.intensity) * t
+      this.rimLight.intensity += (this._targetRimIntensity - this.rimLight.intensity) * t
+      this.volumetricLight.intensity +=
+        (this._targetVolumetricIntensity - this.volumetricLight.intensity) * t
+      this.hemiLight.intensity += (this._targetHemiIntensity - this.hemiLight.intensity) * t
 
-    // Key light position (lerp toward target — no alloc, uses lerp in-place)
-    this.keyLight.position.lerp(this._targetKeyPos, t)
+      // Key light position (lerp toward target — no alloc, uses lerp in-place)
+      this.keyLight.position.lerp(this._targetKeyPos, t)
+
+      if (this.isAtTargets()) {
+        this._snapToTargets()
+        this._transitionActive = false
+      }
+    }
 
     // Volumetric light: slow orbit for organic atmosphere
     // (frozen when prefers-reduced-motion — continuous orbit is a vestibular hazard)
-    if (!prefersReducedMotion()) {
+    if (!this._reducedMotion) {
       const time = performance.now() * 0.0004
       this.volumetricLight.position.x = Math.sin(time) * 2.5
       this.volumetricLight.position.z = Math.cos(time) * 2.5
@@ -200,10 +239,13 @@ export class CinematicLights {
   }
 
   public dispose(): void {
+    if (this._disposed) return
+    this._disposed = true
     this.group.traverse((obj) => {
       if (obj instanceof THREE.Light) obj.dispose()
     })
     this.group.parent?.remove(this.group)
+    this.group.clear()
   }
 
   // ── Private ──────────────────────────────────────────────────────────────
@@ -236,5 +278,25 @@ export class CinematicLights {
     this.rimLight.intensity = this._targetRimIntensity
     this.volumetricLight.intensity = this._targetVolumetricIntensity
     this.hemiLight.intensity = this._targetHemiIntensity
+  }
+
+  private isAtTargets(): boolean {
+    return (
+      Math.abs(this.keyLight.color.r - this._targetKeyColor.r) < 0.001 &&
+      Math.abs(this.keyLight.color.g - this._targetKeyColor.g) < 0.001 &&
+      Math.abs(this.keyLight.color.b - this._targetKeyColor.b) < 0.001 &&
+      Math.abs(this.fillLight.color.r - this._targetFillColor.r) < 0.001 &&
+      Math.abs(this.fillLight.color.g - this._targetFillColor.g) < 0.001 &&
+      Math.abs(this.fillLight.color.b - this._targetFillColor.b) < 0.001 &&
+      Math.abs(this.rimLight.color.r - this._targetRimColor.r) < 0.001 &&
+      Math.abs(this.rimLight.color.g - this._targetRimColor.g) < 0.001 &&
+      Math.abs(this.rimLight.color.b - this._targetRimColor.b) < 0.001 &&
+      Math.abs(this.keyLight.intensity - this._targetKeyIntensity) < 0.001 &&
+      Math.abs(this.fillLight.intensity - this._targetFillIntensity) < 0.001 &&
+      Math.abs(this.rimLight.intensity - this._targetRimIntensity) < 0.001 &&
+      Math.abs(this.volumetricLight.intensity - this._targetVolumetricIntensity) < 0.001 &&
+      Math.abs(this.hemiLight.intensity - this._targetHemiIntensity) < 0.001 &&
+      this.keyLight.position.distanceToSquared(this._targetKeyPos) < 0.000001
+    )
   }
 }

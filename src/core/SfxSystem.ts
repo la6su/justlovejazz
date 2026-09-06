@@ -18,6 +18,7 @@ export class SfxSystem {
   private master: GainNode | null = null
   private _muted = false
   private _started = false
+  private _disposed = false
 
   /** Mute/unmute master gain. When muted, play() is a silent no-op. */
   setMuted(muted: boolean): void {
@@ -33,7 +34,7 @@ export class SfxSystem {
 
   /** Play a named SFX. Lazy-inits AudioContext on first call (user gesture). */
   play(name: SfxName): void {
-    if (this._muted) return
+    if (this._muted || this._disposed) return
     if (!this._started) this.init()
     if (!this.ctx || !this.master) return
     // D-4 fix: resume AudioContext if suspended. Browsers suspend AudioContext
@@ -64,7 +65,7 @@ export class SfxSystem {
 
   /** Initialize AudioContext + master gain. Safe to call multiple times. */
   private init(): void {
-    if (this._started) return
+    if (this._started || this._disposed) return
     try {
       const Ctx =
         window.AudioContext ||
@@ -131,6 +132,7 @@ export class SfxSystem {
   }
 
   dispose(): void {
+    this._disposed = true
     this.ctx?.close()
     this.ctx = null
     this.master = null

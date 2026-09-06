@@ -29,8 +29,12 @@ function lerp(a: number, b: number, n: number): number {
 // Phase 2: canvas 100→120 for larger cursor (baseRadius 28 + targetRadius 44)
 const CANVAS_SIZE = 120
 const CANVAS_HALF = CANVAS_SIZE / 2
+const SMOOTH_SEGMENTS = 16
+
+type CursorThemeColors = { accent: string; accentGlow: string; teal: string }
 
 export class Cursor {
+  private _disposed = false
   private innerEl: HTMLElement
   private canvas: HTMLCanvasElement
   private ctx: CanvasRenderingContext2D | null
@@ -44,29 +48,40 @@ export class Cursor {
 
   // Cached theme colors — read once from CSS variables, refreshed on theme change.
   // Avoids 4× getComputedStyle per redraw (was a per-frame allocation hotspot).
-  private _cachedAccent = '#b8ed69'
-  private _cachedAccentGlow = 'rgba(184,237,105,0.22)'
-  private _cachedTeal = '#45d7bc'
+  private _cachedAccent = '#ffd60a'
+  private _cachedAccentGlow = 'rgba(255, 214, 10, 0.35)'
+  private _cachedTeal = '#5eb0ff'
+  private readonly _themeColors: CursorThemeColors = {
+    accent: this._cachedAccent,
+    accentGlow: this._cachedAccentGlow,
+    teal: this._cachedTeal,
+  }
   private _cacheDirty = true
+  // A theme change can leave the cursor's geometry completely settled while
+  // its palette has changed. Consume this one-shot redraw request in the same
+  // gate as motion so a settled loop gets exactly one fresh canvas paint.
+  private _forceRedraw = false
+  private readonly _ringPoints = Array.from({ length: SMOOTH_SEGMENTS }, () => ({ x: 0, y: 0 }))
 
   /** Refresh cached theme colors from CSS variables. Call on theme change. */
   refreshThemeCache(): void {
+    if (this._disposed) return
     const styles = getComputedStyle(document.documentElement)
-    this._cachedAccent = styles.getPropertyValue('--jlz-color-accent').trim() || '#b8ed69'
+    this._cachedAccent = styles.getPropertyValue('--jlz-color-accent').trim() || '#ffd60a'
     this._cachedAccentGlow =
-      styles.getPropertyValue('--jlz-color-accent-glow').trim() || 'rgba(184,237,105,0.22)'
-    this._cachedTeal = styles.getPropertyValue('--jlz-color-signal-teal').trim() || '#45d7bc'
+      styles.getPropertyValue('--jlz-color-accent-glow').trim() || 'rgba(255, 214, 10, 0.35)'
+    this._cachedTeal = styles.getPropertyValue('--jlz-color-signal-teal').trim() || '#5eb0ff'
+    this._themeColors.accent = this._cachedAccent
+    this._themeColors.accentGlow = this._cachedAccentGlow
+    this._themeColors.teal = this._cachedTeal
     this._cacheDirty = false
+    this._forceRedraw = true
   }
 
   /** Get cached colors, refreshing if dirty. */
-  private _getThemeColors(): { accent: string; accentGlow: string; teal: string } {
+  private _getThemeColors(): CursorThemeColors {
     if (this._cacheDirty) this.refreshThemeCache()
-    return {
-      accent: this._cachedAccent,
-      accentGlow: this._cachedAccentGlow,
-      teal: this._cachedTeal,
-    }
+    return this._themeColors
   }
 
   // Phase 2: spring physics for wobble (skaltenegger-style, smoothed)
@@ -118,6 +133,35 @@ export class Cursor {
   private fillProgress = 0
   private fillTarget = 0
 
+  /**
+   * Loop-wake port (Phase 7). The single renderer-loop driver runs frames
+   * only while the scene or the cursor is unsettled; the cursor's own
+   * pointer/hover/click handlers report activity through this callback so a
+   * pointer move can wake a settled loop. Wired by the Experience bootstrap.
+   */
+  onActivity: (() => void) | null = null
+
+  /**
+   * True when the spring + radius/bump/fill lerps have converged on their
+   * goals (nothing needs another frame for the cursor). Read by the Phase 7
+   * scheduler's settle decision after each frame.
+   */
+  get isSettled(): boolean {
+    if (this._disposed) return true
+    const goalX = this.isStuck ? this.stuckX : this.targetX
+    const goalY = this.isStuck ? this.stuckY : this.targetY
+    const targetR = this.isStuck ? this.targetRadius : this.baseRadius
+    return (
+      Math.abs(this.velX) < 0.01 &&
+      Math.abs(this.velY) < 0.01 &&
+      Math.abs(this.posX - goalX) < 0.5 &&
+      Math.abs(this.posY - goalY) < 0.5 &&
+      Math.abs(this.currentRadius - targetR) < 0.05 &&
+      Math.abs(this.bumpScale - this.bumpTarget) < 0.005 &&
+      Math.abs(this.fillProgress - this.fillTarget) < 0.005
+    )
+  }
+
   private readonly mousemoveHandler: (e: MouseEvent) => void
   private readonly mouseoverHandler: (e: MouseEvent) => void
   private readonly mouseoutHandler: (e: MouseEvent) => void
@@ -155,8 +199,10 @@ export class Cursor {
     this.mousemoveHandler = (e: MouseEvent) => {
       this.targetX = e.clientX
       this.targetY = e.clientY
+      this.onActivity?.()
     }
     this.mouseoverHandler = (e: MouseEvent) => {
+      this.onActivity?.()
       const target = e.target as HTMLElement
       if (!target || typeof target.closest !== 'function') return
       // D-14 fix: skip intra-element transitions (mouseout→mouseover between
@@ -211,6 +257,7 @@ export class Cursor {
       }
     }
     this.mouseoutHandler = (e: MouseEvent) => {
+      this.onActivity?.()
       const target = e.target as HTMLElement
       if (!target || typeof target.closest !== 'function') return
       // D-14 fix: skip if moving to a related element that's also interactive
@@ -227,6 +274,9 @@ export class Cursor {
       }
     }
     this.clickHandler = () => {
+      // A settled demand-driven loop has no frame available to animate the
+      // click bump unless the event explicitly wakes the scheduler.
+      this.onActivity?.()
       // Bump: radius scales down to 0.7, then bounces back to 1.0
       this.bumpScale = 0.6
       this.bumpTarget = 1
@@ -240,6 +290,7 @@ export class Cursor {
   }
 
   update() {
+    if (this._disposed) return
     // Inner dot — instant follow, centered.
     // Color: accent-hover (idle) → RED (hover) via CSS .is-hover class.
     // Inner dot stays visible (no opacity fade) — just changes color.
@@ -294,7 +345,8 @@ export class Cursor {
       Math.abs(this.fillProgress - this._lastDrawFill) > 0.01 ||
       Math.abs(this.bumpScale - this._lastDrawBump) > 0.01 ||
       this.isStuck !== this._lastDrawStuck ||
-      this.cursorState !== this._lastDrawState
+      this.cursorState !== this._lastDrawState ||
+      this._forceRedraw
     if (moved) {
       this.drawCircle()
       this._lastDrawX = this.posX
@@ -304,6 +356,7 @@ export class Cursor {
       this._lastDrawBump = this.bumpScale
       this._lastDrawStuck = this.isStuck
       this._lastDrawState = this.cursorState
+      this._forceRedraw = false
     }
     this.frameCount++
   }
@@ -346,10 +399,9 @@ export class Cursor {
 
     // Noisy distortion only when expanded enough
     const isNoisy = this.isStuck && this.currentRadius > this.baseRadius + 5
-    const smoothSegments = 16
-    const points: Array<{ x: number; y: number }> = []
-    for (let i = 0; i < smoothSegments; i++) {
-      const angle = (i / smoothSegments) * Math.PI * 2
+    const points = this._ringPoints
+    for (let i = 0; i < SMOOTH_SEGMENTS; i++) {
+      const angle = (i / SMOOTH_SEGMENTS) * Math.PI * 2
       let segRadius = radius
 
       if (isNoisy) {
@@ -358,10 +410,9 @@ export class Cursor {
         segRadius += (noiseX + noiseY) * this.noiseRange
       }
 
-      points.push({
-        x: cx + Math.cos(angle) * segRadius,
-        y: cy + Math.sin(angle) * segRadius,
-      })
+      const point = points[i]!
+      point.x = cx + Math.cos(angle) * segRadius
+      point.y = cy + Math.sin(angle) * segRadius
     }
 
     // Smoothed ring (quadraticCurveTo midpoint method)
@@ -492,11 +543,15 @@ export class Cursor {
   }
 
   destroy() {
+    if (this._disposed) return
+    this._disposed = true
     window.removeEventListener('mousemove', this.mousemoveHandler)
     document.removeEventListener('mouseover', this.mouseoverHandler)
     document.removeEventListener('mouseout', this.mouseoutHandler)
     document.removeEventListener('click', this.clickHandler)
+    this.onActivity = null
     this.innerEl.remove()
     this.canvas.remove()
+    this.ctx = null
   }
 }

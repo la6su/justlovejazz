@@ -17,6 +17,8 @@
 // 3D sync: ContentReveal dispatches 'jlz:theme-applied' with {isLight} so
 // Experience.ts can sync EnvSphere background per-section.
 
+import { eventBus } from './EventBus'
+
 export type ThemeMode = 'auto' | 'inverse'
 
 const STORAGE_KEY = 'jlz:theme'
@@ -38,10 +40,11 @@ class ThemeManager {
   }
 
   setMode(mode: ThemeMode): void {
+    if (mode === this._mode) return
     this._mode = mode
     this._saveMode(mode)
     // Notify ContentReveal to re-apply per-section theme
-    window.dispatchEvent(new CustomEvent('jlz:theme-change', { detail: { mode } }))
+    eventBus.emit('jlz:theme-change', { mode })
   }
 
   /** Toggle auto ↔ inverse. */

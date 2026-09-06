@@ -20,6 +20,8 @@ const CHARS = '░▒▓█▄▀▌▐│║╟╠╫╬●○◆◇▪▫•·
 export class NoiseText {
   /** Global registry: one instance per DOM element, prevents overlap. */
   private static instances = new WeakMap<HTMLElement, NoiseText>()
+  /** Active animation owners, kept enumerable for runtime teardown. */
+  private static active = new Set<NoiseText>()
 
   private readonly el: HTMLElement
   private cleanText = ''
@@ -29,6 +31,8 @@ export class NoiseText {
   private running = false
   private start = 0
   private dur = 1000
+  /** Reused frame buffer; only the joined DOM string is transient. */
+  private readonly chars: string[] = []
 
   private constructor(el: HTMLElement) {
     this.el = el
@@ -69,6 +73,7 @@ export class NoiseText {
 
     this.dur = dur * 1000
     this.running = true
+    NoiseText.active.add(this)
     this.start = performance.now()
     this.el.setAttribute('data-visible', 'true')
 
@@ -85,6 +90,10 @@ export class NoiseText {
 
   private tick = (ts: number): void => {
     if (!this.running) return
+    if (!this.el.isConnected) {
+      this.finalize()
+      return
+    }
 
     const t = Math.min(1, (ts - this.start) / this.dur)
 
@@ -100,7 +109,8 @@ export class NoiseText {
 
     // PERF-15 fix: build via array + join (was `text +=` in a loop = O(N²)
     // string allocation). For a 20-char title: ~23 string allocs/frame → 1.
-    const chars: string[] = new Array(fixedLength + noiseLength)
+    const chars = this.chars
+    chars.length = fixedLength + noiseLength
 
     // Fixed (clean) characters — already revealed
     for (let i = 0; i < fixedLength; i++) {
@@ -119,6 +129,7 @@ export class NoiseText {
   /** Hard stop with clean text restoration (called on animation end). */
   finalize(): void {
     this.running = false
+    NoiseText.active.delete(this)
     if (this.rafId !== null) {
       cancelAnimationFrame(this.rafId)
       this.rafId = null
@@ -128,7 +139,7 @@ export class NoiseText {
       this.timeoutId = null
     }
     // Final frame = ALWAYS clean text (no glitch residue)
-    this.el.textContent = this.cleanText
+    if (this.cleanText) this.el.textContent = this.cleanText
   }
 
   /** Lightweight cancel — restores clean text and cancels RAF+timeout.
@@ -136,6 +147,7 @@ export class NoiseText {
    *  noise being captured as cleanText on rapid re-trigger). */
   private cancel(): void {
     this.running = false
+    NoiseText.active.delete(this)
     if (this.rafId !== null) {
       cancelAnimationFrame(this.rafId)
       this.rafId = null
@@ -149,5 +161,10 @@ export class NoiseText {
     if (this.cleanText) {
       this.el.textContent = this.cleanText
     }
+  }
+
+  /** Stop every active text animation owned by the current Experience. */
+  static disposeAll(): void {
+    for (const instance of NoiseText.active) instance.finalize()
   }
 }

@@ -22,6 +22,7 @@ export class WireframeTypography extends THREE.Group {
   private revealElapsed = 0
   private revealProgress = 0
   private active = false
+  private disposed = false
   private glyphs: FloatingGlyph[] = []
   private material = new THREE.MeshPhysicalMaterial({
     color: 0xf4efff,
@@ -82,6 +83,7 @@ export class WireframeTypography extends THREE.Group {
 
   /** Keep the opaque bubble letters legible on either UI theme. */
   setTheme(isLight: boolean): void {
+    if (this.disposed) return
     this.material.color.setHex(isLight ? 0x233329 : 0xdfffe9)
     this.material.emissive.setHex(isLight ? 0x020403 : 0x06100b)
     this.material.emissiveIntensity = isLight ? 0.015 : 0.035
@@ -89,6 +91,7 @@ export class WireframeTypography extends THREE.Group {
 
   /** Reveal only after the lower contact frame has settled into view. */
   setActive(active: boolean): void {
+    if (this.disposed) return
     if (this.active === active) return
     this.active = active
     this.revealElapsed = 0
@@ -98,13 +101,26 @@ export class WireframeTypography extends THREE.Group {
     }
   }
 
+  /** Apply a live preference change without requiring a route reactivation. */
+  setReducedMotion(reduced: boolean): void {
+    if (this.disposed) return
+    this.userData.reducedMotion = reduced
+    if (reduced && this.active) this.settleReducedMotion()
+  }
+
   get isAnimating(): boolean {
-    return this.active && this.revealProgress < 1
+    return !this.disposed && this.active && this.revealProgress < 1
   }
 
   update(dt: number): void {
+    if (this.disposed) return
     this.time += dt
     if (!this.active) return
+
+    if (this.userData.reducedMotion === true) {
+      this.settleReducedMotion()
+      return
+    }
 
     this.revealElapsed += dt
     const revealDelay = this.userData.reducedMotion === true ? 0 : 0.72
@@ -125,9 +141,22 @@ export class WireframeTypography extends THREE.Group {
     }
   }
 
+  private settleReducedMotion(): void {
+    this.revealProgress = 1
+    for (const { mesh, x } of this.glyphs) {
+      mesh.position.set(x, 0, 0)
+      mesh.rotation.set(0, 0, 0)
+      mesh.scale.setScalar(1)
+    }
+  }
+
   dispose(): void {
+    if (this.disposed) return
+    this.disposed = true
+    this.active = false
     for (const { mesh } of this.glyphs) mesh.geometry.dispose()
     this.material.dispose()
+    this.glyphs = []
     this.clear()
   }
 }

@@ -2,6 +2,7 @@
 
 import * as THREE from 'three'
 import { BakuRole } from './types'
+import { worldSlotAt, WORLD_SLOT_COUNT } from './worldSlots'
 
 // ── Types ──
 export interface CameraTransform {
@@ -74,6 +75,9 @@ export interface SceneControl {
   }
 }
 
+/** Shared fallback for sections that do not override camera smoothing. */
+export const DEFAULT_CAMERA_SMOOTHING = 5
+
 export interface PhaseConfig {
   id: string
   context: string
@@ -144,7 +148,7 @@ const DEFAULTS: Omit<RawScene, 'id' | 'context' | 'domSection' | 'range'> = {
   camFov: 60,
   camFovOffset: 0.3,
   camFovDuration: 0.8,
-  camSmoothing: 5,
+  camSmoothing: DEFAULT_CAMERA_SMOOTHING,
   bakuRole: BakuRole.GLASS,
   bakuOpacity: 0.4,
   bakuDisplace: 0.06,
@@ -172,29 +176,26 @@ const DEFAULTS: Omit<RawScene, 'id' | 'context' | 'domSection' | 'range'> = {
 
 // 6 sections (4 story frames + Contact finale/Lab=0 + Menu=5)
 // Index: 0=lab, 1=intro, 2=about, 3=works, 4=contact, 5=menu
-const RAW: RawScene[] = [
+// The per-slot DOM anchor and story range are owned by the canonical
+// world-slot contract (src/core/worldSlots.ts); the home scenes below only
+// carry their authored per-section overrides.
+const HOME_RAW: Array<Omit<RawScene, 'domSection' | 'range'>> = [
   {
     ...DEFAULTS,
     id: 'sec_lab',
     context: 'LAB — Experiments',
-    domSection: 'lab',
-    range: [0, 1 / 5],
     sectionTheme: 'light',
   },
   {
     ...DEFAULTS,
     id: 'sec_intro',
     context: 'Studio — Home',
-    domSection: 'intro',
-    range: [1 / 5, 2 / 5],
     sceneTransition: { duration: 1.0, easing: 'ease-in-out' },
   },
   {
     ...DEFAULTS,
     id: 'sec_about',
     context: 'TRINITY — About',
-    domSection: 'about',
-    range: [2 / 5, 3 / 5],
     camFovOffset: 0.4,
     camFovDuration: 0.9,
     camSmoothing: 6,
@@ -211,8 +212,6 @@ const RAW: RawScene[] = [
     ...DEFAULTS,
     id: 'sec_works',
     context: 'WORKS — Gallery',
-    domSection: 'works',
-    range: [3 / 5, 4 / 5],
     camFovOffset: 0.5,
     camFovDuration: 1.0,
     camSmoothing: 6,
@@ -230,8 +229,6 @@ const RAW: RawScene[] = [
     ...DEFAULTS,
     id: 'sec_contact',
     context: 'CONTACT — Footer',
-    domSection: 'contact',
-    range: [4 / 5, 5 / 5],
     postBloom: 0.2,
     lightColor: 0xffffff,
     lightIntensity: 1.5,
@@ -244,8 +241,6 @@ const RAW: RawScene[] = [
     ...DEFAULTS,
     id: 'sec_menu',
     context: 'MENU — Navigation',
-    domSection: 'menu',
-    range: [5 / 5, 6 / 5],
     bakuOpacity: 0.14,
     bakuDisplace: 0.025,
     bakuColor: 0xc7c9e6,
@@ -259,6 +254,13 @@ const RAW: RawScene[] = [
     sceneTransition: { duration: 0.9, easing: 'ease-in-out' },
   },
 ]
+
+// The canonical slot contract supplies the DOM anchor and story range so the
+// slot model is declared in exactly one place.
+const RAW: RawScene[] = HOME_RAW.map((scene, index) => {
+  const slot = worldSlotAt(index)
+  return { ...scene, domSection: slot.domSection, range: [slot.range[0]!, slot.range[1]!] }
+})
 
 // ── Helpers ──
 const _toVec = (v: [number, number, number]) => new THREE.Vector3(...v)
@@ -358,13 +360,17 @@ function makeContentScenes(pageId: string): PhaseConfig[] {
   // Even indices = dark, odd indices = light. In auto mode, sections alternate
   // dark/light. In inverse mode, they flip to light/dark.
   const themes: Array<'light' | 'dark'> = ['dark', 'light', 'dark', 'light', 'dark', 'light']
-  return Array.from({ length: 6 }, (_, idx) =>
+  // Content pages mirror the six-face track geometry: the frame count and
+  // story ranges come from the canonical slot tuple; only the DOM anchor
+  // namespace is content-page-specific (`content-${idx}`), not the home slot
+  // anchor.
+  return Array.from({ length: WORLD_SLOT_COUNT }, (_, idx) =>
     toPhaseConfig({
       ...DEFAULTS,
       id: `content_${pageId}_${idx}`,
       context: `Content — ${pageId} face ${idx}`,
       domSection: `content-${idx}`,
-      range: [idx / 5, (idx + 1) / 5] as [number, number],
+      range: [...worldSlotAt(idx).range],
       sectionTheme: themes[idx]!,
       bakuColor: p.bakuColor,
       bakuEmissive: p.bakuEmissive,

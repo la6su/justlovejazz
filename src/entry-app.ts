@@ -1,12 +1,18 @@
-import UIkit from 'uikit'
-import { initRouter } from './router'
 import { BlurFade } from './Experience/BlurFade'
 import { NoiseText } from './Experience/NoiseText'
 import { eventBus } from './core/EventBus'
 import { initWorkCards } from './UI/WorkCards'
 import { getSoundMuted, setSoundMutedPreference } from './core/SfxSystem'
 import { prefersReducedMotion } from './core/motionPolicy'
+import { getCurrentPage } from './core/routePage'
 // LANG_KEY handled by i18n.ts
+import { INITIAL_BOOTSTRAP_STATE, tryTransition, type BootstrapState } from './core/bootstrapStates'
+
+function contentRoot(): ParentNode {
+  // Vue owns route content; retain a document fallback only before the route
+  // shell mounts during the bootstrap handoff.
+  return document.getElementById('spa-content') ?? document
+}
 
 // ── Config: sound toggle (splash overlay) ──
 function initSoundToggle(): void {
@@ -23,11 +29,33 @@ function initSoundToggle(): void {
     soundOn = !soundOn
     setSoundMutedPreference(!soundOn)
     update()
-  })
+  }, { signal: _bootstrapAbort.signal })
 }
 
 // ── Config: language toggle EN/RU ──
 import { initI18n, toggleLang, getLang } from './core/i18n'
+
+// ── window.__jlzEmit — typed `jlz:*` port facade for non-module producers ──
+// The Phase 10 raw window `jlz:*` bridge was removed — the app only receives
+// those ports through the typed `eventBus`. Two non-module sites still need to
+// emit a port without importing the TS graph:
+//   • the index.html splash Enter script (classic, kept outside the initial
+//     Vue/Tres/Three/UIkit dependency graph) emits `jlz:splash-entered`;
+//   • the e2e suite (production preview) and the Phase 10 soak (dev) trigger
+//     `jlz:navigate` etc. from outside the app.
+// Both call this facade instead of `window.dispatchEvent`. It is a thin alias
+// over the public, typed `eventBus.emit` and adds no new capability surface
+// (the equivalent raw dispatch existed in production pre-migration).
+// Installed at module scope — the moment entry-app.ts loads, which is before
+  // the Vue router mounts and before the splash Enter button
+// is ever enabled (`jlz:webgl-ready`) — so it is always present for the splash
+// and for navigation tests regardless of whether `experience.init()` succeeds.
+;(window as unknown as { __jlzEmit?: (event: string, detail?: unknown) => void }).__jlzEmit = (
+  event,
+  detail,
+) => {
+  ;(eventBus.emit as (name: string, detail?: unknown) => void).call(eventBus, event, detail)
+}
 
 function initLangToggle(): void {
   const btn = document.getElementById('cfg-lang') as HTMLButtonElement | null
@@ -43,7 +71,7 @@ function initLangToggle(): void {
   btn.addEventListener('click', () => {
     toggleLang()
     update()
-  })
+  }, { signal: _bootstrapAbort.signal })
 }
 
 // ── Enter button click is wired by inline script in index.html ──
@@ -74,10 +102,10 @@ function showLoadError(): void {
     const parent = enterBtn.parentElement
     if (parent) {
       parent.innerHTML = `
-        <div style="text-align:center; color: rgba(255,255,255,0.7); font-family:Commissioner,sans-serif; max-width: 320px;">
-          <p style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:rgba(255,100,100,0.8); margin:0 0 0.5rem;">3D Failed</p>
+        <div style="text-align:center; color: var(--jlz-color-text-muted, rgba(255,255,255,0.7)); font-family:Commissioner,sans-serif; max-width: 320px;">
+          <p style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--jlz-color-status-danger, rgba(255,100,100,0.8)); margin:0 0 0.5rem;">3D Failed</p>
           <p style="font-size:0.8rem; line-height:1.4; margin:0 0 1rem;">The 3D experience couldn't load. Your browser may not support WebGL2, or the GPU is unavailable.</p>
-          <a href="/" style="font-size:0.7rem; font-weight:600; text-transform:uppercase; color:#6b78a3; text-decoration:none; border:1px solid rgba(107,120,163,0.3); padding:0.5rem 1rem; border-radius:999px;">Retry</a>
+          <a href="/" style="font-size:0.7rem; font-weight:600; text-transform:uppercase; color:var(--jlz-color-signal-cool, #6b78a3); text-decoration:none; border:1px solid color-mix(in srgb, var(--jlz-color-signal-cool, #6b78a3) 30%, transparent); padding:0.5rem 1rem; border-radius:999px;">Retry</a>
         </div>
       `
     }
@@ -102,35 +130,309 @@ function updateLoaderProgress(pct: number): void {
   ring.style.strokeDashoffset = String(offset)
 }
 
-let _bootstrapped = false
+let _bootstrapState: BootstrapState = INITIAL_BOOTSTRAP_STATE
+let _readyWatchdog: ReturnType<typeof setTimeout> | null = null
+let _bootstrapAbort = new AbortController()
+let _bootstrapUnsubs: Array<() => void> = []
 
-async function boot(): Promise<void> {
-  if (_bootstrapped) return
+export function createStyleOwner(): {
+  set: (css: string) => void
+  clear: () => void
+} {
+  let style: HTMLStyleElement | null = null
+  const clear = (): void => {
+    style?.remove()
+    style = null
+  }
+  return {
+    set: (css) => {
+      clear()
+      style = document.createElement('style')
+      style.textContent = css
+      document.head.appendChild(style)
+    },
+    clear,
+  }
+}
+
+const bootstrapStyleOwner = createStyleOwner()
+
+function clearBootstrapStyle(): void {
+  bootstrapStyleOwner.clear()
+}
+
+function clearHostProbe(): void {
+  delete window.__jlzHost
+}
+
+function resetBootstrapBindings(): void {
+  _bootstrapUnsubs.forEach((unsubscribe) => unsubscribe())
+  _bootstrapUnsubs = []
+  _bootstrapAbort.abort()
+  _bootstrapAbort = new AbortController()
+  clearReadyWatchdog()
+  clearReadyEventTimer()
+  clearSplashRevealTimer()
+  clearBootstrapStyle()
+  clearHostProbe()
+  _titleObserver?.disconnect()
+  _titleObserver = null
+}
+
+function clearReadyWatchdog(): void {
+  if (_readyWatchdog !== null) {
+    clearTimeout(_readyWatchdog)
+    _readyWatchdog = null
+  }
+}
+
+/** Own the delayed readiness event so a failed/replaced attempt cannot emit it. */
+export function createReadyEventTimer(onReady: () => void): {
+  schedule: (delayMs: number) => void
+  clear: () => void
+} {
+  let timer: ReturnType<typeof setTimeout> | null = null
+  let generation = 0
+  const clear = (): void => {
+    generation += 1
+    if (timer !== null) {
+      clearTimeout(timer)
+      timer = null
+    }
+  }
+  return {
+    schedule: (delayMs) => {
+      clear()
+      const token = generation
+      timer = setTimeout(() => {
+        timer = null
+        if (token !== generation) return
+        onReady()
+      }, delayMs)
+    },
+    clear,
+  }
+}
+
+const readyEventTimer = createReadyEventTimer(() => {
+  eventBus.emit('jlz:webgl-ready')
+})
+
+function clearReadyEventTimer(): void {
+  readyEventTimer.clear()
+}
+
+/** Own the delayed curtain/title handoff so retry/failure cannot reveal stale DOM. */
+export function createSplashRevealTimer(onReveal: () => void): {
+  schedule: (delayMs: number) => void
+  clear: () => void
+} {
+  let timer: ReturnType<typeof setTimeout> | null = null
+  const clear = () => {
+    if (timer !== null) {
+      clearTimeout(timer)
+      timer = null
+    }
+  }
+  return {
+    schedule: (delayMs) => {
+      clear()
+      timer = setTimeout(() => {
+        timer = null
+        onReveal()
+      }, delayMs)
+    },
+    clear,
+  }
+}
+
+/**
+ * Coalesce concurrent starts while allowing a rejected attempt to be retried.
+ * Keeping this small and generic makes the bootstrap ownership contract
+ * testable without importing the DOM-heavy entrypoint in a browser harness.
+ */
+export function createStartGate<T>(start: () => Promise<T>): {
+  run: () => Promise<T>
+  reset: () => void
+} {
+  let pending: Promise<T> | null = null
+  return {
+    run: () => {
+      if (pending) return pending
+      pending = Promise.resolve()
+        .then(start)
+        .catch((error) => {
+          pending = null
+          throw error
+        })
+      return pending
+    },
+    reset: () => {
+      pending = null
+    },
+  }
+}
+
+const splashRevealTimer = createSplashRevealTimer(() => {
+  revealActiveSplashTitle()
+  setupTitleObserver()
+})
+
+function clearSplashRevealTimer(): void {
+  splashRevealTimer.clear()
+}
+
+function scheduleSplashRevealTimer(delayMs: number): void {
+  splashRevealTimer.schedule(delayMs)
+}
+
+function transitionBootstrap(next: BootstrapState): boolean {
+  const result = tryTransition(_bootstrapState, next)
+  if (!result) {
+    console.warn(`[entry-app] invalid bootstrap transition: ${_bootstrapState} -> ${next}`)
+    return false
+  }
+  _bootstrapState = result
+  return true
+}
+
+function disposeBootstrapAttempt(
+  experience: import('./Experience/Experience').Experience | null,
+  ui: import('./UI/UIManager').UIManager | null,
+): void {
+  try {
+    experience?.destroy()
+  } catch (error) {
+    console.error('[entry-app] Experience cleanup failed:', error)
+  }
+  try {
+    ui?.dispose()
+  } catch (error) {
+    console.error('[entry-app] UI cleanup failed:', error)
+  }
+}
+
+interface BootResult {
+  retryable: boolean
+}
+
+async function boot(): Promise<BootResult> {
+  if (_bootstrapState === 'ready' || _bootstrapState === 'entered') {
+    return { retryable: false }
+  }
+  if (_bootstrapState === 'failed') transitionBootstrap('app-loading')
+  else if (_bootstrapState === 'shell-painted') transitionBootstrap('app-loading')
   const progress = (pct: number) => updateLoaderProgress(Math.min(100, pct))
 
-  // D-5 fix: set _bootstrapped AFTER the try block. Previously it was set
-  // BEFORE → a failed Experience.init() left _bootstrapped=true, preventing
-  // retry (user had to reload the page). Now if init throws, the catch block
-  // fires jlz:webgl-failed and _bootstrapped stays false → user can retry.
+  // ?no-scene=1 — Phase 5 prerender contract: boot the route shell and the
+  // semantic route content WITHOUT the scene runtime (the Three/Experience
+  // dynamic imports below never run, no canvas is created). The loader ring
+  // completes and `jlz:webgl-ready` fires synchronously so the Enter flow
+  // and every scene-ready consumer proceed on a DOM-only world. This is the
+  // evidence path for the Phase 5 candidate gate: routes + navigation work
+  // with zero renderer, and a route can never (re)create one.
+  if (new URLSearchParams(window.location.search).has('no-scene')) {
+    try {
+      transitionBootstrap('renderer-initializing')
+      progress(100)
+      const { UIManager } = await import('./UI/UIManager')
+      const ui = new UIManager()
+      try {
+        ui.init()
+      } catch (error) {
+        ui.dispose()
+        throw error
+      }
+      transitionBootstrap('scene-prewarming')
+      transitionBootstrap('ready')
+      eventBus.emit('jlz:webgl-ready')
+      return { retryable: false }
+    } catch (e) {
+      console.error('[entry-app] no-scene bootstrap failed:', e)
+      transitionBootstrap('failed')
+      eventBus.emit('jlz:webgl-failed')
+      return { retryable: true }
+    }
+  }
+
+  // A failed initialization may retry only before the one-shot SceneHost has
+  // settled. Once it owns a renderer/canvas, a second attempt is unsafe.
+  let ui: import('./UI/UIManager').UIManager | null = null
+  let experience: import('./Experience/Experience').Experience | null = null
+  let sceneHostSettled = false
   try {
     const { ErrorTracker } = await import('./core/ErrorTracker')
     ErrorTracker.init()
-    // syncReducedMotionDataset() is already called in entry-shell.ts;
-    // it is idempotent so we skip the second call here.
+    transitionBootstrap('renderer-initializing')
+    // entry-shell.ts set the reduced-motion dataset synchronously at shell
+    // load (legacy E2E/CSS hook); the preference itself is read on demand
+    // through motionPolicy.prefersReducedMotion().
 
     const bootStart = performance.now()
     progress(15)
 
     const { UIManager } = await import('./UI/UIManager')
-    const ui = new UIManager()
+    ui = new UIManager()
     ui.init()
     progress(40)
 
+    // ── Phase 7: the persistent SceneHost (Vue) is the readiness handshake ──
+    // AppShell mounts SceneHost (startApp above); it owns the one canvas, the
+    // custom renderer factory and the camera. `sceneHost.ready` settles only
+    // AFTER renderer init + actual-backend inspection + the software-adapter
+    // policy decision + the Tres context mount. Experience adopts those
+    // instances and awaits the initial World's first successful render
+    // (Experience.init → firstRender), so `jlz:webgl-ready` below can only
+    // fire after that — the renderer factory return alone never satisfies
+    // readiness. The `?no-scene` DOM-only rollback above returns earlier and
+    // never reaches this handshake.
+    const { sceneHost } = await import('./app/sceneHost')
+    sceneHostSettled = true
+    const host = await sceneHost.ready
+    transitionBootstrap('scene-prewarming')
     const { Experience } = await import('./Experience/Experience')
     progress(55)
 
-    const experience = new Experience(ui)
-    await experience.init()
+    const runtime = new Experience(
+      ui,
+      {
+        scene: host.scene,
+        camera: host.camera,
+        renderer: host.renderer,
+        canvas: host.canvas,
+        mode: host.mode,
+        replaceRenderer: (renderer) => sceneHost.replaceRenderer(renderer),
+      },
+      getCurrentPage,
+    )
+    experience = runtime
+    const hostProbe: JlzHostProbe = {
+      mode: host.mode,
+      backend: host.backend.backendName,
+      isFallbackAdapter: host.backend.isFallbackAdapter,
+      recovered: false,
+    }
+    window.__jlzHost = hostProbe
+    _bootstrapUnsubs.push(
+      eventBus.on('jlz:renderer-recovered', () => {
+        if (window.__jlzHost === hostProbe) hostProbe.recovered = true
+      }),
+    )
+    await runtime.init()
+    if (import.meta.env.DEV) {
+      ;(window as unknown as { __jlzRuntimeDestroy?: () => void }).__jlzRuntimeDestroy = () => runtime.destroy()
+    }
+    // Phase 6 evidence (fixed 2026-08-22): the unified `WebGPURenderer` on
+    // `WebGLBackend` keeps the direct-WebGL path (no TSL post) by design; TSL
+    // post runs only on `WebGPUBackend` (`WebGPUPostPipeline`). No
+    // TSL-post-on-WebGLBackend claim is made. (The dev-forced classic
+    // `?renderer=webgl` parity QA owner that compared the two paths was
+    // removed in Phase 10; the automatic software-adapter fallback remains.)
+    if (import.meta.env.DEV) {
+      console.info(
+        `[entry-app] Phase 7 host ready: mode=${host.mode} backend=${host.backend.backendName ?? '?'} isFallbackAdapter=${host.backend.isFallbackAdapter}`,
+      )
+    }
     progress(95)
     // Small delay at 95% so user sees 'Ready' status before 100% + curtain split
     await new Promise((resolve) => setTimeout(resolve, 150))
@@ -141,41 +443,28 @@ async function boot(): Promise<void> {
     const elapsed = performance.now() - bootStart
     const readyAt = Math.max(0, INTRO_MS - elapsed)
 
-    setTimeout(
-      () => {
-        eventBus.emit('jlz:webgl-ready')
-      },
-      prefersReducedMotion() ? 0 : readyAt,
-    )
-    _bootstrapped = true
+    transitionBootstrap('ready')
+    readyEventTimer.schedule(prefersReducedMotion() ? 0 : readyAt)
+    return { retryable: false }
   } catch (e) {
     console.error('[entry-app] bootstrap failed:', e)
+    disposeBootstrapAttempt(experience, ui)
+    clearHostProbe()
+    clearReadyWatchdog()
+    clearReadyEventTimer()
+    transitionBootstrap('failed')
     eventBus.emit('jlz:webgl-failed')
-    // D-5: _bootstrapped stays false → allows retry without page reload
-  }
-
-  scheduleUiKitRefresh()
-}
-
-function scheduleUiKitRefresh(): void {
-  const refresh = () => {
-    const content = document.getElementById('spa-content')
-    if (!content) return
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ;(UIkit as any).update()
-  }
-  if ('requestIdleCallback' in window) {
-    ;(
-      window as Window & {
-        requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => void
-      }
-    ).requestIdleCallback(refresh, { timeout: 800 })
-  } else {
-    setTimeout(refresh, 120)
+    const retryable = !sceneHostSettled
+    if (retryable) {
+      const { ErrorTracker } = await import('./core/ErrorTracker')
+      ErrorTracker.dispose()
+    }
+    return { retryable }
   }
 }
 
-export async function startApp(): Promise<void> {
+async function startAppOnce(): Promise<void> {
+  resetBootstrapBindings()
   // Init splash config toggles FIRST — instant, no dependencies.
   // These work during loading, before three.js finishes.
   initSoundToggle()
@@ -189,9 +478,7 @@ export async function startApp(): Promise<void> {
   // HMR injection.
   const cssModule = await import('./assets/main.less?inline')
   // Manually inject the CSS into the document
-  const style = document.createElement('style')
-  style.textContent = (cssModule as unknown as { default: string }).default || ''
-  document.head.appendChild(style)
+  bootstrapStyleOwner.set((cssModule as unknown as { default: string }).default || '')
   // Register console-themed SVG icons — replaces UIKit's default icon set
   // (76KB) with our custom pixel/console-style icons. No uikit-icons import.
   // UIKit's icon component is built into the core; we just register our SVGs.
@@ -203,45 +490,64 @@ export async function startApp(): Promise<void> {
       /* icons are enhancement, not critical */
     })
 
-  initRouter()
+  // Phase 5 (cleanup): Vue Router (src/app) owns navigation. The dynamic
+  // import below is the only edge into the Vue graph, so the router + route
+  // SFCs stay in a separate lazy `app` chunk and the initial entry bundle
+  // remains lean. The scene runtime boots exactly once regardless of the
+  // route.
+  void import('./app')
+    .then((m) => m.mountVueApp())
+    .catch((error) => {
+      console.error('[entry-app] Vue mount failed:', error)
+      eventBus.emit('jlz:webgl-failed')
+      void import('./app/sceneHost')
+        .then(({ sceneHost }) => sceneHost.reject(error))
+        .catch(() => {
+          /* sceneHost rejection is best-effort; the visible failure state remains */
+        })
+    })
 
   // ── Works page 3D cards: bind tilt + click on every route change ──
   // initWorkCards() is idempotent (skips already-bound cards).
-  window.addEventListener('jlz:route-change', () => {
+  _bootstrapUnsubs.push(eventBus.on('jlz:route-change', () => {
     initWorkCards()
-  })
+  }))
   initWorkCards()
 
   // jlz:webgl-ready fires when Experience.init() completes — show Enter button.
   // Animations (BlurFade + NoiseText) are DELAYED until jlz:splash-entered
   // (Enter click) so user sees them as 3D scene reveals, not behind splash.
-  eventBus.on('jlz:webgl-ready', () => {
+  _bootstrapUnsubs.push(eventBus.on('jlz:webgl-ready', () => {
+    clearReadyWatchdog()
+    clearSplashRevealTimer()
     showEnterButton()
-  })
+  }))
 
   // jlz:webgl-failed fires if Experience.init() throws — show an error message
   // instead of the Enter button, so the user knows the 3D failed (not just slow).
-  eventBus.on('jlz:webgl-failed', () => {
+  _bootstrapUnsubs.push(eventBus.on('jlz:webgl-failed', () => {
+    clearReadyWatchdog()
+    clearSplashRevealTimer()
+    if (_bootstrapState !== 'failed') transitionBootstrap('failed')
     showLoadError()
-  })
+  }))
 
   // jlz:splash-entered fires when user clicks Enter — splash starts fading.
   // Let the active title answer the opening curtain, rather than animating
   // every title in the document behind the splash.
-  window.addEventListener('jlz:splash-entered', () => {
+  _bootstrapUnsubs.push(eventBus.on('jlz:splash-entered', () => {
+    transitionBootstrap('entered')
     // Let the curtain begin to split, then reveal the title inside that gap.
-    setTimeout(() => {
-      revealActiveSplashTitle()
-      setupTitleObserver()
-    }, 90)
-  })
+    scheduleSplashRevealTimer(90)
+  }))
 
   // Fallback: if jlz:webgl-ready doesn't fire within 60s (Experience.init
   // crashed or hung), show a load error. The Enter button stays DISABLED
   // (greyed, non-clickable) the entire time — it never activates until 3D
   // is truly ready. Under CPU/network throttling, init() can take 10-20s;
   // that's expected and the progress ring keeps the user informed.
-  setTimeout(() => {
+  _readyWatchdog = setTimeout(() => {
+    _readyWatchdog = null
     const enterBtn = document.getElementById('jlz-splash-enter')
     if (enterBtn && !enterBtn.classList.contains('is-ready')) {
       console.error('[entry-app] jlz:webgl-ready did not fire within 60s — showing load error')
@@ -250,23 +556,23 @@ export async function startApp(): Promise<void> {
   }, 60000)
 
   // ── Animate titles on section change (home: data-section) ──
-  eventBus.on('jlz:section-change', (payload) => {
+  _bootstrapUnsubs.push(eventBus.on('jlz:section-change', (payload) => {
     if (!payload?.sectionId) return
-    const section = document.querySelector(`[data-section="${payload.sectionId}"]`)
+    if (prefersReducedMotion()) return
+    const section = contentRoot().querySelector(`[data-section="${payload.sectionId}"]`)
     if (!section) return
     const title = section.querySelector<HTMLElement>('.studio-title')
     if (title && title.dataset.blurFade !== 'off') {
       const text = title.textContent?.trim() || ''
       if (text) BlurFade.for(title).show(1.5)
     }
-  })
+  }))
 
   // ── Animate titles on page section change (content: data-page-section) ──
-  window.addEventListener('jlz:page-section-change', ((e: Event) => {
-    const detail = (e as CustomEvent<{ index: number }>).detail
-    if (!detail) return
-    const sections = document.querySelectorAll<HTMLElement>('[data-page-section]')
-    const el = sections[detail.index]
+  _bootstrapUnsubs.push(eventBus.on('jlz:page-section-change', ({ index }) => {
+    if (prefersReducedMotion()) return
+    const sections = contentRoot().querySelectorAll<HTMLElement>('[data-page-section]')
+    const el = sections[index]
     if (!el) return
     // BlurFade on title
     const title = el.querySelector<HTMLElement>('.studio-title')
@@ -280,9 +586,18 @@ export async function startApp(): Promise<void> {
       const text = eyebrow.getAttribute('data-eyebrow-text') ?? eyebrow.textContent ?? ''
       if (text) NoiseText.for(eyebrow).show(0.6, text)
     }
-  }) as EventListener)
+  }))
 
-  void boot()
+  const result = await boot()
+  if (_bootstrapState === 'failed' && result.retryable) {
+    throw new Error('Application bootstrap failed')
+  }
+}
+
+const startGate = createStartGate(startAppOnce)
+
+export function startApp(): Promise<void> {
+  return startGate.run()
 }
 
 /**
@@ -295,8 +610,9 @@ const splashRevealedTitles = new WeakSet<HTMLElement>()
 function setupTitleObserver(): void {
   // Disconnect previous observer if any (HMR re-init guard)
   _titleObserver?.disconnect()
+  if (prefersReducedMotion()) return
 
-  const titles = document.querySelectorAll<HTMLElement>('.studio-title:not([data-blur-fade="off"])')
+  const titles = contentRoot().querySelectorAll<HTMLElement>('.studio-title:not([data-blur-fade="off"])')
   if (titles.length === 0) return
   const observer = new IntersectionObserver(
     (entries) => {
@@ -320,7 +636,7 @@ function setupTitleObserver(): void {
 
 /** Fast first reveal that is synchronized with the splash curtain opening. */
 function revealActiveSplashTitle(): void {
-  const title = document.querySelector<HTMLElement>(
+  const title = contentRoot().querySelector<HTMLElement>(
     '.section-active .studio-title:not([data-blur-fade="off"]), [data-section="intro"] .studio-title:not([data-blur-fade="off"])',
   )
   if (!title) return

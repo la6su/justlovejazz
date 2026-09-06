@@ -4,9 +4,11 @@
 // preference controls. A separate lower launcher opens the 3D Contact finale.
 // CinematicNav owns story position and the panel section state.
 
+import UIkit from 'uikit'
 import { toggleLang, getLang } from '../core/i18n'
 import { themeManager } from '../core/ThemeManager'
 import { getSoundMuted, setSoundMutedPreference } from '../core/SfxSystem'
+import { eventBus } from '../core/EventBus'
 
 // Theme icons are registered in console-icons.ts as 'theme-auto' (sun) and
 // 'theme-inverse' (moon). The toggle shows/hides them via CSS based on the
@@ -17,13 +19,27 @@ export class UIMenu {
   private _langBtn: HTMLButtonElement | null = null
   private _themeBtn: HTMLButtonElement | null = null
   private _soundBtn: HTMLButtonElement | null = null
-  private _langHandler: (() => void) | null = null
-  private _themeChangeHandler: (() => void) | null = null
-  private _soundToggleHandler: ((e: Event) => void) | null = null
+  private _langUnsub: (() => void) | null = null
+  private _themeChangeUnsub: (() => void) | null = null
+  private _soundToggleUnsub: (() => void) | null = null
   private _soundMuted = getSoundMuted()
   private _menuBtn: HTMLButtonElement | null = null
   private _contactBtn: HTMLButtonElement | null = null
   private _navigate: ((index: number) => void) | null = null
+  private readonly _clickHandler = (event: MouseEvent): void => {
+    const target = event.target as Element | null
+    if (target?.closest('#jlz-lang-toggle')) {
+      toggleLang()
+    } else if (target?.closest('#jlz-theme-toggle')) {
+      themeManager.toggle()
+    } else if (target?.closest('#jlz-sound-toggle')) {
+      eventBus.emit('jlz:sound-toggle', { muted: !this._soundMuted })
+    } else if (target?.closest('#jlz-menu-launcher')) {
+      this._navigate?.(5)
+    } else if (target?.closest('#jlz-contact-launcher')) {
+      this._navigate?.(0)
+    }
+  }
 
   constructor() {
     this.navEl = document.createElement('div')
@@ -75,6 +91,10 @@ export class UIMenu {
 
     const app = document.getElementById('app') ?? document.body
     app.appendChild(this.navEl)
+    // The persistent shell is outside every route root. Hydrate its icons and
+    // tooltip once at the owner boundary instead of relying on a later global
+    // `UIkit.update(#spa-content)` pass from the bootstrap.
+    ;(UIkit as unknown as { update(element: Element): void }).update(this.navEl)
 
     this._langBtn = this.navEl.querySelector<HTMLButtonElement>('#jlz-lang-toggle')
     this._themeBtn = this.navEl.querySelector<HTMLButtonElement>('#jlz-theme-toggle')
@@ -82,44 +102,24 @@ export class UIMenu {
     this._menuBtn = this.navEl.querySelector<HTMLButtonElement>('#jlz-menu-launcher')
     this._contactBtn = this.navEl.querySelector<HTMLButtonElement>('#jlz-contact-launcher')
 
-    // Language toggle
-    this._langBtn?.addEventListener('click', () => toggleLang())
-    // Theme toggle
-    this._themeBtn?.addEventListener('click', () => themeManager.toggle())
-    // Sound toggle — D-6 fix: click handler ONLY dispatches the event (single
-    // code path). The _soundToggleHandler does the actual state mutation +
-    // localStorage + button sync. Previously the click handler did the work
-    // AND dispatched the event → the event listener re-did the same work
-    // (double localStorage write, double button sync on every click).
-    this._soundBtn?.addEventListener('click', () => {
-      window.dispatchEvent(
-        new CustomEvent('jlz:sound-toggle', {
-          detail: { muted: !this._soundMuted },
-        }),
-      )
-    })
-    this._menuBtn?.addEventListener('click', () => this._navigate?.(5))
-    this._contactBtn?.addEventListener('click', () => this._navigate?.(0))
+    // One delegated handler keeps the persistent shell's DOM listener surface
+    // small and gives dispose() one exact owner to remove.
+    this.navEl.addEventListener('click', this._clickHandler)
 
-    // Wire global listeners
-    this._langHandler = () => this.updateLangLabel()
-    window.addEventListener('jlz:lang-change', this._langHandler)
+    // Wire global listeners (typed eventBus ports — the raw window bridge was
+    // removed in Phase 10).
+    this._langUnsub = eventBus.on('jlz:lang-change', () => this.updateLangLabel())
 
-    this._themeChangeHandler = () => this._syncThemeButton()
-    window.addEventListener('jlz:theme-change', this._themeChangeHandler)
+    this._themeChangeUnsub = eventBus.on('jlz:theme-change', () => this._syncThemeButton())
 
     // D-6 fix: single handler for jlz:sound-toggle — does ALL the work
     // (state + localStorage + button sync). Both the click handler above
     // and external triggers (if any) route through this one path.
-    this._soundToggleHandler = (e: Event) => {
-      const detail = (e as CustomEvent<{ muted: boolean }>).detail
-      if (detail) {
-        this._soundMuted = detail.muted
-        setSoundMutedPreference(this._soundMuted)
-        this._syncSoundButton()
-      }
-    }
-    window.addEventListener('jlz:sound-toggle', this._soundToggleHandler)
+    this._soundToggleUnsub = eventBus.on('jlz:sound-toggle', ({ muted }) => {
+      this._soundMuted = muted
+      setSoundMutedPreference(this._soundMuted)
+      this._syncSoundButton()
+    })
 
     // Initialize button states
     this.updateLangLabel()
@@ -145,6 +145,7 @@ export class UIMenu {
     const iconSpan = this._soundBtn.querySelector('[uk-icon]')
     if (iconSpan) {
       iconSpan.setAttribute('uk-icon', `icon: ${muted ? 'muted' : 'sound'}`)
+      ;(UIkit as unknown as { update(element: Element): void }).update(iconSpan)
     }
   }
 
@@ -172,11 +173,12 @@ export class UIMenu {
   }
 
   dispose(): void {
-    if (this._langHandler) window.removeEventListener('jlz:lang-change', this._langHandler)
-    if (this._themeChangeHandler)
-      window.removeEventListener('jlz:theme-change', this._themeChangeHandler)
-    if (this._soundToggleHandler)
-      window.removeEventListener('jlz:sound-toggle', this._soundToggleHandler)
+    this.navEl.removeEventListener('click', this._clickHandler)
+    this._langUnsub?.()
+    this._themeChangeUnsub?.()
+    this._soundToggleUnsub?.()
+    this._langUnsub = this._themeChangeUnsub = this._soundToggleUnsub = null
+    this._navigate = null
     this.navEl.remove()
   }
 }

@@ -165,6 +165,7 @@ export class LabGamepad extends THREE.Group {
     this.removeFromParent()
     this._geometries.forEach((geometry) => geometry.dispose())
     this._materials.forEach((material) => material.dispose())
+    this.clear()
     this._geometries.length = 0
     this._materials.length = 0
   }

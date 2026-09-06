@@ -54,15 +54,15 @@ body::before {
 .jlz-menu-launcher {
   min-width: 7rem;
   padding-inline: 1.15rem;
-  color: #f5e6d2;
-  background: #11100f;
+  color: var(--jlz-color-text);
+  background: var(--jlz-color-surface);
   clip-path: polygon(0 0, calc(100% - 1rem) 0, 100% 1rem, 100% 100%, 0 100%);
 }
 
 .jlz-menu-launcher:hover,
 .jlz-menu-launcher:focus-visible,
 .is-menu-open .jlz-menu-launcher {
-  color: #11100f;
+  color: var(--jlz-color-text-inverse);
   background: var(--jlz-color-accent);
 }
 
@@ -71,14 +71,14 @@ body::before {
 }
 
 .jlz-contact-launcher__button {
-  color: #f5e6d2;
-  background: #11100f;
+  color: var(--jlz-color-text);
+  background: var(--jlz-color-surface);
   clip-path: polygon(0 0.7rem, 0.7rem 0, 100% 0, 100% 100%, 0 100%);
 }
 
 .jlz-contact-launcher__button:hover,
 .jlz-contact-launcher__button:focus-visible {
-  color: #11100f;
+  color: var(--jlz-color-text-inverse);
   background: var(--jlz-color-accent);
 }
 
@@ -165,21 +165,23 @@ body::before {
 }
 
 .jlz-work-card__caption {
-  background: #12100f;
+  background: var(--jlz-color-surface);
 }
 
+// The caption chip keeps the dark console chip inside the inverse page:
+// the inverse palette flipped (paper text on ink background).
 html.uk-light .jlz-work-card__caption {
-  color: #f5e6d2;
-  background: #15110e;
+  color: var(--jlz-inverse-surface);
+  background: var(--jlz-inverse-text);
 }
 
 html.uk-light .jlz-topbar-controls .uk-icon-button {
-  color: #15110e;
-  background: rgba(248, 237, 223, 0.88);
+  color: var(--jlz-inverse-text);
+  background: color-mix(in srgb, var(--jlz-inverse-surface) 88%, transparent);
 }
 
 html.uk-light .jlz-menu-overlay::after {
-  background: #15110e;
+  background: var(--jlz-inverse-text);
 }
 
 @media (max-width: 639px) {

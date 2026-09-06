@@ -10,48 +10,67 @@
 //
 // init() is idempotent — safe to call on every route change.
 
+import { eventBus } from '../core/EventBus'
+
 interface CardState {
   el: HTMLElement
-  click: () => void
   _clickDebounce?: boolean
   releaseTimer?: number
 }
 
 let cards: CardState[] = []
-let sectionChangeHandler: ((e: Event) => void) | null = null
+const cardStates = new WeakMap<HTMLElement, CardState>()
+const gridListeners = new Map<HTMLElement, (event: MouseEvent) => void>()
+let sectionChangeUnsub: (() => void) | null = null
 
-/** Attach listeners to one card. */
+function contentRoot(): ParentNode {
+  return document.getElementById('spa-content') ?? document
+}
+
+/** Open one card while preserving the same debounce and visual handoff. */
+function openCard(state: CardState): void {
+  const idx = Number(state.el.dataset.projectIdx)
+  if (Number.isNaN(idx)) return
+  // The clicked 3D plane begins expanding in the same event turn. Delaying
+  // this dispatch would leave a perceptible gap between DOM activation and
+  // the shader-driven fullscreen transition.
+  if (state._clickDebounce) return
+  state._clickDebounce = true
+  state.el.classList.add('is-opening')
+  eventBus.emit('jlz:open-project', { idx })
+  state.releaseTimer = window.setTimeout(() => {
+    state.releaseTimer = undefined
+    state._clickDebounce = false
+    state.el.classList.remove('is-opening')
+  }, 700)
+}
+
+/** Register one card in the delegated grid owner. */
 function bindCard(cardEl: HTMLElement): void {
   if (cardEl.dataset.jlzBound === '1') return
   cardEl.dataset.jlzBound = '1'
 
-  const state: CardState = {
-    el: cardEl,
-    click: () => {
-      const idx = Number(cardEl.dataset.projectIdx)
-      if (Number.isNaN(idx)) return
-      // The clicked 3D plane begins expanding in the same event turn. Delaying
-      // this dispatch would leave a perceptible gap between DOM activation and
-      // the shader-driven fullscreen transition.
-      if (state._clickDebounce) return
-      state._clickDebounce = true
-      cardEl.classList.add('is-opening')
-      window.dispatchEvent(new CustomEvent('jlz:open-project', { detail: { idx } }))
-      state.releaseTimer = window.setTimeout(() => {
-        state.releaseTimer = undefined
-        state._clickDebounce = false
-        cardEl.classList.remove('is-opening')
-      }, 700)
-    },
-  }
-
-  cardEl.addEventListener('click', state.click)
+  const state: CardState = { el: cardEl }
+  cardStates.set(cardEl, state)
   cards.push(state)
+}
+
+/** Own one delegated click listener for a whole grid. */
+function bindGrid(grid: HTMLElement): void {
+  if (gridListeners.has(grid)) return
+  const listener = (event: MouseEvent): void => {
+    const target = (event.target as Element | null)?.closest<HTMLElement>('.jlz-work-card')
+    if (!target || !grid.contains(target)) return
+    const state = cardStates.get(target)
+    if (state) openCard(state)
+  }
+  grid.addEventListener('click', listener)
+  gridListeners.set(grid, listener)
 }
 
 /** All card grids on the page, in DOM order (matches section order). */
 function grids(): HTMLElement[] {
-  return Array.from(document.querySelectorAll<HTMLElement>('.jlz-works-grid'))
+  return Array.from(contentRoot().querySelectorAll<HTMLElement>('.jlz-works-grid'))
 }
 
 /** Apply roving tabindex to a single grid: first card = 0, rest = -1. */
@@ -70,28 +89,34 @@ function onPageSectionChange(): void {
 /** Scan the document for .jlz-work-card and bind any unbound ones.
  *  Called on jlz:route-change (works page render). Idempotent. */
 export function initWorkCards(): void {
-  const els = document.querySelectorAll<HTMLElement>('.jlz-work-card')
+  const els = contentRoot().querySelectorAll<HTMLElement>('.jlz-work-card')
   for (const el of els) bindCard(el)
 
-  grids().forEach(applyRoving)
+  grids().forEach((grid) => {
+    bindGrid(grid)
+    applyRoving(grid)
+  })
 
-  if (!sectionChangeHandler) {
-    sectionChangeHandler = onPageSectionChange
-    window.addEventListener('jlz:page-section-change', sectionChangeHandler)
+  if (!sectionChangeUnsub) {
+    sectionChangeUnsub = eventBus.on('jlz:page-section-change', () => onPageSectionChange())
   }
 }
 
 /** Remove all card listeners (e.g. on full teardown). */
 export function disposeWorkCards(): void {
+  for (const [grid, listener] of gridListeners) {
+    grid.removeEventListener('click', listener)
+  }
+  gridListeners.clear()
   for (const c of cards) {
     if (c.releaseTimer !== undefined) clearTimeout(c.releaseTimer)
-    c.el.removeEventListener('click', c.click)
+    cardStates.delete(c.el)
     c.el.dataset.jlzBound = ''
     c.el.removeAttribute('tabindex')
   }
   cards = []
-  if (sectionChangeHandler) {
-    window.removeEventListener('jlz:page-section-change', sectionChangeHandler)
-    sectionChangeHandler = null
+  if (sectionChangeUnsub) {
+    sectionChangeUnsub()
+    sectionChangeUnsub = null
   }
 }

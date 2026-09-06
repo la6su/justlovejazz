@@ -11,6 +11,8 @@
 
 export class BlurFade {
   private static instances = new WeakMap<HTMLElement, BlurFade>()
+  /** Active animation owners, kept enumerable for runtime teardown. */
+  private static active = new Set<BlurFade>()
 
   private readonly el: HTMLElement
   private cleanText = ''
@@ -19,6 +21,8 @@ export class BlurFade {
   private running = false
   private start = 0
   private dur = 1000
+  /** Rotation values are authored once per reveal, not re-parsed per RAF. */
+  private readonly rotations: number[] = []
 
   private constructor(el: HTMLElement) {
     this.el = el
@@ -45,19 +49,28 @@ export class BlurFade {
 
     this.dur = dur * 1000
     this.running = true
+    BlurFade.active.add(this)
     this.start = performance.now()
     this.el.setAttribute('data-visible', 'true')
     this.el.setAttribute('aria-label', this.cleanText)
+    this.rotations.length = 0
 
-    // Build spans — each character in its own span for stagger animation
-    this.el.innerHTML = this.cleanText
-      .split('')
-      .map((ch) => {
-        const safeChar = ch === ' ' ? '&nbsp;' : ch
-        const rot = (Math.random() - 0.5) * 30
-        return `<span aria-hidden="true" style="display:inline-block;opacity:0;transform:translateY(20px) rotate(${rot}deg);filter:blur(8px);transition:none;" data-rot="${rot}">${safeChar}</span>`
-      })
-      .join('')
+    // Build spans through DOM APIs. Titles can come from translated/editorial
+    // content, so interpolating them into innerHTML would turn markup into
+    // executable DOM and pay an avoidable HTML parse cost on every reveal.
+    const spans = Array.from(this.cleanText, (ch) => {
+      const span = document.createElement('span')
+      const rot = (Math.random() - 0.5) * 30
+      span.setAttribute('aria-hidden', 'true')
+      span.style.cssText =
+        'display:inline-block;opacity:0;transform:translateY(20px) rotate(' +
+        `${rot}deg);filter:blur(8px);transition:none;`
+      span.dataset.rot = String(rot)
+      this.rotations.push(rot)
+      span.textContent = ch === ' ' ? '\u00a0' : ch
+      return span
+    })
+    this.el.replaceChildren(...spans)
 
     this.timeoutId = window.setTimeout(() => this.finalize(), this.dur + 200)
     this.rafId = requestAnimationFrame(this.tick)
@@ -65,11 +78,17 @@ export class BlurFade {
 
   hide(): void {
     this.finalize()
+    if (this.cleanText) this.el.textContent = this.cleanText
+    this.el.removeAttribute('aria-label')
     this.el.removeAttribute('data-visible')
   }
 
   private tick = (ts: number): void => {
     if (!this.running) return
+    if (!this.el.isConnected) {
+      this.finalize()
+      return
+    }
     const t = Math.min(1, (ts - this.start) / this.dur)
     if (t >= 1) {
       this.finalize()
@@ -88,7 +107,7 @@ export class BlurFade {
       const eased = 1 - Math.pow(1 - charT, 3)
       const opacity = eased
       const translateY = 20 * (1 - eased)
-      const rotate = parseFloat(span.dataset.rot || '0') * (1 - eased)
+      const rotate = (this.rotations[i] ?? 0) * (1 - eased)
       const blur = 8 * (1 - eased)
       span.style.opacity = String(opacity)
       span.style.transform = `translateY(${translateY}px) rotate(${rotate}deg)`
@@ -100,6 +119,7 @@ export class BlurFade {
 
   finalize(): void {
     this.running = false
+    BlurFade.active.delete(this)
     if (this.rafId !== null) {
       cancelAnimationFrame(this.rafId)
       this.rafId = null
@@ -125,6 +145,7 @@ export class BlurFade {
 
   private cancel(): void {
     this.running = false
+    BlurFade.active.delete(this)
     if (this.rafId !== null) {
       cancelAnimationFrame(this.rafId)
       this.rafId = null
@@ -136,5 +157,10 @@ export class BlurFade {
     if (this.cleanText) {
       this.el.textContent = this.cleanText
     }
+  }
+
+  /** Stop every active blur animation owned by the current Experience. */
+  static disposeAll(): void {
+    for (const instance of BlurFade.active) instance.finalize()
   }
 }

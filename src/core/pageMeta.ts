@@ -5,37 +5,18 @@
 // they switch language with the EN/RU toggle. applyMetaTags(page) is called
 // by the router on every renderView + on jlz:lang-change.
 //
-// Canonical URL + og:url are built from window.location.origin + the page path.
+// Canonical URL + og:url are built from window.location.origin + the page
+// path. The path is read from the route manifest (`pathForPage`) — the single
+// source of truth for public paths; the i18n copy keys + sitemap fields come
+// from the pure metadata table (`pageMetaData`).
+//
+// Phase 9: paths are no longer re-declared here; a route rename is a
+// manifest change only.
 
 import { t, getLang } from './i18n'
+import { pathForPage } from './routeManifest'
+import { PAGE_META_DATA, type PageMetaData } from './pageMetaData'
 import type { PageId } from '../sections/_shared/constants'
-
-interface PageMetaConfig {
-  path: string
-  titleKey: string
-  descKey: string
-}
-
-const PAGE_META: Record<PageId, PageMetaConfig> = {
-  home: { path: '/', titleKey: 'meta.home.title', descKey: 'meta.home.description' },
-  services: {
-    path: '/services',
-    titleKey: 'meta.services.title',
-    descKey: 'meta.services.description',
-  },
-  works: { path: '/works', titleKey: 'meta.works.title', descKey: 'meta.works.description' },
-  manifesto: {
-    path: '/manifesto',
-    titleKey: 'meta.manifesto.title',
-    descKey: 'meta.manifesto.description',
-  },
-  lab: { path: '/lab', titleKey: 'meta.lab.title', descKey: 'meta.lab.description' },
-  contact: {
-    path: '/contact',
-    titleKey: 'meta.contact.title',
-    descKey: 'meta.contact.description',
-  },
-}
 
 const SITE_NAME = 'JUSTLOVEJAZZ'
 
@@ -61,16 +42,19 @@ function ensureCanonical(): HTMLLinkElement {
   return el
 }
 
-/** Apply per-page meta tags for the given page. Uses i18n for title/description.
- *  Call on every route change and on language change. */
+/**
+ * Apply per-page meta tags for the given page. Uses i18n for
+ * title/description and the route manifest for the canonical path.
+ * Call on every route change and on language change.
+ */
 export function applyMetaTags(page: PageId): void {
-  const cfg = PAGE_META[page]
+  const cfg: PageMetaData = PAGE_META_DATA[page]
   if (!cfg) return
 
   const title = t(cfg.titleKey)
   const description = t(cfg.descKey)
   const origin = window.location.origin
-  const url = `${origin}${cfg.path}`
+  const url = `${origin}${pathForPage(page)}`
 
   // <title>
   document.title = title

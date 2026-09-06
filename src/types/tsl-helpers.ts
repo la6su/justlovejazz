@@ -21,6 +21,7 @@ export function tslPass(
   getTextureNode: () => unknown
   scene: Scene
   camera: Camera
+  dispose: () => void
 } {
   return _pass(scene as any, camera as any) as any
 }

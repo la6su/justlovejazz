@@ -403,7 +403,7 @@ body[data-cinematic-sheet='menu'] .jlz-menu-preview {
 .jlz-menu-preview__label {
   max-width: 7ch;
   color: var(--jlz-color-text);
-  font-size: clamp(4.5rem, 9vw, 9rem);
+  font-size: clamp(@jlz-type-step-4, 9vw, @jlz-type-step-6); // φ steps 4–6
   font-variation-settings:
     'wght' 680,
     'FLAR' 62,
@@ -483,7 +483,7 @@ body[data-cinematic-sheet='menu'] .jlz-menu-preview {
 }
 
 .jlz-menu-overlay .jlz-menu-nav__label {
-  font-size: clamp(1.65rem, 3.25vw, 3.5rem);
+  font-size: clamp(@jlz-type-step-2, 3.25vw, @jlz-type-step-4); // φ steps 2–4
   line-height: 0.92;
 }
 
@@ -578,7 +578,7 @@ body[data-cinematic-sheet='menu'] .jlz-menu-nav__item:nth-child(7) .jlz-menu-nav
   }
 
   .jlz-menu-overlay .jlz-menu-nav__label {
-    font-size: clamp(1.55rem, 8vw, 2.35rem);
+    font-size: clamp(@jlz-type-step-2, 8vw, @jlz-type-step-3); // φ steps 2–3
   }
 
   // UIkit remains the state owner. On a sheet initialized while hidden, make

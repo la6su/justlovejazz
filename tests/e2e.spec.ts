@@ -78,15 +78,37 @@ function attachErrorCapture(page: Page, errors: string[]): void {
 }
 
 async function waitForRouter(page: Page): Promise<void> {
-  // index.html is prerendered, so mounted DOM alone is not proof that the
-  // lazy shell has called initRouter(). startApp() injects main.less directly
-  // before that synchronous call; waiting for its distinctive rule avoids
-  // dispatching a navigation request into the startup gap.
-  await page.waitForFunction(() =>
-    [...document.head.querySelectorAll('style')].some((style) =>
-      style.textContent?.includes('.jlz-storyline'),
-    ),
+  // Proof the Vue navigation owner committed the first page: its semantic
+  // `data-page-view` marker is written on the mounted route root. Waiting only
+  // for main.less would dispatch a navigation request into the Vue startup gap
+  // where no listener exists yet — a CustomEvent is not queued, so the request
+  // is simply lost.
+  await page.waitForFunction(
+    () =>
+      [...document.head.querySelectorAll('style')].some((style) =>
+        style.textContent?.includes('.jlz-storyline'),
+      ) &&
+        Boolean(document.querySelector('#spa-content')?.getAttribute('data-page-view')) &&
+        (window as unknown as { __jlzRouterReady?: boolean }).__jlzRouterReady === true,
   )
+}
+
+/**
+ * Trigger an in-app strict navigation through the app's typed event bus.
+ * The Phase 10 raw `window` bridge was removed, so the app only receives
+ * `jlz:navigate` via the typed port; the app exposes the dev/test seam
+ * `window.__jlzEmit` (entry-app.ts) to call that port from the test.
+ */
+function navigateInApp(page: Page, path: string): Promise<void> {
+  return page.evaluate((nextPath) => {
+    const emit = (
+      window as unknown as {
+        __jlzEmit?: (event: string, detail?: unknown) => void
+      }
+    ).__jlzEmit
+    if (!emit) throw new Error('window.__jlzEmit test seam is not available')
+    emit('jlz:navigate', { path: nextPath })
+  }, path)
 }
 
 test.describe('JustLoveJazz — page boot smoke', () => {
@@ -105,6 +127,71 @@ test.describe('JustLoveJazz — page boot smoke', () => {
       expect(response.ok(), `${route} should resolve on the production preview`).toBe(true)
       expect(await response.text(), `${route} should serve the SPA shell`).toContain('id="app"')
     }
+  })
+
+  test('approved builder documents ship as static /p pages without the app bundle', async ({
+    request,
+  }) => {
+    // Phase 9, slice 5: `published: true` builder documents are rendered by
+    // the publish pipeline (scripts/publish-builder-pages.mjs) through the
+    // trusted Vue registry into standalone static routes — the registry body,
+    // the per-page Less rewritten by Vite, zero application scripts, no
+    // editor surface.
+    const response = await request.get('/p/studio-page')
+    expect(response.ok()).toBe(true)
+    const html = await response.text()
+
+    expect(html).toContain('<main id="main" class="jlz-builder-page" role="main">')
+    expect(html).toContain('<title>Studio page | JUSTLOVEJAZZ</title>')
+    expect(html).toContain('<link rel="canonical" href="https://justlovejazz.dev/p/studio-page" />')
+    expect(html).toMatch(/\/assets\/studio-page-[A-Za-z0-9_-]+\.css/)
+    expect(html).not.toContain('<script')
+    expect(html).not.toMatch(/vendor-three|assets\/(app|main)\b/)
+    expect(html).not.toContain('__jlz-admin')
+    expect(html).not.toContain('data-builder-id')
+  })
+
+  test('no-scene mode boots the route shell and semantic content without a renderer', async ({
+    page,
+  }) => {
+    // Phase 5 prerender contract: ?no-scene=1 boots the route shell and the
+    // semantic route content WITHOUT the scene runtime — no canvas is ever
+    // created, and navigation still works on a DOM-only world.
+    await page.goto('/?no-scene=1')
+
+    const main = page.locator('main#spa-content')
+    await expect(main).toBeAttached({ timeout: 20000 })
+    for (const id of SECTION_IDS) {
+      await expect(page.locator(`#${id}`)).toBeAttached({ timeout: 20000 })
+    }
+    await expect(page.locator('canvas')).toHaveCount(0)
+
+    // jlz:webgl-ready fired (synthetic) — Enter becomes available.
+    await expect(page.locator('#jlz-splash-enter')).toHaveClass(/is-ready/)
+
+    // The no-scene path still mounts the navigation owner (startApp's router
+    // branch runs before the no-scene early return inside boot()); wait for
+    // it so the request below cannot land in the startup gap.
+    await waitForRouter(page)
+
+    // Semantic navigation without the scene: in-app push lands on /works.
+    await navigateInApp(page, '/works')
+    await expect(page).toHaveURL(/\/works$/)
+    await expect(page.locator('#section-works-01')).toBeAttached({ timeout: 20000 })
+    await expect(page.locator('canvas')).toHaveCount(0)
+  })
+
+  test('direct content-route entry renders the target page, not the prerendered home', async ({
+    page,
+  }) => {
+    // index.html is prerendered with the home sections; a direct deep link to
+    // a content route must land on that route's page (the lenient fallback is
+    // home-only for UNKNOWN paths, never for a manifest route).
+    await page.goto('/works', { waitUntil: 'domcontentloaded' })
+    await expect(page.locator('#section-works-01')).toBeAttached({ timeout: 60000 })
+    await expect(page.locator('#section-works-04')).toBeAttached({ timeout: 20000 })
+    // The prerendered home sections are gone once the router lands on /works.
+    await expect(page.locator('#section-intro')).toHaveCount(0, { timeout: 60000 })
   })
 
   test('variable typography is self-hosted with Cyrillic coverage', async ({ request }) => {
@@ -155,9 +242,7 @@ test.describe('JustLoveJazz — page boot smoke', () => {
     await expect(announcer).toHaveAttribute('aria-live', 'polite')
     await expect(announcer).toHaveAttribute('aria-atomic', 'true')
 
-    await page.evaluate(() => {
-      window.dispatchEvent(new CustomEvent('jlz:navigate', { detail: { path: '/services' } }))
-    })
+    await navigateInApp(page, '/services')
 
     await expect(page).toHaveURL(/\/services$/)
     await expect(page).toHaveTitle('Services — JUSTLOVEJAZZ')
@@ -214,10 +299,7 @@ test.describe('JustLoveJazz — accessibility & DOM UI', () => {
     await expect(page.locator('#section-intro')).toBeAttached()
     await waitForRouter(page)
 
-    const navigate = (path: string) =>
-      page.evaluate((nextPath) => {
-        window.dispatchEvent(new CustomEvent('jlz:navigate', { detail: { path: nextPath } }))
-      }, path)
+    const navigate = (path: string) => navigateInApp(page, path)
 
     await navigate('/lab#section-lab-02')
     await expect(page).toHaveURL(/\/lab#section-lab-02$/)
@@ -241,9 +323,7 @@ test.describe('JustLoveJazz — accessibility & DOM UI', () => {
     await page.goto('/')
     await waitForRouter(page)
 
-    await page.evaluate(() => {
-      window.dispatchEvent(new CustomEvent('jlz:navigate', { detail: { path: '/works' } }))
-    })
+    await navigateInApp(page, '/works')
     await expect(page).toHaveURL(/\/works$/)
 
     await page.goBack()
@@ -432,7 +512,209 @@ test.describe('JustLoveJazz — accessibility & DOM UI', () => {
   })
 })
 
+test.describe('JustLoveJazz — Phase 7 persistent scene host', () => {
+  test('splash→Enter over exactly one canvas; navigation never remounts the scene root', async ({
+    page,
+  }) => {
+    // The software backend may take longer than the default budget to reach
+    // the first successful render (readiness gate).
+    test.setTimeout(120000)
+    const errors: string[] = []
+    attachErrorCapture(page, errors)
+
+    await page.goto('/')
+
+    // Readiness: Enter becomes available only after renderer init + backend
+    // inspection + Tres context mount + the initial World's first render.
+    const enter = page.locator('#jlz-splash-enter')
+    await expect(enter).toHaveClass(/is-ready/)
+
+    // Exactly one canvas (the persistent Tres root, selector canvas.canvas),
+    // hidden from the accessibility tree.
+    const canvas = page.locator('canvas.canvas')
+    await expect(canvas).toHaveCount(1)
+    await expect(canvas).toHaveAttribute('aria-hidden', 'true')
+
+    // Splash → Enter.
+    await enter.click()
+    await expect(page.locator('#jlz-app-loader')).toBeHidden()
+
+    // Mark the canvas element: a remount would lose the marker.
+    await page.evaluate(() => {
+      const el = document.querySelector('canvas.canvas') as
+        (HTMLCanvasElement & { __jlzPhase7Mark?: string }) | null
+      if (el) el.__jlzPhase7Mark = 'phase7'
+    })
+    const markedAfterBoot = () =>
+      page.evaluate(() =>
+        Boolean(
+          (
+            document.querySelector('canvas.canvas') as
+              (HTMLCanvasElement & { __jlzPhase7Mark?: string }) | null
+          )?.__jlzPhase7Mark,
+        ),
+      )
+    expect(await markedAfterBoot(), 'canvas was not reachable to mark').toBe(true)
+
+    // In-app navigation to a content route.
+    await navigateInApp(page, '/works')
+    await expect(page).toHaveURL(/\/works$/)
+    await expect(page.locator('#section-works-01')).toBeAttached()
+
+    // The persistent SceneHost (sibling of RouterView) survives navigation:
+    // still exactly one canvas and the SAME element (marker intact).
+    await expect(page.locator('canvas.canvas')).toHaveCount(1)
+    expect(await markedAfterBoot(), 'scene root remounted on /works navigation').toBe(true)
+
+    // And again on the way back home.
+    await navigateInApp(page, '/')
+    await expect(page).toHaveURL(/\/$/)
+    await expect(page.locator('canvas.canvas')).toHaveCount(1)
+    expect(await markedAfterBoot(), 'scene root remounted on the way back home').toBe(true)
+
+    const fatal = errors.filter(isFatalError)
+    expect(fatal, `Fatal errors:\n${fatal.join('\n')}`).toEqual([])
+  })
+
+  test('Tres canvas keeps the renderer DPR cap on high-density viewports', async ({ browser }) => {
+    const context = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      deviceScaleFactor: 3,
+    })
+    const page = await context.newPage()
+    try {
+      await page.goto('/')
+      await expect(page.locator('#jlz-splash-enter')).toHaveClass(/is-ready/, { timeout: 90000 })
+      const metrics = await page.evaluate(() => {
+        const canvas = document.querySelector('canvas.canvas')
+        return {
+          dpr: window.devicePixelRatio,
+          cssWidth: window.innerWidth,
+          bufferWidth: canvas?.width ?? 0,
+        }
+      })
+      expect(metrics.dpr).toBe(3)
+      expect(metrics.bufferWidth).toBeLessThanOrEqual(Math.ceil(metrics.cssWidth * 1.5))
+    } finally {
+      await context.close()
+    }
+  })
+})
+
 test.describe('JustLoveJazz — runtime health', () => {
+  test('WebGLBackend survives a real webglcontextlost handoff', async ({ page }) => {
+    test.setTimeout(120000)
+    const errors: string[] = []
+    attachErrorCapture(page, errors)
+    await page.goto(
+      process.env.JLZ_WEBGL_RECOVERY_CHROME === '1' ? '/?force-webgl-backend=1' : '/',
+    )
+    await expect(page.locator('main#spa-content')).toBeAttached({ timeout: 20000 })
+    await expect(page.locator('#jlz-splash-enter')).toHaveClass(/is-ready/, { timeout: 90000 })
+
+    await expect
+      .poll(() => page.evaluate(() => window.__jlzHost?.backend ?? null), { timeout: 5000 })
+      .not.toBeNull()
+    const backend = await page.evaluate(() => window.__jlzHost?.backend ?? null)
+    if (process.env.JLZ_WEBGL_RECOVERY_CHROME === '1') {
+      console.info(`[WebGL recovery gate] backend=${backend ?? 'unreported'}`)
+    }
+    test.skip(
+      backend !== 'WebGLBackend',
+      `WebGLBackend probe skipped: ${backend ?? 'backend was not reported'}`,
+    )
+
+    const probe = await page.evaluate(async () => {
+      // Some headless Chromium builds expose WEBGL_lose_context but do not
+      // restore a usable default framebuffer. Skip those environments before
+      // touching the production canvas; real WebGL browsers still execute the
+      // full recovery handoff below.
+      const preflightCanvas = document.createElement('canvas')
+      const preflightGl = preflightCanvas.getContext('webgl2')
+      const preflightLose = preflightGl?.getExtension('WEBGL_lose_context')
+      if (!preflightGl || !preflightLose) {
+        return { available: false, reason: 'WebGL context restoration preflight is unavailable' }
+      }
+      const preflightRestored = await new Promise<boolean>((resolve) => {
+        let settled = false
+        const finish = (value: boolean) => {
+          if (settled) return
+          settled = true
+          resolve(value)
+        }
+        preflightCanvas.addEventListener(
+          'webglcontextlost',
+          (event) => {
+            event.preventDefault()
+            preflightLose.restoreContext()
+          },
+          { once: true },
+        )
+        preflightCanvas.addEventListener('webglcontextrestored', () => finish(true), { once: true })
+        preflightLose.loseContext()
+        window.setTimeout(() => finish(false), 2000)
+      })
+      if (!preflightRestored || preflightGl.getParameter(preflightGl.VIEWPORT) === null) {
+        return { available: false, reason: 'browser cannot restore a usable WebGL framebuffer' }
+      }
+
+      const canvas = document.querySelector('canvas.canvas')
+      if (!(canvas instanceof HTMLCanvasElement)) {
+        return { available: false, reason: 'persistent canvas is unavailable' }
+      }
+      const gl = canvas.getContext('webgl2')
+      if (!gl) {
+        return { available: false, reason: 'active WebGL2 context is unavailable' }
+      }
+      const lose = gl.getExtension('WEBGL_lose_context')
+      if (!lose) {
+        return { available: false, reason: 'WEBGL_lose_context extension is unavailable' }
+      }
+
+      const lost = await new Promise<boolean>((resolve) => {
+        let settled = false
+        const finish = (value: boolean) => {
+          if (settled) return
+          settled = true
+          resolve(value)
+        }
+        canvas.addEventListener(
+          'webglcontextlost',
+          (event) => {
+            event.preventDefault()
+            finish(true)
+          },
+          { once: true },
+        )
+        lose.loseContext()
+        window.setTimeout(() => finish(false), 2000)
+      })
+
+      // Keep the browser's context-loss contract realistic: preventing the
+      // default loss event allows WEBGL_lose_context to restore the context,
+      // while the production Renderer recovery runs asynchronously.
+      if (lost) {
+        await new Promise((resolve) => window.setTimeout(resolve, 100))
+        lose.restoreContext()
+      }
+
+      return { available: true, lost }
+    })
+
+    if (process.env.JLZ_WEBGL_RECOVERY_CHROME === '1' && !probe.available) {
+      console.info(`[WebGL recovery gate] skipped: ${probe.reason}`)
+    }
+
+    test.skip(!probe.available, `WebGLBackend probe skipped: ${probe.reason}`)
+    expect(probe.lost, 'WEBGL_lose_context did not dispatch webglcontextlost').toBe(true)
+    await expect
+      .poll(() => page.evaluate(() => window.__jlzHost?.recovered === true), { timeout: 15000 })
+      .toBe(true)
+    expect(await page.locator('canvas.canvas').count()).toBe(1)
+    const fatal = errors.filter(isFatalError)
+    expect(fatal, `Fatal errors:\n${fatal.join('\n')}`).toEqual([])
+  })
+
   test('no fatal JS errors on home load', async ({ page }) => {
     const errors: string[] = []
     attachErrorCapture(page, errors)
@@ -466,9 +748,7 @@ test.describe('JustLoveJazz — runtime health', () => {
       expect(flag).toBe('1')
 
       await waitForRouter(page)
-      await page.evaluate(() => {
-        window.dispatchEvent(new CustomEvent('jlz:navigate', { detail: { path: '/works' } }))
-      })
+      await navigateInApp(page, '/works')
       await expect(page).toHaveURL(/\/works$/)
       await expect(page.locator('.jlz-route-transition')).toHaveCount(0)
     } finally {

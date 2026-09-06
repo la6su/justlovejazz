@@ -6,20 +6,37 @@
 // without occupying a story frame.
 
 import { prefersReducedMotion } from '../core/motionPolicy'
+import type { PageId } from '../sections/_shared/constants'
+import { worldSlotIndex, WORLD_SLOT_COUNT } from '../core/worldSlots'
+import {
+  clampStoryPosition,
+  mainSectionFromPosition,
+  storyProgressFromScroll,
+  type StorySide,
+} from '../core/storyState'
+import { eventBus } from '../core/EventBus'
 
-const CONTACT_FOOTER_INDEX = 0
-const FIRST_MAIN = 1
-const LAST_MAIN = 4
-const MENU_INDEX = 5
+// Story slot indices are derived from the canonical six-slot model
+// (worldSlots) instead of re-declared here — the slot model is the single
+// source of truth for the index assignment. Slot 0 is the lab/Contact-finale
+// slot, the four main story frames are slots 1..4, and the menu sheet is
+// slot 5. These are canonical IDs, so the lookups are always defined.
+const CONTACT_FOOTER_INDEX = worldSlotIndex('lab')!
+const FIRST_MAIN = worldSlotIndex('intro')!
+const LAST_MAIN = worldSlotIndex('contact')!
+const MENU_INDEX = worldSlotIndex('menu')!
 const MAIN_COUNT = LAST_MAIN - FIRST_MAIN + 1
 const INTERACTION_SETTLE_MS = 220
 
-type SideState = 'center' | 'footer' | 'menu'
+// The side positions are the story-state contract's StorySide (single
+// source of the 'center' | 'footer' | 'menu' set).
+type SideState = StorySide
 
 export class CinematicNav {
   public el: HTMLElement
 
   private _sectionCount: number
+  private _page: () => PageId
   private _track: HTMLElement | null = null
   private _mainSections: HTMLElement[] = []
   private _mainSection = FIRST_MAIN
@@ -32,16 +49,27 @@ export class CinematicNav {
   private _scrollFrame: number | null = null
   private _focusFrame: number | null = null
   private _restoreFocus: HTMLElement | null = null
-  private _routeChangeHandler: (() => void) | null = null
-  private _langChangeHandler: (() => void) | null = null
-  private _closePanelHandler: (() => void) | null = null
+  private _routeChangeUnsub: (() => void) | null = null
+  private _langChangeUnsub: (() => void) | null = null
+  private _closePanelUnsub: (() => void) | null = null
   private _keydownHandler: ((event: KeyboardEvent) => void) | null = null
   private _scrollHandler: (() => void) | null = null
   private _sheetClickHandler: ((event: MouseEvent) => void) | null = null
   private _navButtons: HTMLButtonElement[] = []
+  private _navButtonHandlers = new Map<HTMLButtonElement, () => void>()
+  private _reducedMotion = prefersReducedMotion()
 
-  constructor(sectionCount: number) {
-    this._sectionCount = Math.max(6, sectionCount)
+  /**
+   * Loop-wake port (Phase 7). Native track scrolling is a renderer-loop wake
+   * source: the rAF-throttled scroll sync reports activity so the single
+   * driver can start the loop on a settled scene. Wired by Experience.
+   */
+  onActivity: (() => void) | null = null
+
+  constructor(sectionCount: number, page: () => PageId) {
+    this._page = page
+    // The six-slot model is the worldSlots contract, not a literal.
+    this._sectionCount = Math.max(WORLD_SLOT_COUNT, sectionCount)
     this.el = this._buildNavigator()
     this._addGlobalListeners()
     this._bindTrack()
@@ -70,7 +98,9 @@ export class CinematicNav {
       label.dataset.storyLabel = ''
       label.textContent = `Section ${index}`
       button.append(number, label)
-      button.addEventListener('click', () => this.goToSection(index))
+      const clickHandler = (): void => this.goToSection(index)
+      button.addEventListener('click', clickHandler)
+      this._navButtonHandlers.set(button, clickHandler)
       items.appendChild(button)
       this._navButtons.push(button)
     }
@@ -85,14 +115,11 @@ export class CinematicNav {
   }
 
   private _addGlobalListeners(): void {
-    this._routeChangeHandler = () => this._bindTrack()
-    window.addEventListener('jlz:route-change', this._routeChangeHandler)
+    this._routeChangeUnsub = eventBus.on('jlz:route-change', () => this._bindTrack())
 
-    this._langChangeHandler = () => this._refreshLabels()
-    window.addEventListener('jlz:lang-change', this._langChangeHandler)
+    this._langChangeUnsub = eventBus.on('jlz:lang-change', () => this._refreshLabels())
 
-    this._closePanelHandler = () => this._closeSide()
-    window.addEventListener('jlz:close-nav', this._closePanelHandler)
+    this._closePanelUnsub = eventBus.on('jlz:close-nav', () => this._closeSide())
 
     this._keydownHandler = (event: KeyboardEvent) => {
       if (document.querySelector('.uk-modal.uk-open')) return
@@ -132,6 +159,7 @@ export class CinematicNav {
   }
 
   private _bindTrack(): void {
+    this._cancelPendingFrames()
     this._removeTrackListeners()
     // Clear stale state from the previous page — _restoreFocus points to a
     // detached node after innerHTML replacement, and a pending _inactiveTimer
@@ -142,7 +170,7 @@ export class CinematicNav {
       this._inactiveTimer = null
     }
 
-    const pageMode = document.body.dataset.page !== 'home'
+    const pageMode = this._page() !== 'home'
     this._track = pageMode
       ? document.querySelector<HTMLElement>('#spa-content .jlz-page')
       : document.getElementById('spa-content')
@@ -168,6 +196,9 @@ export class CinematicNav {
       this._scrollFrame = requestAnimationFrame(() => {
         this._scrollFrame = null
         this._syncFromScroll()
+        // Phase 7: native scroll is a loop wake source — report activity so a
+        // settled single-driver loop can start advancing the scene.
+        this.onActivity?.()
       })
     }
 
@@ -183,17 +214,28 @@ export class CinematicNav {
     if (this._scrollHandler) this._track.removeEventListener('scroll', this._scrollHandler)
   }
 
+  private _cancelPendingFrames(): void {
+    if (this._scrollFrame !== null) {
+      cancelAnimationFrame(this._scrollFrame)
+      this._scrollFrame = null
+    }
+    if (this._focusFrame !== null) {
+      cancelAnimationFrame(this._focusFrame)
+      this._focusFrame = null
+    }
+  }
+
   private _syncFromScroll(): void {
     if (!this._track || this._mainSections.length === 0) return
     const height = Math.max(1, this._track.clientHeight || window.innerHeight)
-    const position = Math.max(
-      0,
-      Math.min(this._mainSections.length - 1, this._track.scrollTop / height),
-    )
-    const nextMain = FIRST_MAIN + Math.round(position)
+    // The clamp + main-section rounding rule are the pure storyState
+    // contract; the clamped position also feeds the per-section CSS vars.
+    const position = clampStoryPosition(this._track.scrollTop / height, this._mainSections.length)
+    const nextMain = mainSectionFromPosition(position, FIRST_MAIN, this._mainSections.length)
 
+    const wasSide = this._side
     this._side = 'center'
-    this._applySideState()
+    if (wasSide !== this._side) this._applySideState()
     this._mainSection = nextMain
     this._updateStoryState(position)
     this._notifySection(nextMain)
@@ -208,8 +250,14 @@ export class CinematicNav {
       const distance = Math.min(1, Math.abs(index - position))
       section.dataset.storyState = state
       section.style.setProperty('--jlz-story-distance', String(distance))
-      section.style.setProperty('--jlz-story-shift', `${(index - position) * 3}vh`)
-      section.style.setProperty('--jlz-story-shift-opposite', `${(position - index) * 2.5}vh`)
+      section.style.setProperty(
+        '--jlz-story-shift',
+        this._reducedMotion ? '0vh' : `${(index - position) * 3}vh`,
+      )
+      section.style.setProperty(
+        '--jlz-story-shift-opposite',
+        this._reducedMotion ? '0vh' : `${(position - index) * 2.5}vh`,
+      )
       section.style.setProperty('--jlz-story-title-opacity', String(1 - distance * 0.7))
       section.style.setProperty('--jlz-story-panel-opacity', String(1 - distance * 0.82))
     })
@@ -220,6 +268,13 @@ export class CinematicNav {
       if (active) button.setAttribute('aria-current', 'step')
       else button.removeAttribute('aria-current')
     })
+  }
+
+  /** Settle decorative story parallax when the live motion policy changes. */
+  setReducedMotion(reduced: boolean): void {
+    if (this._reducedMotion === reduced) return
+    this._reducedMotion = reduced
+    this._updateStoryState(this._mainSection - FIRST_MAIN)
   }
 
   private _refreshLabels(): void {
@@ -234,16 +289,12 @@ export class CinematicNav {
   }
 
   private _notifySection(index: number): void {
-    if (index === this._lastNotified && this._onSectionChange) return
+    if (index === this._lastNotified) return
     this._lastNotified = index
     this._onSectionChange?.(index)
 
-    if (document.body.dataset.page !== 'home') {
-      window.dispatchEvent(
-        new CustomEvent('jlz:page-section-change', {
-          detail: { index, count: this._sectionCount },
-        }),
-      )
+    if (this._page() !== 'home') {
+      eventBus.emit('jlz:page-section-change', { index, count: this._sectionCount })
     }
   }
 
@@ -281,7 +332,7 @@ export class CinematicNav {
     if (!this._track) return
     const clamped = Math.max(FIRST_MAIN, Math.min(LAST_MAIN, index))
     const top = (clamped - FIRST_MAIN) * Math.max(1, this._track.clientHeight || window.innerHeight)
-    const behavior: ScrollBehavior = prefersReducedMotion() ? 'auto' : 'smooth'
+    const behavior: ScrollBehavior = this._reducedMotion ? 'auto' : 'smooth'
     if (typeof this._track.scrollTo === 'function') this._track.scrollTo({ top, behavior })
     else this._track.scrollTop = top
   }
@@ -300,13 +351,25 @@ export class CinematicNav {
     return this._mainSection
   }
 
+  /** Read-only story-side port for scene owners; the DOM dataset is only a UI projection. */
+  getSide(): StorySide {
+    return this._side
+  }
+
   getOverallProgress(): number {
     if (this._side === 'footer') return 0
     if (this._side === 'menu') return 1
-    if (!this._track) return FIRST_MAIN / (this._sectionCount - 1)
-    const height = Math.max(1, this._track.clientHeight || window.innerHeight)
-    const storyPosition = Math.max(0, Math.min(MAIN_COUNT - 1, this._track.scrollTop / height))
-    return (FIRST_MAIN + storyPosition) / (this._sectionCount - 1)
+    if (!this._track)
+      return storyProgressFromScroll(0, 1, MAIN_COUNT, FIRST_MAIN, this._sectionCount)
+    // The main→slot progress rescale is the pure storyState contract.
+    const height = this._track.clientHeight || window.innerHeight
+    return storyProgressFromScroll(
+      this._track.scrollTop,
+      height,
+      MAIN_COUNT,
+      FIRST_MAIN,
+      this._sectionCount,
+    )
   }
 
   goToSection(index: number): void {
@@ -357,7 +420,12 @@ export class CinematicNav {
   }
 
   goToSectionByHash(hash: string): void {
-    const target = document.getElementById(hash.replace('#', ''))
+    const targetId = hash.replace(/^#/, '')
+    const target = this._track
+      ? [...this._track.querySelectorAll<HTMLElement>('[id]')].find(
+          (candidate) => candidate.id === targetId,
+        ) ?? null
+      : null
     if (!target) return
 
     const section = target.closest<HTMLElement>('[data-section], [data-page-section]') ?? target
@@ -402,18 +470,20 @@ export class CinematicNav {
 
   dispose(): void {
     this._removeTrackListeners()
-    if (this._routeChangeHandler)
-      window.removeEventListener('jlz:route-change', this._routeChangeHandler)
-    if (this._langChangeHandler)
-      window.removeEventListener('jlz:lang-change', this._langChangeHandler)
-    if (this._closePanelHandler)
-      window.removeEventListener('jlz:close-nav', this._closePanelHandler)
+    this._cancelPendingFrames()
+    this._routeChangeUnsub?.()
+    this._langChangeUnsub?.()
+    this._closePanelUnsub?.()
+    this._routeChangeUnsub = this._langChangeUnsub = this._closePanelUnsub = null
     if (this._keydownHandler) window.removeEventListener('keydown', this._keydownHandler)
     if (this._sheetClickHandler)
       document.removeEventListener('click', this._sheetClickHandler, true)
+    this._navButtonHandlers.forEach((handler, button) => {
+      button.removeEventListener('click', handler)
+    })
+    this._navButtonHandlers.clear()
+    this._navButtons = []
     if (this._inactiveTimer) clearTimeout(this._inactiveTimer)
-    if (this._scrollFrame !== null) cancelAnimationFrame(this._scrollFrame)
-    if (this._focusFrame !== null) cancelAnimationFrame(this._focusFrame)
     this._mainSections.forEach((section) => {
       section.inert = false
     })

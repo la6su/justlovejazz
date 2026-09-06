@@ -1,0 +1,143 @@
+{
+  "tool": "phase7-live-gate",
+  "base": "http://127.0.0.1:5173",
+  "host": "linux x64",
+  "utc": "2026-08-26T13:33:55.826Z",
+  "allPassed": true,
+  "runs": [
+    {
+      "label": "unified (auto backend)",
+      "url": "http://127.0.0.1:5173/",
+      "reducedMotion": false,
+      "settledIdleRequired": true,
+      "dataEngine": "three.js r185 webgpu",
+      "backendLog": "[entry-app] Phase 7 host ready: mode=webgl backend=WebGLBackend isFallbackAdapter=null",
+      "ready": true,
+      "canvasCount": 1,
+      "canvasAriaHidden": true,
+      "loop": {
+        "loopActive": false,
+        "hidden": false,
+        "frames": 128,
+        "settledFrames": 8,
+        "lastInvalidation": "breath"
+      },
+      "resources": {
+        "canvasCount": 2,
+        "scene": {
+          "geometries": 13,
+          "materials": 24,
+          "textures": 9
+        },
+        "renderer": {
+          "geometries": 10,
+          "textures": 14,
+          "programs": null
+        },
+        "post": {
+          "renderTargets": 0,
+          "passes": 0,
+          "webgpuPipeline": false
+        }
+      },
+      "timing": {
+        "samples": 46,
+        "scene": {
+          "p50": 0.1,
+          "p95": 0.6,
+          "latest": 0
+        },
+        "camera": {
+          "p50": 0,
+          "p95": 0.1,
+          "latest": 0
+        },
+        "renderer": {
+          "p50": 0.5,
+          "p95": 2.3,
+          "latest": 0.5
+        },
+        "total": {
+          "p50": 0.9,
+          "p95": 2.6,
+          "latest": 0.9
+        }
+      },
+      "timingCaptured": true,
+      "destroy": {
+        "fatalErrors": [],
+        "canvasSurvives": true
+      },
+      "fatalErrors": [],
+      "passed": true,
+      "notes": []
+    },
+    {
+      "label": "unified + reduced motion",
+      "url": "http://127.0.0.1:5173/",
+      "reducedMotion": true,
+      "settledIdleRequired": true,
+      "dataEngine": "three.js r185 webgpu",
+      "backendLog": "[entry-app] Phase 7 host ready: mode=webgl backend=WebGLBackend isFallbackAdapter=null",
+      "ready": true,
+      "canvasCount": 1,
+      "canvasAriaHidden": true,
+      "loop": {
+        "loopActive": false,
+        "hidden": false,
+        "frames": 111,
+        "settledFrames": 4,
+        "lastInvalidation": "cursor"
+      },
+      "resources": {
+        "canvasCount": 2,
+        "scene": {
+          "geometries": 13,
+          "materials": 24,
+          "textures": 9
+        },
+        "renderer": {
+          "geometries": 10,
+          "textures": 14,
+          "programs": null
+        },
+        "post": {
+          "renderTargets": 0,
+          "passes": 0,
+          "webgpuPipeline": false
+        }
+      },
+      "timing": {
+        "samples": 16,
+        "scene": {
+          "p50": 0,
+          "p95": 0.4,
+          "latest": 0
+        },
+        "camera": {
+          "p50": 0.1,
+          "p95": 0.3,
+          "latest": 0.1
+        },
+        "renderer": {
+          "p50": 0.6,
+          "p95": 152.2,
+          "latest": 0.4
+        },
+        "total": {
+          "p50": 0.9,
+          "p95": 153.9,
+          "latest": 0.8
+        }
+      },
+      "timingCaptured": true,
+      "destroy": {
+        "fatalErrors": [],
+        "canvasSurvives": true
+      },
+      "fatalErrors": [],
+      "passed": true,
+      "notes": []
+    }
+  ]
+}

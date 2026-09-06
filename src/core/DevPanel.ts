@@ -13,6 +13,8 @@
 import { Pane } from 'tweakpane'
 import type { Experience } from '../Experience/Experience'
 import { getLang } from './i18n'
+import { FrameGapStats } from './FrameGapStats'
+import type { RuntimeResourceSnapshot } from './RuntimeResourceSnapshot'
 
 const STORAGE_KEY = 'jlz:devpanel'
 
@@ -74,6 +76,13 @@ export class DevPanel {
     rendering: false,
     lang: '?',
     lowFps: false,
+    sceneGeometries: 0,
+    sceneMaterials: 0,
+    sceneTextures: 0,
+    postTargets: 0,
+    postPasses: 0,
+    rendererCanvasCount: 0,
+    documentCanvasCount: 0,
   }
 
   // Controls
@@ -123,6 +132,19 @@ export class DevPanel {
     f.addBinding(this.stats, 'heap', { readonly: true, label: 'heap MB' })
     f.addBinding(this.stats, 'section', { readonly: true, label: 'section' })
     f.addBinding(this.stats, 'rendering', { readonly: true, label: 'rendering' })
+    f.addBinding(this.stats, 'rendererCanvasCount', {
+      readonly: true,
+      label: 'renderer canvases',
+    })
+    f.addBinding(this.stats, 'documentCanvasCount', {
+      readonly: true,
+      label: 'document canvases',
+    })
+    f.addBinding(this.stats, 'sceneGeometries', { readonly: true, label: 'scene geometries' })
+    f.addBinding(this.stats, 'sceneMaterials', { readonly: true, label: 'scene materials' })
+    f.addBinding(this.stats, 'sceneTextures', { readonly: true, label: 'scene textures' })
+    f.addBinding(this.stats, 'postTargets', { readonly: true, label: 'post targets' })
+    f.addBinding(this.stats, 'postPasses', { readonly: true, label: 'post passes' })
   }
 
   // ── Navigation folder REMOVED (2026-07-11) — the section slider + prev/next
@@ -156,19 +178,18 @@ export class DevPanel {
   private buildSceneFolder(): void {
     const f = this.pane.addFolder({ title: 'Scene', expanded: false })
     f.addBinding(this.controls, 'groundVisible', { label: 'ground plane' }).on('change', (ev) => {
-      const world = (this.exp as unknown as { world?: { groundPlane?: { visible: boolean } } })
-        .world
-      if (world?.groundPlane) world.groundPlane.visible = ev.value as boolean
+      // Phase 8 slice 1: the ground is an Experience-owned scene owner.
+      const exp = this.exp as unknown as { ground?: { object?: { visible: boolean } } }
+      if (exp.ground?.object) exp.ground.object.visible = ev.value as boolean
     })
     f.addButton({ title: 'Reset ground (section 4 only)' }).on('click', () => {
       // Restore the contact-only ground visibility invariant.
-      const world = (
-        this.exp as unknown as {
-          world?: { groundPlane?: { visible: boolean }; currentSectionIndex?: number }
-        }
-      ).world
-      if (world?.groundPlane) world.groundPlane.visible = world.currentSectionIndex === 4
-      this.controls.groundVisible = world?.groundPlane?.visible ?? false
+      const exp = this.exp as unknown as {
+        ground?: { object?: { visible: boolean } }
+        coordinator?: { currentSectionIndex?: number }
+      }
+      if (exp.ground?.object) exp.ground.object.visible = exp.coordinator?.currentSectionIndex === 4
+      this.controls.groundVisible = exp.ground?.object?.visible ?? false
       this.pane.refresh()
     })
   }
@@ -224,6 +245,14 @@ export class DevPanel {
       this.stats.rendering = exp?._needsRender ?? false
       this.stats.lowFps = this.exp.lowFps
       this.stats.lang = getLang()
+      const resources = this.getResourceSnapshot()
+      this.stats.rendererCanvasCount = resources.rendererCanvasCount
+      this.stats.documentCanvasCount = resources.documentCanvasCount
+      this.stats.sceneGeometries = resources.scene.geometries
+      this.stats.sceneMaterials = resources.scene.materials
+      this.stats.sceneTextures = resources.scene.textures
+      this.stats.postTargets = resources.post.renderTargets
+      this.stats.postPasses = resources.post.passes
 
       // Force render if toggle is on
       if (this.controls.forceRender && exp) {
@@ -237,10 +266,10 @@ export class DevPanel {
       }
       this.stats.fps = this._fps
       this.stats.frameMs = this._frameMs
-      if (this._frameSamples.length > 0) {
-        const sorted = [...this._frameSamples].sort((a, b) => a - b)
-        this.stats.frameP50 = this.percentile(sorted, 0.5)
-        this.stats.frameP95 = this.percentile(sorted, 0.95)
+      const framePercentiles = this._frameGaps.snapshot()
+      if (framePercentiles) {
+        this.stats.frameP50 = framePercentiles.p50
+        this.stats.frameP95 = framePercentiles.p95
       }
 
       this.pane.refresh()
@@ -252,13 +281,7 @@ export class DevPanel {
   private _fpsLastTime: number | null = null
   private _lastRenderedAt = 0
   private _fpsFrames = 0
-  private _frameSamples: number[] = []
-  private static readonly FRAME_SAMPLE_LIMIT = 240
-
-  private percentile(sorted: readonly number[], quantile: number): number {
-    const index = Math.min(sorted.length - 1, Math.ceil(sorted.length * quantile) - 1)
-    return Math.round((sorted[index] ?? 0) * 10) / 10
-  }
+  private readonly _frameGaps = new FrameGapStats()
 
   /** Record one real scene render. Idle on-demand frames intentionally read 0. */
   recordRenderFrame(now = performance.now()): void {
@@ -269,12 +292,13 @@ export class DevPanel {
       this._frameMs = 0
       this._fpsLastTime = now
       this._fpsFrames = 0
-      this._frameSamples = []
+      this._frameGaps.reset()
+      this.stats.frameP50 = 0
+      this.stats.frameP95 = 0
       return
     }
 
-    this._frameSamples.push(gap)
-    if (this._frameSamples.length > DevPanel.FRAME_SAMPLE_LIMIT) this._frameSamples.shift()
+    this._frameGaps.record(gap)
     this._fpsFrames += 1
     const delta = now - this._fpsLastTime
     if (delta < 500) return
@@ -283,6 +307,11 @@ export class DevPanel {
     this._frameMs = Math.round((delta / this._fpsFrames) * 10) / 10
     this._fpsFrames = 0
     this._fpsLastTime = now
+  }
+
+  /** Development-only stable inventory for DevTools and soak automation. */
+  public getResourceSnapshot(): RuntimeResourceSnapshot {
+    return this.exp.renderer.getResourceSnapshot(this.exp.scene)
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────

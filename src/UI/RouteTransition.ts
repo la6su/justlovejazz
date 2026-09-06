@@ -10,41 +10,9 @@ const REVEAL_MS = 420
  */
 export class RouteTransition {
   private overlay: HTMLElement | null = null
-  private active = false
   private sequence = 0
-
-  async run(render: () => void): Promise<void> {
-    const sequence = ++this.sequence
-    if (prefersReducedMotion()) {
-      render()
-      if (this.overlay) this.overlay.dataset.state = 'idle'
-      this.active = false
-      return
-    }
-
-    const overlay = this.getOverlay()
-    if (this.active) {
-      // A newer route request supersedes the covered document before the
-      // earlier transition can render its now-stale destination.
-      render()
-      overlay.dataset.state = 'revealing'
-      await this.wait(REVEAL_MS)
-      if (sequence !== this.sequence) return
-      overlay.dataset.state = 'idle'
-      this.active = false
-      return
-    }
-    this.active = true
-    overlay.dataset.state = 'covering'
-    await this.wait(COVER_MS)
-    if (sequence !== this.sequence) return
-    render()
-    overlay.dataset.state = 'revealing'
-    await this.wait(REVEAL_MS)
-    if (sequence !== this.sequence) return
-    overlay.dataset.state = 'idle'
-    this.active = false
-  }
+  private coverTimer: { id: number; resolve: () => void } | null = null
+  private revealTimer: number | null = null
 
   private getOverlay(): HTMLElement {
     if (this.overlay?.isConnected) return this.overlay
@@ -62,7 +30,78 @@ export class RouteTransition {
     return overlay
   }
 
-  private wait(duration: number): Promise<void> {
-    return new Promise((resolve) => window.setTimeout(resolve, duration))
+  /**
+   * Phased API wired to the Vue Router guards (src/app): `cover()` awaits the
+   * cover phase before the router guard resolves (the RouterView re-render
+   * lands under the covered document), and `reveal()` starts the reveal
+   * after the guard settles. Under reduced motion both phases are synchronous
+   * no-ops and the overlay element is never created. A newer cover supersedes
+   * a pending reveal (sequence check).
+   */
+  async cover(): Promise<void> {
+    const sequence = ++this.sequence
+    this.cancelCoverTimer()
+    if (prefersReducedMotion()) {
+      if (this.overlay) this.overlay.dataset.state = 'idle'
+      return
+    }
+    const overlay = this.getOverlay()
+    overlay.dataset.state = 'covering'
+    await new Promise<void>((resolve) => {
+      const id = window.setTimeout(() => {
+        this.coverTimer = null
+        resolve()
+      }, COVER_MS)
+      this.coverTimer = { id, resolve }
+    })
+    if (sequence !== this.sequence) return
   }
+
+  reveal(): void {
+    const sequence = this.sequence
+    if (prefersReducedMotion()) {
+      if (this.overlay) this.overlay.dataset.state = 'idle'
+      return
+    }
+    this.cancelRevealTimer()
+    const overlay = this.getOverlay()
+    overlay.dataset.state = 'revealing'
+    this.revealTimer = window.setTimeout(() => {
+      this.revealTimer = null
+      if (sequence !== this.sequence) return
+      if (overlay.isConnected) overlay.dataset.state = 'idle'
+    }, REVEAL_MS)
+  }
+
+  /** Abort a failed navigation and return the transition surface to idle. */
+  cancel(): void {
+    this.sequence += 1
+    this.cancelCoverTimer()
+    this.cancelRevealTimer()
+    if (this.overlay) this.overlay.dataset.state = 'idle'
+  }
+
+  /** Release the transition DOM owner and every pending timer. */
+  dispose(): void {
+    this.cancel()
+    if (this.overlay?.isConnected) this.overlay.remove()
+    this.overlay = null
+  }
+
+  private cancelCoverTimer(): void {
+    if (this.coverTimer !== null) {
+      clearTimeout(this.coverTimer.id)
+      const { resolve } = this.coverTimer
+      this.coverTimer = null
+      resolve()
+    }
+  }
+
+  private cancelRevealTimer(): void {
+    if (this.revealTimer !== null) {
+      clearTimeout(this.revealTimer)
+      this.revealTimer = null
+    }
+  }
+
 }

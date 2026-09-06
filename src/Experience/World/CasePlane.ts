@@ -20,6 +20,7 @@
 import * as THREE from 'three'
 import { MeshBasicNodeMaterial } from 'three/webgpu'
 import { Fn, float, positionLocal, sin, smoothstep, uniform, vec3, abs, max } from 'three/tsl'
+import { prefersReducedMotion } from '../../core/motionPolicy'
 
 // Shared geometry — reused by all CasePlane instances (GPU buffer, not uniforms).
 // 20×12 segments for smooth cloth deformation without excessive vertex count.
@@ -52,6 +53,7 @@ export const CLOTH_PARAMS = {
 } as const
 
 export class CasePlane extends THREE.Mesh {
+  private _disposed = false
   private _wobbleValue = 0
   private _wobbleTarget = 0
   private _motionValue = 0
@@ -61,6 +63,7 @@ export class CasePlane extends THREE.Mesh {
   private _myTransition = 0
   private _myReveal = 0
   private _texture: THREE.Texture
+  private _reducedMotion = prefersReducedMotion()
 
   // Per-instance uniform nodes — each material has its own GPU uniform buffer.
   // Typed as `any` because TSL uniform node types are complex generics that
@@ -152,6 +155,7 @@ export class CasePlane extends THREE.Mesh {
   }
 
   get isAnimating(): boolean {
+    if (this._disposed) return false
     return (
       this._wobbleValue > 0.002 ||
       this._wobbleTarget > 0.002 ||
@@ -162,29 +166,60 @@ export class CasePlane extends THREE.Mesh {
   }
 
   setReveal(value: number): void {
-    this._myReveal = THREE.MathUtils.clamp(value, 0, 1)
+    if (this._disposed) return
+    const nextReveal = THREE.MathUtils.clamp(value, 0, 1)
+    if (Math.abs(nextReveal - this._myReveal) < 0.0001) {
+      this.visible = nextReveal > 0.001
+      return
+    }
+    this._myReveal = nextReveal
     this._stateUni.value.y = this._myReveal
-    this.visible = value > 0.001
+    this.visible = nextReveal > 0.001
   }
 
   pulse(amount = CLOTH_PARAMS.pulseAmount): void {
+    if (this._disposed) return
+    if (this._reducedMotion) return
     this._wobbleTarget = Math.max(this._wobbleTarget, amount)
   }
 
+  /** Reconcile the shared motion policy without querying media state per frame. */
+  setReducedMotion(reduced: boolean): void {
+    if (this._disposed) return
+    this._reducedMotion = reduced
+    if (!reduced) return
+    this._wobbleValue = 0
+    this._wobbleTarget = 0
+    this._motionValue = 0
+    this._motionTarget = 0
+    this._edgeWarpValue = this._edgeWarpTarget
+    this._stateUni.value.z = 0
+    this._state2Uni.value.x = 0
+    this._state2Uni.value.y = this._edgeWarpValue
+  }
+
   setMotion(amount: number, _direction: number): void {
-    this._motionTarget = THREE.MathUtils.clamp(amount, 0, 1)
+    if (this._disposed) return
+    const nextMotion = THREE.MathUtils.clamp(amount, 0, 1)
+    if (Math.abs(nextMotion - this._motionTarget) < 0.0001) return
+    this._motionTarget = nextMotion
   }
 
   setEdgeWarp(amount: number): void {
+    if (this._disposed) return
     this._edgeWarpTarget = THREE.MathUtils.clamp(amount, 0, 1)
   }
 
   setTransition(value: number): void {
-    this._myTransition = THREE.MathUtils.clamp(value, 0, 1)
+    if (this._disposed) return
+    const nextTransition = THREE.MathUtils.clamp(value, 0, 1)
+    if (Math.abs(nextTransition - this._myTransition) < 0.0001) return
+    this._myTransition = nextTransition
     this._stateUni.value.x = this._myTransition
   }
 
   update(dt: number, active: boolean): void {
+    if (this._disposed) return
     if (
       !active &&
       this._wobbleValue < 0.002 &&
@@ -193,6 +228,11 @@ export class CasePlane extends THREE.Mesh {
       this._motionTarget < 0.002 &&
       Math.abs(this._edgeWarpValue - this._edgeWarpTarget) < 0.002
     ) {
+      return
+    }
+
+    if (this._reducedMotion) {
+      this.setReducedMotion(true)
       return
     }
 
@@ -217,6 +257,8 @@ export class CasePlane extends THREE.Mesh {
   }
 
   dispose(): void {
+    if (this._disposed) return
+    this._disposed = true
     // Dispose per-instance material (geometry is shared — don't dispose).
     const mat = this.material as MeshBasicNodeMaterial
     mat.dispose()

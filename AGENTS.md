@@ -1,8 +1,13 @@
 # AGENTS — project context
 
-JUSTLOVEJAZZ is a Vite + TypeScript 3D portfolio built with Three.js TSL,
-WebGPU/WebGL2 fallback, UIkit 3 and Bun. Product copy is Russian/English; code,
-commits and technical documentation are English.
+JUSTLOVEJAZZ is a Vite + TypeScript 3D portfolio built with Vue 3, Vue Router
+and TresJS over one Three.js `WebGPURenderer` (TSL NodeMaterials, UIkit 3,
+Bun). The renderer runs `WebGPUBackend` when hardware WebGPU is usable and
+`WebGLBackend` through the automatic software-adapter policy; the classic
+`WebGLRenderer` path was removed in Phase 10 (2026-08-22). The phased
+transition that shipped this topology and its ADRs are recorded in the
+[completed migration record](docs/archive/MIGRATION_VUE_TRES.md). Product copy is
+Russian/English; code, commits and technical documentation are English.
 
 ## Working principle
 
@@ -10,6 +15,26 @@ Treat current source, configuration and tests as the primary context. Follow
 the owners and patterns already present in the code, and load supporting
 documentation only when the task touches its subject. Preserve unrelated work
 in a dirty tree and keep each change to one coherent outcome.
+
+## Engineering principles
+
+- Do not preserve backward compatibility. Remove obsolete paths instead of
+  adding compatibility layers, fallbacks, or migrations.
+- Choose the simplest implementation that fully meets the current
+  requirements. Avoid speculative abstractions, configuration, and
+  indirection.
+- Grow the system in layers. Start from the smallest version that works end to
+  end, and add each new capability on top of a product that already works.
+  Never trade a working product for unfinished complexity.
+- Keep components modular and concerns clearly separated.
+- Prefer established, well-maintained libraries when they reduce overall
+  complexity or improve reliability. Do not reimplement common functionality
+  without a clear reason.
+- Lean on the dependencies already in the project before writing your own
+  implementation or adding packages. Do not assume a library lacks a
+  capability without checking its documentation and types.
+- Make architectural decisions for the long term. Do not accept a stopgap that
+  only works for now and is meant to be replaced later.
 
 ## Project-specific design
 
@@ -30,6 +55,22 @@ in a dirty tree and keep each change to one coherent outcome.
   styles express the 3D shell and project-specific compositions.
 - The router owns translations and page metadata. Semantic DOM remains the
   interaction and accessibility layer over the shared scene.
+- There is exactly one canvas, renderer and animation-loop owner. Vue owns
+  semantic DOM, TresJS owns scene composition and GPU resources retain one
+  explicit disposal owner.
+- `WebGPURenderer` is the only constructed renderer class: `WebGPUBackend`
+  when hardware WebGPU is usable, otherwise the same class is re-created with
+  `forceWebGL: true` on `WebGLBackend` (the automatic software-adapter
+  policy). Never claim unified backend parity between the two backends.
+- All `jlz:*` application events flow through the typed `eventBus`
+  (`AppEvents` map); non-module producers (the inline splash script, e2e and
+  soak scripts) use the `window.__jlzEmit` facade.
+- Route state is owned by the typed in-memory `routePage` port. Vue route roots
+  own their semantic DOM markers; scene/UI code must never infer application
+  state from a body or document dataset.
+- The splash stays outside the Vue mount and initial Vue/Tres/Three/UIkit
+  dependency graph. Scene code receives typed route and preference state; it
+  does not infer application state from DOM datasets in the target design.
 
 ## Context on demand
 
@@ -38,8 +79,15 @@ in a dirty tree and keep each change to one coherent outcome.
   non-obvious runtime contracts.
 - [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) — setup, checks and budgets.
 - [docs/BRAND.md](docs/BRAND.md) — visual and editorial direction.
+- [docs/archive/MIGRATION_VUE_TRES.md](docs/archive/MIGRATION_VUE_TRES.md) —
+  completed migration, gates, rollback points and removal ledger (historical).
+- [docs/adr/README.md](docs/adr/README.md) — accepted and proposed architecture
+  decisions.
 - [skills/justlovejazz-ui/SKILL.md](skills/justlovejazz-ui/SKILL.md) — load for
   UI, Less, theme, accessibility or visual QA work.
+- [skills/uikit3/SKILL.md](skills/uikit3/SKILL.md) — load for UIKit 3
+  component/Less contracts, the page-builder reference (catalogue,
+  inspector, preview, generated theme) or yotheme.pro editor-pattern work.
 - [skills/justlovejazz-release/SKILL.md](skills/justlovejazz-release/SKILL.md) —
   load when preparing a commit, push or pull request.
 
@@ -51,8 +99,10 @@ local gate is the release check, not a prerequisite for every documentation
 edit. Publishing uses a scoped non-default branch and a pull request; commit
 messages follow Conventional Commits.
 
-Keep active work in `NEXT.md`. After completing a planned outcome, update
-`NEXT.md` in the same change: remove the completed item, capture newly
-discovered follow-up work and reorder the remainder when evidence changes its
-priority. Durable released behavior belongs in source, tests and the changelog;
-session-by-session narration is unnecessary.
+Keep active work in `NEXT.md`. Migration changes implement one phase or bounded
+owner slice at a time, keep the application runnable and update the migration
+traceability/removal ledgers in the same change. After completing an outcome,
+remove it from `NEXT.md`, capture discovered follow-up work and reorder the
+remainder when evidence changes priority. Durable released behavior belongs in
+source, tests, ADRs and the changelog; session-by-session narration is
+unnecessary.

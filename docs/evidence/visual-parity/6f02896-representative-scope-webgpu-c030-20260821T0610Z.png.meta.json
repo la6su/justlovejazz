@@ -1,0 +1,21 @@
+{
+  "tool": "scripts/visual-parity.ts capture",
+  "frame": "6f02896-representative-scope-webgpu-c030-20260821T0610Z.png",
+  "url": "https://project.6la.ru/__spikes/tres-resource?parity=1",
+  "commit": "6f02896",
+  "capturedAtUtc": "2026-08-21T06:10:25.980Z",
+  "browser": "Chrome/151.0.7922.137",
+  "viewport": "1267x1297 CSS, DPR 1, Chrome 151.0.7922.137",
+  "dataStatus": "ready",
+  "dataBackend": "WebGPUBackend",
+  "dataRenderPath": "parity-direct",
+  "dataMotionMode": "normal",
+  "canvasCssWidth": 800,
+  "canvasCssHeight": 450,
+  "canvasBackingWidth": 800,
+  "canvasBackingHeight": 450,
+  "viewportCss": "1267x1297",
+  "devicePixelRatio": 1,
+  "visibilityState": "visible",
+  "device": "Linux x86_64, NVIDIA Lovelace (non-fallback), 60 Hz"
+}

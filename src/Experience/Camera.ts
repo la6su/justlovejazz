@@ -6,21 +6,23 @@ import { input } from './Input'
 import { Device } from '../core/DeviceCapability'
 import { prefersReducedMotion } from '../core/motionPolicy'
 import type { CameraTarget } from '../core/types'
-
-// Zero-allocation vectors
-const _offsetVec = new THREE.Vector3()
-const _tempQuat = new THREE.Quaternion()
-const _tempEuler = new THREE.Euler()
-
-// Spring-damper state
-const springX = { pos: 0, vel: 0, target: 0 }
-const springY = { pos: 0, vel: 0, target: 0 }
+import { getCurrentPage } from '../core/routePage'
 
 const SP_STIFFNESS = 8
 const SP_DAMPING = 3
 
 export class Camera {
   instance: THREE.PerspectiveCamera
+  private _disposed = false
+  private _reducedMotion = prefersReducedMotion()
+
+  // Owner-scoped scratch/state. These used to live at module scope, which
+  // coupled concurrent Camera wrappers during HMR, recovery and tests.
+  private readonly _offsetVec = new THREE.Vector3()
+  private readonly _tempQuat = new THREE.Quaternion()
+  private readonly _tempEuler = new THREE.Euler()
+  private readonly springX = { pos: 0, vel: 0, target: 0 }
+  private readonly springY = { pos: 0, vel: 0, target: 0 }
 
   // Smooth state
   private smoothPosition = new THREE.Vector3()
@@ -37,8 +39,12 @@ export class Camera {
 
   // ── FOV pulse ──
   private fovOffset = 0
+  private sectionFovOffset = 0
   private targetFovOffset = 0
-  private fovTransitionT = 0
+  // No pulse is active until pulse() or setFovOffset() starts a transition.
+  // Starting settled prevents the demand scheduler from treating a newly
+  // constructed camera as animated before the first authored transition.
+  private fovTransitionT = 1
   private fovStartOffset = 0
   private fovDuration = 1.0
   // C12 fix: pulse phase-2 timer stored so destroy() can clear it.
@@ -50,11 +56,19 @@ export class Camera {
 
   /** Set cursor follow strength for current section (A-015) */
   setCursorFollow(strength: number): void {
+    if (this._disposed) return
     this._cursorFollowStrength = strength
   }
 
-  constructor(sizes: Sizes) {
-    this.instance = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 1000)
+  /**
+   * @param sizes Viewport sizes (aspect source).
+   * @param instance Phase 7: an externally owned PerspectiveCamera (the
+   *   SceneHost is the single camera owner). When omitted the wrapper
+   *   creates its own — the native-world host (rollback) path.
+   */
+  constructor(sizes: Sizes, instance?: THREE.PerspectiveCamera) {
+    this.instance =
+      instance ?? new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 1000)
     this.smoothPosition.set(0, 0, 3)
     this.instance.position.copy(this.smoothPosition)
 
@@ -71,6 +85,8 @@ export class Camera {
 
   /** Remove the window resize listener. Call from Experience.destroy(). */
   destroy(): void {
+    if (this._disposed) return
+    this._disposed = true
     window.removeEventListener('resize', this._onResize)
     // C12 fix: clear pending pulse timer so it doesn't fire on a destroyed Camera.
     if (this._pulseTimer) {
@@ -81,6 +97,7 @@ export class Camera {
 
   /** Lerp camera base state toward target with exponential smoothing */
   updateSmooth(target: CameraTarget, deltaT: number, smoothing = 5) {
+    if (this._disposed) return
     if (!target) return
     const lerp = 1 - Math.exp(-smoothing * deltaT)
 
@@ -91,6 +108,7 @@ export class Camera {
 
   /** Trigger an action shake (impact on section change) */
   shake(power = 0.1, duration = 0.5) {
+    if (this._disposed) return
     this.shakePower = power
     this.shakeDuration = duration
     // D-27 fix: reset shakeTime so the new shake starts at phase 0 (was
@@ -100,16 +118,30 @@ export class Camera {
 
   /** True while action shake is active (needs rendering). */
   get isShaking(): boolean {
-    return this.shakePower > 0 && this.shakeDuration > 0
+    return !this._disposed && this.shakePower > 0 && this.shakeDuration > 0
   }
 
   /** True while the FOV pulse transition is animating (needs rendering). */
   get isPulsing(): boolean {
-    return this.fovTransitionT < 1
+    return !this._disposed && this.fovTransitionT < 1
   }
 
   /** Set FOV offset for cinematic zoom-in on section arrival */
   setFovOffset(value: number, duration = 1) {
+    if (this._disposed) return
+    this.sectionFovOffset = value
+    if (this._reducedMotion) {
+      if (this._pulseTimer) {
+        clearTimeout(this._pulseTimer)
+        this._pulseTimer = null
+      }
+      this.fovOffset = value
+      this.targetFovOffset = value
+      this.fovStartOffset = value
+      this.fovTransitionT = 1
+      this.fovDuration = duration
+      return
+    }
     this.fovStartOffset = this.fovOffset
     this.targetFovOffset = value
     this.fovDuration = duration
@@ -120,6 +152,8 @@ export class Camera {
    *  Positive amount = zoom in (FOV decreases). ~0.04 = subtle, ~0.08 = noticeable.
    *  Uses a two-phase transition: dips to -amount over half duration, then back to 0. */
   pulse(amount = 0.05, duration = 0.8): void {
+    if (this._disposed) return
+    if (this._reducedMotion) return
     // Clear any pending pulse timer (rapid section changes can overlap pulses)
     if (this._pulseTimer) {
       clearTimeout(this._pulseTimer)
@@ -133,42 +167,81 @@ export class Camera {
     // Phase 2: return to 0 after dip completes
     this._pulseTimer = setTimeout(() => {
       this.fovStartOffset = this.fovOffset
-      this.targetFovOffset = 0
+      this.targetFovOffset = this.sectionFovOffset
       this.fovDuration = duration * 0.6
       this.fovTransitionT = 0
       this._pulseTimer = null
     }, duration * 400)
   }
 
+  /** Settle cinematic camera reactions on a live motion-policy change. */
+  setReducedMotion(reduced: boolean): void {
+    if (this._disposed) return
+    this._reducedMotion = reduced
+    if (!reduced) return
+
+    if (this._pulseTimer) {
+      clearTimeout(this._pulseTimer)
+      this._pulseTimer = null
+    }
+
+    this.shakePower = 0
+    this.shakeDuration = 0
+    this.shakeTime = 0
+    this.springX.vel = 0
+    this.springY.vel = 0
+    this.springX.pos = 0
+    this.springY.pos = 0
+    this.springX.target = 0
+    this.springY.target = 0
+
+    // A pending pulse is decorative and returns to the persistent section
+    // framing target; it must never freeze the transient dip on screen.
+    this.fovOffset = this.sectionFovOffset
+    this.targetFovOffset = this.sectionFovOffset
+    this.fovStartOffset = this.sectionFovOffset
+    this.fovTransitionT = 1
+
+    this.instance.position.copy(this.smoothPosition)
+    this.instance.lookAt(this.smoothTarget)
+    const portraitWeight = Math.max(0, Math.min(1, 1 - this.instance.aspect / 1.5))
+    this.instance.fov = this.smoothFov + this.fovOffset + portraitWeight * 20
+    this.instance.updateProjectionMatrix()
+  }
+
   update(deltaT: number) {
-    const dt = Math.min(Math.max(deltaT, 1 / 120), 0.1)
+    if (this._disposed) return
+    // Preserve authored timing on high-refresh displays. A fixed lower bound
+    // would advance shake, organic motion and FOV transitions faster than
+    // wall-clock time at 144/240 Hz; only clamp invalid negatives and stalls.
+    const dt = Math.min(Math.max(deltaT, 0), 0.1)
 
     // ── 1. Spring-damper cursor follow ──
     const mouse = input.getMouse()
 
-    springX.target = mouse.x
-    springY.target = mouse.y
+    this.springX.target = mouse.x
+    this.springY.target = mouse.y
 
-    springX.vel += (springX.target - springX.pos) * SP_STIFFNESS * dt
-    springY.vel += (springY.target - springY.pos) * SP_STIFFNESS * dt
+    this.springX.vel += (this.springX.target - this.springX.pos) * SP_STIFFNESS * dt
+    this.springY.vel += (this.springY.target - this.springY.pos) * SP_STIFFNESS * dt
 
-    springX.vel *= Math.exp(-SP_DAMPING * dt)
-    springY.vel *= Math.exp(-SP_DAMPING * dt)
+    this.springX.vel *= Math.exp(-SP_DAMPING * dt)
+    this.springY.vel *= Math.exp(-SP_DAMPING * dt)
 
-    springX.pos += springX.vel * dt
-    springY.pos += springY.vel * dt
+    this.springX.pos += this.springX.vel * dt
+    this.springY.pos += this.springY.vel * dt
 
     // ── 2. Build position ──
     const isMobile = Device.isMobile
-    const isHome = document.body?.dataset?.page === 'home'
+    const isHome = getCurrentPage() === 'home'
     // Respect prefers-reduced-motion: disable cursor follow + organic shake
     // + FOV breath (SPEC.md motion rules).
-    const reduced = prefersReducedMotion()
+    const reduced = this._reducedMotion
     const pos = this.instance.position
 
     // Cursor follow — spring-damper (disabled on mobile + reduced motion)
-    const cursorX = isMobile || reduced ? 0 : springX.pos
-    const cursorY = isMobile || reduced ? 0 : springY.pos
+    const cursorX = isMobile || reduced ? 0 : this.springX.pos
+    const cursorY = isMobile || reduced ? 0 : this.springY.pos
 
     // A-015: Per-section cursor follow strength (junni cameraRange pattern).
     // Works section (idx=3) gets stronger follow for interactive feel.
@@ -207,9 +280,9 @@ export class Camera {
     }
 
     if (this.fovOffset > 0) {
-      _offsetVec.set(0, 0, -this.fovOffset * 0.05)
-      _offsetVec.applyQuaternion(this.instance.quaternion)
-      pos.add(_offsetVec)
+      this._offsetVec.set(0, 0, -this.fovOffset * 0.05)
+      this._offsetVec.applyQuaternion(this.instance.quaternion)
+      pos.add(this._offsetVec)
     }
 
     // Blend FOV smoothly. Breathing disabled on mobile + reduced motion.
@@ -236,9 +309,9 @@ export class Camera {
       const sx = Math.sin(this.shakeTime * 7) * Math.sin(this.shakeTime * 4) * 0.1 * this.shakePower
       const sy =
         Math.sin(this.shakeTime * 3.3) * Math.sin(this.shakeTime * 5.2) * 0.1 * this.shakePower
-      _tempEuler.set(sx, sy, 0)
-      _tempQuat.setFromEuler(_tempEuler)
-      this.instance.quaternion.multiply(_tempQuat)
+      this._tempEuler.set(sx, sy, 0)
+      this._tempQuat.setFromEuler(this._tempEuler)
+      this.instance.quaternion.multiply(this._tempQuat)
       this.shakeDuration -= dt
       if (this.shakeDuration <= 0) {
         this.shakePower = 0

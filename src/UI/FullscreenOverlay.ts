@@ -13,6 +13,8 @@
 
 import UIkit from 'uikit'
 import { BlurFade } from '../Experience/BlurFade'
+import { eventBus } from '../core/EventBus'
+import { prefersReducedMotion } from '../core/motionPolicy'
 
 export interface OverlayOptions {
   mode?: 'video' | 'image'
@@ -54,16 +56,23 @@ export class FullscreenOverlay {
   private _lastShiftTab = false
   private _autoplayTimer: ReturnType<typeof setTimeout> | null = null
   private _enterFallback: number | null = null
+  private _shownRevealFrame: number | null = null
+  private _videoRevealFrame: number | null = null
+  private _videoFrameCallbackId: number | null = null
   private _posterRequestId = 0
   private _posterUrl: string | null = null
   private _mediaGeneration = 0
+  private readonly _listeners = new AbortController()
 
   public onPrev: (() => void) | null = null
   public onNext: (() => void) | null = null
-  /** @deprecated Use OverlayOptions.onClose (per-open) instead. */
-  public onClose: (() => void) | null = null
   private _perOpenOnClose: (() => void) | null = null
   private _restoreFocus: HTMLElement | null = null
+  private _hideHandled = false
+
+  private readonly _onModalHide = (): void => {
+    this.handleHide()
+  }
 
   constructor() {
     this.container = document.createElement('div')
@@ -143,53 +152,79 @@ export class FullscreenOverlay {
         this.video.pause()
       }
     }
-    this.bigPlay.addEventListener('click', togglePlay)
-    this.video.addEventListener('click', togglePlay)
+    this.bigPlay.addEventListener('click', togglePlay, { signal: this._listeners.signal })
+    this.video.addEventListener('click', togglePlay, { signal: this._listeners.signal })
 
     // Mute toggle — swap uk-icon between muted/sound
-    this.muteBtn.addEventListener('click', () => {
-      this.video.muted = !this.video.muted
-      this.muteBtn.setAttribute('aria-pressed', String(this.video.muted))
-      this.muteBtn.classList.toggle('is-muted', this.video.muted)
-      const muteIcon = this.muteBtn.querySelector('[uk-icon]')
-      if (muteIcon)
-        muteIcon.setAttribute('uk-icon', `icon: ${this.video.muted ? 'muted' : 'sound'}`)
-    })
+    this.muteBtn.addEventListener(
+      'click',
+      () => {
+        this.video.muted = !this.video.muted
+        this.muteBtn.setAttribute('aria-pressed', String(this.video.muted))
+        this.muteBtn.classList.toggle('is-muted', this.video.muted)
+        const muteIcon = this.muteBtn.querySelector('[uk-icon]')
+        if (muteIcon)
+          muteIcon.setAttribute('uk-icon', `icon: ${this.video.muted ? 'muted' : 'sound'}`)
+      },
+      { signal: this._listeners.signal },
+    )
 
     // Video events
-    this.video.addEventListener('playing', () => {
-      this.container.classList.add('is-playing')
-      this.bigPlay.style.opacity = '0'
-      this.revealVideoAfterFirstFrame()
+    this.video.addEventListener(
+      'playing',
+      () => {
+        this.container.classList.add('is-playing')
+        this.bigPlay.style.opacity = '0'
+        this.revealVideoAfterFirstFrame()
+      },
+      { signal: this._listeners.signal },
+    )
+    this.video.addEventListener(
+      'pause',
+      () => {
+        this.container.classList.remove('is-playing')
+        this.bigPlay.style.opacity = '1'
+      },
+      { signal: this._listeners.signal },
+    )
+    this.video.addEventListener(
+      'timeupdate',
+      () => {
+        // Guard: duration is NaN until metadata loads (and stays NaN if no source)
+        if (!isFinite(this.video.duration) || this.video.duration === 0) return
+        const pct = (this.video.currentTime / this.video.duration) * 100
+        const pctStr = String(isNaN(pct) ? 0 : pct)
+        this.seekBar.value = pctStr
+        this.seekBar.style.setProperty('--jlz-seek-progress', `${pctStr}%`)
+        this.updateTimeDisplay()
+      },
+      { signal: this._listeners.signal },
+    )
+    this.video.addEventListener('loadedmetadata', () => this.updateTimeDisplay(), {
+      signal: this._listeners.signal,
     })
-    this.video.addEventListener('pause', () => {
-      this.container.classList.remove('is-playing')
-      this.bigPlay.style.opacity = '1'
-    })
-    this.video.addEventListener('timeupdate', () => {
-      // Guard: duration is NaN until metadata loads (and stays NaN if no source)
-      if (!isFinite(this.video.duration) || this.video.duration === 0) return
-      const pct = (this.video.currentTime / this.video.duration) * 100
-      const pctStr = String(isNaN(pct) ? 0 : pct)
-      this.seekBar.value = pctStr
-      this.seekBar.style.setProperty('--jlz-seek-progress', `${pctStr}%`)
-      this.updateTimeDisplay()
-    })
-    this.video.addEventListener('loadedmetadata', () => this.updateTimeDisplay())
 
     // Seek
-    this.seekBar.addEventListener('input', () => {
-      // Guard: don't set currentTime if duration is NaN/Infinity/0
-      // (happens when video has no source or metadata not loaded yet)
-      const duration = this.video.duration
-      if (!isFinite(duration) || duration === 0) return
-      const pct = Number(this.seekBar.value)
-      this.video.currentTime = (pct / 100) * duration
-    })
+    this.seekBar.addEventListener(
+      'input',
+      () => {
+        // Guard: don't set currentTime if duration is NaN/Infinity/0
+        // (happens when video has no source or metadata not loaded yet)
+        const duration = this.video.duration
+        if (!isFinite(duration) || duration === 0) return
+        const pct = Number(this.seekBar.value)
+        this.video.currentTime = (pct / 100) * duration
+      },
+      { signal: this._listeners.signal },
+    )
 
     // Nav buttons
-    this.prevBtn.addEventListener('click', () => this.navigate(-1))
-    this.nextBtn.addEventListener('click', () => this.navigate(1))
+    this.prevBtn.addEventListener('click', () => this.navigate(-1), {
+      signal: this._listeners.signal,
+    })
+    this.nextBtn.addEventListener('click', () => this.navigate(1), {
+      signal: this._listeners.signal,
+    })
 
     // UIKit3 modal events — uk-open is the authoritative state. UIkit adds it
     // on show and removes it on hide; isOpen reads it directly. No custom
@@ -224,7 +259,10 @@ export class FullscreenOverlay {
         this._enterFallback = null
       }
       // Trigger the CSS reveal transition (clip-path + scale + opacity).
-      requestAnimationFrame(() => {
+      const generation = this._mediaGeneration
+      this._shownRevealFrame = requestAnimationFrame(() => {
+        this._shownRevealFrame = null
+        if (generation !== this._mediaGeneration || !this.container.isConnected) return
         this.container.classList.add('is-entered')
       })
       // Move focus into the modal so keyboard users are not stranded on the
@@ -236,33 +274,7 @@ export class FullscreenOverlay {
       target?.focus({ preventScroll: true })
       this._tryAutoplay()
     })
-    UIkit.util.on(this.container, 'hide', () => {
-      if (this._enterFallback) {
-        cancelAnimationFrame(this._enterFallback)
-        this._enterFallback = null
-      }
-      if (this._autoplayTimer) {
-        clearTimeout(this._autoplayTimer)
-        this._autoplayTimer = null
-      }
-      this.container.classList.remove('is-playing')
-      this.container.classList.remove('is-entered')
-      this.video.pause()
-      // Call the per-open callback first, then the deprecated persistent one.
-      this._perOpenOnClose?.()
-      this.onClose?.()
-      this._perOpenOnClose = null
-      // Restore focus to the trigger that opened the overlay (B-2 a11y fix).
-      this._restoreFocus?.focus({ preventScroll: true })
-      this._restoreFocus = null
-      // Remove keyboard listener when modal closes — clean lifecycle, no
-      // stale listeners intercepting events while the overlay is hidden.
-      document.removeEventListener('keydown', this._keydownHandler!)
-      if (this._focusTrapHandler) {
-        document.removeEventListener('focusin', this._focusTrapHandler)
-      }
-    })
-
+    UIkit.util.on(this.container, 'hide', this._onModalHide)
     // Keyboard: Space (play/pause), ArrowLeft/Right (prev/next)
     // Attached to document on 'show', removed on 'hide' (see above).
     // stopImmediatePropagation prevents CinematicNav's window keydown from
@@ -306,6 +318,38 @@ export class FullscreenOverlay {
     }
   }
 
+  private handleHide(): void {
+    if (this._hideHandled) return
+    this._hideHandled = true
+    if (this._enterFallback) {
+      cancelAnimationFrame(this._enterFallback)
+      this._enterFallback = null
+    }
+    if (this._shownRevealFrame) {
+      cancelAnimationFrame(this._shownRevealFrame)
+      this._shownRevealFrame = null
+    }
+    this._mediaGeneration += 1
+    this._cancelVideoReveal()
+    this._cancelAutoplay()
+    this.container.classList.remove('is-playing')
+    this.container.classList.remove('is-entered')
+    this.video.pause()
+    // Close ownership is per-open, so a completed cycle cannot leak a
+    // callback into the next media item.
+    this._perOpenOnClose?.()
+    this._perOpenOnClose = null
+    // Restore focus to the trigger that opened the overlay (B-2 a11y fix).
+    this._restoreFocus?.focus({ preventScroll: true })
+    this._restoreFocus = null
+    // Remove keyboard listener when modal closes — clean lifecycle, no
+    // stale listeners intercepting events while the overlay is hidden.
+    document.removeEventListener('keydown', this._keydownHandler!)
+    if (this._focusTrapHandler) {
+      document.removeEventListener('focusin', this._focusTrapHandler)
+    }
+  }
+
   private updateTimeDisplay(): void {
     const fmt = (s: number) => {
       if (isNaN(s)) return '0:00'
@@ -319,11 +363,7 @@ export class FullscreenOverlay {
   private navigate(direction: -1 | 1): void {
     if (direction < 0) this.onPrev?.()
     else this.onNext?.()
-    window.dispatchEvent(
-      new CustomEvent('jlz:project-navigate', {
-        detail: { direction },
-      }),
-    )
+    eventBus.emit('jlz:project-navigate', { direction })
   }
 
   /**
@@ -332,21 +372,45 @@ export class FullscreenOverlay {
    * the handoff never exposes the video element's black backing surface.
    */
   private revealVideoAfterFirstFrame(): void {
+    this._cancelVideoReveal()
     const generation = this._mediaGeneration
     const reveal = () => {
+      this._videoFrameCallbackId = null
       if (generation !== this._mediaGeneration) return
       this.posterEl.style.opacity = '0'
     }
     const videoWithFrameCallback = this.video as HTMLVideoElement & {
-      requestVideoFrameCallback?: (callback: () => void) => number
+      requestVideoFrameCallback?: (callback: VideoFrameRequestCallback) => number
+      cancelVideoFrameCallback?: (handle: number) => void
     }
 
     if (videoWithFrameCallback.requestVideoFrameCallback) {
-      videoWithFrameCallback.requestVideoFrameCallback(reveal)
+      this._videoFrameCallbackId = videoWithFrameCallback.requestVideoFrameCallback(reveal)
       return
     }
 
-    requestAnimationFrame(() => requestAnimationFrame(reveal))
+    this._videoRevealFrame = requestAnimationFrame(() => {
+      this._videoRevealFrame = null
+      if (generation !== this._mediaGeneration) return
+      this._videoRevealFrame = requestAnimationFrame(() => {
+        this._videoRevealFrame = null
+        reveal()
+      })
+    })
+  }
+
+  private _cancelVideoReveal(): void {
+    if (this._videoRevealFrame !== null) {
+      cancelAnimationFrame(this._videoRevealFrame)
+      this._videoRevealFrame = null
+    }
+    if (this._videoFrameCallbackId !== null) {
+      const video = this.video as HTMLVideoElement & {
+        cancelVideoFrameCallback?: (handle: number) => void
+      }
+      video.cancelVideoFrameCallback?.(this._videoFrameCallbackId)
+      this._videoFrameCallbackId = null
+    }
   }
 
   /** Open overlay with given options. */
@@ -373,6 +437,7 @@ export class FullscreenOverlay {
       if (isFinite(this.video.duration)) {
         this.video.currentTime = 0
       }
+      this._cancelAutoplay()
       this._autoplayTimer = setTimeout(() => {
         this._autoplayTimer = null
         this.video.play().catch(() => {
@@ -382,8 +447,18 @@ export class FullscreenOverlay {
     }
   }
 
+  private _cancelAutoplay(): void {
+    if (this._autoplayTimer) {
+      clearTimeout(this._autoplayTimer)
+      this._autoplayTimer = null
+    }
+  }
+
   /** Apply overlay options to the DOM (shared by open + preload). */
   private _applyOptions(opts: OverlayOptions): void {
+    this._hideHandled = false
+    this._cancelAutoplay()
+    this._cancelVideoReveal()
     this._mediaGeneration += 1
     // Store the per-open close callback (called in the 'hide' handler).
     this._perOpenOnClose = opts.onClose ?? null
@@ -401,9 +476,12 @@ export class FullscreenOverlay {
       this.video.style.display = ''
     } else {
       // Works image mode never inherits or autoplays the showreel source.
+      const hadVideoSource = Boolean(source?.getAttribute('src'))
       if (source) {
         source.removeAttribute('src')
-        this.video.load()
+        // Avoid reinitializing an already source-less video element for every
+        // image preload/open. A load is only needed to abort a prior film.
+        if (hadVideoSource) this.video.load()
       }
       this.controlsEl.style.display = 'none'
       this.video.style.display = 'none'
@@ -414,7 +492,12 @@ export class FullscreenOverlay {
 
     // Project info
     if (opts.title) {
-      BlurFade.for(this.titleEl).show(0.8, opts.title)
+      if (prefersReducedMotion()) {
+        this.titleEl.textContent = opts.title
+        this.titleEl.setAttribute('aria-label', opts.title)
+      } else {
+        BlurFade.for(this.titleEl).show(0.8, opts.title)
+      }
     } else {
       this.titleEl.textContent = ''
     }
@@ -475,7 +558,7 @@ export class FullscreenOverlay {
           .catch(() => undefined)
           .then(reveal)
       },
-      { once: true },
+      { once: true, signal: this._listeners.signal },
     )
     image.src = poster
   }
@@ -492,15 +575,30 @@ export class FullscreenOverlay {
   }
 
   dispose(): void {
+    if (this.isOpen) {
+      const modal = UIkit.modal(this.container)
+      modal.hide()
+      // UIkit normally emits `hide`, but a teardown can race its transition.
+      // Run the same idempotent cleanup synchronously before destroying the
+      // component so body scroll, focus and the per-open callback are settled.
+      this.handleHide()
+    }
+    this._listeners.abort()
+    // The title reveal is an independent RAF owner. A preloaded/hidden
+    // overlay can be disposed without passing through `hide`; cancel it
+    // synchronously so the static BlurFade registry cannot retain this DOM.
+    BlurFade.for(this.titleEl).hide()
     this._posterRequestId += 1
     this._mediaGeneration += 1
-    if (this._autoplayTimer) {
-      clearTimeout(this._autoplayTimer)
-      this._autoplayTimer = null
-    }
+    this._cancelVideoReveal()
+    this._cancelAutoplay()
     if (this._enterFallback) {
       cancelAnimationFrame(this._enterFallback)
       this._enterFallback = null
+    }
+    if (this._shownRevealFrame) {
+      cancelAnimationFrame(this._shownRevealFrame)
+      this._shownRevealFrame = null
     }
     if (this._keydownHandler) {
       document.removeEventListener('keydown', this._keydownHandler)

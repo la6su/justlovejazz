@@ -11,12 +11,13 @@
 //   3. Opener — scale pulse (1.0 → 1.3 → 1.0)
 //
 // Glass shader: a physical transmission volume on WebGPU and WebGL2. The
-// Contact pixel-title mesh is rendered behind it, so the cube can refract and
+// Contact typography mesh is rendered behind it, so the cube can refract and
 // softly magnify that real scene content instead of merely fading over it.
 
 import * as THREE from 'three'
 import { BakuRole, type BakuMaterialState } from '../../core/types'
 import { prefersReducedMotion } from '../../core/motionPolicy'
+import { WORLD_SLOTS } from '../../core/worldSlots'
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js'
 
 interface BakuMaterialParams {
@@ -40,6 +41,7 @@ const JELLY_UPDATE_INTERVAL = 1 / 30
 // (GRADIENT_COLORS removed — was Apple Fifth Avenue port. Now using JLZ palette.)
 
 export class SplashCube extends THREE.Mesh {
+  private _disposed = false
   private cubeMesh!: THREE.Mesh
   private cubeMaterial!: THREE.MeshPhysicalMaterial
   private cubePositions!: THREE.BufferAttribute
@@ -76,10 +78,14 @@ export class SplashCube extends THREE.Mesh {
   private _blendToEmissive: THREE.Color = new THREE.Color(0x5a5a8a)
   private _blendT: number = 0
   private _isLightTheme = true
+  private _reducedMotion = prefersReducedMotion()
   // Neutral violet-grey, rather than the previous blue diagnostic colour.
   // It gives the transparent volume enough contrast on a white UI without
   // reading as an added wireframe or a flat blue block.
   private _themeTint = new THREE.Color(0x5e5667)
+  private readonly _blendColor = new THREE.Color()
+  private _blendDirty = true
+  private _materialDirty = true
 
   private _idleRotY = 0
 
@@ -91,14 +97,11 @@ export class SplashCube extends THREE.Mesh {
   // NOTE: sections 4+5 use ±π/4 tilt (NOT actual top/bottom face rotation).
   // The cube shows two side faces at an angle for these sections.
   // This is a known simplification — true top/bottom face would need X rotation.
-  private static readonly FACE_ROTATIONS: number[] = [
-    0, // 0: canonical Lab / public Contact finale — front face
-    -Math.PI / 2, // 1: Intro — right face (+X toward camera)
-    Math.PI, // 2: About — back face (-Z toward camera)
-    Math.PI / 2, // 3: Works — left face (-X toward camera)
-    -Math.PI / 4, // 4: Contact — slight tilt (two side faces visible)
-    Math.PI / 4, // 5: Menu — slight tilt (two side faces visible)
-  ]
+  // The per-slot rotations are owned by the canonical world-slot contract
+  // (src/core/worldSlots.ts); this array only re-exposes them by index.
+  private static readonly FACE_ROTATIONS: readonly number[] = WORLD_SLOTS.map(
+    (slot) => slot.faceRotation,
+  )
   private _targetFaceRotY = 0
   private _faceLerp = 0 // 0→1, animated on section change
   // D-16 fix: store start rotation + delta at rotateToFace time for
@@ -108,23 +111,29 @@ export class SplashCube extends THREE.Mesh {
 
   /** True only while an authored cube reaction still needs animation frames. */
   get isAmbientlyAnimated(): boolean {
-    return this.visible && (this.jellyEnergy > 0.001 || this.jellyTarget > 0.001)
+    return !this._disposed && this.visible && (this.jellyEnergy > 0.001 || this.jellyTarget > 0.001)
   }
 
   /** True while the opener scale-pulse is animating (opening or closing). */
   get isOpenerActive(): boolean {
-    return this.openerPhase !== 'done' && this.openerPhase !== 'idle'
+    return !this._disposed && this.openerPhase !== 'done' && this.openerPhase !== 'idle'
   }
 
   /** True while the cube is rotating to a new face (section change). */
   get isRotating(): boolean {
-    return this._faceLerp < 1
+    return !this._disposed && this._faceLerp < 1
   }
 
   // Scratch
 
   constructor() {
-    super(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial({ visible: false }))
+    // Root geometry keeps an empty `position` attribute so the @tresjs/core devtools
+    // performance sampler (calculateMemoryUsage → geometry.attributes.position.count)
+    // does not throw on this attribute-less root mesh. The root is never drawn: its
+    // material is `visible: false` and all visible content lives in child meshes.
+    const rootGeometry = new THREE.BufferGeometry()
+    rootGeometry.setAttribute('position', new THREE.Float32BufferAttribute([], 3))
+    super(rootGeometry, new THREE.MeshBasicMaterial({ visible: false }))
     this.name = 'baku-cube'
     this.visible = true
     // (buildContentScene() REMOVED — CubeCamera + content scene deleted.
@@ -235,10 +244,11 @@ export class SplashCube extends THREE.Mesh {
   // (setProgress removed — dead no-op, zero callers.)
 
   triggerOpener(): void {
+    if (this._disposed) return
     // Under reduced-motion the opener never animates (baku.update() is skipped
     // by World), so snap immediately to 'done' — otherwise openerPhase stays
     // 'opening' forever and forces continuous rendering (B-1).
-    if (prefersReducedMotion()) {
+    if (this._reducedMotion) {
       this.openerPhase = 'done'
       this.openerProgress = 0
       this.openerTarget = 0
@@ -251,6 +261,7 @@ export class SplashCube extends THREE.Mesh {
 
   /** Trigger a scale pulse alongside the continuous jelly motion. */
   triggerWobblePulse(): void {
+    if (this._disposed) return
     this.triggerOpener()
   }
 
@@ -259,6 +270,7 @@ export class SplashCube extends THREE.Mesh {
    *  rendered through either backend's post-processing target.
    *  Called by Experience.setupEnvironment() after PMREM is generated. */
   bindEnvironment(envTexture: THREE.Texture): void {
+    if (this._disposed) return
     if (this.cubeMaterial) {
       this.cubeMaterial.envMap = envTexture
       this.cubeMaterial.needsUpdate = true
@@ -267,11 +279,14 @@ export class SplashCube extends THREE.Mesh {
 
   /** Keep the transparent shell legible when UI theme flips light ↔ dark. */
   setTheme(isLight: boolean): void {
+    if (this._disposed) return
     this._isLightTheme = isLight
     this._themeTint.setHex(isLight ? 0x5f536b : 0xd0c5dc)
+    this._blendDirty = true
   }
 
   updateMaterial(params: BakuMaterialState): void {
+    if (this._disposed) return
     this.targetParams = {
       color: params.color ? new THREE.Color(params.color) : this.targetParams.color,
       emissive: params.emissive ? new THREE.Color(params.emissive) : this.targetParams.emissive,
@@ -279,6 +294,7 @@ export class SplashCube extends THREE.Mesh {
       metalness: params.metalness ?? this.targetParams.metalness,
       role: (params.role ?? this.targetParams.role) as BakuRole,
     }
+    this._materialDirty = true
   }
 
   /** Rotate cube to show the face for the given section index.
@@ -286,6 +302,11 @@ export class SplashCube extends THREE.Mesh {
    *  over the next ~0.8s (lerped in update()). Called by Experience.ts
    *  on jlz:section-change. */
   rotateToFace(sectionIndex: number): void {
+    if (this._disposed) return
+    if (this._reducedMotion) {
+      this.snapToFace(sectionIndex)
+      return
+    }
     const idx = Math.max(0, Math.min(SplashCube.FACE_ROTATIONS.length - 1, sectionIndex))
     this._targetFaceRotY = SplashCube.FACE_ROTATIONS[idx] ?? 0
     // D-16 fix: capture start rotation + shortest-path delta for absolute lerp.
@@ -300,6 +321,7 @@ export class SplashCube extends THREE.Mesh {
 
   /** Apply the boot section without replaying a visible entrance animation. */
   snapToFace(sectionIndex: number): void {
+    if (this._disposed) return
     const idx = Math.max(0, Math.min(SplashCube.FACE_ROTATIONS.length - 1, sectionIndex))
     const rotation = SplashCube.FACE_ROTATIONS[idx] ?? 0
     this._targetFaceRotY = rotation
@@ -308,6 +330,31 @@ export class SplashCube extends THREE.Mesh {
     this._idleRotY = rotation
     this._faceLerp = 1
     this.rotation.set(0, rotation, 0)
+  }
+
+  /** Settle all decorative cube reactions when motion policy changes live. */
+  setReducedMotion(reduced: boolean): void {
+    if (this._disposed) return
+    this._reducedMotion = reduced
+    if (!reduced) return
+
+    this._idleRotY = this._targetFaceRotY
+    this._startFaceRotY = this._targetFaceRotY
+    this._startFaceDelta = 0
+    this._faceLerp = 1
+    this.rotation.set(0, this._idleRotY, 0)
+
+    this.jellyTarget = 0
+    this.jellyEnergy = 0
+    this.nextJellyUpdateAt = 0
+    if (this.jellyWasActive) this.resetJellyGeometry()
+    this.jellyWasActive = false
+
+    this.openerPhase = 'done'
+    this.openerTarget = 0
+    this.openerProgress = 0
+    this.cubeMesh.scale.setScalar(1)
+    this.applyMaterialBlend()
   }
 
   // (setEnvAndCamera removed — dead no-op, body was '// No-op'.
@@ -322,17 +369,27 @@ export class SplashCube extends THREE.Mesh {
     _fromDisplace: number = 0.05,
     _toDisplace: number = 0.05,
   ): void {
+    if (this._disposed) return
     this._blendFromColor.copy(fromColor)
     this._blendToColor.copy(toColor)
     this._blendFromEmissive.copy(fromEmissive)
     this._blendToEmissive.copy(toEmissive)
     this._blendT = t
+    this._blendDirty = true
   }
 
   // ════════════════════════════════════════════════════════════════════
   // UPDATE — called every frame when rendering
   // ════════════════════════════════════════════════════════════════════
   update(dt: number): void {
+    if (this._disposed) return
+    const reactionActive =
+      this.jellyEnergy > 0.0005 ||
+      this.jellyTarget > 0.0005 ||
+      this._faceLerp < 1 ||
+      (this.openerPhase !== 'done' && this.openerPhase !== 'idle') ||
+      this.openerProgress > 0.01
+    if (!reactionActive && !this._blendDirty && !this._materialDirty) return
     this.time += dt
 
     // A driven envelope gives the silicone wobble a quick response and a long,
@@ -379,29 +436,22 @@ export class SplashCube extends THREE.Mesh {
     // Boosted scale pulse for clearer click feedback.
     const openerScale = 1 + this.openerProgress * 0.4
     this.cubeMesh.scale.setScalar(openerScale)
-    this.cubeMesh.rotation.set(
-      Math.sin(this.time * 0.73) * 0.035,
-      Math.sin(this.time * 0.51) * 0.05,
-      Math.sin(this.time * 0.66) * 0.025,
-    )
 
     // (PlayButton3D update removed — dead render path deleted)
     // ── Material color blend ──
-    this.cubeMaterial.color.copy(this._blendFromColor).lerp(this._blendToColor, this._blendT)
-    // A controlled neutral tint keeps glass visible on white without a
-    // debug-looking outline. The visible shape is a real PBR surface: PMREM,
-    // transmission, clearcoat and iridescence create the moving highlights.
-    this.cubeMaterial.color.lerp(this._themeTint, this._isLightTheme ? 0.9 : 0.3)
+    this.applyMaterialBlend()
 
     // Edge colors are STATIC — set once in buildCube, NOT animated per frame.
     // Per-frame edge animation was allocating new Color objects + updating
     // GPU buffer every frame — major Safari/iOS perf killer.
 
     // ── Apply role when changed ──
-    if (this.targetParams.role !== this._currentRole) {
+    if (this._materialDirty || this.targetParams.role !== this._currentRole) {
       this._currentRole = this.targetParams.role
       this.applyRoleAndParams()
     }
+    this._materialDirty = false
+    this._blendDirty = false
   }
 
   private applyRoleAndParams(): void {
@@ -412,6 +462,18 @@ export class SplashCube extends THREE.Mesh {
     // effect. Glass is a dielectric: it stays non-metallic in every phase.
     this.cubeMaterial.roughness = Math.max(roughness, 0.14)
     this.cubeMaterial.metalness = 0
+  }
+
+  /** Apply the latest world blend without requiring a scheduler frame. */
+  private applyMaterialBlend(): void {
+    this._blendColor.copy(this._blendFromColor).lerp(this._blendToColor, this._blendT)
+    // A controlled neutral tint keeps glass visible on white without a
+    // debug-looking outline. The visible shape is a real PBR surface: PMREM,
+    // transmission, clearcoat and iridescence create the moving highlights.
+    this._blendColor.lerp(this._themeTint, this._isLightTheme ? 0.9 : 0.3)
+    if (!this.cubeMaterial.color.equals(this._blendColor)) {
+      this.cubeMaterial.color.copy(this._blendColor)
+    }
   }
 
   /** Add energy to the damped material reaction without a timer cut-off. */
@@ -457,6 +519,9 @@ export class SplashCube extends THREE.Mesh {
   //  deleted. JLZ branding no longer rendered inside the glass cube.)
 
   dispose(): void {
+    if (this._disposed) return
+    this._disposed = true
+    this.removeFromParent()
     // (Pulse timers removed — triggerWobblePulse now uses animated sin-envelope
     //  in update() instead of setTimeout, so there are no timers to clear.)
     // (PlayButton3D dispose removed — dead render path deleted)

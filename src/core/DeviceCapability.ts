@@ -5,6 +5,11 @@ export interface TierConfig {
   postMultiplier: number
 }
 
+/** TSL post is available only on the native WebGPU backend. */
+export function supportsPostProcessing(mode: RendererMode, tier: QualityTier): boolean {
+  return mode === 'webgpu' && tier !== 'low'
+}
+
 const TIER_SETTINGS: Record<QualityTier, TierConfig> = {
   low: {
     postMultiplier: 0.4,
@@ -78,7 +83,7 @@ export class DeviceCapability {
     this.maxDpr = this.calculateMaxDpr()
     this.tier = this.detectTier()
     this.config = TIER_SETTINGS[this.tier]
-    this.postProcessing = this.tier !== 'low' && this.mode !== 'unsupported'
+    this.postProcessing = supportsPostProcessing(this.mode, this.tier)
   }
 
   public static getInstance(): DeviceCapability {
@@ -98,7 +103,7 @@ export class DeviceCapability {
     this.maxDpr = this.calculateMaxDpr()
     this.tier = this.detectTier()
     this.config = TIER_SETTINGS[this.tier]
-    this.postProcessing = this.tier !== 'low'
+    this.postProcessing = supportsPostProcessing(this.mode, this.tier)
   }
 
   // D-17 fix: removed verifyWebGPU() + _webgpuAdapterAvailable — was 70 lines
@@ -186,9 +191,9 @@ export class DeviceCapability {
       return 1.5
     }
     if (this.mode === 'webgl') {
-      // WebGL2's explicit post chain composites to the default framebuffer.
-      // DPR 2 makes that final full-screen pass four times the CSS pixel area;
-      // 1.5 remains crisp on Retina while restoring animation headroom.
+      // WebGLBackend uses direct rendering without a post chain. DPR 2 still
+      // costs four times the scene pixel area; 1.5 remains crisp on Retina
+      // while restoring animation headroom.
       return this.isMobile ? 1 : 1.5
     }
     return 1

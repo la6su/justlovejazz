@@ -1,10 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { initI18n, getLang, toggleLang, t, applyTranslations, type Lang } from '../core/i18n'
+import { eventBus } from '../core/EventBus'
 
 // i18n module holds mutable `currentLang` state at module scope. Tests must
 // reset it between cases — toggleLang persists to localStorage, so we clear
-// that + reset via initI18n() (which reads from localStorage). We also stub
-// window.dispatchEvent because toggleLang fires jlz:lang-change.
+// that + reset via initI18n() (which reads from localStorage). toggleLang
+// publishes jlz:lang-change on the typed eventBus (the raw window bridge was
+// removed in Phase 10).
 
 describe('i18n', () => {
   beforeEach(() => {
@@ -63,12 +65,12 @@ describe('i18n', () => {
       expect(localStorage.getItem('jlz:lang')).toBe('EN')
     })
 
-    it('dispatches jlz:lang-change event with the new lang', () => {
-      const dispatchSpy = vi.spyOn(window, 'dispatchEvent')
+    it('publishes jlz:lang-change on the eventBus with the new lang', () => {
+      const emitSpy = vi.spyOn(eventBus, 'emit')
       toggleLang()
-      const event = dispatchSpy.mock.calls[0]?.[0] as CustomEvent<{ lang: Lang }>
-      expect(event.type).toBe('jlz:lang-change')
-      expect(event.detail.lang).toBe('RU')
+      const call = emitSpy.mock.calls.find(([name]) => name === 'jlz:lang-change')
+      expect(call).toBeDefined()
+      expect(call?.[1]).toEqual({ lang: 'RU' })
     })
 
     it('round-trips: EN → RU → EN → RU', () => {

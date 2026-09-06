@@ -12,6 +12,8 @@
 //   - `jlz:close-nav` → return to the previous main section.
 //   - Subsection click → navigate to target section (menu auto-closes).
 
+import { eventBus } from '../../core/EventBus'
+
 // (themeManager + getLang imports removed — UIMenu.ts owns all config controls now.)
 
 // ── Navigation items with subsections ──
@@ -369,41 +371,63 @@ export function navOverlaySection(mode: 'home' | 'content' = 'content'): string 
  * (intercept the link, dispatch jlz:navigate + jlz:close-nav). UIKit handles the
  * rest. No custom .is-expanded class, no manual toggle listeners.
  */
-export function initMenuNav(): void {
-  const nav = document.querySelector('.jlz-menu-nav')
-  if (!nav) return
+export function initMenuNav(): () => void {
+  const contentRoot = document.getElementById('spa-content') ?? document
+  const nav = contentRoot.querySelector('.jlz-menu-nav')
+  const abortController = new AbortController()
+  let disposed = false
+  if (!nav) return () => {
+    disposed = true
+    abortController.abort()
+  }
 
   // UIkit owns `aria-expanded` and `hidden`. When the sheet itself was hidden
   // during its initial update, UIkit can retain `hidden` after it has already
   // announced the parent as expanded. Reconcile only that native state on the
   // next frame; no app-level accordion state is introduced.
   const toggles = nav.querySelectorAll<HTMLAnchorElement>('.jlz-menu-nav__toggle')
+  const pendingVisibilityFrames = new Map<HTMLAnchorElement, [number, number?]>()
+  const cancelPendingFrames = (toggle: HTMLAnchorElement): void => {
+    const pending = pendingVisibilityFrames.get(toggle)
+    if (!pending) return
+    cancelAnimationFrame(pending[0])
+    if (pending[1] !== undefined) cancelAnimationFrame(pending[1])
+    pendingVisibilityFrames.delete(toggle)
+  }
   toggles.forEach((toggle) => {
     if (toggle.dataset.jlzVisibilityBound === '1') return
     toggle.dataset.jlzVisibilityBound = '1'
     toggle.addEventListener('click', () => {
-      requestAnimationFrame(() => {
+      cancelPendingFrames(toggle)
+      const routeRoot = toggle.closest('#spa-content')
+      const first = requestAnimationFrame(() => {
+        if (disposed) return
         // UIkit may reconcile an initially hidden sheet on the first frame.
         // Read its authoritative aria state on the following frame, after that
         // update has settled, then mirror only the native `hidden` attribute.
-        requestAnimationFrame(() => {
+        const second = requestAnimationFrame(() => {
+          pendingVisibilityFrames.delete(toggle)
+          if (disposed) return
+          if (!toggle.isConnected || !routeRoot?.contains(toggle)) return
           const content = toggle.nextElementSibling
           if (!(content instanceof HTMLElement) || toggle.ariaExpanded !== 'true') return
           content.hidden = false
         })
+        pendingVisibilityFrames.set(toggle, [first, second])
       })
-    })
+      pendingVisibilityFrames.set(toggle, [first])
+    }, { signal: abortController.signal })
 
     const syncPreview = () => {
-      const previewNumber = document.querySelector<HTMLElement>('.jlz-menu-preview__number')
-      const previewLabel = document.querySelector<HTMLElement>('.jlz-menu-preview__label')
+      const previewNumber = contentRoot.querySelector<HTMLElement>('.jlz-menu-preview__number')
+      const previewLabel = contentRoot.querySelector<HTMLElement>('.jlz-menu-preview__label')
       const number = toggle.querySelector<HTMLElement>('.jlz-menu-nav__num')?.textContent
       const label = toggle.querySelector<HTMLElement>('.jlz-menu-nav__label')?.textContent
       if (previewNumber && number) previewNumber.textContent = number
       if (previewLabel && label) previewLabel.textContent = label
     }
-    toggle.addEventListener('pointerenter', syncPreview)
-    toggle.addEventListener('focus', syncPreview)
+    toggle.addEventListener('pointerenter', syncPreview, { signal: abortController.signal })
+    toggle.addEventListener('focus', syncPreview, { signal: abortController.signal })
   })
 
   // Subsection links — intercept for SPA navigation.
@@ -431,22 +455,25 @@ export function initMenuNav(): void {
       if (path !== window.location.pathname) {
         // Cross-page: close Menu first (restore the current story frame), then
         // dispatch jlz:navigate so the router can run the page transition.
-        window.dispatchEvent(new CustomEvent('jlz:close-nav'))
-        window.dispatchEvent(
-          new CustomEvent('jlz:navigate', {
-            detail: { path: path + (hash || '') },
-          }),
-        )
+        eventBus.emit('jlz:close-nav')
+        eventBus.emit('jlz:navigate', { path: path + (hash || '') })
       } else {
         // Same-page: scroll to hash + close menu (return to previous section)
         if (hash) {
-          const target = document.querySelector(hash)
+          const target = contentRoot.querySelector(hash)
           target?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' })
         }
-        window.dispatchEvent(new CustomEvent('jlz:close-nav'))
+        eventBus.emit('jlz:close-nav')
       }
-    })
+    }, { signal: abortController.signal })
   })
+
+  return () => {
+    if (disposed) return
+    disposed = true
+    pendingVisibilityFrames.forEach((_pending, toggle) => cancelPendingFrames(toggle))
+    abortController.abort()
+  }
 }
 
 // (Theme + sound toggle wiring removed — UIMenu.ts owns all config controls now.
@@ -457,12 +484,13 @@ export function initMenuNav(): void {
  * Initialize nav item click handlers ONLY (config controls are in UIMenu).
  * Called by router.ts after every renderView().
  */
-export function initMenuToolbar(): void {
-  initMenuNav()
+export function initMenuToolbar(): () => void {
+  const disposeMenuNav = initMenuNav()
   // Note: [data-close-cinematic-sheet] clicks are already handled by
   // CinematicNav's capture-phase document listener (_sheetClickHandler).
   // The previous duplicate binding here dispatched jlz:close-nav which
   // CinematicNav also listened to — both fired on the same click (Bug F).
+  return disposeMenuNav
 }
 
 // wireMenuToolbarGlobals removed — was a no-op after config controls

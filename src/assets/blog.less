@@ -70,7 +70,7 @@ body {
 .jlz-reading-progress__bar {
   height: 100%;
   width: 100%;
-  background: var(--jlz-color-accent, #b8ed69);
+  background: var(--jlz-color-accent);
   transform: scaleX(0);
   transform-origin: left center;
   transition: transform 0.05s linear; // smooth micro-updates without rAF jitter
@@ -195,7 +195,7 @@ code[class*='language-'] {
 .jlz-journal-feature h2 {
   max-width: 30rem;
   margin: 0;
-  font-size: clamp(2.3rem, 5vw, 5.75rem);
+  font-size: clamp(@jlz-type-step-3, 5vw, @jlz-type-step-5); // φ steps 3–5
 }
 
 .jlz-journal-feature h2 a,
@@ -243,7 +243,7 @@ code[class*='language-'] {
 
 .jlz-journal-list__head h2 {
   margin: 0;
-  font-size: clamp(2.2rem, 4vw, 4.5rem);
+  font-size: clamp(@jlz-type-step-3, 4vw, @jlz-type-step-4); // φ steps 3–4
 }
 
 .jlz-journal-note {

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { eventBus } from '../core/EventBus'
 
 describe('EventBus', () => {
@@ -49,6 +49,25 @@ describe('EventBus', () => {
     expect(count).toBe(1)
   })
 
+  it('dispatches a stable snapshot when a handler tears down listeners', () => {
+    const calls: string[] = []
+    const teardown: { removeSibling?: () => void } = {}
+    const first = (): void => {
+      calls.push('first')
+      teardown.removeSibling?.()
+    }
+    const sibling = (): void => {
+      calls.push('sibling')
+    }
+    eventBus.on('jlz:webgl-ready', first)
+    teardown.removeSibling = eventBus.on('jlz:webgl-ready', sibling)
+
+    eventBus.emit('jlz:webgl-ready')
+
+    expect(calls).toEqual(['first', 'sibling'])
+    eventBus.clear()
+  })
+
   it('clear() removes all subscribers', () => {
     let count = 0
     eventBus.on('jlz:webgl-ready', () => {
@@ -61,5 +80,18 @@ describe('EventBus', () => {
     eventBus.emit('jlz:webgl-ready')
     eventBus.emit('jlz:route-change', { page: 'home' })
     expect(count).toBe(0)
+  })
+
+  it('does not bridge to window.dispatchEvent (raw window path removed)', () => {
+    const dispatchSpy = vi.spyOn(window, 'dispatchEvent')
+    let count = 0
+    const unsub = eventBus.on('jlz:route-change', () => {
+      count++
+    })
+    eventBus.emit('jlz:route-change', { page: 'home' })
+    expect(count).toBe(1)
+    expect(dispatchSpy).not.toHaveBeenCalled()
+    unsub()
+    dispatchSpy.mockRestore()
   })
 })

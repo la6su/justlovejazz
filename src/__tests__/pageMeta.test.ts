@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { applyMetaTags } from '../core/pageMeta'
 import { initI18n, getLang, toggleLang } from '../core/i18n'
+import { pathForPage, ROUTE_MANIFEST } from '../core/routeManifest'
+import { PAGE_META_DATA } from '../core/pageMetaData'
 import type { PageId } from '../sections/_shared/constants'
 
 // pageMeta reads from i18n + writes <title>, <meta>, <link rel=canonical>,
@@ -193,6 +195,31 @@ describe('pageMeta — applyMetaTags', () => {
       const pages: PageId[] = ['home', 'services', 'works', 'manifesto', 'lab', 'contact']
       for (const p of pages) {
         expect(() => applyMetaTags(p)).not.toThrow()
+      }
+    })
+  })
+
+  describe('manifest drift (Phase 9)', () => {
+    // The runtime path is read from the route manifest — the canonical
+    // href must equal origin + pathForPage(page) for every manifest page.
+    // A manifest rename fails this suite (and the sitemap generator)
+    // instead of silently desyncing the runtime from the manifest.
+    it('canonical href derives from the manifest path for every page', () => {
+      for (const entry of ROUTE_MANIFEST) {
+        applyMetaTags(entry.page)
+        const canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]')
+        expect(canonical).not.toBeNull()
+        expect(canonical!.href).toBe(`${window.location.origin}${pathForPage(entry.page)}`)
+        expect(pathForPage(entry.page)).toBe(entry.path)
+      }
+    })
+
+    it('the metadata table covers exactly the manifest pages', () => {
+      const tablePages = Object.keys(PAGE_META_DATA) as PageId[]
+      expect(new Set(tablePages)).toEqual(new Set(ROUTE_MANIFEST.map((entry) => entry.page)))
+      for (const page of tablePages) {
+        expect(PAGE_META_DATA[page].titleKey).toBe(`meta.${page}.title`)
+        expect(PAGE_META_DATA[page].descKey).toBe(`meta.${page}.description`)
       }
     })
   })

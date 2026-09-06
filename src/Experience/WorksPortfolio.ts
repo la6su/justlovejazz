@@ -6,6 +6,7 @@
 import { type Project } from '../core/types'
 
 export class WorksPortfolio {
+  private _disposed = false
   public projects: Project[]
   public currentIdx = 0
 
@@ -18,25 +19,35 @@ export class WorksPortfolio {
   }
 
   next(): void {
+    if (this._disposed) return
     const n = this.projects.length
+    if (n === 0) return
     this.currentIdx = (((this.currentIdx + 1) % n) + n) % n
     this.onCardClick(this.currentIdx)
   }
 
   prev(): void {
+    if (this._disposed) return
     const n = this.projects.length
+    if (n === 0) return
     this.currentIdx = (((this.currentIdx - 1) % n) + n) % n
     this.onCardClick(this.currentIdx)
   }
 
   goTo(idx: number): void {
+    if (this._disposed) return
     const n = this.projects.length
+    if (n === 0 || !Number.isFinite(idx)) return
     this.currentIdx = ((Math.round(idx) % n) + n) % n
     this.onCardClick(this.currentIdx)
   }
 
   dispose(): void {
-    // No GPU resources to clean up
+    if (this._disposed) return
+    this._disposed = true
+    this.projects = []
+    this.currentIdx = 0
+    this.onCardClick = () => undefined
   }
 }
 

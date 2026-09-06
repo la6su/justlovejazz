@@ -26,6 +26,7 @@ export interface LightData {
 }
 
 export class Section extends THREE.Group {
+  private _disposed = false
   public phaseConfig: PhaseConfig
 
   // Transform holders read from PhaseConfig at construction
@@ -90,6 +91,7 @@ export class Section extends THREE.Group {
     // Listen for animation completion to sync _state. When the animate()
     // completes, StateBus emits 'done:${name}' and we resolve _state.
     this._stateDoneHandler = (_eventName: string, data: unknown) => {
+      if (this._disposed) return
       if (data !== this.stateChannel) return
       const val = bus.get(this.stateChannel)
       let resolved: SectionState
@@ -105,6 +107,7 @@ export class Section extends THREE.Group {
   }
 
   public switchState(target: SectionState, duration: number = 1.0, reduced: boolean = false): void {
+    if (this._disposed) return
     const bus = StateBus.getInstance()
     const current = bus.get(this.stateChannel)
     const targetValue = STATE_VALUE[target]
@@ -119,6 +122,7 @@ export class Section extends THREE.Group {
   }
 
   public fadeIn(duration: number = 0.8): void {
+    if (this._disposed) return
     StateBus.getInstance().animate(this.opacityChannel, 1, duration, 'easeOutQuart')
   }
 
@@ -173,6 +177,7 @@ export class Section extends THREE.Group {
   }
 
   public forceState(state: SectionState, reduced: boolean = false): void {
+    if (this._disposed) return
     const bus = StateBus.getInstance()
     bus.set(this.stateChannel, STATE_VALUE[state])
     this._state = state
@@ -180,6 +185,8 @@ export class Section extends THREE.Group {
   }
 
   public dispose(): void {
+    if (this._disposed) return
+    this._disposed = true
     const bus = StateBus.getInstance()
     bus.cancel(this.stateChannel)
     bus.cancel(this.opacityChannel)
@@ -187,6 +194,8 @@ export class Section extends THREE.Group {
       bus.off(`done:${this.stateChannel}`, this._stateDoneHandler)
       this._stateDoneHandler = null
     }
+    bus.removeChannel(this.stateChannel)
+    bus.removeChannel(this.opacityChannel)
     this._opacityMeshCache = null
     this.traverse((obj: THREE.Object3D) => {
       if (obj instanceof THREE.Mesh) {
@@ -195,6 +204,7 @@ export class Section extends THREE.Group {
         mats.forEach((m) => disposeMaterialDeep(m))
       }
     })
+    this.removeFromParent()
     this.clear()
   }
 }

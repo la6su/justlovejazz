@@ -3,6 +3,8 @@
 // __ERROR_ENDPOINT__ / __BUILD_VERSION__ were never set (no Vite define,
 // no window assignment), so the prod sendBeacon path was dead code.
 const sent = new Set<string>()
+let rejectionHandler: ((event: PromiseRejectionEvent) => void) | null = null
+let errorHandler: ((event: ErrorEvent) => void) | null = null
 
 export const ErrorTracker = {
   report: (error: Error | string, context?: Record<string, unknown>) => {
@@ -19,12 +21,12 @@ export const ErrorTracker = {
   init: function () {
     if (ErrorTracker._initialized) return
     ErrorTracker._initialized = true
-    window.addEventListener('unhandledrejection', (e) => {
+    rejectionHandler = (e) => {
       e.preventDefault()
       ErrorTracker.report(e.reason as Error, { source: 'unhandledrejection' })
-    })
+    }
 
-    window.addEventListener('error', (e) => {
+    errorHandler = (e) => {
       // Suppress benign ResizeObserver loop error — this is a browser
       // limitation, not a real bug. The observation completes next frame.
       const msg = e.error?.message ?? e.message ?? 'Unknown error'
@@ -35,6 +37,17 @@ export const ErrorTracker = {
         lineno: e.lineno ?? 0,
         colno: e.colno ?? 0,
       })
-    })
+    }
+    window.addEventListener('unhandledrejection', rejectionHandler)
+    window.addEventListener('error', errorHandler)
+  },
+
+  dispose: function () {
+    if (rejectionHandler) window.removeEventListener('unhandledrejection', rejectionHandler)
+    if (errorHandler) window.removeEventListener('error', errorHandler)
+    rejectionHandler = null
+    errorHandler = null
+    ErrorTracker._initialized = false
+    sent.clear()
   },
 }

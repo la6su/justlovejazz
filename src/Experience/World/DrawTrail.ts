@@ -11,55 +11,59 @@ import * as THREE from 'three'
 import { MeshBasicNodeMaterial } from 'three/webgpu'
 import { Fn, vec3, float, uniform, uv, sin, mix, smoothstep } from 'three/tsl'
 import { input } from '../Input'
+import { prefersReducedMotion } from '../../core/motionPolicy'
 
 const TRAIL_LENGTH = 36
 const RIBBON_WIDTH = 0.115
 
-// Uniforms
-const trailUniforms = {
+const createTrailUniforms = () => ({
   uTime: uniform(0),
   uVelocity: uniform(0),
   uEnergy: uniform(0),
-}
+})
+type TrailUniforms = ReturnType<typeof createTrailUniforms>
 
 // ── Fragment: a low-noise Studio Console signal ──
 // UV.x = along ribbon (0=head/bright, 1=tail/transparent)
 // UV.y = across ribbon (0..1, center=0.5)
-const trailColorNode = Fn(() => {
-  const vUv = uv()
-  const along = vUv.x
-  const across = vUv.y
-  const signal = sin(along.mul(9.0).sub(trailUniforms.uTime.mul(5.0)))
-    .mul(0.5)
-    .add(0.5)
-  const head = smoothstep(float(0.22), float(0.0), along)
-  let color = mix(vec3(0.271, 0.843, 0.737), vec3(0.722, 0.929, 0.412), signal)
-  color = mix(color, vec3(1.0), head.mul(0.32))
+const createTrailColorNode = (trailUniforms: TrailUniforms) =>
+  Fn(() => {
+    const vUv = uv()
+    const along = vUv.x
+    const across = vUv.y
+    const signal = sin(along.mul(9.0).sub(trailUniforms.uTime.mul(5.0)))
+      .mul(0.5)
+      .add(0.5)
+    const head = smoothstep(float(0.22), float(0.0), along)
+    let color = mix(vec3(0.271, 0.843, 0.737), vec3(0.722, 0.929, 0.412), signal)
+    color = mix(color, vec3(1.0), head.mul(0.32))
 
-  const acrossSoft = smoothstep(float(0.0), float(0.5), across).mul(
-    smoothstep(float(1.0), float(0.5), across),
-  )
-  color = color.mul(acrossSoft.mul(0.38).add(0.62))
+    const acrossSoft = smoothstep(float(0.0), float(0.5), across).mul(
+      smoothstep(float(1.0), float(0.5), across),
+    )
+    color = color.mul(acrossSoft.mul(0.38).add(0.62))
 
-  return color
-})
+    return color
+  })()
 
-const trailOpacityNode = Fn(() => {
-  const vUv = uv()
-  const along = vUv.x
-  const across = vUv.y
-  const fade = float(1.0).sub(along)
-  const fadeInt = fade.mul(fade).mul(fade)
-  const headBoost = smoothstep(float(0.18), float(0.0), along).mul(0.18)
-  const acrossSoft = smoothstep(float(0.0), float(0.5), across).mul(
-    smoothstep(float(1.0), float(0.5), across),
-  )
-  const velocity = trailUniforms.uVelocity.mul(0.32).add(0.68)
+const createTrailOpacityNode = (trailUniforms: TrailUniforms) =>
+  Fn(() => {
+    const vUv = uv()
+    const along = vUv.x
+    const across = vUv.y
+    const fade = float(1.0).sub(along)
+    const fadeInt = fade.mul(fade).mul(fade)
+    const headBoost = smoothstep(float(0.18), float(0.0), along).mul(0.18)
+    const acrossSoft = smoothstep(float(0.0), float(0.5), across).mul(
+      smoothstep(float(1.0), float(0.5), across),
+    )
+    const velocity = trailUniforms.uVelocity.mul(0.32).add(0.68)
 
-  return fadeInt.add(headBoost).mul(acrossSoft).mul(velocity).mul(trailUniforms.uEnergy)
-})
+    return fadeInt.add(headBoost).mul(acrossSoft).mul(velocity).mul(trailUniforms.uEnergy)
+  })()
 
 export class DrawTrail {
+  private readonly _uniforms = createTrailUniforms()
   private group: THREE.Group
   private mesh: THREE.Mesh
   private geometry: THREE.BufferGeometry
@@ -70,13 +74,38 @@ export class DrawTrail {
   private initialized = false
   private _ndc = new THREE.Vector3()
   private _prevNdc = new THREE.Vector2()
-  private _frameCount = 0
+  // Reused camera-basis scratch vectors; this owner runs in the render loop and
+  // must not allocate three Vector3 instances on every ribbon rebuild.
+  private _cameraRight = new THREE.Vector3()
+  private _cameraUp = new THREE.Vector3()
+  private _cameraForward = new THREE.Vector3()
+  private _lastCameraRight = new THREE.Vector3()
+  private _lastCameraUp = new THREE.Vector3()
+  private _lastCameraForward = new THREE.Vector3()
+  private _lastCameraWorld = new THREE.Matrix4()
+  private _hasCameraBasis = false
+  private _hasCameraWorld = false
   private _velocity = 0
   private _energy = 0
   private _geometryDirty = true
+  private _reducedMotion = prefersReducedMotion()
 
   public get isAnimating(): boolean {
-    return this._energy > 0.008
+    return !this._reducedMotion && this._energy > 0.008
+  }
+
+  /** Settle the cursor trail at the owner boundary when motion is reduced. */
+  setReducedMotion(reduced: boolean): void {
+    this._reducedMotion = reduced
+    if (!reduced) return
+    this._energy = 0
+    this._velocity = 0
+    this._uniforms.uEnergy.value = 0
+    this._uniforms.uVelocity.value = 0
+    this.initialized = false
+    this._geometryDirty = false
+    this._hasCameraBasis = false
+    this._hasCameraWorld = false
   }
 
   constructor() {
@@ -129,8 +158,10 @@ export class DrawTrail {
       // R-11 fix: toneMapped=false keeps additive glow energy predictable.
       toneMapped: false,
     })
-    material.colorNode = trailColorNode()
-    ;(material as unknown as { opacityNode: unknown }).opacityNode = trailOpacityNode()
+    material.colorNode = createTrailColorNode(this._uniforms)
+    ;(material as unknown as { opacityNode: unknown }).opacityNode = createTrailOpacityNode(
+      this._uniforms,
+    )
 
     this.mesh = new THREE.Mesh(this.geometry, material)
     this.mesh.frustumCulled = false
@@ -144,13 +175,52 @@ export class DrawTrail {
   }
 
   update(_dt: number, camera: THREE.Camera): void {
+    if (this._reducedMotion) {
+      this.setReducedMotion(true)
+      return
+    }
     const mouse = input.getMouse()
+    const pointerChanged = mouse.x !== this._prevNdc.x || mouse.y !== this._prevNdc.y
+    const cameraMatrixChanged =
+      !this._hasCameraWorld || !camera.matrixWorld.equals(this._lastCameraWorld)
+
+    // Once the trail is fully settled, identical pointer and camera state do
+    // not require basis extraction, unprojection, ray construction or uniform
+    // writes. Keep the first frame and all actual wake-up signals live.
+    if (!this.initialized || pointerChanged || cameraMatrixChanged || this.isAnimating) {
+      // Continue through the active path below.
+    } else {
+      if (this._energy > 0) {
+        this._energy = 0
+        this._uniforms.uEnergy.value = 0
+      }
+      return
+    }
+
+    // Ribbon vertices are camera-facing. A static pointer still needs a
+    // rebuild when a moving camera changes that basis, but not on a fixed
+    // cadence while only the energy uniform decays.
+    camera.matrixWorld.extractBasis(this._cameraRight, this._cameraUp, this._cameraForward)
+    const cameraBasisChanged =
+      !this._hasCameraBasis ||
+      !this._cameraRight.equals(this._lastCameraRight) ||
+      !this._cameraUp.equals(this._lastCameraUp) ||
+      !this._cameraForward.equals(this._lastCameraForward)
+    if (cameraBasisChanged) {
+      this._lastCameraRight.copy(this._cameraRight)
+      this._lastCameraUp.copy(this._cameraUp)
+      this._lastCameraForward.copy(this._cameraForward)
+      this._hasCameraBasis = true
+      this._geometryDirty = true
+    }
+    this._lastCameraWorld.copy(camera.matrixWorld)
+    this._hasCameraWorld = true
 
     // Track velocity (NDC units per frame).
     const velNdc = Math.hypot(mouse.x - this._prevNdc.x, mouse.y - this._prevNdc.y)
     this._velocity = this._velocity * 0.78 + velNdc * 0.22
     this._prevNdc.set(mouse.x, mouse.y)
-    trailUniforms.uVelocity.value = Math.min(1, this._velocity * 20)
+    this._uniforms.uVelocity.value = Math.min(1, this._velocity * 20)
 
     // Unproject cursor NDC to world ray, intersect z=0 plane
     this._ndc.set(mouse.x, mouse.y, 0.5)
@@ -186,17 +256,16 @@ export class DrawTrail {
     } else {
       this._energy *= Math.exp(-_dt * 5.5)
     }
-    trailUniforms.uEnergy.value = this._energy
+    this._uniforms.uEnergy.value = this._energy
 
     // Rebuild immediately after input, then at a restrained cadence while the
     // trace settles.
-    this._frameCount++
-    if (this._geometryDirty || this._frameCount % 2 === 0) {
+    if (this._geometryDirty) {
       this._rebuildRibbon(camera)
       this._geometryDirty = false
     }
 
-    trailUniforms.uTime.value += _dt
+    this._uniforms.uTime.value += _dt
   }
 
   /** Rebuild a camera-facing ribbon perpendicular to each segment.
@@ -205,10 +274,10 @@ export class DrawTrail {
    * cursor travel collapse into zero-area triangles. A local perpendicular is
    * stable for horizontal, vertical and diagonal gestures. */
   private _rebuildRibbon(camera: THREE.Camera): void {
-    const headWidth = RIBBON_WIDTH * (0.75 + trailUniforms.uVelocity.value * 0.85)
+    const headWidth = RIBBON_WIDTH * (0.75 + this._uniforms.uVelocity.value * 0.85)
     const tailWidth = headWidth * 0.045
-    const camRight = new THREE.Vector3()
-    camera.matrixWorld.extractBasis(camRight, new THREE.Vector3(), new THREE.Vector3())
+    camera.matrixWorld.extractBasis(this._cameraRight, this._cameraUp, this._cameraForward)
+    const camRight = this._cameraRight
 
     for (let i = 0; i < TRAIL_LENGTH; i++) {
       const p = this.trailPositions[i]!
@@ -240,12 +309,22 @@ export class DrawTrail {
     this.group.visible = visible
     if (!visible) {
       this._energy = 0
-      trailUniforms.uEnergy.value = 0
+      this._uniforms.uEnergy.value = 0
       this.initialized = false
+      this._hasCameraBasis = false
+      this._hasCameraWorld = false
+      this._geometryDirty = true
     }
   }
 
   dispose(): void {
+    this._reducedMotion = true
+    this._energy = 0
+    this.initialized = false
+    this._geometryDirty = false
+    this._hasCameraBasis = false
+    this._hasCameraWorld = false
+    this.group.clear()
     this.geometry.dispose()
     ;(this.mesh.material as THREE.Material).dispose()
   }
