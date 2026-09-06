@@ -6,15 +6,28 @@
 // an editorial composition sized by UIkit's responsive grid. The DOM
 // carries the index header and semantic card buttons; the route's visible
 // media is owned by WorksPlaneStage (scene side, untouched by navigation).
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import { RouterLink } from 'vue-router'
 
 import { PROJECTS } from '../../Data/Projects'
+import { CASE_STUDY_BY_PROJECT } from '../../Data/CaseStudies'
 import { useJlzPage } from '../useJlzPage'
 import ContactFooter from './ContactFooter.vue'
 import NavMenu from './NavMenu.vue'
+import WorksHero from './works/WorksHero.vue'
+import CaseStudyCard from './works/CaseStudyCard.vue'
 
 const rootEl = ref<HTMLElement | null>(null)
 useJlzPage('works', () => rootEl.value)
+const activeFilter = ref('all')
+const visibleSections = computed(() =>
+  SECTIONS.filter(
+    (sec) =>
+      activeFilter.value === 'all' ||
+      (activeFilter.value === 'Digital products' && sec.index <= 2) ||
+      (activeFilter.value === 'Creative technology' && sec.index >= 3),
+  ),
+)
 
 type WorksLayout = 'feature' | 'equal' | 'reverse' | 'cinematic'
 
@@ -61,9 +74,37 @@ const meta = (idx: number): string =>
   >
     <article class="jlz-page jlz-works-page" data-page-view="works">
       <ContactFooter mode="content" />
+      <!-- Dedicated Works surface: editorial hero + case index, separate from generic pages. -->
+      <WorksHero
+        :project-count="PROJECTS.length"
+        :ready-count="CASE_STUDY_BY_PROJECT.size"
+        :active-filter="activeFilter"
+        @filter="activeFilter = $event"
+      />
+      <section
+        class="jlz-case-index uk-container uk-container-expand uk-padding uk-padding-large@m"
+        aria-labelledby="case-index-title"
+      >
+        <div class="uk-flex uk-flex-between uk-flex-middle">
+          <h2 id="case-index-title" class="uk-h3 uk-margin-remove">Case notes</h2>
+          <span class="uk-text-meta">Outcome first</span>
+        </div>
+        <div class="uk-grid-medium uk-child-width-1-3@m uk-margin-medium-top" uk-grid>
+          <template
+            v-for="study in [
+              CASE_STUDY_BY_PROJECT.get('ebb-vibes'),
+              CASE_STUDY_BY_PROJECT.get('mono-sunday'),
+              CASE_STUDY_BY_PROJECT.get('nocturne-blue'),
+            ]"
+            :key="study?.projectId"
+          >
+            <CaseStudyCard v-if="study" :study="study" />
+          </template>
+        </div>
+      </section>
 
       <section
-        v-for="sec in SECTIONS"
+        v-for="sec in visibleSections"
         :key="sec.index"
         :class="[
           'jlz-page-section',
@@ -87,6 +128,9 @@ const meta = (idx: number): string =>
             </div>
             <span class="jlz-works-index__progress">{{ number(sec.index) }} / 04</span>
           </header>
+          <p class="jlz-works-index__lead" :data-i18n="`works.section${sec.index}.lead`">
+            A focused visual system with a clear technical intention.
+          </p>
 
           <div
             class="jlz-works-grid jlz-works-composition uk-grid uk-grid-small uk-height-1-1 uk-flex uk-flex-middle uk-child-width-1-1 uk-child-width-auto@m"
@@ -121,9 +165,17 @@ const meta = (idx: number): string =>
                     </span>
                   </span>
                 </button>
+                <RouterLink
+                  class="jlz-work-card__case-link uk-position-cover"
+                  :to="`/works/${PROJECTS[pos === 0 ? sec.projectA : sec.projectB]!.id}`"
+                  :aria-label="`Read case study: ${PROJECTS[pos === 0 ? sec.projectA : sec.projectB]!.title}`"
+                />
               </div>
             </div>
           </div>
+          <RouterLink class="jlz-works-section__cta uk-button uk-button-default" to="/contact">
+            <span data-i18n="common.startProject">Start a project</span>
+          </RouterLink>
         </div>
       </section>
 
