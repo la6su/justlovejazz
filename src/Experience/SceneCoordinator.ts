@@ -26,6 +26,7 @@ import type { WorksPlaneStage } from './World/WorksPlaneStage'
 import type { ContactTypographyStage } from './World/ContactTypographyStage'
 import type { ContactCyprusStage } from './World/ContactCyprusStage'
 import type { ContactHaloStage } from './World/ContactHaloStage'
+import type { ManifestoInkStage } from './World/ManifestoInkStage'
 import type { LabExperimentObject } from './Lab/manifest'
 
 export interface WorldTransformResult {
@@ -50,6 +51,7 @@ export interface SceneCoordinatorOwners {
   contactTypographyStage?: () => ContactTypographyStage | null
   contactCyprusStage: () => ContactCyprusStage | null
   contactHaloStage?: () => ContactHaloStage | null
+  manifestoInkStage?: () => ManifestoInkStage | null
   labGamepad: () => LabExperimentObject | null
 }
 
@@ -112,6 +114,9 @@ export class SceneCoordinator {
   }
   public get contactHaloStage(): ContactHaloStage | null {
     return this.owners.contactHaloStage?.() ?? null
+  }
+  public get manifestoInkStage(): ManifestoInkStage | null {
+    return this.owners.manifestoInkStage?.() ?? null
   }
   public get labGamepad(): LabExperimentObject | null {
     return this.owners.labGamepad()
@@ -312,6 +317,12 @@ export class SceneCoordinator {
     if (this.owners.baku()?.isAmbientlyAnimated) return true
     if (this.contactTypographyStage?.visible && this.contactTypographyStage.isAnimating) return true
     if (this.contactHaloStage?.visible && this.contactHaloStage.isAnimating) return true
+    const manifestoInkStage = this.manifestoInkStage
+    if (manifestoInkStage?.visible && manifestoInkStage.isAnimating) return true
+    // The Lab object's authored hover clock is an intentional primary object
+    // motion (mirrors the typography stage), not decoration.
+    const labGamepad = this.owners.labGamepad()
+    if (labGamepad?.visible && labGamepad.isAnimating) return true
     return false
   }
 
@@ -319,6 +330,7 @@ export class SceneCoordinator {
   public syncTypographyTheme(isLight: boolean): void {
     this.contactTypographyStage?.setTheme(isLight)
     this.contactHaloStage?.setTheme(isLight)
+    this.manifestoInkStage?.setTheme(isLight)
   }
 
   public update(deltaTime: number, needsRender: boolean = true): void {
@@ -359,8 +371,13 @@ export class SceneCoordinator {
     }
     this.contactTypographyStage?.update(deltaTime)
     this.contactHaloStage?.update(deltaTime)
+    this.manifestoInkStage?.update(deltaTime)
     const contactCyprusStage = this.owners.contactCyprusStage()
     contactCyprusStage?.update(deltaTime)
+    // Lab object: authored idle motion advances only on rendered frames; the
+    // object itself guards visibility and reduced motion (motion contract in
+    // Lab/manifest.ts). Optional calls keep inert experiments legal.
+    this.labGamepad?.update?.(deltaTime)
     const baku = this.owners.baku()
 
     if (!this.isReducedMotion) {
@@ -787,7 +804,12 @@ export class SceneCoordinator {
         page !== 'works' &&
         !(page === 'contact' && (this.owners.contactCyprusStage()?.isActive ?? false))
     const labGamepad = this.owners.labGamepad()
-    if (labGamepad) labGamepad.visible = isLab
+    if (labGamepad) {
+      labGamepad.visible = isLab
+      // Every route entry starts from the authored pose — without this reset
+      // a mid-hover tilt or crank angle would persist across visits.
+      if (isLab) labGamepad.resetMotion?.()
+    }
     this._invalidateTransformCache()
   }
 

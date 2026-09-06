@@ -56,6 +56,9 @@ export interface ExperienceUIHost {
   ensureContactTypographyStageInitialized: () => Promise<void>
   ensureContactCyprusStageInitialized: () => Promise<void>
   ensureContactHaloStageInitialized: () => Promise<void>
+  /** The Experience-owned lazy /manifesto ink-wash stage lifecycle. */
+  ensureManifestoInkStageInitialized: () => Promise<void>
+  disposeManifestoInkStage: () => void
   disposeContactTypographyStage: () => void
   disposeContactCyprusStage: () => void
   disposeContactHaloStage: () => void
@@ -251,6 +254,14 @@ export class ExperienceUI {
         this.host.disposeContactCyprusStage()
         this.host.disposeContactHaloStage()
         coordinator.setContactSceneSection(0)
+      }
+      if (newPage === 'manifesto') {
+        void this.host.ensureManifestoInkStageInitialized().then(() => {
+          if (!continuationIsCurrent()) return
+          this.host.raise('nav')
+        })
+      } else {
+        this.host.disposeManifestoInkStage()
       }
       // Phase 8 slice 9: the Lab object's lazy creation moved to Experience
       // (created once on the first /lab visit; never disposed per route leave —
