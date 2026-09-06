@@ -472,9 +472,6 @@ export class BakuCarousel extends THREE.Group {
       card.setReveal(streamReveal)
       // No scroll-induced motion bend — keeps textures distortion-free.
       // The wobble is reserved for explicit pulse events (card tap/open).
-      card.setMotion(0, 0)
-      card.setEdgeWarp(0)
-      card.setTransition(0)
       // Hidden idle cards still receive their reveal/transform uniforms above,
       // but do not need per-frame cloth time advancement. Keep the CasePlane
       // idle guard active for those cards while preserving updates for visible
