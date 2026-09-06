@@ -168,7 +168,7 @@ export async function mountVueApp(): Promise<void> {
   const navigateToPath = async (path: string): Promise<void> => {
     const hashIdx = path.indexOf('#')
     const purePath = hashIdx >= 0 ? path.slice(0, hashIdx) : path
-    if (!resolveRoute(purePath)) return
+    if (!resolveRoute(purePath) && !isRoutePath(purePath)) return
     // A push before the initial navigation settles is committed against
     // the start history entry (replace) and loses the session's first
     // back slot — the legacy contract never had this window because its
