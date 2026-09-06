@@ -75,7 +75,8 @@ const COLOR: Record<string, Token> = {
 
 // ── Typography ──
 const TYPOGRAPHY: Record<string, Token> = {
-  'font-display': "'JetBrains Mono', 'SFMono-Regular', 'Cascadia Code', 'Consolas', monospace",
+  'font-display':
+    "'Commissioner', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
   'font-body': "'Commissioner', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
   'font-mono': "'JetBrains Mono', 'SFMono-Regular', 'Cascadia Code', 'Consolas', monospace",
   'weight-light': '300',

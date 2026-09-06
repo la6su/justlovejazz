@@ -174,6 +174,9 @@ useJlzPage('home', () => rootEl.value)
           <span uk-icon="icon: slidenav-next-large" aria-hidden="true"></span>
         </button>
       </div>
+      <a href="/works" class="jlz-works-entrance uk-button uk-button-default">
+        <span data-i18n="works.enterRooms">Explore the four rooms</span> ↗
+      </a>
     </section>
 
     <!-- 04 · Manifesto (bottom face -Y) -->

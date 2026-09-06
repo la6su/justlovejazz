@@ -57,7 +57,6 @@ useJlzPage('services', () => rootEl.value)
               <div>
                 <div class="jlz-console-card jlz-service-console">
                   <div class="jlz-console-card__chrome" aria-hidden="true">
-                    <span></span><span></span><span></span>
                     <span class="jlz-console-card__index uk-text-meta uk-text-uppercase"
                       >01 / 04</span
                     >
@@ -68,6 +67,16 @@ useJlzPage('services', () => rootEl.value)
                   >
                     A useful identity gives every later decision a direction.
                   </p>
+                  <ul class="jlz-service-spec uk-list uk-list-divider uk-margin-medium-top">
+                    <li>
+                      <span>01</span><strong>Position</strong
+                      ><small>point of view, audience, signal</small>
+                    </li>
+                    <li>
+                      <span>02</span><strong>System</strong
+                      ><small>type, color, interaction rules</small>
+                    </li>
+                  </ul>
                   <a
                     href="/blog/glassmorphism-webgpu"
                     class="jlz-service-explore uk-button uk-button-default uk-button-small uk-text-uppercase uk-margin-top uk-flex uk-flex-none uk-flex-inline uk-flex-middle uk-margin-medium-top"
@@ -144,6 +153,9 @@ useJlzPage('services', () => rootEl.value)
                   >
                     Render only when there is something to say.
                   </p>
+                  <p class="jlz-service-runtime__detail">
+                    One scene, one demand signal, one measurable reason to move.
+                  </p>
                   <div uk-scrollspy="cls: uk-animation-slide-bottom-small; delay: 90; repeat: true">
                     <a
                       href="/blog/on-demand-rendering"
@@ -202,6 +214,10 @@ useJlzPage('services', () => rootEl.value)
                     <span data-i18n="services.motionRealtime.word2">Shift</span>
                     <span data-i18n="services.motionRealtime.word3">Land</span>
                   </div>
+                  <p class="jlz-service-motion__detail">
+                    Transitions are authored as states: hold attention, shift context, land on
+                    meaning.
+                  </p>
                   <div uk-scrollspy="cls: uk-animation-slide-left-small; delay: 120; repeat: true">
                     <a
                       href="/blog/tsl-changes-everything"
@@ -252,7 +268,6 @@ useJlzPage('services', () => rootEl.value)
               <div>
                 <div class="jlz-console-card jlz-service-console jlz-service-console--cta">
                   <div class="jlz-console-card__chrome" aria-hidden="true">
-                    <span></span><span></span><span></span>
                     <span class="jlz-console-card__index uk-text-meta uk-text-uppercase"
                       >04 / 04</span
                     >
@@ -262,6 +277,9 @@ useJlzPage('services', () => rootEl.value)
                     data-i18n="services.aiSystems.statement"
                   >
                     The right workflow creates more room for the decisions that cannot be automated.
+                  </p>
+                  <p class="jlz-service-console__note">
+                    Brief → prototype → measured scene → handoff.
                   </p>
                   <a
                     href="mailto:hello@justlovejazz.com?subject=Project%20brief"

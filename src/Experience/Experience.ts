@@ -49,6 +49,7 @@ import { ParticleBurst } from './World/ParticleBurst'
 import { DrawTrail } from './World/DrawTrail'
 import type { BakuCarousel } from './World/BakuCarousel'
 import { WorksPlaneStage } from './World/WorksPlaneStage'
+import { ServicesStage } from './World/ServicesStage'
 import type { ContactTypographyStage } from './World/ContactTypographyStage'
 import type { ContactHaloStage } from './World/ContactHaloStage'
 import type { ManifestoInkStage } from './World/ManifestoInkStage'
@@ -179,6 +180,7 @@ export class Experience {
   // never look like a navigation leak). The World frame path reads it through
   // the attachWorksPlaneStage adapter + worksPlaneStage getter.
   private worksPlaneStage: WorksPlaneStage | null = null
+  private servicesStage: ServicesStage | null = null
   private _worksPlaneStagePromise: Promise<void> | null = null
   private _worksPlaneStageRequest = 0
   // Phase 8 slice 8: the lazy 3D Agros backdrop (ContactCyprusStage, Draco model),
@@ -453,6 +455,7 @@ export class Experience {
         contactHaloStage: () => this.contactHaloStage,
         manifestoInkStage: () => this.manifestoInkStage,
         labGamepad: () => this.labGamepad,
+        servicesStage: () => this.servicesStage,
       },
       () => this.currentPage(),
     )
@@ -466,6 +469,8 @@ export class Experience {
       () => this.currentPage(),
       () => this._storyNav?.getSide() ?? 'center',
     )
+    this.servicesStage = new ServicesStage()
+    this.scene.add(this.servicesStage)
     // Phase 8 slice 6: the project stream (BakuCarousel) is created by the
     // works section factory as a child of the Works group — it enters the
     // scene graph with the group, but its reference + init + per-frame drive
@@ -1121,7 +1126,7 @@ export class Experience {
     // registered the listener above. Replay that settled DOM state so the
     // ambient pavilion, glass and contact ground never boot one polarity
     // behind the semantic interface.
-    const initialIsLight = document.body.classList.contains('uk-light')
+    const initialIsLight = this.contentReveal.isLight
     this.envSphere.snapToSection(this.coordinator.currentSectionIndex, initialIsLight)
     this.ground?.syncTheme(initialIsLight)
     this.baku?.setTheme(initialIsLight)
@@ -1725,6 +1730,8 @@ export class Experience {
     // Phase 8 slice 7: the /works case-plane stage owner (lazy — only alive
     // when /works was reached; a direct child of the Tres-owned scene).
     this.disposeWorksPlaneStage()
+    this.servicesStage?.dispose()
+    this.servicesStage = null
     // Phase 8 slice 8: the Contact typography + Cyprus stage owners (lazy — only
     // alive when /contact was reached; direct children of the Tres-owned
     // scene).

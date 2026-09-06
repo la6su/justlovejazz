@@ -20,5 +20,6 @@ export function worksSection(): string {
       </button>
     </div>
   `
-  return sectionShell('works', accessibleTitle, '', 'home', false, '', controls)
+  const entrance = `<a href="/works" class="jlz-works-entrance uk-button uk-button-default"><span data-i18n="works.enterRooms">Explore the four rooms</span> ↗</a>`
+  return sectionShell('works', accessibleTitle, '', 'home', false, '', controls + entrance)
 }

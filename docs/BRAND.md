@@ -17,11 +17,13 @@ precise rather than sterile.
 
 The interface derives its palette from the accepted **Neon Stage** identity
 (ADR 0007): a cool near-black stage, cool ivory text, one concentrated
-electric-yellow accent, a cool second signal and an ember error signal. The
+electric-yellow accent, a phosphor interaction signal, cool spatial highlights
+and an ember error signal. The
 inverse polarity is a cool paper field, kept as an explicit accessibility
 preference rather than a section art direction. Semantic status colors
 (success, warning, danger) belong to the token chain: warning and danger
-alias the brand signals, and success is the only green in the system.
+alias the brand signals. Green interaction emphasis is distinct from textual
+success status; color alone must not convey status.
 The type scale is a golden-ratio (φ = 1.618) modular chain owned by the
 `type-step` tokens (0.875 / 1.414 / 2.288 / 3.702 / 6 / 9.708 / 15.707rem),
 mobile-first: html font-size is 0.85rem on mobile and 1rem on desktop, so
@@ -52,6 +54,30 @@ The app's normal visual theme is dark across every section. Inverse remains an
 explicit accessibility preference, not a section-by-section art direction.
 Console glass must derive its contrast from shared runtime tokens in both
 polarities; its accompanying 3D pixel title follows the same effective theme.
+
+## Works as the narrative centre
+
+The portfolio is a sequence of four rooms: Listening (rhythm and silence),
+Signal (analogue and synthetic), Atmosphere (light and texture), and After hours
+(the archive and an invitation to collaborate). Each room presents one
+featured work, a framing question and an unobstructed project action. The last
+room exposes the complete eight-work archive. A shared spatial installation
+frames the media; its finite transitions follow the selected room.
+Case-note links are separate from immersive viewing and appear only for
+existing notes. The persistent room navigator connects the sequence.
+
+Case studies use four chapters: intent, system, material and reflection.
+Review-state descriptions must remain identified as independent prototypes;
+do not invent client results or claim approved evidence. Theme assembly and
+component rules are documented in [THEME.md](THEME.md).
+
+Use the YOOtheme section/container/content hierarchy through UIkit. Reserve
+absolute positioning for controls that must align with camera-local media.
+Keep the exhibition track at four permanent viewport sections so scrolling,
+room navigation and the scene agree. The surrounding studio pages use the
+same typography, surfaces and explicit dark/inverse preference. Console
+character comes from restrained metadata and rules, without scanlines or
+continuous decorative blinking.
 
 ## Typography and voice
 

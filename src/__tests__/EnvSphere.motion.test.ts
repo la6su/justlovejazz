@@ -12,9 +12,9 @@ describe('EnvSphere reduced-motion transitions', () => {
 
     sphere.changeSection(3, false)
 
-    expect(back.color.getHex()).toBe(0x17120f)
+    expect(back.color.getHex()).toBe(0x0b1018)
     sphere.update(1)
-    expect(back.color.getHex()).toBe(0x17120f)
+    expect(back.color.getHex()).toBe(0x0b1018)
     sphere.dispose()
     expect(sphere.parent).toBeNull()
   })
@@ -48,7 +48,7 @@ describe('EnvSphere reduced-motion transitions', () => {
     sphere.changeSection(3, false)
 
     const back = (sphere.children[1] as THREE.Mesh | undefined)?.material as THREE.MeshBasicMaterial
-    expect(back.color.getHex()).toBe(0x17120f)
+    expect(back.color.getHex()).toBe(0x0b1018)
     expect(matchMedia).toHaveBeenCalledTimes(1)
     sphere.dispose()
   })
@@ -64,7 +64,7 @@ describe('EnvSphere reduced-motion transitions', () => {
 
     sphere.setReducedMotion(true)
 
-    expect(back.color.getHex()).toBe(0x17120f)
+    expect(back.color.getHex()).toBe(0x0b1018)
     expect(back.color.getHex()).not.toBe(intermediate)
     expect(sphere.isAnimating).toBe(false)
     sphere.dispose()

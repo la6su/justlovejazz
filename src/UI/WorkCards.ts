@@ -4,7 +4,7 @@
 // buttons remain as focusable caption/hit-target layers and request a project
 // opening via jlz:open-project; Experience chooses the corresponding 3D plane.
 //
-// Card focus uses Tab/Shift+Tab (roving tabindex within each .jlz-works-grid).
+// Every project remains reachable through native Tab/Shift+Tab navigation.
 // Story arrows are owned by CinematicNav; Enter/Space open the focused card
 // through native <button> behavior.
 //
@@ -73,11 +73,11 @@ function grids(): HTMLElement[] {
   return Array.from(contentRoot().querySelectorAll<HTMLElement>('.jlz-works-grid'))
 }
 
-/** Apply roving tabindex to a single grid: first card = 0, rest = -1. */
+/** Keep every independent project button in the native focus order. */
 function applyRoving(grid: HTMLElement): void {
   const gridCards = Array.from(grid.querySelectorAll<HTMLElement>('.jlz-work-card'))
-  gridCards.forEach((card, i) => {
-    card.setAttribute('tabindex', i === 0 ? '0' : '-1')
+  gridCards.forEach((card) => {
+    card.setAttribute('tabindex', '0')
   })
 }
 

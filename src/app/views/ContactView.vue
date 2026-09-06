@@ -40,7 +40,6 @@ useJlzPage('contact', () => rootEl.value)
             uk-scrollspy="cls: uk-animation-slide-bottom-small; repeat: true"
           >
             <div class="jlz-console-card__chrome" aria-hidden="true">
-              <span></span><span></span><span></span>
               <span class="jlz-console-card__index uk-text-meta uk-text-uppercase">01 / 04</span>
             </div>
             <h3
@@ -181,7 +180,6 @@ useJlzPage('contact', () => rootEl.value)
             uk-scrollspy="cls: uk-animation-slide-bottom-small; repeat: true"
           >
             <div class="jlz-console-card__chrome" aria-hidden="true">
-              <span></span><span></span><span></span>
               <span class="jlz-console-card__index uk-text-meta uk-text-uppercase">04 / 04</span>
             </div>
             <h3

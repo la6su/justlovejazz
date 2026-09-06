@@ -17,6 +17,8 @@ import { resolveEffectiveTheme, type ThemeAppliedPort } from '../core/sectionThe
 import UIkit from 'uikit'
 
 export class ContentReveal {
+  /** Latest resolved theme, including initial resolution before listeners attach. */
+  public isLight = false
   private sectionHandler: ((payload: AppEvents['jlz:section-change']) => void) | null = null
   private pageSectionUnsub: (() => void) | null = null
   private themeChangeUnsub: (() => void) | null = null
@@ -137,13 +139,14 @@ export class ContentReveal {
       const idx = configs.indexOf(cfg)
       if (idx >= 0) this.currentSectionIndex = idx
     }
-    const sectionIsLight = cfg?.theme === 'light' || !cfg
+    const sectionIsLight = cfg?.theme === 'light'
     const isInverse = themeManager.isInverse
     // Effective-theme port: the auto/inverse decision is the pure
     // sectionTheme contract (single source of the rule), and the event
     // detail below is built as the typed ThemeAppliedPort the scene reads.
     const mode: ThemeMode = isInverse ? 'inverse' : 'auto'
     const shouldUseLight = resolveEffectiveTheme(sectionIsLight, mode)
+    this.isLight = shouldUseLight
 
     document.documentElement.classList.toggle('uk-light', shouldUseLight)
     document.body.classList.toggle('uk-light', shouldUseLight)

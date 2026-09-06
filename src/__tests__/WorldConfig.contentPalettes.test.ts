@@ -16,6 +16,7 @@ describe('WorldConfig content post palettes', () => {
     for (const page of CONTENT_PAGES) {
       const scenes = getWorldConfigForPage(page)
       expect(scenes).toHaveLength(6)
+      expect(scenes.every((scene) => scene.theme === 'dark')).toBe(true)
       for (const scene of scenes) {
         expect(scene.post.bloom).toBeGreaterThan(0)
         expect(scene.post.bloom).toBeLessThanOrEqual(HOME_PEAK_BLOOM)

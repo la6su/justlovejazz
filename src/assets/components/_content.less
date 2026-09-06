@@ -3,10 +3,11 @@
 .jlz-eyebrow {
   min-height: 1em;
   font-family: var(--jlz-font-mono), monospace;
-  font-size: clamp(@jlz-type-step-3, 6vw, @jlz-type-step-4); // φ steps 3–4
-  font-weight: 200;
-  line-height: 1;
-  opacity: 0.35;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: 0.12em;
+  color: var(--jlz-color-text-muted);
 }
 
 .jlz-section-top,
@@ -52,27 +53,6 @@
   gap: 0.38rem;
   min-height: 0.7rem;
   margin-bottom: clamp(2.5rem, 8vh, 6rem);
-}
-
-.jlz-console-card__chrome > span:not(.jlz-console-card__index) {
-  display: block;
-  width: 0.45rem;
-  height: 0.45rem;
-  border: 0;
-  border-radius: 0;
-}
-
-/* Terminal window dots — the reference console chrome. */
-.jlz-console-card__chrome > span:nth-child(1) {
-  background: #ff5f56;
-}
-
-.jlz-console-card__chrome > span:nth-child(2) {
-  background: #ffbd2e;
-}
-
-.jlz-console-card__chrome > span:nth-child(3) {
-  background: #27c93f;
 }
 
 .jlz-console-card__index,
@@ -130,6 +110,33 @@
   font-size: clamp(@jlz-type-step-1, 2.3vw, @jlz-type-step-2); // φ steps 1–2
   line-height: 1.25;
 }
+.jlz-service-runtime__detail,
+.jlz-service-motion__detail {
+  max-width: 26rem;
+  color: var(--jlz-color-text-muted);
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+.jlz-service-spec {
+  max-width: 28rem;
+  font-size: 0.7rem;
+}
+.jlz-service-spec li {
+  display: grid;
+  grid-template-columns: 2rem 1fr;
+  gap: 0.4rem;
+}
+.jlz-service-spec span {
+  color: var(--jlz-color-accent);
+  font-family: var(--jlz-font-mono);
+}
+.jlz-service-spec strong {
+  font-weight: 600;
+}
+.jlz-service-spec small {
+  grid-column: 2;
+  color: var(--jlz-color-text-muted);
+}
 
 .jlz-service-console__note {
   margin: var(--jlz-space-4) 0 0;
@@ -166,7 +173,8 @@
 .jlz-service-runtime__trace,
 .jlz-service-runtime__signal {
   fill: none;
-  stroke-linecap: round;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
   stroke-width: 1.5;
 }
 
@@ -177,13 +185,7 @@
 .jlz-service-runtime__signal {
   stroke: var(--jlz-color-accent);
   stroke-dasharray: 18 120;
-  animation: jlz-runtime-signal 2.6s linear infinite;
-}
-
-@keyframes jlz-runtime-signal {
-  to {
-    stroke-dashoffset: -138;
-  }
+  stroke-dashoffset: 0;
 }
 
 .jlz-service-runtime__node {
@@ -192,7 +194,6 @@
   height: 0.48rem;
   border-radius: var(--jlz-radius-full);
   background: var(--jlz-color-accent);
-  box-shadow: 0 0 0.8rem color-mix(in srgb, var(--jlz-color-accent) 68%, transparent);
 }
 
 .jlz-service-runtime__node--start {
@@ -443,6 +444,80 @@
 
 // UIkit Scrollspy owns simple DOM entrances. The section controller owns frame
 // changes, while BlurFade/NoiseText and the Cyprus stage keep specialised owners.
+.jlz-manifesto-room {
+  position: relative;
+  padding: 7rem 7vw 8rem;
+}
+.jlz-manifesto-head {
+  max-width: 48rem;
+}
+.jlz-manifesto-head .jlz-eyebrow {
+  color: var(--jlz-color-accent);
+  font-family: var(--jlz-font-mono);
+}
+.jlz-manifesto-lead {
+  max-width: 34rem;
+  color: var(--jlz-color-text-muted);
+}
+.jlz-manifesto-grid {
+  display: grid;
+  grid-template-columns: 6rem minmax(0, 32rem) 1fr;
+  gap: 2rem;
+  align-items: end;
+  min-height: 42vh;
+  margin-top: 8vh;
+}
+.jlz-manifesto-index {
+  color: var(--jlz-color-text);
+  font: clamp(2rem, 5vw, 5rem) var(--jlz-font-mono);
+  letter-spacing: -0.08em;
+}
+.jlz-manifesto-index span {
+  display: block;
+  color: var(--jlz-color-text-muted);
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+}
+.jlz-manifesto-protocol {
+  border-top: 1px solid var(--jlz-color-border-strong);
+  padding-top: 1rem;
+}
+.jlz-manifesto-protocol__label {
+  color: var(--jlz-color-accent-secondary);
+  font: 0.62rem var(--jlz-font-mono);
+  letter-spacing: 0.12em;
+}
+.jlz-manifesto-protocol__line {
+  margin: 0.8rem 0;
+  font-size: clamp(1.35rem, 2.2vw, 2.3rem);
+  line-height: 1.1;
+}
+.jlz-manifesto-evidence {
+  max-width: 30rem;
+  color: var(--jlz-color-text-muted);
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+.jlz-manifesto-link {
+  display: inline-flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  color: var(--jlz-color-accent);
+}
+@media (max-width: 959px) {
+  .jlz-manifesto-room {
+    padding: 6rem 6vw 7rem;
+  }
+  .jlz-manifesto-grid {
+    grid-template-columns: 3rem minmax(0, 1fr);
+    gap: 1rem;
+    margin-top: 6vh;
+  }
+  .jlz-manifesto-index {
+    font-size: 2.2rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .jlz-service-runtime__signal {
     animation: none;

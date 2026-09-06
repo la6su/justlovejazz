@@ -10,9 +10,9 @@ import { themeManager } from '../core/ThemeManager'
 import { getSoundMuted, setSoundMutedPreference } from '../core/SfxSystem'
 import { eventBus } from '../core/EventBus'
 
-// Theme icons are registered in console-icons.ts as 'theme-auto' (sun) and
-// 'theme-inverse' (moon). The toggle shows/hides them via CSS based on the
-// active theme state.
+// Theme icons are registered in console-icons.ts as polarity scope glyphs.
+// The toggle shows the active glyph through CSS; no text or DOM state is used
+// by the scene.
 
 export class UIMenu {
   private navEl: HTMLElement
@@ -57,13 +57,13 @@ export class UIMenu {
                   uk-tooltip="pos: bottom; delay: 200">
             <span class="jlz-lang-label uk-text-uppercase uk-text-bold">EN</span>
           </button>
-          <button class="uk-icon-button jlz-theme-toggle uk-visible@s" type="button" id="jlz-theme-toggle"
+          <button class="uk-icon-button jlz-theme-toggle" type="button" id="jlz-theme-toggle"
                   aria-label="Toggle inverse theme" aria-pressed="false" title="Theme: auto"
                   uk-tooltip="pos: bottom; delay: 200">
             <span uk-icon="icon: theme-auto" aria-hidden="true"></span>
             <span uk-icon="icon: theme-inverse" aria-hidden="true"></span>
           </button>
-          <button class="uk-icon-button jlz-sound-toggle uk-visible@s" type="button" id="jlz-sound-toggle"
+          <button class="uk-icon-button jlz-sound-toggle" type="button" id="jlz-sound-toggle"
                   aria-label="Toggle sound" aria-pressed="true" title="Sound: off"
                   uk-tooltip="pos: bottom; delay: 200">
             <span uk-icon="icon: muted" aria-hidden="true"></span>
@@ -78,7 +78,8 @@ export class UIMenu {
       <div class="jlz-console-bar">
         <span class="jlz-console-bar__signal" aria-hidden="true"></span>
         <div class="jlz-contact-launcher">
-          <button class="uk-button uk-button-primary uk-flex uk-flex-middle jlz-contact-launcher__button" type="button"
+          <span class="jlz-contact-launcher__eyebrow" aria-hidden="true">UPLINK / OPEN CHANNEL</span>
+          <button class="uk-button uk-button-default uk-flex uk-flex-middle jlz-contact-launcher__button" type="button"
                   id="jlz-contact-launcher" aria-controls="section-lab" aria-expanded="false">
             <span class="jlz-contact-launcher__orb uk-display-inline-block" aria-hidden="true"></span>
             <span data-i18n="story.contact">Contact</span>

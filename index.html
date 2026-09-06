@@ -140,11 +140,10 @@
       }
       body {
         font-family:
-          'JetBrains Mono',
           'Commissioner',
           -apple-system,
           BlinkMacSystemFont,
-          monospace;
+          sans-serif;
       }
       #app {
         position: relative;
@@ -392,34 +391,83 @@
       /* Config buttons (top-right) — sound + language */
       .jlz-config {
         position: fixed;
-        top: 1rem;
-        right: 1rem;
+        top: max(1rem, env(safe-area-inset-top));
+        right: max(1rem, env(safe-area-inset-right));
         z-index: 10016;
         display: flex;
-        gap: 0.5rem;
+        gap: 0.35rem;
+        padding: 0.25rem;
+        background: rgba(10, 14, 20, 0.72);
+        border: 1px solid rgba(130, 150, 180, 0.25);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.07),
+          0 0.8rem 2rem rgba(0, 0, 0, 0.28);
+        backdrop-filter: blur(14px) saturate(115%);
+        clip-path: polygon(
+          0.45rem 0,
+          100% 0,
+          100% calc(100% - 0.45rem),
+          calc(100% - 0.45rem) 100%,
+          0 100%,
+          0 0.45rem
+        );
       }
       .jlz-config__btn {
-        height: 44px;
-        min-width: 44px;
-        padding: 0 0.5rem;
-        border-radius: 999px;
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        background: rgba(255, 255, 255, 0.04);
-        color: rgba(255, 255, 255, 0.6);
-        font-size: 0.75rem;
-        font-weight: 600;
+        width: 2.35rem;
+        height: 2.15rem;
+        min-width: 2.35rem;
+        padding: 0;
+        border: 1px solid transparent;
+        border-radius: 0;
+        background: rgba(255, 255, 255, 0.035);
+        color: rgba(230, 237, 243, 0.62);
+        font:
+          600 0.62rem/1 'SF Mono',
+          'Cascadia Code',
+          monospace;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: all 0.2s ease;
+        transition:
+          color 180ms ease,
+          border-color 180ms ease,
+          background-color 180ms ease;
       }
       .jlz-config__btn:hover {
-        border-color: rgba(255, 255, 255, 0.3);
-        color: #fff;
+        border-color: rgba(88, 230, 169, 0.58);
+        background: rgba(88, 230, 169, 0.08);
+        color: #58e6a9;
       }
       .jlz-config__btn.is-off {
-        opacity: 0.4;
+        color: rgba(230, 237, 243, 0.45);
+      }
+      .jlz-config__btn svg {
+        width: 1rem;
+        height: 1rem;
+      }
+      .jlz-config__btn.is-off svg {
+        color: rgba(230, 237, 243, 0.48);
+      }
+      .jlz-splash-sound--on {
+        display: block;
+      }
+      .jlz-splash-sound--off {
+        display: none;
+      }
+      .jlz-config__btn.is-off .jlz-splash-sound--on {
+        display: none;
+      }
+      .jlz-config__btn.is-off .jlz-splash-sound--off {
+        display: block;
+      }
+      @media (max-width: 640px) {
+        .jlz-config {
+          top: max(0.75rem, env(safe-area-inset-top));
+          right: max(0.75rem, env(safe-area-inset-right));
+        }
       }
 
       /* Skip link — visible on focus (WCAG 2.4.1) */
@@ -488,7 +536,7 @@
           height="266"
           fill="none"
           stroke="rgba(107,120,163,0.15)"
-          stroke-width="2"
+          stroke-width="1.5"
           class="jlz-splash-progress-bg"
         />
         <rect
@@ -498,7 +546,7 @@
           height="266"
           fill="none"
           stroke="#6b78a3"
-          stroke-width="2"
+          stroke-width="1.5"
           class="jlz-splash-progress-ring"
           stroke-dasharray="1064"
           stroke-dashoffset="1064"
@@ -534,30 +582,40 @@
           title="Sound: Off"
         >
           <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
-            <path
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M2 7 L2 13 L6 13 L11 17 L11 3 L6 7 Z"
-            ></path>
-            <path
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M14 7 Q16 10 14 13"
-            ></path>
-            <path
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M16.5 5 Q19.5 10 16.5 15"
-            ></path>
+            <g class="jlz-splash-sound--on">
+              <path
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="square"
+                stroke-linejoin="miter"
+                d="M3 7h3l5-4v14l-5-4H3Z"
+              ></path>
+              <path
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="square"
+                d="M14 7v6M17 5v10"
+              ></path>
+            </g>
+            <g class="jlz-splash-sound--off">
+              <path
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="square"
+                stroke-linejoin="miter"
+                d="M3 7h3l5-4v14l-5-4H3Z"
+              ></path>
+              <path
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="square"
+                d="M14 8l4 4M18 8l-4 4"
+              ></path>
+            </g>
           </svg>
         </button>
         <button

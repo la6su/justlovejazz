@@ -75,9 +75,15 @@
 @jlz-inverse-accent: #7a5c00;
 
 // ── Typography ──
-// The display face is the console face: one mono family carries headings,
-// labels and data. Commissioner remains the long-form reading face.
-@jlz-font-display: 'JetBrains Mono', 'SFMono-Regular', 'Cascadia Code', 'Consolas', monospace;
+// Commissioner owns display and reading; fixed-width type identifies controls
+// and coordinates. Both are self-hosted and cover Latin/Cyrillic content.
+@jlz-font-display:
+  'Commissioner',
+  -apple-system,
+  BlinkMacSystemFont,
+  'Segoe UI',
+  Roboto,
+  sans-serif;
 @jlz-font-body:
   'Commissioner',
   -apple-system,
@@ -347,6 +353,7 @@ html.uk-light {
 
 // ── UIKit variables (defaults we override below) ──
 @import '../../node_modules/uikit/src/less/components/variables.less';
+@import './console-theme/_import.less';
 
 // Typography — rem-based, scales with html font-size (.85rem mob → 1rem desktop)
 @global-font-family: @jlz-font-display;
@@ -355,7 +362,7 @@ html.uk-light {
 
 // Colors (dark theme — project primary palette)
 @global-color: @jlz-color-text;
-@global-emphasis-color: #fff;
+@global-emphasis-color: @jlz-color-text;
 @global-muted-color: @jlz-color-text-muted;
 @global-inverse-color: @jlz-color-text-inverse;
 @global-link-color: @jlz-color-signal-phosphor;
@@ -400,15 +407,7 @@ html.uk-light {
 // body.light-theme overrides.
 @inverse-global-color-mode: light;
 
-// ── Global primary background (QF glow/glitch anchor) ──
-// MUST be set here (before master-qf imports) so all QF effects that reference
-// @global-primary-background (button glow gradients, alert-primary, marker,
-// dotnav, subnav-pill, progress-bar, navbar-dropdown-nav-active) use the JLZ
-// accent color instead of UIKit's default blue (#1e87f0).
-// This is the ONLY color override needed — QF handles all component-specific
-// styling (buttons, cards, navbar) via its own variables, which reference
-// @global-primary-background. Do NOT override @button-*, @card-*, @navbar-*
-// here — let QF do its job.
+// UIkit component variables inherit the brand signal.
 @global-primary-background: @jlz-color-accent;
 @global-primary-hover-background: @jlz-color-accent-hover;
 
@@ -447,38 +446,30 @@ html.uk-light {
 // This is the canonical UIKit theming pattern — see:
 // https://getuikit.com/docs/less → "Hooks" section.
 
-// ── Buttons: compact glass controls, still owned by UIKit semantics. ──
+// ── Controls: flat technical surfaces, with UIkit owning state. ──
 .hook-button() {
   border-radius: @jlz-button-radius;
+  font-family: @jlz-font-mono;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
   font-weight: @button-font-weight;
   text-transform: @button-text-transform;
   transition:
-    transform @jlz-duration-fast @jlz-ease-state,
     border-color @jlz-duration-fast ease,
     background @jlz-duration-fast ease,
-    box-shadow @jlz-duration-fast ease;
-}
-
-.hook-button-hover() {
-  transform: translateY(-1px);
-}
-
-.hook-button-active() {
-  transform: translateY(0) scale(0.98);
+    color @jlz-duration-fast ease;
 }
 
 .hook-button-default() {
-  border-color: @jlz-color-border-strong;
-  background: @jlz-color-surface;
-  box-shadow: inset 0 0 0 1px fade(@global-primary-background, 5%);
+  border: 1px solid var(--jlz-color-border-strong);
+  background: var(--jlz-color-bg-elevated);
+  color: var(--jlz-color-text);
 }
 
 .hook-button-default-hover() {
-  border-color: @jlz-color-signal-phosphor;
-  background: @jlz-color-surface-hover;
-  box-shadow:
-    inset 2px 0 0 @jlz-color-signal-phosphor,
-    inset 0 0 0 1px fade(@jlz-color-signal-phosphor, 22%);
+  border-color: var(--jlz-color-accent-secondary);
+  background: var(--jlz-color-surface-hover);
+  color: var(--jlz-color-accent-secondary);
 }
 
 .hook-button-primary() {
@@ -495,8 +486,9 @@ html.uk-light {
 
 // Icon buttons remain compact Uikit controls, but use the same technical plane.
 .hook-icon-button() {
-  background: @jlz-color-surface;
-  border: 1px solid @jlz-color-border;
+  background: var(--jlz-color-bg-elevated);
+  color: var(--jlz-color-text);
+  border: 1px solid var(--jlz-color-border);
   border-radius: @jlz-radius-md;
   box-shadow: none;
   transition:
@@ -518,10 +510,9 @@ html.uk-light {
 }
 
 .hook-icon-button-hover() {
-  border-color: @jlz-color-signal-phosphor;
-  background: @jlz-color-surface-hover;
-  color: @jlz-color-signal-phosphor;
-  box-shadow: inset 2px 0 0 @jlz-color-signal-phosphor;
+  border-color: var(--jlz-color-accent-secondary);
+  background: var(--jlz-color-surface-hover);
+  color: var(--jlz-color-accent-secondary);
 }
 
 .hook-icon-button-active() {
@@ -533,6 +524,8 @@ html.uk-light {
 .hook-navbar-container() {
   background: @jlz-navbar-surface;
 }
+
+@import './console-theme/components.less';
 
 // ═══════════════════════════════════════════════════════════════════════
 // §4. UIKIT COMPONENT IMPORTS (order-dependent, per UIKit docs)
@@ -549,6 +542,8 @@ html.uk-light {
 @import '../../node_modules/uikit/src/less/components/heading.less';
 @import '../../node_modules/uikit/src/less/components/icon.less';
 @import '../../node_modules/uikit/src/less/components/button.less';
+@import '../../node_modules/uikit/src/less/components/list.less';
+@import '../../node_modules/uikit/src/less/components/accordion.less';
 //@import '../../node_modules/uikit/src/less/components/label.less';
 
 // Layout

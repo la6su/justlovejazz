@@ -14,6 +14,7 @@ import { prefersReducedMotion } from '../core/motionPolicy'
 import { type CameraTarget, type WorldState, BakuRole } from '../core/types'
 import type { PageId } from '../sections/_shared/constants'
 import { getWorldConfigForPage, type PhaseConfig } from '../core/WorldConfig'
+import { ServicesStage } from './World/ServicesStage'
 import { clampStoryProgress, sectionIndexAt } from '../core/storyProgress'
 import type { GroundPlane } from './Scene/GroundPlane'
 import type { SectionGroups } from './Scene/SectionGroups'
@@ -53,6 +54,7 @@ export interface SceneCoordinatorOwners {
   contactHaloStage?: () => ContactHaloStage | null
   manifestoInkStage?: () => ManifestoInkStage | null
   labGamepad: () => LabExperimentObject | null
+  servicesStage?: () => ServicesStage | null
 }
 
 export class SceneCoordinator {
@@ -319,6 +321,8 @@ export class SceneCoordinator {
     if (this.contactHaloStage?.visible && this.contactHaloStage.isAnimating) return true
     const manifestoInkStage = this.manifestoInkStage
     if (manifestoInkStage?.visible && manifestoInkStage.isAnimating) return true
+    if (this.owners.servicesStage?.()?.visible && this.owners.servicesStage?.()?.isAnimating)
+      return true
     // The Lab object's authored hover clock is an intentional primary object
     // motion (mirrors the typography stage), not decoration.
     const labGamepad = this.owners.labGamepad()
@@ -368,6 +372,18 @@ export class SceneCoordinator {
     if (worksStage) {
       worksStage.setActive(page === 'works', this.worksPlaneStageSection)
       worksStage.update(deltaTime)
+    }
+    const servicesStage = this.owners.servicesStage?.()
+    if (servicesStage) {
+      servicesStage.visible = page === 'services'
+      if (servicesStage.visible && this._camera instanceof THREE.PerspectiveCamera) {
+        servicesStage.updateState(
+          this._camera,
+          THREE.MathUtils.clamp(this._currentSectionIndex - 1, 0, 3),
+          deltaTime,
+          this.isReducedMotion,
+        )
+      }
     }
     this.contactTypographyStage?.update(deltaTime)
     this.contactHaloStage?.update(deltaTime)
@@ -780,6 +796,7 @@ export class SceneCoordinator {
     // Inline WorldAtmosphere.dispose — null out fog only (EnvSphere owns
     // background).
     this.sceneRef.fog = null
+    this.owners.servicesStage?.()?.dispose()
   }
 
   /** Set camera reference for DrawTrail (unproject to world).

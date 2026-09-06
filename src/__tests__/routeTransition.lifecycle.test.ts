@@ -70,6 +70,20 @@ describe('RouteTransition failure lifecycle', () => {
     expect(vi.getTimerCount()).toBe(0)
   })
 
+  it('cancels an old reveal when a new cover starts', async () => {
+    vi.useFakeTimers()
+    const transition = new RouteTransition()
+    transition.reveal()
+    const covering = transition.cover()
+    expect(vi.getTimerCount()).toBe(1)
+    vi.advanceTimersByTime(420)
+    await covering
+    expect(document.querySelector('.jlz-route-transition')?.getAttribute('data-state')).toBe(
+      'covering',
+    )
+    transition.dispose()
+  })
+
   it('releases the cover timer immediately when navigation is cancelled', async () => {
     vi.useFakeTimers()
     const transition = new RouteTransition()
