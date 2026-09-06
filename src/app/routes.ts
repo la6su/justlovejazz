@@ -12,10 +12,9 @@
 
 import type { RouteRecordRaw, RouteRecordSingleView } from 'vue-router'
 
-import { ROUTE_MANIFEST, isCaseStudyPath, resolvePage } from '../core/routeManifest'
+import { ROUTE_MANIFEST, resolvePage } from '../core/routeManifest'
 import type { PageId } from '../sections/_shared/constants'
 import HomeView from './views/HomeView.vue'
-import CaseStudyView from './views/CaseStudyView.vue'
 
 export type { PageId }
 
@@ -34,7 +33,7 @@ const PAGE_VIEWS: Record<PageId, RouteRecordSingleView['component']> = {
 
 /** Lenient page resolution for a router location (initial-load contract). */
 export function pageForPath(path: string): PageId {
-  return isCaseStudyPath(path) ? 'works' : resolvePage(path)
+  return resolvePage(path)
 }
 
 /**
@@ -49,7 +48,6 @@ export function jlzRouteRecords(): RouteRecordRaw[] {
     name: entry.page,
     component: PAGE_VIEWS[entry.page],
   }))
-  records.push({ path: '/works/:projectId', name: 'case-study', component: CaseStudyView })
   records.push({
     path: '/:pathMatch(.*)*',
     name: 'fallback',

@@ -67,10 +67,5 @@ export function resolvePage(path: string): PageId {
 
 /** True when the manifest owns the path (strict lookup). */
 export function isRoutePath(path: string): boolean {
-  return PAGE_BY_PATH.has(path) || /^\/works\/[a-z0-9-]+$/.test(path)
-}
-
-/** True for a case-study detail route owned by the works section. */
-export function isCaseStudyPath(path: string): boolean {
-  return /^\/works\/[a-z0-9-]+$/.test(path)
+  return PAGE_BY_PATH.has(path)
 }
