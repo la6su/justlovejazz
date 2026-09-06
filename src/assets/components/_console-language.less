@@ -1,16 +1,52 @@
 /*
- * Shared JLZ cinematic language.
+ * Neuro Console language — the single owner of the persistent chrome.
  *
- * UIkit owns component state, focus and ARIA. This layer connects the shell
- * and Menu through the real brand mark, an electric signal and an aperture
- * transition without turning every surface into a framed console.
+ * Replaces the former cinematic-language + paper-ink-language stack: one
+ * layer, one definition per selector. UIkit owns component state, focus and
+ * ARIA; this layer only dresses the shell, the menu sheet and the contact
+ * surfaces in the console TUI voice:
+ *   - hairline rules and flat elevated planes (no blur, no cut corners)
+ *   - phosphor as the interface signal, yellow as the display funk accent
+ *   - mono micro labels, prompt glyphs, blinking block cursors
+ *   - a dot-grid field under the 3D world and faint scanlines over it
  */
 
+// ── Field: dot grid under the world, scanlines over it ──
+// body::before sits below the scene host (z 1) and content (z 2).
+body::before {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  background-image: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--jlz-color-text) 4.5%, transparent) 1px,
+    transparent 1px
+  );
+  background-size: 24px 24px;
+  content: '';
+  pointer-events: none;
+}
+
+// body::after shares z 1 with the scene host but paints after it in tree
+// order — above the render, below the content. Static texture, no animation.
+body::after {
+  position: fixed;
+  z-index: 1;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--jlz-color-text) 1.6%, transparent) 0 1px,
+    transparent 1px 3px
+  );
+  content: '';
+  pointer-events: none;
+}
+
 .jlz-cinematic-shell {
-  --jlz-shell-edge: color-mix(in srgb, var(--jlz-color-text) 15%, transparent);
   color: var(--jlz-color-text);
 }
 
+// ── Topbar: terminal chrome ──
 .jlz-topbar {
   align-items: stretch;
 }
@@ -37,8 +73,10 @@
 }
 
 .jlz-topbar__wordmark {
+  font-family: var(--jlz-font-mono);
   font-size: 0.66rem;
-  font-weight: 760;
+  font-weight: 700;
+  letter-spacing: 0.14em;
   line-height: 1;
 }
 
@@ -49,6 +87,7 @@
   font-family: var(--jlz-font-mono);
   font-size: 0.55rem;
   font-weight: 500;
+  letter-spacing: 0.16em;
 }
 
 .jlz-topbar__mode::before {
@@ -57,16 +96,15 @@
   left: 0;
   width: 0.28rem;
   height: 0.28rem;
-  background: var(--jlz-color-accent);
+  background: var(--jlz-color-signal-phosphor);
   content: '';
   transform: translateY(-50%);
 }
 
 .jlz-topbar-controls {
   padding: 0.18rem;
-  background: color-mix(in srgb, var(--jlz-color-bg) 76%, transparent);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--jlz-color-border);
+  background: var(--jlz-color-bg-elevated);
 }
 
 .jlz-topbar-controls .uk-icon-button,
@@ -79,15 +117,24 @@
 
 .jlz-topbar-controls .uk-icon-button:hover,
 .jlz-topbar-controls .uk-icon-button:focus-visible {
-  background: color-mix(in srgb, var(--jlz-color-text) 7%, transparent);
+  color: var(--jlz-color-signal-phosphor);
+  background: var(--jlz-color-surface);
   box-shadow: none;
 }
 
 .jlz-menu-launcher {
   position: relative;
   min-width: 6.6rem;
+  min-height: 2.55rem;
   justify-content: flex-end;
+  gap: 0.7rem;
+  padding: 0 1rem;
   overflow: hidden;
+  color: var(--jlz-color-text);
+  font-family: var(--jlz-font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 
 .jlz-menu-launcher::before {
@@ -95,13 +142,21 @@
   right: 0.55rem;
   width: 0.3rem;
   height: 0.3rem;
-  background: var(--jlz-color-accent);
+  background: var(--jlz-color-signal-phosphor);
   content: '';
   opacity: 0;
   transform: scale(0);
   transition:
     opacity var(--jlz-duration-normal) ease,
     transform var(--jlz-duration-slow) var(--jlz-ease-emphasis);
+}
+
+.jlz-menu-launcher:hover,
+.jlz-menu-launcher:focus-visible,
+.is-menu-open .jlz-menu-launcher {
+  color: var(--jlz-color-signal-phosphor);
+  background: var(--jlz-color-surface);
+  box-shadow: none;
 }
 
 .jlz-menu-launcher:hover::before,
@@ -111,21 +166,22 @@
   transform: scale(1);
 }
 
-.jlz-menu-launcher:hover,
-.jlz-menu-launcher:focus-visible,
-.is-menu-open .jlz-menu-launcher {
-  color: var(--jlz-color-text);
-  background: color-mix(in srgb, var(--jlz-color-text) 7%, transparent);
-  box-shadow: none;
-}
-
 .jlz-menu-launcher:focus-visible {
-  outline: 2px solid var(--jlz-color-accent);
+  outline: 2px solid var(--jlz-color-signal-phosphor);
   outline-offset: 2px;
 }
 
 .jlz-menu-launcher__glyph {
+  display: grid;
+  width: 1.1rem;
   gap: 0.3rem;
+}
+
+.jlz-menu-launcher__glyph i {
+  display: block;
+  height: 1px;
+  background: currentColor;
+  transition: transform var(--jlz-duration-normal) var(--jlz-ease-state);
 }
 
 .jlz-menu-launcher__glyph i:first-child {
@@ -141,6 +197,7 @@
   transform: translateY(-0.15rem) rotate(-35deg);
 }
 
+// ── Bottom status: signal, contact launcher, storyline ──
 .jlz-console-bar {
   min-height: 4.5rem;
   padding: 0.75rem 0.85rem;
@@ -157,8 +214,8 @@
 .jlz-console-bar__signal::after {
   position: absolute;
   inset: 0;
-  background: var(--jlz-color-accent);
-  box-shadow: 0 0 1rem var(--jlz-color-accent-glow);
+  background: var(--jlz-color-signal-phosphor);
+  box-shadow: 0 0 1rem color-mix(in srgb, var(--jlz-color-signal-phosphor) 35%, transparent);
   content: '';
   animation: jlz-shell-signal 4.8s var(--jlz-ease-emphasis) infinite;
 }
@@ -180,22 +237,42 @@
 .jlz-contact-launcher__button {
   position: relative;
   min-height: 3rem;
-  border: 0;
+  gap: 0.65rem;
+  padding: 0 1.15rem;
+  border: 1px solid var(--jlz-color-fluid-border);
   color: var(--jlz-color-text);
-  background: color-mix(in srgb, var(--jlz-color-bg) 82%, transparent);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: var(--jlz-color-bg-elevated);
+}
+
+.jlz-contact-launcher__button:hover,
+.jlz-contact-launcher__button:focus-visible {
+  border-color: var(--jlz-color-signal-phosphor);
+  color: var(--jlz-color-signal-phosphor);
 }
 
 .jlz-contact-launcher__orb {
-  background: var(--jlz-color-accent);
-  box-shadow: 0 0 0.8rem var(--jlz-color-accent-glow);
+  width: 0.52rem;
+  height: 0.52rem;
+  border-radius: 50%;
+  background: var(--jlz-color-signal-phosphor);
+  box-shadow: 0 0 0.85rem color-mix(in srgb, var(--jlz-color-signal-phosphor) 55%, transparent);
 }
 
 .jlz-storyline {
+  position: fixed;
+  right: 0.85rem;
+  bottom: 0.85rem;
+  z-index: 10018;
+  width: auto;
+  min-height: 3.55rem;
   padding: 0.25rem;
   border: 0;
+  color: inherit;
   background: transparent;
+  transform: none;
+  transition:
+    opacity var(--jlz-duration-normal) ease,
+    transform var(--jlz-duration-slow) var(--jlz-ease-entrance);
 }
 
 .jlz-storyline__items {
@@ -207,10 +284,13 @@
   width: 2rem;
   min-width: 2rem;
   min-height: 2rem;
+  padding: 0;
   border: 0;
   border-radius: 0;
   color: var(--jlz-color-text-subtle);
   background: transparent;
+  cursor: pointer;
+  font: inherit;
 }
 
 .jlz-storyline__item::after {
@@ -233,21 +313,44 @@
   border: 0;
   color: var(--jlz-color-text);
   background: color-mix(in srgb, var(--jlz-color-text) 7%, transparent);
+  outline: none;
 }
 
 .jlz-storyline__item:hover::after,
 .jlz-storyline__item:focus-visible::after,
 .jlz-storyline__item.is-active::after {
-  background: var(--jlz-color-accent);
+  background: var(--jlz-color-signal-phosphor);
   transform: translateX(-50%) scale(1);
 }
 
-// Menu opens from a one-dimensional signal into a complete spatial field.
+.jlz-storyline__number,
+.jlz-storyline__hint {
+  font-family: var(--jlz-font-mono);
+  font-size: 0.62rem;
+}
+
+// The caption chip keeps a dark console chip inside the inverse page: the
+// hard-coded chip-internal text tones assume the dark plane.
+html.uk-light .jlz-work-card__caption {
+  color: var(--jlz-inverse-surface);
+  background: var(--jlz-inverse-text);
+}
+
+// ── Menu sheet: the console field ──
+// The sheet opens from a one-dimensional slit — the aperture stays, the
+// surface it reveals is now a flat console field (single definition here).
 #spa-content > .jlz-menu-overlay,
 .jlz-page > .jlz-menu-overlay {
+  min-height: 100dvh;
+  overflow: hidden;
+  color: var(--jlz-color-text);
   background:
-    radial-gradient(circle at 18% 68%, var(--jlz-color-accent-glow), transparent 34%),
-    color-mix(in srgb, var(--jlz-color-bg) 94%, transparent);
+    radial-gradient(
+      circle at 18% 68%,
+      color-mix(in srgb, var(--jlz-color-signal-phosphor) 7%, transparent),
+      transparent 34%
+    ),
+    var(--jlz-color-bg);
   clip-path: inset(49.85% 0 49.85% 0);
   transform: scale(1.015);
   transform-origin: center;
@@ -272,35 +375,6 @@ body[data-cinematic-sheet='menu'] .jlz-page > .jlz-menu-overlay {
   pointer-events: none;
 }
 
-.jlz-menu-field::before {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(
-      circle at 28% 62%,
-      transparent 0 13rem,
-      var(--jlz-color-border) 13.05rem,
-      transparent 13.15rem
-    ),
-    linear-gradient(
-      115deg,
-      transparent 0 37%,
-      color-mix(in srgb, var(--jlz-color-signal-cool) 8%, transparent) 52%,
-      transparent 68%
-    );
-  content: '';
-  opacity: 0;
-  transform: scale(0.92);
-  transition:
-    opacity 700ms ease 180ms,
-    transform 1200ms var(--jlz-ease-entrance) 80ms;
-}
-
-body[data-cinematic-sheet='menu'] .jlz-menu-field::before {
-  opacity: 1;
-  transform: scale(1);
-}
-
 .jlz-menu-field__horizon {
   display: none;
 }
@@ -311,8 +385,8 @@ body[data-cinematic-sheet='menu'] .jlz-menu-field::before {
   left: 28%;
   width: 0.45rem;
   height: 0.45rem;
-  background: var(--jlz-color-accent);
-  box-shadow: 0 0 2rem var(--jlz-color-accent-glow);
+  background: var(--jlz-color-signal-phosphor);
+  box-shadow: 0 0 2rem color-mix(in srgb, var(--jlz-color-signal-phosphor) 35%, transparent);
   opacity: 0;
   transform: translate(-50%, -50%) scale(0);
   transition:
@@ -339,12 +413,17 @@ body[data-cinematic-sheet='menu'] .jlz-menu-field__pulse {
   width: auto;
   max-width: 100%;
   margin-bottom: clamp(1rem, 3vh, 2.5rem) !important;
+  padding-inline: 0.1rem;
+  color: var(--jlz-color-text-subtle);
   font-family: var(--jlz-font-mono);
-  letter-spacing: 0.08em;
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
 }
 
 .jlz-menu-sheet__index {
   padding-right: 1.5rem;
+  color: var(--jlz-color-signal-phosphor);
 }
 
 .jlz-menu-overlay .jlz-menu-grid {
@@ -358,6 +437,12 @@ body[data-cinematic-sheet='menu'] .jlz-menu-field__pulse {
   min-height: 0;
   justify-content: center;
   padding: 0;
+  box-shadow: none;
+}
+
+.jlz-menu-overlay .jlz-menu-stat__num {
+  font-size: clamp(@jlz-type-step-5, 16vw, @jlz-type-step-7); // φ steps 5–7
+  color: inherit;
 }
 
 .jlz-menu-preview {
@@ -386,48 +471,45 @@ body[data-cinematic-sheet='menu'] .jlz-menu-preview {
   left: 38%;
   width: min(34vw, 25rem);
   aspect-ratio: 1;
-  border-radius: 50%;
-  background: radial-gradient(circle, var(--jlz-color-accent-glow), transparent 67%);
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--jlz-color-accent) 14%, transparent),
+    transparent 64%
+  );
   content: '';
   transform: translate(-50%, -50%);
   animation: jlz-preview-breathe 7s var(--jlz-ease-cinematic) infinite alternate;
 }
 
 .jlz-menu-preview__number {
-  color: var(--jlz-color-accent);
+  color: var(--jlz-color-signal-phosphor);
   font-family: var(--jlz-font-mono);
   font-size: clamp(0.7rem, 1vw, 0.9rem);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.16em;
 }
 
 .jlz-menu-preview__label {
-  max-width: 7ch;
+  max-width: 9ch;
   color: var(--jlz-color-text);
   font-size: clamp(@jlz-type-step-4, 9vw, @jlz-type-step-6); // φ steps 4–6
-  font-variation-settings:
-    'wght' 680,
-    'FLAR' 62,
-    'VOLM' 68,
-    'slnt' -4;
-  letter-spacing: -0.075em;
-  line-height: 0.78;
+  letter-spacing: -0.04em;
+  line-height: 0.9;
   text-wrap: balance;
-  transition: font-variation-settings 500ms var(--jlz-ease-emphasis);
 }
 
 .jlz-menu-preview__cursor {
   width: 0.62rem;
-  height: 0.62rem;
+  height: 1.1rem;
   margin-top: 1.5rem;
-  background: var(--jlz-color-accent);
-  box-shadow: 0 0 1.2rem var(--jlz-color-accent-glow);
+  background: var(--jlz-color-signal-phosphor);
+  animation: jlz-cursor-blink 1s steps(2) infinite;
 }
 
 .jlz-menu-preview__echo {
   position: absolute;
   right: 12%;
   bottom: 8%;
-  color: var(--jlz-color-text-subtle);
+  color: var(--jlz-color-signal-cool);
   font-family: var(--jlz-font-mono);
   font-size: 0.56rem;
   letter-spacing: 0.16em;
@@ -438,6 +520,18 @@ body[data-cinematic-sheet='menu'] .jlz-menu-preview {
   to {
     opacity: 0.52;
     transform: translate(-50%, -50%) scale(1.12);
+  }
+}
+
+@keyframes jlz-cursor-blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+
+  50.01%,
+  100% {
+    opacity: 0;
   }
 }
 
@@ -453,16 +547,19 @@ body[data-cinematic-sheet='menu'] .jlz-menu-preview {
   color: var(--jlz-color-text-muted);
 }
 
+// The prompt glyph: a phosphor '>' slides in on hover and stays while open.
 .jlz-menu-overlay .jlz-menu-nav__toggle::before {
   position: absolute;
   top: 50%;
   left: 0;
-  width: 0.38rem;
-  height: 0.38rem;
-  background: var(--jlz-color-accent);
-  content: '';
+  color: var(--jlz-color-signal-phosphor);
+  content: '>';
+  font-family: var(--jlz-font-mono);
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1;
   opacity: 0;
-  transform: scale(0);
+  transform: translate(-0.35rem, -50%);
   transition:
     opacity var(--jlz-duration-fast) ease,
     transform var(--jlz-duration-slow) var(--jlz-ease-emphasis);
@@ -479,7 +576,7 @@ body[data-cinematic-sheet='menu'] .jlz-menu-preview {
 .jlz-menu-overlay .jlz-menu-nav__toggle:focus-visible::before,
 .jlz-menu-overlay .jlz-menu-nav__item.uk-open > .jlz-menu-nav__toggle::before {
   opacity: 1;
-  transform: scale(1);
+  transform: translate(0, -50%);
 }
 
 .jlz-menu-overlay .jlz-menu-nav__label {
@@ -491,6 +588,12 @@ body[data-cinematic-sheet='menu'] .jlz-menu-preview {
   font-family: var(--jlz-font-mono);
 }
 
+.jlz-menu-overlay .jlz-menu-nav__toggle:hover .jlz-menu-nav__num,
+.jlz-menu-overlay .jlz-menu-nav__item.uk-open .jlz-menu-nav__num {
+  color: var(--jlz-color-signal-phosphor);
+}
+
+// Staggered entry for the nav items while the sheet opens.
 body[data-cinematic-sheet='menu'] .jlz-menu-nav__item:nth-child(1) .jlz-menu-nav__toggle {
   transition-delay: 180ms;
 }
@@ -519,6 +622,7 @@ body[data-cinematic-sheet='menu'] .jlz-menu-nav__item:nth-child(7) .jlz-menu-nav
   transition-delay: 390ms;
 }
 
+// ── Breakpoints ──
 @media (max-width: 900px) {
   .jlz-topbar__mode {
     display: none;
@@ -559,6 +663,10 @@ body[data-cinematic-sheet='menu'] .jlz-menu-nav__item:nth-child(7) .jlz-menu-nav
     min-height: 44px;
   }
 
+  .jlz-menu-field__pulse {
+    left: 12%;
+  }
+
   .jlz-menu-overlay .jlz-menu-container {
     justify-content: center;
     padding: 4.8rem 1.1rem 2rem;
@@ -588,20 +696,20 @@ body[data-cinematic-sheet='menu'] .jlz-menu-nav__item:nth-child(7) .jlz-menu-nav
     height: auto !important;
     visibility: visible;
   }
-
-  .jlz-menu-field__pulse {
-    left: 12%;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  body::after {
+    display: none;
+  }
+
   .jlz-console-bar__signal::after,
-  .jlz-menu-preview::before {
+  .jlz-menu-preview::before,
+  .jlz-menu-preview__cursor {
     animation: none;
   }
 
   .jlz-menu-preview,
-  .jlz-menu-field::before,
   .jlz-menu-field__pulse {
     opacity: 1;
     transform: none;
