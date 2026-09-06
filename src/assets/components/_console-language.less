@@ -1,8 +1,17 @@
-/* Persistent console chrome: flat surfaces, functional rules and mono metadata.
- * UIkit owns component behavior; application state owns the cinematic sheets.
+/* Persistent console chrome — the single owner of the TUI shell.
+ *
+ * Owns everything persistent around the authored scene: cinematic shell
+ * positioning, topbar, control banks, menu sheet, bottom status island and
+ * the menu field language. Route composition stays in main.less; UIkit
+ * owns component behavior.
+ *
+ * Cascade note: this file is imported last by main.less, so these rules are
+ * the final voice for chrome selectors. Blocks absorbed from main.less keep
+ * their relative order ahead of the canonical control banks.
  */
 
 .jlz-cinematic-shell {
+  z-index: 10020;
   color: var(--jlz-color-text);
 }
 
@@ -14,14 +23,32 @@
 
 // ── Topbar: terminal chrome ──
 .jlz-topbar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 10001;
   align-items: stretch;
+  pointer-events: none;
+}
+
+.jlz-cinematic-shell .jlz-topbar {
+  top: 0.85rem;
+  right: 0.85rem;
+  left: 0.85rem;
+  width: auto;
+  min-height: 2.75rem;
+  padding: 0.25rem 0;
+  pointer-events: auto;
 }
 
 .jlz-topbar__brand {
   min-height: 2.75rem;
   gap: 0.7rem;
   padding: 0 0.15rem;
+  overflow: visible;
   color: var(--jlz-color-text);
+  pointer-events: auto;
   isolation: isolate;
 }
 
@@ -67,11 +94,62 @@
   transform: translateY(-50%);
 }
 
-.jlz-topbar-controls {
-  padding: 0;
-  background: transparent;
+// ── Toggle controls: language, theme, sound ──
+.jlz-lang-label {
+  font-size: 0.72rem;
+  line-height: 1;
 }
 
+.jlz-theme-toggle [uk-icon] {
+  width: 1rem;
+  height: 1rem;
+  filter: none;
+}
+
+.jlz-theme-toggle [uk-icon] {
+  display: none;
+  color: inherit;
+}
+
+// auto mode (default) → show sun (theme-auto)
+.jlz-theme-toggle:not(.is-inverse) [uk-icon='icon: theme-auto'] {
+  display: inline-block;
+}
+
+// inverse mode → show moon (theme-inverse)
+.jlz-theme-toggle.is-inverse [uk-icon='icon: theme-inverse'] {
+  display: inline-block;
+}
+
+.jlz-theme-toggle:not(.is-inverse) {
+  color: var(--jlz-color-text-muted);
+}
+
+.jlz-theme-toggle.is-inverse {
+  color: var(--jlz-color-accent-secondary);
+}
+
+.jlz-sound-toggle [uk-icon] {
+  width: 1rem;
+  height: 1rem;
+}
+
+.jlz-sound-toggle.is-muted {
+  color: var(--jlz-color-text-muted);
+}
+
+.jlz-sound-toggle:not(.is-muted) {
+  color: var(--jlz-color-signal-phosphor);
+}
+
+.jlz-topbar-controls {
+  gap: 0.4rem;
+  padding: 0;
+  background: transparent;
+  pointer-events: auto;
+}
+
+// ── Menu launcher ──
 .jlz-menu-launcher {
   position: relative;
   min-width: 6.6rem;
@@ -147,10 +225,439 @@
   transform: translateY(-0.15rem) rotate(-35deg);
 }
 
+// ── Menu sheet shell: fixed positioning (route sheets overlay the scene) ──
+#spa-content > .jlz-menu-overlay,
+.jlz-page > .jlz-menu-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 10010 !important;
+  display: flex !important;
+  width: 100vw;
+  height: 100dvh;
+  min-height: 100dvh;
+  overflow: hidden;
+  visibility: hidden;
+  color: var(--jlz-color-text);
+  pointer-events: none !important;
+  background:
+    radial-gradient(
+      circle at 18% 68%,
+      color-mix(in srgb, var(--jlz-color-signal-phosphor) 7%, transparent),
+      transparent 34%
+    ),
+    var(--jlz-color-bg);
+  opacity: 0;
+  clip-path: inset(49.85% 0 49.85% 0);
+  transform: scale(1.015);
+  transform-origin: center;
+  transition:
+    clip-path 900ms var(--jlz-ease-cinematic),
+    transform 900ms var(--jlz-ease-cinematic),
+    opacity 180ms ease,
+    visibility 0s linear 900ms;
+}
+
+body[data-cinematic-sheet='menu'] #spa-content > .jlz-menu-overlay,
+body[data-cinematic-sheet='menu'] .jlz-page > .jlz-menu-overlay {
+  visibility: visible;
+  background:
+    radial-gradient(
+      circle at 18% 68%,
+      color-mix(in srgb, var(--jlz-color-signal-phosphor) 7%, transparent),
+      transparent 34%
+    ),
+    var(--jlz-color-bg);
+  pointer-events: auto !important;
+  opacity: 1;
+  clip-path: inset(0);
+  transform: translate3d(0, 0, 0) scale(1);
+  transition-delay: 0s;
+}
+
+// ── Menu field: the console plane behind the sheet ──
+.jlz-menu-field {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  pointer-events: none;
+}
+
+.jlz-menu-field__horizon {
+  display: none;
+}
+
+.jlz-menu-field__pulse {
+  position: absolute;
+  top: 50%;
+  left: 28%;
+  width: 0.45rem;
+  height: 0.45rem;
+  background: var(--jlz-color-signal-phosphor);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0);
+  transition:
+    opacity 240ms ease 620ms,
+    transform 600ms var(--jlz-ease-emphasis) 600ms;
+}
+
+body[data-cinematic-sheet='menu'] .jlz-menu-field__pulse {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.jlz-menu-overlay .jlz-menu-container {
+  position: relative;
+  z-index: 2;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  justify-content: center;
+  padding: 5.8rem clamp(1.25rem, 5vw, 5rem) 3.5rem;
+}
+
+.jlz-menu-sheet__header {
+  align-self: stretch;
+  box-sizing: border-box;
+  width: auto;
+  max-width: 100%;
+  gap: 1.5rem;
+  margin-bottom: clamp(1rem, 3vh, 2.5rem) !important;
+  padding-inline: 0.1rem;
+  color: var(--jlz-color-text-subtle);
+  font-family: var(--jlz-font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.jlz-menu-sheet__header,
+.jlz-menu-overlay .jlz-menu-nav__toggle {
+  opacity: 0;
+  transform: translate3d(0, 1.25rem, 0);
+  .jlz-cinematic-reveal();
+}
+
+body[data-cinematic-sheet='menu'] .jlz-menu-sheet__header,
+body[data-cinematic-sheet='menu'] .jlz-menu-overlay .jlz-menu-nav__toggle {
+  opacity: 1;
+  transform: none;
+}
+
+body[data-cinematic-sheet='menu'] .jlz-menu-overlay .jlz-menu-nav__toggle {
+  transition-delay: 150ms;
+}
+
+.jlz-menu-sheet__index {
+  padding-right: 1.5rem;
+  color: var(--jlz-color-signal-phosphor);
+}
+
+.jlz-menu-overlay .jlz-menu-grid {
+  width: 100%;
+  max-height: calc(
+    100dvh - var(--jlz-header-height, 60px) - (var(--jlz-bottom-controls, 4.5rem) * 1.35) -
+      @global-medium-margin
+  );
+  margin: 0 auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  grid-template-columns: minmax(20rem, 0.9fr) minmax(30rem, 1.35fr);
+  gap: clamp(3rem, 8vw, 9rem);
+  align-items: center;
+  -webkit-overflow-scrolling: touch;
+}
+
+.jlz-menu-col {
+  gap: @global-small-margin;
+  min-height: 0;
+}
+
+.jlz-menu-overlay .jlz-menu-col--stat {
+  min-height: 0;
+  justify-content: center;
+  padding: 0;
+  box-shadow: none;
+}
+
+.jlz-menu-stat__num {
+  font-size: clamp(@jlz-type-step-5, 16vw, @jlz-type-step-7); // φ steps 5–7
+  font-weight: 900;
+  line-height: 0.85;
+  color: inherit;
+}
+
+.jlz-menu-stat__label {
+  margin-top: var(--jlz-space-2);
+  color: var(--jlz-color-text-subtle);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.jlz-menu-preview {
+  position: relative;
+  display: grid;
+  width: min(100%, 30rem);
+  min-height: min(52vh, 30rem);
+  align-content: center;
+  isolation: isolate;
+  opacity: 0;
+  transform: translateY(1.5rem);
+  transition:
+    opacity 500ms ease 260ms,
+    transform 1100ms var(--jlz-ease-entrance) 180ms;
+}
+
+body[data-cinematic-sheet='menu'] .jlz-menu-preview {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.jlz-menu-preview::before {
+  position: absolute;
+  z-index: -1;
+  top: 50%;
+  left: 38%;
+  width: min(34vw, 25rem);
+  aspect-ratio: 1;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--jlz-color-accent) 14%, transparent),
+    transparent 64%
+  );
+  content: '';
+  transform: translate(-50%, -50%);
+}
+
+.jlz-menu-preview__number {
+  color: var(--jlz-color-signal-phosphor);
+  font-family: var(--jlz-font-mono);
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
+  letter-spacing: 0.16em;
+}
+
+.jlz-menu-preview__label {
+  max-width: 9ch;
+  color: var(--jlz-color-text);
+  font-size: clamp(@jlz-type-step-4, 9vw, @jlz-type-step-6); // φ steps 4–6
+  letter-spacing: -0.04em;
+  line-height: 0.9;
+  text-wrap: balance;
+}
+
+.jlz-menu-preview__cursor {
+  width: 0.62rem;
+  height: 1.1rem;
+  margin-top: 1.5rem;
+  background: var(--jlz-color-signal-phosphor);
+}
+
+.jlz-menu-preview__echo {
+  position: absolute;
+  right: 12%;
+  bottom: 8%;
+  color: var(--jlz-color-signal-cool);
+  font-family: var(--jlz-font-mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.16em;
+  writing-mode: vertical-rl;
+}
+
+// ── Menu nav: the console index ──
+.jlz-menu-overlay .jlz-menu-nav__item {
+  border: 0;
+}
+
+.jlz-menu-nav__toggle {
+  align-items: baseline;
+  gap: @global-small-margin;
+  padding: var(--jlz-space-2) 0;
+  color: var(--jlz-color-text-muted);
+  transition:
+    color 0.2s ease,
+    padding-left 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.jlz-menu-overlay .jlz-menu-nav__toggle {
+  position: relative;
+  min-height: clamp(3.5rem, 6.4vh, 4.75rem);
+  padding: 0.25rem 0;
+  overflow: hidden;
+  color: var(--jlz-color-text-muted);
+}
+
+// The prompt glyph: a phosphor '>' slides in on hover and stays while open.
+// The `/ ''` alt keeps the glyph out of the accessibility tree.
+.jlz-menu-overlay .jlz-menu-nav__toggle::before {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  color: var(--jlz-color-signal-phosphor);
+  content: '>' / '';
+  font-family: var(--jlz-font-mono);
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1;
+  opacity: 0;
+  transform: translate(-0.35rem, -50%);
+  transition:
+    opacity var(--jlz-duration-fast) ease,
+    transform var(--jlz-duration-slow) var(--jlz-ease-emphasis);
+}
+
+.jlz-menu-overlay .jlz-menu-nav__toggle:hover,
+.jlz-menu-overlay .jlz-menu-nav__toggle:focus-visible,
+.jlz-menu-overlay .jlz-menu-nav__item.uk-open > .jlz-menu-nav__toggle {
+  padding-left: 1.3rem;
+  color: var(--jlz-color-text);
+}
+
+.jlz-menu-overlay .jlz-menu-nav__toggle:hover::before,
+.jlz-menu-overlay .jlz-menu-nav__toggle:focus-visible::before,
+.jlz-menu-overlay .jlz-menu-nav__item.uk-open > .jlz-menu-nav__toggle::before {
+  opacity: 1;
+  transform: translate(0, -50%);
+}
+
+.jlz-menu-overlay .jlz-menu-nav__label {
+  flex: 1;
+  font-size: clamp(@jlz-type-step-2, 3.25vw, @jlz-type-step-4); // φ steps 2–4
+  line-height: 0.92;
+  text-transform: none;
+}
+
+.jlz-menu-nav__num {
+  min-width: 2rem;
+  flex-shrink: 0;
+  color: var(--jlz-color-text-subtle);
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+.jlz-menu-nav__arrow {
+  color: var(--jlz-color-text-subtle);
+  font-family: var(--jlz-font-mono);
+  font-size: 0.85rem;
+  opacity: 0.6;
+  transition:
+    transform 0.2s ease,
+    color 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.jlz-menu-nav__toggle:hover .jlz-menu-nav__arrow {
+  color: var(--jlz-color-signal-phosphor);
+  opacity: 1;
+}
+
+.jlz-menu-nav__item.uk-open .jlz-menu-nav__arrow {
+  color: var(--jlz-color-signal-phosphor);
+  opacity: 1;
+  transform: rotate(90deg);
+}
+
+.jlz-menu-overlay .jlz-menu-nav__toggle:hover .jlz-menu-nav__num,
+.jlz-menu-overlay .jlz-menu-nav__item.uk-open .jlz-menu-nav__num {
+  color: var(--jlz-color-signal-phosphor);
+}
+
+// Staggered entry for the nav items while the sheet opens.
+body[data-cinematic-sheet='menu'] .jlz-menu-nav__item:nth-child(1) .jlz-menu-nav__toggle {
+  transition-delay: 180ms;
+}
+
+body[data-cinematic-sheet='menu'] .jlz-menu-nav__item:nth-child(2) .jlz-menu-nav__toggle {
+  transition-delay: 215ms;
+}
+
+body[data-cinematic-sheet='menu'] .jlz-menu-nav__item:nth-child(3) .jlz-menu-nav__toggle {
+  transition-delay: 250ms;
+}
+
+body[data-cinematic-sheet='menu'] .jlz-menu-nav__item:nth-child(4) .jlz-menu-nav__toggle {
+  transition-delay: 285ms;
+}
+
+body[data-cinematic-sheet='menu'] .jlz-menu-nav__item:nth-child(5) .jlz-menu-nav__toggle {
+  transition-delay: 320ms;
+}
+
+body[data-cinematic-sheet='menu'] .jlz-menu-nav__item:nth-child(6) .jlz-menu-nav__toggle {
+  transition-delay: 355ms;
+}
+
+body[data-cinematic-sheet='menu'] .jlz-menu-nav__item:nth-child(7) .jlz-menu-nav__toggle {
+  transition-delay: 390ms;
+}
+
+.jlz-menu-nav__subs {
+  gap: 0.125rem;
+}
+
+.jlz-menu-nav__sub-link {
+  gap: var(--jlz-space-2);
+  padding: 0.4rem var(--jlz-space-2);
+  border-radius: 0;
+  color: var(--jlz-color-text-subtle);
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition:
+    color 0.2s ease,
+    background 0.2s ease,
+    padding-left 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.jlz-menu-nav__sub-link:hover,
+.jlz-menu-nav__sub-link:focus-visible {
+  padding-left: @global-small-margin;
+  color: var(--jlz-color-signal-phosphor);
+  background: var(--jlz-color-signal-phosphor-muted);
+  outline: none;
+}
+
+.jlz-menu-nav__sub-num {
+  flex-shrink: 0;
+  color: var(--jlz-color-text-subtle);
+  font-size: 0.6rem;
+  font-weight: 600;
+  opacity: 0.6;
+}
+
+.jlz-menu-nav__sub-link:hover .jlz-menu-nav__sub-num {
+  color: var(--jlz-color-signal-phosphor);
+  opacity: 1;
+}
+
+.jlz-menu-nav__sub-arrow {
+  color: var(--jlz-color-text-subtle);
+  font-size: 0.75rem;
+  opacity: 0;
+  transform: translateX(-3px);
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+
+.jlz-menu-nav__sub-link:hover .jlz-menu-nav__sub-arrow {
+  color: var(--jlz-color-signal-phosphor);
+  opacity: 1;
+  transform: translateX(0);
+}
+
 // ── Bottom status: signal, contact launcher, storyline ──
 .jlz-console-bar {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 10017;
   min-height: 4.5rem;
   padding: 0.75rem 0.85rem;
+  pointer-events: auto;
+  transition: opacity var(--jlz-duration-normal) ease;
 }
 
 .jlz-console-bar__signal {
@@ -259,270 +766,17 @@
   font-size: 0.62rem;
 }
 
-// ── Menu sheet: the console field ──
-// The sheet opens from a one-dimensional slit — the aperture stays, the
-// surface it reveals is now a flat console field (single definition here).
-#spa-content > .jlz-menu-overlay,
-.jlz-page > .jlz-menu-overlay {
-  min-height: 100dvh;
-  overflow: hidden;
-  color: var(--jlz-color-text);
-  background:
-    radial-gradient(
-      circle at 18% 68%,
-      color-mix(in srgb, var(--jlz-color-signal-phosphor) 7%, transparent),
-      transparent 34%
-    ),
-    var(--jlz-color-bg);
-  clip-path: inset(49.85% 0 49.85% 0);
-  transform: scale(1.015);
-  transform-origin: center;
-  transition:
-    clip-path 900ms var(--jlz-ease-cinematic),
-    transform 900ms var(--jlz-ease-cinematic),
-    opacity 180ms ease,
-    visibility 0s linear 900ms;
-}
-
-body[data-cinematic-sheet='menu'] #spa-content > .jlz-menu-overlay,
-body[data-cinematic-sheet='menu'] .jlz-page > .jlz-menu-overlay {
-  clip-path: inset(0);
-  transform: scale(1);
-  transition-delay: 0s;
-}
-
-.jlz-menu-field {
-  position: absolute;
-  z-index: 0;
-  inset: 0;
+// Sheets dim the persistent island while a cinematic sheet is open.
+body[data-cinematic-sheet] .jlz-storyline,
+body[data-cinematic-sheet] .jlz-contact-launcher {
+  opacity: 0;
   pointer-events: none;
+  transform: translate3d(0, 1.2rem, 0);
 }
 
-.jlz-menu-field__horizon {
-  display: none;
-}
-
-.jlz-menu-field__pulse {
-  position: absolute;
-  top: 50%;
-  left: 28%;
-  width: 0.45rem;
-  height: 0.45rem;
-  background: var(--jlz-color-signal-phosphor);
-  opacity: 0;
-  transform: translate(-50%, -50%) scale(0);
-  transition:
-    opacity 240ms ease 620ms,
-    transform 600ms var(--jlz-ease-emphasis) 600ms;
-}
-
-body[data-cinematic-sheet='menu'] .jlz-menu-field__pulse {
-  opacity: 1;
-  transform: translate(-50%, -50%) scale(1);
-}
-
-.jlz-menu-overlay .jlz-menu-container {
-  z-index: 2;
-  box-sizing: border-box;
-  justify-content: center;
-  padding-top: 5.8rem;
-  padding-bottom: 3.5rem;
-}
-
-.jlz-menu-sheet__header {
-  align-self: stretch;
-  box-sizing: border-box;
-  width: auto;
-  max-width: 100%;
-  gap: 1.5rem;
-  margin-bottom: clamp(1rem, 3vh, 2.5rem) !important;
-  padding-inline: 0.1rem;
-  color: var(--jlz-color-text-subtle);
-  font-family: var(--jlz-font-mono);
-  font-size: 0.62rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-
-.jlz-menu-sheet__index {
-  padding-right: 1.5rem;
-  color: var(--jlz-color-signal-phosphor);
-}
-
-.jlz-menu-overlay .jlz-menu-grid {
-  width: 100%;
-  grid-template-columns: minmax(20rem, 0.9fr) minmax(30rem, 1.35fr);
-  gap: clamp(3rem, 8vw, 9rem);
-  align-items: center;
-}
-
-.jlz-menu-overlay .jlz-menu-col--stat {
-  min-height: 0;
-  justify-content: center;
-  padding: 0;
-  box-shadow: none;
-}
-
-.jlz-menu-overlay .jlz-menu-stat__num {
-  font-size: clamp(@jlz-type-step-5, 16vw, @jlz-type-step-7); // φ steps 5–7
-  color: inherit;
-}
-
-.jlz-menu-preview {
-  position: relative;
-  display: grid;
-  width: min(100%, 30rem);
-  min-height: min(52vh, 30rem);
-  align-content: center;
-  isolation: isolate;
-  opacity: 0;
-  transform: translateY(1.5rem);
-  transition:
-    opacity 500ms ease 260ms,
-    transform 1100ms var(--jlz-ease-entrance) 180ms;
-}
-
-body[data-cinematic-sheet='menu'] .jlz-menu-preview {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.jlz-menu-preview::before {
-  position: absolute;
-  z-index: -1;
-  top: 50%;
-  left: 38%;
-  width: min(34vw, 25rem);
-  aspect-ratio: 1;
-  background: radial-gradient(
-    circle,
-    color-mix(in srgb, var(--jlz-color-accent) 14%, transparent),
-    transparent 64%
-  );
-  content: '';
-  transform: translate(-50%, -50%);
-}
-
-.jlz-menu-preview__number {
-  color: var(--jlz-color-signal-phosphor);
-  font-family: var(--jlz-font-mono);
-  font-size: clamp(0.7rem, 1vw, 0.9rem);
-  letter-spacing: 0.16em;
-}
-
-.jlz-menu-preview__label {
-  max-width: 9ch;
-  color: var(--jlz-color-text);
-  font-size: clamp(@jlz-type-step-4, 9vw, @jlz-type-step-6); // φ steps 4–6
-  letter-spacing: -0.04em;
-  line-height: 0.9;
-  text-wrap: balance;
-}
-
-.jlz-menu-preview__cursor {
-  width: 0.62rem;
-  height: 1.1rem;
-  margin-top: 1.5rem;
-  background: var(--jlz-color-signal-phosphor);
-}
-
-.jlz-menu-preview__echo {
-  position: absolute;
-  right: 12%;
-  bottom: 8%;
-  color: var(--jlz-color-signal-cool);
-  font-family: var(--jlz-font-mono);
-  font-size: 0.56rem;
-  letter-spacing: 0.16em;
-  writing-mode: vertical-rl;
-}
-
-.jlz-menu-overlay .jlz-menu-nav__item {
-  border: 0;
-}
-
-.jlz-menu-overlay .jlz-menu-nav__toggle {
-  position: relative;
-  min-height: clamp(3.5rem, 6.4vh, 4.75rem);
-  padding: 0.25rem 0;
-  overflow: hidden;
-  color: var(--jlz-color-text-muted);
-}
-
-// The prompt glyph: a phosphor '>' slides in on hover and stays while open.
-// The `/ ''` alt keeps the glyph out of the accessibility tree.
-.jlz-menu-overlay .jlz-menu-nav__toggle::before {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  color: var(--jlz-color-signal-phosphor);
-  content: '>' / '';
-  font-family: var(--jlz-font-mono);
-  font-size: 0.85rem;
-  font-weight: 600;
-  line-height: 1;
-  opacity: 0;
-  transform: translate(-0.35rem, -50%);
-  transition:
-    opacity var(--jlz-duration-fast) ease,
-    transform var(--jlz-duration-slow) var(--jlz-ease-emphasis);
-}
-
-.jlz-menu-overlay .jlz-menu-nav__toggle:hover,
-.jlz-menu-overlay .jlz-menu-nav__toggle:focus-visible,
-.jlz-menu-overlay .jlz-menu-nav__item.uk-open > .jlz-menu-nav__toggle {
-  padding-left: 1.3rem;
-  color: var(--jlz-color-text);
-}
-
-.jlz-menu-overlay .jlz-menu-nav__toggle:hover::before,
-.jlz-menu-overlay .jlz-menu-nav__toggle:focus-visible::before,
-.jlz-menu-overlay .jlz-menu-nav__item.uk-open > .jlz-menu-nav__toggle::before {
-  opacity: 1;
-  transform: translate(0, -50%);
-}
-
-.jlz-menu-overlay .jlz-menu-nav__label {
-  font-size: clamp(@jlz-type-step-2, 3.25vw, @jlz-type-step-4); // φ steps 2–4
-  line-height: 0.92;
-}
-
-.jlz-menu-nav__arrow {
-  font-family: var(--jlz-font-mono);
-}
-
-.jlz-menu-overlay .jlz-menu-nav__toggle:hover .jlz-menu-nav__num,
-.jlz-menu-overlay .jlz-menu-nav__item.uk-open .jlz-menu-nav__num {
-  color: var(--jlz-color-signal-phosphor);
-}
-
-// Staggered entry for the nav items while the sheet opens.
-body[data-cinematic-sheet='menu'] .jlz-menu-nav__item:nth-child(1) .jlz-menu-nav__toggle {
-  transition-delay: 180ms;
-}
-
-body[data-cinematic-sheet='menu'] .jlz-menu-nav__item:nth-child(2) .jlz-menu-nav__toggle {
-  transition-delay: 215ms;
-}
-
-body[data-cinematic-sheet='menu'] .jlz-menu-nav__item:nth-child(3) .jlz-menu-nav__toggle {
-  transition-delay: 250ms;
-}
-
-body[data-cinematic-sheet='menu'] .jlz-menu-nav__item:nth-child(4) .jlz-menu-nav__toggle {
-  transition-delay: 285ms;
-}
-
-body[data-cinematic-sheet='menu'] .jlz-menu-nav__item:nth-child(5) .jlz-menu-nav__toggle {
-  transition-delay: 320ms;
-}
-
-body[data-cinematic-sheet='menu'] .jlz-menu-nav__item:nth-child(6) .jlz-menu-nav__toggle {
-  transition-delay: 355ms;
-}
-
-body[data-cinematic-sheet='menu'] .jlz-menu-nav__item:nth-child(7) .jlz-menu-nav__toggle {
-  transition-delay: 390ms;
+body[data-cinematic-sheet] .jlz-console-bar {
+  opacity: 0.3;
+  pointer-events: none;
 }
 
 // ── Breakpoints ──
@@ -538,6 +792,14 @@ body[data-cinematic-sheet='menu'] .jlz-menu-nav__item:nth-child(7) .jlz-menu-nav
 }
 
 @media (max-width: 639px) {
+  .jlz-cinematic-shell .jlz-topbar {
+    top: 0.55rem;
+    right: 0.55rem;
+    left: 0.55rem;
+    min-height: 2.35rem;
+    padding: 0.2rem 0;
+  }
+
   .jlz-topbar__brand {
     min-height: 44px;
     gap: 0.5rem;
@@ -580,10 +842,26 @@ body[data-cinematic-sheet='menu'] .jlz-menu-nav__item:nth-child(7) .jlz-menu-nav
 
   .jlz-menu-overlay .jlz-menu-grid {
     display: block;
+    overflow: visible;
   }
 
+  .jlz-menu-overlay .jlz-menu-container {
+    overflow-y: auto;
+  }
+
+  // Hide stat column on mobile — nav is the focus
+  .jlz-menu-overlay .jlz-menu-col--stat {
+    display: none;
+  }
+
+  // Center nav items, larger touch targets
   .jlz-menu-overlay .jlz-menu-nav {
-    max-width: none;
+    width: 100%;
+    max-width: 20rem;
+  }
+
+  .jlz-menu-overlay .jlz-menu-sheet__header {
+    justify-content: center;
   }
 
   .jlz-menu-overlay .jlz-menu-nav__toggle {
@@ -594,14 +872,26 @@ body[data-cinematic-sheet='menu'] .jlz-menu-nav__item:nth-child(7) .jlz-menu-nav
   .jlz-menu-overlay .jlz-menu-nav__label {
     font-size: clamp(@jlz-type-step-2, 8vw, @jlz-type-step-3); // φ steps 2–3
   }
+
+  .jlz-menu-nav__subs {
+    padding-top: 0.25rem;
+    padding-bottom: 0.5rem;
+    padding-left: var(--jlz-space-4);
+  }
+}
+
+@media (max-width: 500px) {
+  .jlz-lang-label {
+    font-size: 12px;
+  }
 }
 
 // ── Canonical control banks ──
 // One tactile language for the lower navigation island and the top menu bank.
 .jlz-console-bar {
-  left: auto;
   right: max(1.15rem, calc(env(safe-area-inset-right) + 0.9rem));
   bottom: max(1.1rem, calc(env(safe-area-inset-bottom) + 0.9rem));
+  left: auto;
   width: 15.2rem;
   height: 2.65rem;
   min-height: 0;
@@ -640,6 +930,9 @@ body[data-cinematic-sheet='menu'] .jlz-menu-nav__item:nth-child(7) .jlz-menu-nav
   padding: 0;
   background: transparent;
   backdrop-filter: none;
+  transition:
+    opacity var(--jlz-duration-normal) ease,
+    transform var(--jlz-duration-slow) var(--jlz-ease-entrance);
 }
 
 .jlz-storyline::before {
@@ -829,6 +1122,7 @@ body[data-cinematic-sheet='menu'] .jlz-menu-nav__item:nth-child(7) .jlz-menu-nav
   .jlz-console-bar {
     right: max(0.8rem, calc(env(safe-area-inset-right) + 0.65rem));
     bottom: max(0.8rem, calc(env(safe-area-inset-bottom) + 0.65rem));
+    left: auto;
     width: calc(100vw - 1.6rem);
     height: 2.4rem;
     padding: 0.18rem;

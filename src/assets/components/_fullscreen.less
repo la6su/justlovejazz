@@ -1,0 +1,202 @@
+/* Fullscreen project overlay — the exhibition theater.
+ *
+ * Moved verbatim from main.less: the overlay is one surface with one owner.
+ * UIkit supplies the modal behavior; these rules own the cinematic frame,
+ * the meta bar and the media stage reveal. CSS vars flip automatically with
+ * the inverse preference (body.uk-light overrides in _import.less).
+ */
+
+.jlz-fs-overlay {
+  color: var(--jlz-color-text);
+  background: var(--jlz-color-bg);
+}
+
+.jlz-fs-overlay:not(.uk-open) {
+  display: none !important;
+}
+
+.jlz-fs-overlay.uk-open {
+  z-index: 30010 !important;
+}
+
+.jlz-fs-overlay .jlz-fs-dialog {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  margin: 0 !important;
+  max-width: 100% !important;
+  color: var(--jlz-color-text);
+  background: var(--jlz-color-bg) !important;
+  clip-path: inset(16% 16% 16% 16% round 28px);
+  transform: scale(1.06);
+  opacity: 0;
+  transition:
+    clip-path 0.5s var(--jlz-ease-cinematic),
+    transform 0.5s var(--jlz-ease-cinematic),
+    opacity 0.3s ease;
+}
+
+.jlz-fs-overlay.uk-open.is-entered .jlz-fs-dialog {
+  clip-path: inset(0 round 0);
+  transform: scale(1);
+  opacity: 1;
+}
+
+.jlz-fs-overlay.is-plane-origin {
+  background: transparent !important;
+}
+
+.jlz-fs-overlay.is-plane-origin:not(.is-poster-ready) .jlz-fs-dialog,
+.jlz-fs-overlay.is-plane-origin:not(.is-poster-ready) .jlz-fs-media-stage {
+  background: transparent !important;
+}
+
+.jlz-fs-meta {
+  min-height: 6.5rem;
+  gap: 2rem;
+  padding: 1.25rem clamp(4.5rem, 7vw, 7rem) 1rem;
+  border-bottom: 1px solid var(--jlz-color-border);
+  opacity: 0;
+  transform: translateY(-0.5rem);
+  .jlz-cinematic-reveal(0.12s; 0.4s; 0.5s; var(--jlz-ease-cinematic));
+}
+
+.jlz-fs-overlay.is-entered .jlz-fs-meta {
+  opacity: 1;
+  transform: none;
+}
+
+.jlz-fs-cat,
+.jlz-fs-counter {
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.jlz-fs-desc {
+  max-width: 44rem;
+  color: var(--jlz-color-text-muted);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.jlz-fs-tags {
+  gap: 0.4rem;
+}
+
+.jlz-fs-tag {
+  font-size: 0.62rem;
+}
+
+.jlz-fs-media-stage {
+  min-height: 0;
+  overflow: hidden;
+  background: #000;
+  opacity: 0;
+  transform: scale(1.02);
+  .jlz-cinematic-reveal(0.06s; 0.4s; 0.5s; var(--jlz-ease-cinematic));
+}
+
+.jlz-fs-overlay.is-entered .jlz-fs-media-stage {
+  opacity: 1;
+  transform: none;
+}
+
+.jlz-fs-poster {
+  z-index: 1;
+  background: var(--jlz-color-bg) center / cover no-repeat;
+  transition: opacity 0.65s ease;
+}
+
+.jlz-fs-video {
+  z-index: 2;
+  object-fit: contain;
+  background: #000;
+}
+
+.jlz-fs-big-play {
+  z-index: 3;
+  border: 0;
+  color: var(--jlz-color-text);
+  background: transparent;
+  transition: opacity 0.4s ease;
+}
+
+.jlz-fs-big-play__icon {
+  width: 4.5rem;
+  height: 4.5rem;
+  border: 1px solid color-mix(in srgb, var(--jlz-color-text) 50%, transparent);
+  border-radius: 0;
+  background: var(--jlz-color-bg-elevated);
+  transition: transform 0.3s ease;
+}
+
+.jlz-fs-big-play__icon::after {
+  width: 0;
+  height: 0;
+  margin-left: 0.25rem;
+  border-style: solid;
+  border-width: 0.65rem 0 0.65rem 1rem;
+  border-color: transparent transparent transparent currentColor;
+  content: '';
+}
+
+.jlz-fs-big-play:hover .jlz-fs-big-play__icon {
+  transform: scale(1.08);
+}
+
+.jlz-fs-controls {
+  min-height: 4.5rem;
+  gap: 0.75rem;
+  padding: 0.75rem clamp(4.5rem, 7vw, 7rem);
+  border-top: 1px solid var(--jlz-color-border);
+  background: var(--jlz-color-bg);
+  opacity: 0;
+  transform: translateY(0.5rem);
+  .jlz-cinematic-reveal(0.18s; 0.4s; 0.5s; var(--jlz-ease-cinematic));
+}
+
+.jlz-fs-overlay.is-entered .jlz-fs-controls {
+  opacity: 1;
+  transform: none;
+}
+
+.jlz-fs-seek {
+  cursor: pointer;
+}
+
+.jlz-fs-time {
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.jlz-fs-close {
+  z-index: 6;
+  background: transparent;
+}
+
+@media (max-width: 639px) {
+  .jlz-fs-meta {
+    min-height: 5rem;
+    padding: 0.9rem 3.75rem 0.75rem 1rem;
+  }
+  .jlz-fs-controls {
+    min-height: 4rem;
+    padding: 0.6rem 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jlz-fs-dialog,
+  .jlz-fs-meta,
+  .jlz-fs-media-stage,
+  .jlz-fs-controls {
+    clip-path: none;
+    transform: none;
+    opacity: 1;
+    transition: none;
+  }
+}

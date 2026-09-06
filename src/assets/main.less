@@ -2,8 +2,15 @@
  * src/assets/main.less — JLZ app layer on top of Uikit 3.
  *
  * Goal: keep Uikit as the foundation, then add only the project-specific
- * shell, light/dark section theme glue, and bespoke overlays that Uikit
- * does not provide out of the box.
+ * route composition, scene hosting and bespoke overlays that Uikit does not
+ * provide out of the box.
+ *
+ * Ownership split (one authority per surface):
+ *   - console chrome (topbar, control banks, menu sheet, status island)
+ *     → components/_console-language.less (imported last, final voice)
+ *   - fullscreen project overlay → components/_fullscreen.less
+ *   - works page composition    → components/_works-rooms.less
+ *   - this file                 → assembly + route/scroll composition
  */
 
 @import './_import.less';
@@ -16,203 +23,8 @@
 @import './components/_navigation-controls.less';
 @import './components/_builder-page.less';
 
-// Modal background — dark + blur
-// Fullscreen overlay — always uses CSS vars for automatic light/dark adaptation.
-// No !important needed: CSS vars flip via body.uk-light overrides in _import.less.
-.jlz-fs-overlay {
-  color: var(--jlz-color-text);
-  background: var(--jlz-color-bg);
-}
-
-.jlz-fs-overlay:not(.uk-open) {
-  display: none !important;
-}
-
-.jlz-fs-overlay.uk-open {
-  z-index: 30010 !important;
-}
-
-.jlz-fs-overlay .jlz-fs-dialog {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  width: 100%;
-  height: 100vh;
-  height: 100dvh;
-  overflow: hidden;
-  margin: 0 !important;
-  max-width: 100% !important;
-  color: var(--jlz-color-text);
-  background: var(--jlz-color-bg) !important;
-  clip-path: inset(16% 16% 16% 16% round 28px);
-  transform: scale(1.06);
-  opacity: 0;
-  transition:
-    clip-path 0.5s var(--jlz-ease-cinematic),
-    transform 0.5s var(--jlz-ease-cinematic),
-    opacity 0.3s ease;
-}
-
-.jlz-fs-overlay.uk-open.is-entered .jlz-fs-dialog {
-  clip-path: inset(0 round 0);
-  transform: scale(1);
-  opacity: 1;
-}
-
-.jlz-fs-overlay.is-plane-origin {
-  background: transparent !important;
-}
-
-.jlz-fs-overlay.is-plane-origin:not(.is-poster-ready) .jlz-fs-dialog,
-.jlz-fs-overlay.is-plane-origin:not(.is-poster-ready) .jlz-fs-media-stage {
-  background: transparent !important;
-}
-
-.jlz-fs-meta {
-  min-height: 6.5rem;
-  gap: 2rem;
-  padding: 1.25rem clamp(4.5rem, 7vw, 7rem) 1rem;
-  border-bottom: 1px solid var(--jlz-color-border);
-  opacity: 0;
-  transform: translateY(-0.5rem);
-  .jlz-cinematic-reveal(0.12s; 0.4s; 0.5s; var(--jlz-ease-cinematic));
-}
-
-.jlz-fs-overlay.is-entered .jlz-fs-meta {
-  opacity: 1;
-  transform: none;
-}
-
-.jlz-fs-cat,
-.jlz-fs-counter {
-  font-size: 0.68rem;
-  font-variant-numeric: tabular-nums;
-}
-
-.jlz-fs-desc {
-  max-width: 44rem;
-  color: var(--jlz-color-text-muted);
-  font-size: 0.78rem;
-  line-height: 1.35;
-}
-
-.jlz-fs-tags {
-  gap: 0.4rem;
-}
-
-.jlz-fs-tag {
-  font-size: 0.62rem;
-}
-
-.jlz-fs-media-stage {
-  min-height: 0;
-  overflow: hidden;
-  background: #000;
-  opacity: 0;
-  transform: scale(1.02);
-  .jlz-cinematic-reveal(0.06s; 0.4s; 0.5s; var(--jlz-ease-cinematic));
-}
-
-.jlz-fs-overlay.is-entered .jlz-fs-media-stage {
-  opacity: 1;
-  transform: none;
-}
-
-.jlz-fs-poster {
-  z-index: 1;
-  background: var(--jlz-color-bg) center / cover no-repeat;
-  transition: opacity 0.65s ease;
-}
-
-.jlz-fs-video {
-  z-index: 2;
-  object-fit: contain;
-  background: #000;
-}
-
-.jlz-fs-big-play {
-  z-index: 3;
-  border: 0;
-  color: var(--jlz-color-text);
-  background: transparent;
-  transition: opacity 0.4s ease;
-}
-
-.jlz-fs-big-play__icon {
-  width: 4.5rem;
-  height: 4.5rem;
-  border: 1px solid color-mix(in srgb, var(--jlz-color-text) 50%, transparent);
-  border-radius: 0;
-  background: var(--jlz-color-bg-elevated);
-  transition: transform 0.3s ease;
-}
-
-.jlz-fs-big-play__icon::after {
-  width: 0;
-  height: 0;
-  margin-left: 0.25rem;
-  border-style: solid;
-  border-width: 0.65rem 0 0.65rem 1rem;
-  border-color: transparent transparent transparent currentColor;
-  content: '';
-}
-
-.jlz-fs-big-play:hover .jlz-fs-big-play__icon {
-  transform: scale(1.08);
-}
-
-.jlz-fs-controls {
-  min-height: 4.5rem;
-  gap: 0.75rem;
-  padding: 0.75rem clamp(4.5rem, 7vw, 7rem);
-  border-top: 1px solid var(--jlz-color-border);
-  background: var(--jlz-color-bg);
-  opacity: 0;
-  transform: translateY(0.5rem);
-  .jlz-cinematic-reveal(0.18s; 0.4s; 0.5s; var(--jlz-ease-cinematic));
-}
-
-.jlz-fs-overlay.is-entered .jlz-fs-controls {
-  opacity: 1;
-  transform: none;
-}
-
-.jlz-fs-seek {
-  cursor: pointer;
-}
-
-.jlz-fs-time {
-  font-size: 0.7rem;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.jlz-fs-close {
-  z-index: 6;
-  background: transparent;
-}
-
-@media (max-width: 639px) {
-  .jlz-fs-meta {
-    min-height: 5rem;
-    padding: 0.9rem 3.75rem 0.75rem 1rem;
-  }
-  .jlz-fs-controls {
-    min-height: 4rem;
-    padding: 0.6rem 1rem;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .jlz-fs-dialog,
-  .jlz-fs-meta,
-  .jlz-fs-media-stage,
-  .jlz-fs-controls {
-    clip-path: none;
-    transform: none;
-    opacity: 1;
-    transition: none;
-  }
-}
+// Fullscreen project overlay — one surface, one owner.
+@import './components/_fullscreen.less';
 
 /* ------------------------------------------------------------------
    Works page — editorial project compositions
@@ -254,31 +66,20 @@
   height: 100%;
 }
 
-.jlz-lang-label {
-  font-size: 0.72rem;
-  line-height: 1;
-}
-
-.jlz-theme-toggle [uk-icon] {
-  width: 1rem;
-  height: 1rem;
-  filter: none;
-}
-
 // Vue-owned structural route roots: home is marked by its semantic page-view
 // root, while content pages use the direct .jlz-page child. Route state is
 // not a CSS dependency here.
 #spa-content[data-page-view='home'],
 #spa-content > .jlz-page {
+  display: flex;
   width: 100vw;
   height: 100dvh;
-  display: flex;
   flex-flow: column nowrap;
   overflow-x: hidden;
   overflow-y: auto;
-  overscroll-behavior-y: contain;
   scroll-snap-type: y mandatory;
   scroll-behavior: smooth;
+  overscroll-behavior-y: contain;
   scrollbar-width: none;
   touch-action: pan-y pinch-zoom;
   -webkit-overflow-scrolling: touch;
@@ -294,16 +95,16 @@
 #spa-content > .jlz-page > .jlz-page-section:not(.jlz-menu-overlay):not([data-contact-footer]) {
   position: relative;
   inset: auto;
-  flex: 0 0 100dvh;
-  width: 100vw;
-  min-height: 100dvh;
-  height: 100dvh;
   display: flex !important;
+  width: 100vw;
+  height: 100dvh;
+  min-height: 100dvh;
+  flex: 0 0 100dvh;
   overflow: clip;
   pointer-events: auto;
+  background: transparent;
   scroll-snap-align: start;
   scroll-snap-stop: always;
-  background: transparent;
 }
 
 #spa-content > .jlz-page > .jlz-works-section:not(.jlz-menu-overlay):not([data-contact-footer]) {
@@ -365,131 +166,21 @@
   pointer-events: none;
 }
 
-.jlz-cinematic-shell {
-  z-index: 10020;
-}
-
-.jlz-topbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 10001;
-  padding: max(0.5rem, env(safe-area-inset-top, 0px)) 1rem 0.5rem;
-  pointer-events: none;
-}
-
-.jlz-topbar-controls {
-  pointer-events: auto;
-  gap: 0.4rem;
-}
-
-.jlz-topbar__brand {
-  pointer-events: auto;
-  color: inherit;
-  font-size: 0.72rem;
-  font-weight: 500;
-}
-
-.jlz-topbar-controls .uk-icon-button {
-  width: 2.55rem;
-  height: 2.55rem;
-  color: inherit;
-  overflow: hidden;
-  border-radius: 0;
-}
-
-.jlz-storyline {
-  position: fixed;
-  right: 0.85rem;
-  bottom: 0.85rem;
-  z-index: 10018;
-  width: auto;
-  min-height: 3.55rem;
-  color: inherit;
-  transform: none;
-  transition:
-    opacity var(--jlz-duration-normal) ease,
-    transform var(--jlz-duration-slow) var(--jlz-ease-entrance);
-}
-
-.jlz-contact-launcher {
-  position: fixed;
-  left: 0.85rem;
-  bottom: 0.85rem;
-  z-index: 10019;
-  transition:
-    opacity var(--jlz-duration-normal) ease,
-    transform var(--jlz-duration-slow) var(--jlz-ease-entrance);
-}
-
-#spa-content > .jlz-menu-overlay,
-.jlz-page > .jlz-menu-overlay {
-  position: fixed !important;
-  inset: 0 !important;
-  z-index: 10010 !important;
-  width: 100vw;
-  height: 100dvh;
-  min-height: 0;
-  display: flex !important;
-  overflow: hidden;
-  visibility: hidden;
-  pointer-events: none !important;
-  opacity: 0;
-  color: var(--jlz-color-text);
-}
-
-body[data-cinematic-sheet='menu'] #spa-content > .jlz-menu-overlay,
-body[data-cinematic-sheet='menu'] .jlz-page > .jlz-menu-overlay {
-  visibility: visible;
-  pointer-events: auto !important;
-  opacity: 1;
-  transform: translate3d(0, 0, 0) scale(1);
-  transition-delay: 0s;
-}
-
-.jlz-menu-overlay .jlz-menu-container {
-  width: 100%;
-  max-width: none;
-  height: 100%;
-  justify-content: flex-end;
-  padding: 6.4rem clamp(1.25rem, 5vw, 5rem) 4.5rem;
-}
-
-.jlz-menu-sheet__header,
-.jlz-menu-overlay .jlz-menu-nav__toggle {
-  opacity: 0;
-  transform: translate3d(0, 1.25rem, 0);
-  .jlz-cinematic-reveal();
-}
-
-body[data-cinematic-sheet='menu'] .jlz-menu-sheet__header,
-body[data-cinematic-sheet='menu'] .jlz-menu-overlay .jlz-menu-nav__toggle {
-  opacity: 1;
-  transform: none;
-}
-
-body[data-cinematic-sheet='menu'] .jlz-menu-overlay .jlz-menu-nav__toggle {
-  transition-delay: 150ms;
-}
-
-// The menu visual field (background, aperture reveal, nav prompt states) is
-// owned by components/_console-language.less.
-
+// Contact footer sheet — the route-owned cinematic sheet. Its persistent
+// chrome neighbors (menu, status island) live in _console-language.less.
 #spa-content > [data-contact-footer],
 .jlz-page > [data-contact-footer] {
   position: fixed !important;
   inset: auto 0 0 !important;
   z-index: 10011 !important;
+  display: flex !important;
   width: 100vw;
   height: min(78dvh, 52rem) !important;
   min-height: 30rem;
-  display: flex !important;
   overflow: hidden;
   visibility: hidden;
-  pointer-events: none !important;
-  opacity: 0;
   color: var(--jlz-color-text);
+  pointer-events: none !important;
   border: 1px solid var(--jlz-color-fluid-border);
   border-bottom: 0;
   border-radius: 0;
@@ -539,13 +230,7 @@ body[data-cinematic-sheet='footer'] .jlz-page > [data-contact-footer] {
   font-size: 0.74rem;
 }
 
-body[data-cinematic-sheet] .jlz-storyline,
-body[data-cinematic-sheet] .jlz-contact-launcher {
-  opacity: 0;
-  pointer-events: none;
-  transform: translate3d(0, 1.2rem, 0);
-}
-
+// While a cinematic sheet is open, dim the route containers behind it.
 body[data-cinematic-sheet]
   #spa-content
   > section[data-section]:not(.jlz-menu-overlay):not([data-contact-footer])
@@ -563,44 +248,7 @@ body[data-cinematic-sheet]
     transform var(--jlz-duration-cinematic) var(--jlz-ease-exit);
 }
 
-@media (max-width: 900px) {
-  .jlz-storyline {
-    right: 0.75rem;
-  }
-
-  .jlz-contact-launcher {
-    bottom: 1rem;
-  }
-
-  .jlz-contact-launcher__button {
-    min-height: 2.9rem;
-  }
-}
-
 @media (max-width: 639px) {
-  .jlz-topbar {
-    padding: max(0.4rem, env(safe-area-inset-top, 0px)) 1rem 0.4rem;
-  }
-
-  .jlz-topbar-controls {
-    gap: 0.2rem;
-  }
-
-  .jlz-topbar__brand {
-    min-height: 44px;
-    font-size: 12px;
-  }
-
-  .jlz-topbar-controls .uk-icon-button {
-    width: 44px;
-    height: 44px;
-  }
-
-  .jlz-menu-launcher {
-    min-height: 44px;
-    padding: 0 0.8rem;
-  }
-
   #spa-content[data-page-view='home']
     > section[data-section]:not(.jlz-menu-overlay):not([data-contact-footer])
     > .uk-container,
@@ -640,35 +288,6 @@ body[data-cinematic-sheet]
     color: var(--jlz-color-text-muted);
     font-size: 0.82rem;
     line-height: 1.42;
-  }
-
-  .jlz-storyline {
-    bottom: 0.55rem;
-    right: 0.55rem;
-    min-height: 2.75rem;
-    gap: 0.32rem;
-  }
-
-  .jlz-storyline__number {
-    font-size: 12px;
-  }
-
-  .jlz-contact-launcher {
-    left: 0.55rem;
-    bottom: 0.55rem;
-  }
-
-  .jlz-contact-launcher__button {
-    min-height: 2.75rem;
-    padding: 0 0.9rem;
-  }
-
-  .jlz-menu-overlay .jlz-menu-container {
-    overflow-y: auto;
-  }
-
-  .jlz-menu-overlay .jlz-menu-grid {
-    overflow: visible;
   }
 
   #spa-content > [data-contact-footer],
@@ -721,265 +340,6 @@ body[data-cinematic-sheet]
   .jlz-storyline,
   .jlz-contact-launcher {
     transition-duration: 0ms !important;
-  }
-}
-
-@media (max-width: 500px) {
-  .jlz-lang-label {
-    font-size: 12px;
-  }
-}
-
-.jlz-theme-toggle [uk-icon] {
-  display: none;
-  color: inherit;
-}
-
-// auto mode (default) → show sun (theme-auto)
-.jlz-theme-toggle:not(.is-inverse) [uk-icon='icon: theme-auto'] {
-  display: inline-block;
-}
-
-// inverse mode → show moon (theme-inverse)
-.jlz-theme-toggle.is-inverse [uk-icon='icon: theme-inverse'] {
-  display: inline-block;
-}
-
-.jlz-theme-toggle:not(.is-inverse) {
-  color: var(--jlz-color-text-muted);
-}
-.jlz-theme-toggle.is-inverse {
-  color: var(--jlz-color-accent-secondary);
-}
-
-.jlz-sound-toggle [uk-icon] {
-  width: 1rem;
-  height: 1rem;
-}
-
-.jlz-sound-toggle.is-muted {
-  color: var(--jlz-color-text-muted);
-}
-
-.jlz-sound-toggle:not(.is-muted) {
-  color: var(--jlz-color-signal-phosphor);
-}
-
-.jlz-menu-container {
-  position: relative;
-  z-index: 2;
-  height: 100dvh;
-  padding-top: calc(var(--jlz-header-height, 60px) + var(--jlz-space-4));
-  padding-bottom: calc(var(--jlz-bottom-controls, 4.5rem) * 1.35 + var(--jlz-space-4));
-}
-
-.jlz-menu-grid {
-  width: min(100%, 64rem);
-  max-height: calc(
-    100dvh - var(--jlz-header-height, 60px) - (var(--jlz-bottom-controls, 4.5rem) * 1.35) -
-      @global-medium-margin
-  );
-  margin: 0 auto;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-}
-
-.jlz-menu-col {
-  gap: @global-small-margin;
-  min-height: 0;
-}
-
-.jlz-menu-stat__num {
-  font-size: clamp(@jlz-type-step-4, 12vw, @jlz-type-step-6); // φ steps 4–6
-  font-weight: 900;
-  line-height: 0.85;
-}
-
-.jlz-menu-stat__label {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--jlz-color-text-subtle);
-  margin-top: var(--jlz-space-2);
-}
-
-.jlz-menu-nav__item {
-  border-bottom: 1px solid var(--jlz-color-border);
-}
-
-.jlz-menu-nav__toggle {
-  align-items: baseline;
-  gap: @global-small-margin;
-  padding: var(--jlz-space-2) 0;
-  color: var(--jlz-color-text-muted);
-  transition:
-    color 0.2s ease,
-    padding-left 0.2s ease;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.jlz-menu-nav__num {
-  font-size: 0.68rem;
-  font-weight: 600;
-  color: var(--jlz-color-text-subtle);
-  flex-shrink: 0;
-  min-width: 2rem;
-}
-
-.jlz-menu-nav__label {
-  font-size: clamp(@jlz-type-step-2, 2.5vw, @jlz-type-step-3); // φ steps 2–3
-  text-transform: none;
-  flex: 1;
-}
-
-.jlz-menu-nav__arrow {
-  font-size: 0.85rem;
-  color: var(--jlz-color-text-subtle);
-  opacity: 0.6;
-  transition:
-    transform 0.2s ease,
-    color 0.2s ease,
-    opacity 0.2s ease;
-}
-
-.jlz-menu-nav__toggle:hover .jlz-menu-nav__arrow {
-  color: var(--jlz-color-signal-phosphor);
-  opacity: 1;
-}
-
-.jlz-menu-nav__item.uk-open .jlz-menu-nav__arrow {
-  transform: rotate(90deg);
-  color: var(--jlz-color-signal-phosphor);
-  opacity: 1;
-}
-
-.jlz-menu-nav__subs {
-  gap: 0.125rem;
-}
-
-.jlz-menu-nav__sub-link {
-  gap: var(--jlz-space-2);
-  padding: 0.4rem var(--jlz-space-2);
-  text-decoration: none;
-  color: var(--jlz-color-text-subtle);
-  font-size: 0.85rem;
-  font-weight: 500;
-  border-radius: 0;
-  transition:
-    color 0.2s ease,
-    background 0.2s ease,
-    padding-left 0.2s ease;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.jlz-menu-nav__sub-link:hover,
-.jlz-menu-nav__sub-link:focus-visible {
-  color: var(--jlz-color-signal-phosphor);
-  background: var(--jlz-color-signal-phosphor-muted);
-  padding-left: @global-small-margin;
-  outline: none;
-}
-
-.jlz-menu-nav__sub-num {
-  font-size: 0.6rem;
-  font-weight: 600;
-  color: var(--jlz-color-text-subtle);
-  opacity: 0.6;
-  flex-shrink: 0;
-}
-
-.jlz-menu-nav__sub-link:hover .jlz-menu-nav__sub-num {
-  color: var(--jlz-color-signal-phosphor);
-  opacity: 1;
-}
-
-.jlz-menu-nav__sub-arrow {
-  font-size: 0.75rem;
-  color: var(--jlz-color-text-subtle);
-  opacity: 0;
-  transform: translateX(-3px);
-  transition:
-    opacity 0.2s ease,
-    transform 0.2s ease;
-}
-
-.jlz-menu-nav__sub-link:hover .jlz-menu-nav__sub-arrow {
-  opacity: 1;
-  transform: translateX(0);
-  color: var(--jlz-color-signal-phosphor);
-}
-
-@media (max-width: 639px) {
-  .jlz-menu-nav__subs {
-    padding-left: var(--jlz-space-4);
-    padding-top: 0.25rem;
-    padding-bottom: 0.5rem;
-  }
-}
-
-.jlz-cinematic-shell .jlz-topbar {
-  top: 0.85rem;
-  left: 0.85rem;
-  right: 0.85rem;
-  width: auto;
-  min-height: 2.75rem;
-  padding: 0.25rem 0;
-  pointer-events: auto;
-}
-
-@media (max-width: 639px) {
-  .jlz-cinematic-shell .jlz-topbar {
-    top: 0.55rem;
-    left: 0.55rem;
-    right: 0.55rem;
-    min-height: 2.35rem;
-    padding: 0.2rem 0;
-  }
-}
-
-.jlz-console-bar {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 10017;
-
-  pointer-events: auto;
-  transition: opacity var(--jlz-duration-normal) ease;
-}
-
-// When a cinematic sheet (menu/contact) is open, dim the console bar
-body[data-cinematic-sheet] .jlz-console-bar {
-  opacity: 0.3;
-  pointer-events: none;
-}
-
-@media (max-width: 639px) {
-  // Menu becomes full-screen, vertically centered
-  .jlz-menu-overlay .jlz-menu-container {
-    height: 100dvh;
-    padding: 3.5rem 1.25rem 2rem;
-    justify-content: center;
-  }
-
-  // Hide stat column on mobile — nav is the focus
-  .jlz-menu-overlay .jlz-menu-col--stat {
-    display: none;
-  }
-
-  // Center nav items, larger touch targets
-  .jlz-menu-overlay .jlz-menu-nav {
-    width: 100%;
-    max-width: 20rem;
-  }
-
-  .jlz-menu-overlay .jlz-menu-sheet__header {
-    justify-content: center;
-  }
-
-  .jlz-console-bar {
-    padding: 0.3rem 0.55rem;
-    gap: var(--jlz-space-2);
   }
 }
 
