@@ -107,7 +107,7 @@ describe('WorksPlaneStage async lifecycle', () => {
     stage.update(1 / 60)
 
     const reveal = (stage as unknown as { _reveal: Map<THREE.Object3D, number> })._reveal
-    expect([...reveal.values()].filter((value) => value > 0)).toHaveLength(2)
+    expect([...reveal.values()].filter((value) => value > 0)).toHaveLength(1)
     expect(stage.isAnimating).toBe(false)
     stage.dispose()
   })
@@ -212,7 +212,7 @@ describe('WorksPlaneStage async lifecycle', () => {
     motion.listener?.(true)
 
     const reveal = (stage as unknown as { _reveal: Map<THREE.Object3D, number> })._reveal
-    expect([...reveal.values()].filter((value) => value > 0)).toHaveLength(2)
+    expect([...reveal.values()].filter((value) => value > 0)).toHaveLength(1)
     expect([...reveal.values()].every((value) => value === 0 || value === 1)).toBe(true)
     expect(stage.isAnimating).toBe(false)
     stage.dispose()

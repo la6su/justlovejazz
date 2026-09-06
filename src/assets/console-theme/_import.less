@@ -1,23 +1,15 @@
 // console-theme/_import.less — JLZ console theme variables.
 //
-// This file is the SINGLE source of truth for the console theme.
-// It replaces the former Quantum Flares vendor layer + bridge files
-// (_quantum-flares-overrides.less, _theme-fixes.less, _theme.less).
-//
-// What lives here:
-//   1. Font declaration (Inter)
-//   2. Primary/secondary font weight + transform (bold uppercase headings)
-//   3. Status colors (success/warning/danger)
-//   4. Box-shadows (cinematic depth)
-//   5. Heading font-sizes (rem-based, mobile-first)
-//   6. Color-mode overrides (dark surfaces → light text)
+// UIkit typography, surface and color-mode defaults. Brand tokens and the
+// assembly order belong to ../_import.less; generated builder overrides stay
+// last. See docs/THEME.md for the complete ownership contract.
 //
 // What does NOT live here (defined in ../_import.less):
 //   - @jlz-* design tokens (colors, spacing, radius, z-index, motion)
 //   - UIKit component imports
 //   - UIKit variable overrides (@global-margin, @global-gutter, etc.)
 
-// ── Primary/secondary font (console mono — headings, nav, labels) ──
+// ── Primary/secondary font (proportional display, natural case) ──
 @global-primary-font-family: @jlz-font-display;
 @global-primary-font-weight: 600;
 @global-primary-text-transform: none;
@@ -32,7 +24,7 @@
 
 // ── Heading typography (replaces main.less h1..h6 selector) ──
 // UIKit base.less reads these via @base-heading-text-transform / @base-heading-letter-spacing.
-// Console headings: mono, sentence case, slightly tracked-in.
+// Console headings: Commissioner, sentence case, slightly tracked-in.
 @base-heading-text-transform: none;
 @base-heading-letter-spacing: -0.02em;
 
@@ -42,10 +34,10 @@
 @global-danger-background: @jlz-color-status-danger;
 
 // ── Box-shadows (cinematic depth) ──
-@global-small-box-shadow: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.5);
-@global-medium-box-shadow: 0 0.3rem 1rem rgba(0, 0, 0, 0.5);
-@global-large-box-shadow: 0 0.875rem 1.5rem rgba(0, 0, 0, 0.5);
-@global-xlarge-box-shadow: 0 1.75rem 3rem rgba(0, 0, 0, 0.5);
+@global-small-box-shadow: none;
+@global-medium-box-shadow: none;
+@global-large-box-shadow: none;
+@global-xlarge-box-shadow: none;
 
 // ── Heading font-sizes (rem-based, mobile-first) ──
 // Golden-ratio (φ = 1.618) modular chain, owned by the @jlz-type-step-*

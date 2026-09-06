@@ -1,66 +1,43 @@
-// console-icons.ts — Console-themed UIKit icon overrides.
-//
-// All icons are original SVGs drawn for the JLZ console theme.
-// Style: bold strokes (2px), currentColor, rounded caps — matching the
-// console reticle cursor and theme toggle for visual unity.
-// No duplication: each icon is unique, no two icons share the same SVG.
-
+// Original console glyphs: one 20-unit grid, angular 1.5px strokes.
 import UIkit from 'uikit'
 
-interface Icons {
-  [name: string]: string
+const paths: Record<string, string> = {
+  'arrow-up': 'M10 16V4M5 9l5-5 5 5',
+  'arrow-up-right': 'M4 16 16 4M6 4h10v10',
+  play: 'M6 3 17 10 6 17Z',
+  close: 'M5 5l10 10M15 5 5 15',
+  'slidenav-previous-large': 'M14 3 7 10l7 7',
+  'slidenav-next-large': 'M6 3l7 7-7 7',
+  mail: 'M3 4h14v12H3ZM3 5l7 6 7-6',
+  commenting: 'M3 3h14v11h-6l-4 3v-3H3ZM6 7h8M6 10h5',
+  telegram: 'M18 3 13 17l-4-6-6-3ZM9 11l5-4',
+  github: 'M6 7v7h8M8 5h4l2 2v5M4 3h4v4H4ZM12 12h4v4h-4Z',
+  push: 'M10 13V3M6 7l4-4 4 4M3 10v7h14v-7',
+  // Compact topbar audio states: one speaker body, one unambiguous signal.
+  muted: 'M3 7h3l5-4v14l-5-4H3ZM14 8l4 4M18 8l-4 4',
+  sound: 'M3 7h3l5-4v14l-5-4H3ZM14 7v6M17 5v10',
+  // Minimal analog toggle: housing + lever. Auto is OFF (lever left),
+  // inverse is ON (lever right); the same silhouette reads at 16px.
+  'theme-auto': 'M3 6h14v8H3ZM5 8h4v4H5Z',
+  'theme-inverse': 'M3 6h14v8H3ZM11 8h4v4h-4Z',
+  menu: 'M3 5h14M7 10h10M3 15h14',
+  'chevron-down': 'M4 7l6 6 6-6',
+  'chevron-up': 'M4 13l6-6 6 6',
+  'arrow-left': 'M16 10H4M9 5l-5 5 5 5',
+  'arrow-right': 'M4 10h12M11 5l5 5-5 5',
+  search: 'M3 3h8l3 3v5l-3 3H6l-3-3ZM13 13l4 4',
 }
 
-const STROKE =
-  'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"'
+export const CONSOLE_ICONS: Record<string, string> = Object.fromEntries(
+  Object.entries(paths).map(([name, path]) => [
+    name,
+    `<svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter" d="${path}"/></svg>`,
+  ]),
+)
 
-const CONSOLE_ICONS: Icons = {
-  // ── Navigation ──
-  'arrow-up': `<svg width="20" height="20" viewBox="0 0 20 20"><line ${STROKE} x1="10" y1="16" x2="10" y2="5"/><polyline ${STROKE} points="14 9 10 5 6 9"/></svg>`,
-
-  'arrow-up-right': `<svg width="20" height="20" viewBox="0 0 20 20"><line ${STROKE} x1="5" y1="15" x2="15" y2="5"/><polyline ${STROKE} points="8 5 15 5 15 12"/></svg>`,
-
-  // ── Media controls ──
-  play: `<svg width="20" height="20" viewBox="0 0 20 20"><polygon fill="currentColor" stroke="none" points="7 4 15 10 7 16"/></svg>`,
-
-  // ── Close / X ──
-  close: `<svg width="20" height="20" viewBox="0 0 20 20"><path ${STROKE} d="M15 15 L5 5"/><path ${STROKE} d="M15 5 L5 15"/></svg>`,
-
-  // ── Slidenav (fullscreen prev/next — different from slider arrows) ──
-  // These are chevrons-only (no line), wider, for fullscreen navigation
-  'slidenav-previous-large': `<svg width="25" height="40" viewBox="0 0 25 40"><polyline ${STROKE} points="20 2 3 20 20 38"/></svg>`,
-
-  'slidenav-next-large': `<svg width="25" height="40" viewBox="0 0 25 40"><polyline ${STROKE} points="5 2 22 20 5 38"/></svg>`,
-
-  // ── Communication ──
-  mail: `<svg width="20" height="20" viewBox="0 0 20 20"><rect ${STROKE} x="2" y="4" width="16" height="12" rx="1"/><polyline ${STROKE} points="2 5 10 11 18 5"/></svg>`,
-
-  commenting: `<svg width="20" height="20" viewBox="0 0 20 20"><path ${STROKE} d="M2 2 L18 2 L18 13 L11 13 L7 17 L7 13 L2 13 Z"/><circle fill="currentColor" stroke="none" cx="6.5" cy="7.5" r="1"/><circle fill="currentColor" stroke="none" cx="10" cy="7.5" r="1"/><circle fill="currentColor" stroke="none" cx="13.5" cy="7.5" r="1"/></svg>`,
-
-  telegram: `<svg width="24" height="24" viewBox="0 0 24 24"><path ${STROKE} d="m21 3-6.7 18-4.4-7.1L3 10.2 21 3Z"/><path ${STROKE} d="m9.9 13.9 4-3.8"/></svg>`,
-
-  github: `<svg width="24" height="24" viewBox="0 0 24 24"><circle ${STROKE} cx="6" cy="6" r="2.5"/><circle ${STROKE} cx="18" cy="18" r="2.5"/><circle ${STROKE} cx="18" cy="6" r="2.5"/><path ${STROKE} d="M8.5 6h7M6 8.5V18h9.5"/></svg>`,
-
-  // ── Actions ──
-  push: `<svg width="20" height="20" viewBox="0 0 20 20"><line ${STROKE} x1="10" y1="12" x2="10" y2="2"/><polyline ${STROKE} points="6 6 10 2 14 6"/><path ${STROKE} d="M4 8 L4 18 L16 18 L16 8"/></svg>`,
-
-  // ── Audio ──
-  muted: `<svg width="20" height="20" viewBox="0 0 20 20"><path ${STROKE} d="M2 7 L2 13 L6 13 L11 17 L11 3 L6 7 Z"/><line ${STROKE} x1="14" y1="8" x2="18" y2="12"/><line ${STROKE} x1="18" y1="8" x2="14" y2="12"/></svg>`,
-
-  sound: `<svg width="20" height="20" viewBox="0 0 20 20"><path ${STROKE} d="M2 7 L2 13 L6 13 L11 17 L11 3 L6 7 Z"/><path ${STROKE} d="M14 7 Q16 10 14 13"/><path ${STROKE} d="M16.5 5 Q19.5 10 16.5 15"/></svg>`,
-
-  // ── Theme (auto = sun, inverse = moon) ──
-  // Reticle sun (light/auto mode) + console moon (dark/inverse mode).
-  // Stroke width 2 matches all other console icons for visual unity.
-  'theme-auto': `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M22 12h-3M5 12H2M18.5 5.5l-2 2M7.5 16.5l-2 2M18.5 18.5l-2-2M7.5 7.5l-2-2"/></svg>`,
-
-  'theme-inverse': `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14A8 8 0 1 1 10 4a6 6 0 0 0 10 10Z"/><circle fill="currentColor" stroke="none" cx="14" cy="9" r="0.8"/><circle fill="currentColor" stroke="none" cx="16.5" cy="12" r="0.6"/><circle fill="currentColor" stroke="none" cx="13" cy="13" r="0.5"/></svg>`,
-}
-
-/** Register all console-themed icons with UIKit. Call after UIkit.use(Icons). */
 export function registerConsoleIcons(): void {
-  const iconComponent = (UIkit as unknown as { icon?: { add?: (icons: Icons) => void } }).icon
-  if (iconComponent?.add) {
-    iconComponent.add(CONSOLE_ICONS)
-  }
+  const iconComponent = (
+    UIkit as unknown as { icon?: { add?: (icons: Record<string, string>) => void } }
+  ).icon
+  iconComponent?.add?.(CONSOLE_ICONS)
 }

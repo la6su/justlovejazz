@@ -280,7 +280,7 @@ export class CinematicNav {
   private _refreshLabels(): void {
     this._navButtons.forEach((button, index) => {
       const label =
-        this._mainSections[index]?.querySelector('h2')?.textContent?.trim() ||
+        this._mainSections[index]?.querySelector('h1, h2')?.textContent?.trim() ||
         `Section ${index + 1}`
       const labelEl = button.querySelector<HTMLElement>('[data-story-label]')
       if (labelEl) labelEl.textContent = label

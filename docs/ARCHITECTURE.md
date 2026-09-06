@@ -42,6 +42,10 @@ under `src/builder/`; the public builds do not import the editor graph.
   is decorative and `aria-hidden`.
 - The world retains six stable slots. Route identity does not redefine slot
   identity.
+- The `/works` route adds one route-owned `WorksInstallation` to the existing
+  scene. It is a finite kinetic sculpture with shared geometry, explicit
+  disposal and one active project aperture; Vue owns the editorial chapters
+  and keyboard actions around it.
 - `EnvSphere` owns the ambient background. The contact state owns the ground.
 - Actual initialized backend determines renderer capability, DPR and post
   quality.

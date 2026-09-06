@@ -41,6 +41,7 @@ export class RouteTransition {
   async cover(): Promise<void> {
     const sequence = ++this.sequence
     this.cancelCoverTimer()
+    this.cancelRevealTimer()
     if (prefersReducedMotion()) {
       if (this.overlay) this.overlay.dataset.state = 'idle'
       return

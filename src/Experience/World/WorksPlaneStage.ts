@@ -12,12 +12,9 @@ import { loadCaseTexture, releaseCaseTexture } from './caseTexture'
 import { observeReducedMotion, prefersReducedMotion } from '../../core/motionPolicy'
 import type { RenderSurface } from '../Renderer'
 
-const SECTION_PROJECTS = [
-  [0, 1],
-  [2, 3],
-  [4, 5],
-  [6, 7],
-] as const
+import { WORKS_ROOMS, getWorksCaseProject } from '../../core/worksExperience'
+import { eventBus } from '../../core/EventBus'
+import { WorksInstallation } from './WorksInstallation'
 
 interface CaseLayout {
   x: number
@@ -26,25 +23,19 @@ interface CaseLayout {
   scale: number
 }
 
-// Layouts use fractions of the camera frustum. This lets the composition fill
-// a 21:9 desktop and a portrait phone without treating a 16:9 mockup as a
-// universal coordinate system.
-const WIDE_LAYOUT: readonly [CaseLayout, CaseLayout] = [
-  { x: -0.16, y: 0.03, z: -3.05, scale: 0.52 },
-  { x: 0.27, y: -0.16, z: -3.62, scale: 0.32 },
-]
-// UIkit's `@m` grid breakpoint is where the semantic card controls stack.
-// Mirror that exact editorial order in the 3D layer instead of squeezing the
-// desktop two-column coordinates into a narrow viewport.
-const STACKED_LAYOUT: readonly [CaseLayout, CaseLayout] = [
-  { x: -0.03, y: 0.25, z: -3.15, scale: 0.68 },
-  { x: 0.04, y: -0.25, z: -3.52, scale: 0.6 },
-]
-// Unified animation: tap → wobble pulse + direct overlay open (same as BakuCarousel).
-// No 3D plane-to-fullscreen transition — the CSS clip-path iris reveal handles it.
+// One focal exhibit, positioned in the installation. DOM copy has its own
+// editorial space; it no longer pretends to be a rectangle over a 3D plane.
+const WIDE_LAYOUT: CaseLayout = { x: 0.19, y: -0.015, z: -3.8, scale: 0.43 }
+const STACKED_LAYOUT: CaseLayout = { x: 0, y: 0.015, z: -3.8, scale: 0.84 }
 
 export class WorksPlaneStage extends THREE.Group {
   private cards: CasePlane[] = []
+  private installation: WorksInstallation | null = null
+  private themeUnsub: (() => void) | null = null
+  private inverse = false
+  private get activeProject(): number {
+    return getWorksCaseProject() ?? WORKS_ROOMS[this._sectionIndex]!.projectIndex
+  }
   private _camera: THREE.Camera | null = null
   private _raycaster = new THREE.Raycaster()
   private _ndc = new THREE.Vector2()
@@ -74,12 +65,17 @@ export class WorksPlaneStage extends THREE.Group {
   // Reused per-frame layout result; visible cards are laid out every frame and
   // must not allocate a fresh object for each viewport calculation.
   private _tmpScaledLayout: CaseLayout = { x: 0, y: 0, z: 0, scale: 0 }
+  private _installationProject = -1
 
   constructor() {
     super()
     this.name = 'works-plane-stage'
     this.visible = false
     this.renderOrder = 3
+    this.themeUnsub = eventBus.on('jlz:theme-applied', ({ isLight }) => {
+      this.inverse = isLight
+      this.installation?.setInverse(isLight)
+    })
     this._reducedMotionUnsub = observeReducedMotion((reduced) => {
       this.setReducedMotion(reduced)
     })
@@ -93,28 +89,28 @@ export class WorksPlaneStage extends THREE.Group {
     this.cards.forEach((card) => card.setReducedMotion(reduced))
     if (!reduced) return
 
-    const activeProjects = SECTION_PROJECTS[this._sectionIndex]!
+    const activeProject = this.activeProject
     const cardCount = this.cards.length
     for (let index = 0; index < cardCount; index += 1) {
       const card = this.cards[index]!
       const projectIndex = card.userData.projectIndex as number
-      const targetReveal =
-        activeProjects[0] === projectIndex || activeProjects[1] === projectIndex ? 1 : 0
+      const targetReveal = activeProject === projectIndex ? 1 : 0
       this._reveal.set(card, targetReveal)
       card.setReveal(targetReveal)
     }
+    this.installation?.setRoom(this._sectionIndex, true)
     if (this._active && this._camera) this.update(0)
   }
 
   get isAnimating(): boolean {
     if (this._disposed || !this._active) return false
 
-    const activeProjects = SECTION_PROJECTS[this._sectionIndex]!
+    if (this.installation?.isAnimating) return true
+    const activeProject = this.activeProject
     for (let index = 0; index < this.cards.length; index += 1) {
       const card = this.cards[index]!
       const projectIndex = card.userData.projectIndex as number
-      const shouldBeVisible =
-        activeProjects[0] === projectIndex || activeProjects[1] === projectIndex
+      const shouldBeVisible = activeProject === projectIndex
       const reveal = this._reveal.get(card) ?? 0
       // Include departing cards and their cloth pulses: hidden cards still
       // need a few passes to settle their reveal/animation state before the
@@ -166,8 +162,14 @@ export class WorksPlaneStage extends THREE.Group {
         this._reveal.set(plane, 0)
         this.add(plane)
       })
+      this.installation = new WorksInstallation()
+      this.installation.setInverse(this.inverse)
+      this.installation.setProject(this.activeProject)
+      this.installation.setRoom(this._sectionIndex, this._reducedMotion)
+      this.add(this.installation)
       this.cards = stagedCards
       this._layoutDirty = true
+      this._installationProject = -1
     } catch (error) {
       stagedCards.forEach((card) => {
         card.removeFromParent()
@@ -225,12 +227,16 @@ export class WorksPlaneStage extends THREE.Group {
 
   setActive(active: boolean, sectionIndex: number): void {
     if (this._disposed) return
-    const nextSection = THREE.MathUtils.clamp(sectionIndex, 0, SECTION_PROJECTS.length - 1)
+    const nextSection = THREE.MathUtils.clamp(sectionIndex, 0, WORKS_ROOMS.length - 1)
     const changed = active !== this._active || nextSection !== this._sectionIndex
     this._active = active
     this._sectionIndex = nextSection
     this.visible = active
-    if (changed) this._layoutDirty = true
+    if (changed) {
+      this._layoutDirty = true
+      this.installation?.setProject(this.activeProject)
+      this.installation?.setRoom(nextSection, this._reducedMotion)
+    }
   }
 
   /** Open project overlay with unified wobble pulse (same as BakuCarousel).
@@ -238,7 +244,7 @@ export class WorksPlaneStage extends THREE.Group {
   openProject(index: number, openOverlay: (index: number) => void): boolean {
     if (this._disposed || !this._active) return false
     const card = this.cards[index]
-    if (!card || !card.visible) return false
+    if (!card) return false
 
     // Unified cloth wobble pulse — identical to BakuCarousel.handleTap()
     card.pulse(CLOTH_PARAMS.pulseAmount)
@@ -282,13 +288,27 @@ export class WorksPlaneStage extends THREE.Group {
     this.position.copy(this._tmpCameraPosition)
     this.quaternion.copy(this._camera.quaternion)
 
-    const activeProjects = SECTION_PROJECTS[this._sectionIndex]!
+    const activeProject = this.activeProject
+    if (this._installationProject !== activeProject) {
+      this._installationProject = activeProject
+      this.installation?.setProject(activeProject)
+    }
+    this.installation?.update(dt)
+    if (this.installation && this._camera instanceof THREE.PerspectiveCamera) {
+      const height = 2 * Math.tan(THREE.MathUtils.degToRad(this._camera.fov) / 2) * 5.6
+      this.installation.position.set(
+        this._stackedLayout ? 0 : height * this._viewportAspect * 0.19,
+        0,
+        -5.6,
+      )
+      this.installation.scale.setScalar(
+        Math.min(height * 0.34, height * this._viewportAspect * 0.46),
+      )
+    }
     for (let index = 0; index < this.cards.length; index += 1) {
       const card = this.cards[index]!
       const projectIndex = card.userData.projectIndex as number
-      const isPrimary = activeProjects[0] === projectIndex
-      const isSecondary = activeProjects[1] === projectIndex
-      const isVisible = isPrimary || isSecondary
+      const isVisible = activeProject === projectIndex
       const targetReveal = isVisible ? 1 : 0
       const reveal = this._reveal.get(card) ?? 0
       const nextReveal = this._reducedMotion
@@ -310,23 +330,22 @@ export class WorksPlaneStage extends THREE.Group {
         continue
       }
 
-      const layouts = this._stackedLayout ? STACKED_LAYOUT : WIDE_LAYOUT
-      const layout = isPrimary ? layouts[0] : layouts[1]
+      const layout = this._stackedLayout ? STACKED_LAYOUT : WIDE_LAYOUT
       const scaledLayout = this.layoutInView(layout)
 
       // Snap cards to their layout target on first appearance (reveal was 0)
       // so they never fly out from the camera-local origin.
       if (this._reducedMotion) {
         card.position.set(scaledLayout.x, scaledLayout.y, scaledLayout.z)
-        card.rotation.set(isSecondary ? -0.018 : 0.006, isSecondary ? -0.07 : 0.025, 0)
+        card.rotation.set(-0.04, -0.13, -0.035)
         card.scale.setScalar(scaledLayout.scale)
       } else if (reveal < 0.01 && targetReveal > 0.5) {
         card.position.set(scaledLayout.x, scaledLayout.y, scaledLayout.z)
-        card.rotation.set(isSecondary ? -0.018 : 0.006, isSecondary ? -0.07 : 0.025, 0)
+        card.rotation.set(-0.04, -0.13, -0.035)
         card.scale.setScalar(scaledLayout.scale)
       } else {
         this._tmpTargetPosition.set(scaledLayout.x, scaledLayout.y, scaledLayout.z)
-        this._tmpTargetRotation.set(isSecondary ? -0.018 : 0.006, isSecondary ? -0.07 : 0.025, 0)
+        this._tmpTargetRotation.set(-0.04, -0.13, -0.035)
         card.position.lerp(this._tmpTargetPosition, 1 - Math.exp(-dt * 9))
         card.rotation.x += (this._tmpTargetRotation.x - card.rotation.x) * (1 - Math.exp(-dt * 9))
         card.rotation.y += (this._tmpTargetRotation.y - card.rotation.y) * (1 - Math.exp(-dt * 9))
@@ -380,6 +399,10 @@ export class WorksPlaneStage extends THREE.Group {
       card.dispose()
     })
     this.cards = []
+    this.themeUnsub?.()
+    this.themeUnsub = null
+    this.installation?.dispose()
+    this.installation = null
     this._reveal.clear()
     this.clear()
   }

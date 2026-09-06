@@ -7,12 +7,12 @@
  */
 
 @import './_import.less';
-@import './_theme.less';
 @import './_motion.less';
 @import './components/_cursor.less';
 @import './components/_content.less';
 @import './components/_typography.less';
 @import './components/_shell.less';
+@import './components/_crt.less';
 @import './components/_navigation-controls.less';
 @import './components/_builder-page.less';
 
@@ -141,9 +141,8 @@
   width: 4.5rem;
   height: 4.5rem;
   border: 1px solid color-mix(in srgb, var(--jlz-color-text) 50%, transparent);
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--jlz-color-bg-elevated) 38%, transparent);
-  backdrop-filter: blur(10px);
+  border-radius: 0;
+  background: var(--jlz-color-bg-elevated);
   transition: transform 0.3s ease;
 }
 
@@ -221,304 +220,7 @@
    only define the page-specific composition, depth and reveal language.
    ------------------------------------------------------------------ */
 
-.jlz-works-section {
-  padding: 0;
-  background: transparent;
-}
-
-.jlz-works-stage {
-  isolation: isolate;
-  display: grid;
-  width: 100%;
-  height: 100dvh;
-  box-sizing: border-box;
-  grid-template-rows: auto minmax(0, 1fr);
-  gap: clamp(0.85rem, 2vh, 1.5rem);
-  padding: clamp(4.6rem, 7vh, 6rem) clamp(1rem, 4vw, 4.5rem)
-    max(calc(var(--jlz-bottom-controls, 4.5rem) + 1.5rem), 6vh);
-}
-
-.jlz-works-index {
-  position: relative;
-  z-index: 4;
-  width: 100%;
-  max-width: 96rem;
-  margin: 0 auto;
-  color: color-mix(in srgb, var(--jlz-color-text) 54%, transparent);
-  font-family: var(--jlz-font-mono);
-  font-size: 0.65rem;
-  letter-spacing: 0.06em;
-}
-
-.jlz-works-index__number {
-  position: relative;
-  padding-right: 0.85rem;
-  margin-right: 0.85rem;
-  color: var(--jlz-color-accent);
-  font-variant-numeric: tabular-nums;
-}
-
-.jlz-works-index__number::after {
-  position: absolute;
-  top: 50%;
-  right: 0;
-  width: 0.25rem;
-  height: 0.25rem;
-  background: var(--jlz-color-accent);
-  content: '';
-  transform: translateY(-50%);
-}
-
-.jlz-works-index__title {
-  color: color-mix(in srgb, var(--jlz-color-text) 78%, transparent);
-  font-size: inherit;
-  font-weight: 600;
-  text-transform: inherit;
-}
-
-.jlz-works-index__progress {
-  font-variant-numeric: tabular-nums;
-}
-
-// .jlz-works-statement removed — the section title is no longer a duplicate
-// HTML layer behind the work cards.
-
-.jlz-works-composition {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  grid-row: auto;
-  width: auto;
-  min-height: 0;
-  height: auto;
-  margin: 0;
-  display: block;
-}
-
-.jlz-works-composition > * {
-  position: absolute;
-  z-index: 2;
-  display: block;
-  width: 52%;
-  height: auto;
-  min-width: 0;
-  padding: 0;
-  transform: translateY(-50%);
-}
-
-// Keep the semantic caption controls on the same frustum contract as
-// WorksPlaneStage: x/y are the plane centre, width is its normalized scale,
-// and the native 16:9 ratio derives the matching height at every aspect.
-.jlz-works-composition > :first-child {
-  top: 47%;
-  left: 8%;
-}
-
-.jlz-works-composition > :last-child {
-  top: 66%;
-  left: 61%;
-  width: 32%;
-}
-
-.jlz-works-composition > * > * {
-  width: 100%;
-  height: auto;
-  aspect-ratio: 16 / 9;
-}
-
-.jlz-work-card {
-  position: relative;
-  overflow: hidden;
-  width: 100%;
-  height: auto;
-  aspect-ratio: 16 / 9;
-  padding: 0;
-  border: 0;
-  color: var(--jlz-color-text);
-  background: none;
-  cursor: pointer;
-  text-align: left;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.jlz-work-card::after {
-  position: absolute;
-  z-index: 3;
-  inset: 0;
-  border: 0;
-  box-shadow: inset 0 0 0 0 var(--jlz-color-accent);
-  content: '';
-  pointer-events: none;
-  transition:
-    border-color var(--jlz-duration-normal) ease,
-    box-shadow var(--jlz-duration-slow) var(--jlz-ease-entrance);
-}
-
-.jlz-work-card:hover::after,
-.jlz-work-card:focus-visible::after {
-  box-shadow: inset 3px 0 0 0 var(--jlz-color-accent);
-}
-
-.jlz-work-card:focus-visible {
-  outline: 2px solid var(--jlz-color-accent);
-  outline-offset: 4px;
-}
-
-.jlz-work-card__caption {
-  gap: @global-small-margin;
-  padding: clamp(0.75rem, 1.5vw, 1.1rem);
-  border: 0;
-  color: var(--jlz-color-text);
-  background: color-mix(in srgb, var(--jlz-color-bg-elevated) 92%, transparent);
-  pointer-events: none;
-  transition:
-    padding-left var(--jlz-duration-slow) var(--jlz-ease-entrance),
-    background var(--jlz-duration-normal) ease;
-}
-
-.jlz-work-card:hover .jlz-work-card__caption,
-.jlz-work-card:focus-visible .jlz-work-card__caption {
-  padding-left: clamp(1rem, 2vw, 1.5rem);
-  background: color-mix(in srgb, var(--jlz-color-bg-elevated) 97%, transparent);
-}
-
-.jlz-work-card__eyebrow {
-  color: rgba(255, 255, 255, 0.68);
-  font-size: 0.56rem;
-  font-variant-numeric: tabular-nums;
-  font-weight: 600;
-}
-
-.jlz-work-card__copy {
-  min-width: 0;
-  gap: 0.35rem;
-}
-
-.jlz-work-card__title {
-  color: @jlz-color-text;
-  font-size: clamp(@jlz-type-step-2, 2.1vw, @jlz-type-step-3); // φ steps 2–3
-  font-weight: 600;
-  line-height: 1;
-}
-
-.jlz-work-card:hover .jlz-work-card__title,
-.jlz-work-card:focus-visible .jlz-work-card__title {
-  font-weight: 750;
-}
-
-.jlz-work-card__meta {
-  color: rgba(255, 255, 255, 0.66);
-  font-size: 0.64rem;
-  font-weight: 600;
-}
-
-.jlz-works-composition > * {
-  opacity: 0;
-  transition: opacity 0.5s ease;
-}
-
-.jlz-works-section.section-active .jlz-works-composition > * {
-  opacity: 1;
-}
-
-.jlz-works-section.section-active .jlz-works-composition > :last-child {
-  transition-delay: 0.08s;
-}
-
-@media (max-width: 959px) {
-  .jlz-works-stage {
-    gap: 0.75rem;
-    padding: 4.4rem 0.85rem max(calc(var(--jlz-bottom-controls, 4.5rem) + 1rem), 5vh);
-  }
-
-  .jlz-works-composition {
-    align-content: initial;
-  }
-
-  .jlz-works-composition > * {
-    width: 68%;
-  }
-
-  .jlz-works-composition > :first-child {
-    top: 25%;
-    left: 13%;
-  }
-
-  .jlz-works-composition > :last-child {
-    top: 75%;
-    left: 24%;
-    width: 60%;
-  }
-}
-
-@media (max-width: 639px) {
-  .jlz-works-stage {
-    gap: 0.55rem;
-    padding: max(calc(env(safe-area-inset-top) + 4.1rem), 4.6rem) 0.7rem
-      max(calc(var(--jlz-bottom-controls, 4.5rem) + 1.35rem), 6.4rem);
-  }
-
-  .jlz-works-index {
-    padding: 0 0.3rem;
-    font-size: 0.58rem;
-  }
-
-  .jlz-works-index__number {
-    padding-right: 0.55rem;
-    margin-right: 0.55rem;
-  }
-
-  .jlz-works-index__title {
-    max-width: 53vw;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .jlz-works-composition.jlz-works-composition {
-    margin-top: 0;
-  }
-
-  .jlz-works-composition > * {
-    height: auto;
-    margin-top: 0;
-  }
-
-  .jlz-works-composition > * + * {
-    margin-top: 0;
-  }
-
-  .jlz-work-card__caption {
-    min-height: 3.6rem;
-    padding: 0.62rem 0.72rem;
-    border-color: color-mix(in srgb, var(--jlz-color-text) 22%, transparent);
-    background: color-mix(in srgb, var(--jlz-color-bg-elevated) 95%, transparent);
-  }
-
-  .jlz-work-card__title {
-    font-size: clamp(@jlz-type-step-1, 5.2vw, @jlz-type-step-2); // φ steps 1–2
-  }
-
-  .jlz-work-card__meta {
-    font-size: 0.55rem;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .jlz-works-composition > *,
-  .jlz-work-card__caption {
-    opacity: 1;
-    transform: none !important;
-    transition: none;
-  }
-
-  .studio-title,
-  .jlz-menu-stat__num,
-  .jlz-menu-nav__label,
-  .jlz-work-card__title {
-    transition: none;
-  }
-}
+@import './components/_works-rooms.less';
 
 @media (max-width: 768px) {
   html {
@@ -560,7 +262,7 @@
 .jlz-theme-toggle [uk-icon] {
   width: 1rem;
   height: 1rem;
-  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.18));
+  filter: none;
 }
 
 // Vue-owned structural route roots: home is marked by its semantic page-view
@@ -605,7 +307,7 @@
 }
 
 #spa-content > .jlz-page > .jlz-works-section:not(.jlz-menu-overlay):not([data-contact-footer]) {
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--jlz-color-text);
   background: transparent;
 }
 
@@ -700,7 +402,7 @@
   height: 2.55rem;
   color: inherit;
   overflow: hidden;
-  border-radius: 50%;
+  border-radius: 0;
 }
 
 .jlz-storyline {
@@ -911,7 +613,7 @@ body[data-cinematic-sheet]
   #spa-content
     > .jlz-page
     > .jlz-page-section:not(.jlz-menu-overlay):not([data-contact-footer])
-    > .uk-container {
+    > .uk-container:not(.jlz-works-stage) {
     padding: 5.4rem 1.15rem 9rem;
   }
 
@@ -1047,6 +749,26 @@ body[data-cinematic-sheet]
 // inverse mode → show moon (theme-inverse)
 .jlz-theme-toggle.is-inverse [uk-icon='icon: theme-inverse'] {
   display: inline-block;
+}
+
+.jlz-theme-toggle:not(.is-inverse) {
+  color: var(--jlz-color-text-muted);
+}
+.jlz-theme-toggle.is-inverse {
+  color: var(--jlz-color-accent-secondary);
+}
+
+.jlz-sound-toggle [uk-icon] {
+  width: 1rem;
+  height: 1rem;
+}
+
+.jlz-sound-toggle.is-muted {
+  color: var(--jlz-color-text-muted);
+}
+
+.jlz-sound-toggle:not(.is-muted) {
+  color: var(--jlz-color-signal-phosphor);
 }
 
 .jlz-menu-container {

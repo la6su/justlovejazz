@@ -19,6 +19,9 @@ interface Principle {
   desc: string[]
   href: string
   key: string
+  protocol: string
+  evidence: string
+  routeLabel: string
 }
 
 const PRINCIPLES: readonly Principle[] = [
@@ -29,6 +32,9 @@ const PRINCIPLES: readonly Principle[] = [
     desc: ['We solve different problems.', 'We improve experience and understand the pain.'],
     href: '/blog/tsl-changes-everything',
     key: 'manifesto.purpose',
+    protocol: 'Start with the tension, not the format.',
+    evidence: 'A brief becomes a point of view before it becomes a component.',
+    routeLabel: 'See the work',
   },
   {
     num: '02',
@@ -37,6 +43,9 @@ const PRINCIPLES: readonly Principle[] = [
     desc: ['Clear logic.', 'No noise.'],
     href: '/blog/on-demand-rendering',
     key: 'manifesto.clarity',
+    protocol: 'Every effect must explain a state.',
+    evidence: 'Semantic DOM, one scene owner, one measurable reason to animate.',
+    routeLabel: 'Read the method',
   },
   {
     num: '03',
@@ -45,6 +54,9 @@ const PRINCIPLES: readonly Principle[] = [
     desc: [],
     href: '/blog/undercurrent-webgpu-fluid',
     key: 'manifesto.emotion',
+    protocol: 'Presence is authored through rhythm.',
+    evidence: 'Light, sound and motion settle into a state the visitor can read.',
+    routeLabel: 'Enter Services',
   },
   {
     num: '04',
@@ -53,6 +65,9 @@ const PRINCIPLES: readonly Principle[] = [
     desc: [],
     href: '/blog/glassmorphism-webgpu',
     key: 'manifesto.simplicity',
+    protocol: 'Remove until the signal gets stronger.',
+    evidence: 'The interface leaves room for the project and keeps the next action clear.',
+    routeLabel: 'Start a project',
   },
 ]
 </script>
@@ -84,10 +99,8 @@ const PRINCIPLES: readonly Principle[] = [
         :id="`section-${p.key.replace('manifesto.', 'manifesto-')}`"
         :data-page-section="`${p.key.replace('manifesto.', 'manifesto-')}`"
       >
-        <div
-          class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-height-1-1"
-        >
-          <div class="jlz-section-top uk-text-center uk-flex uk-flex-column uk-flex-middle">
+        <div class="uk-container uk-container-expand uk-height-1-1 jlz-manifesto-room">
+          <div class="jlz-manifesto-head">
             <span
               class="jlz-eyebrow uk-display-inline-block"
               data-eyebrow
@@ -100,37 +113,33 @@ const PRINCIPLES: readonly Principle[] = [
             >
               {{ p.title }}
             </h2>
-            <p class="uk-text-lead uk-margin-small-top" :data-i18n="`${p.key}.lead`">
+            <p
+              class="uk-text-lead uk-margin-small-top jlz-manifesto-lead"
+              :data-i18n="`${p.key}.lead`"
+            >
               {{ p.lead }}
             </p>
           </div>
-          <div class="jlz-section-bottom">
-            <div class="jlz-cinematic-shell">
-              <div>
-                <span aria-hidden="true">></span>
-              </div>
-              <div>
-                <div v-if="p.desc.length" class="jlz-service-desc uk-flex uk-flex-column">
-                  <p
-                    v-for="(line, d) in p.desc"
-                    :key="d"
-                    class="uk-text-meta uk-margin-remove"
-                    :data-i18n="`${p.key}.desc${d + 1}`"
-                  >
-                    {{ line }}
-                  </p>
-                </div>
-                <a
-                  :href="p.href"
-                  class="jlz-service-explore uk-button uk-button-default uk-button-small uk-text-uppercase uk-margin-top uk-flex uk-flex-none uk-flex-inline uk-flex-middle"
+          <div class="jlz-manifesto-grid">
+            <div class="jlz-manifesto-index" aria-hidden="true">{{ p.num }}<span>/04</span></div>
+            <div class="jlz-manifesto-protocol">
+              <p class="jlz-manifesto-protocol__label">WORKING PROTOCOL</p>
+              <p class="jlz-manifesto-protocol__line">{{ p.protocol }}</p>
+              <p class="jlz-manifesto-evidence">{{ p.evidence }}</p>
+              <div v-if="p.desc.length" class="jlz-service-desc uk-flex uk-flex-column">
+                <p
+                  v-for="(line, d) in p.desc"
+                  :key="d"
+                  class="uk-text-meta uk-margin-remove"
+                  :data-i18n="`${p.key}.desc${d + 1}`"
                 >
-                  <span
-                    class="jlz-service-explore__dot uk-display-inline-block"
-                    aria-hidden="true"
-                  ></span>
-                  <span data-i18n="common.readMore">Read more</span>
-                </a>
+                  {{ line }}
+                </p>
               </div>
+              <a :href="p.href" class="uk-button uk-button-text jlz-manifesto-link"
+                ><span>{{ p.routeLabel }}</span
+                ><span aria-hidden="true">↗</span></a
+              >
             </div>
           </div>
         </div>

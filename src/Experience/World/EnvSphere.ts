@@ -14,15 +14,15 @@ interface SectionPattern {
   light: number
 }
 
-// Six material tones within one warm paper/ink world. The route has a local
+// Six material tones within one cool console world. The route has a local
 // temperature, but never becomes a rainbow of unrelated scenes.
 const SECTION_PATTERNS: readonly SectionPattern[] = [
-  { dark: 0x110e0b, light: 0xf5e7d4 }, // lab
-  { dark: 0x0c0b0a, light: 0xefe0cc }, // intro
-  { dark: 0x12100e, light: 0xead8c1 }, // about
-  { dark: 0x17120f, light: 0xf1e3d0 }, // works
-  { dark: 0x100d0b, light: 0xe8d4bc }, // contact
-  { dark: 0x0e0c0b, light: 0xefe0cc }, // menu
+  { dark: 0x0b1017, light: 0xe9eef5 }, // lab
+  { dark: 0x0b0e14, light: 0xe9eef5 }, // intro
+  { dark: 0x0c1119, light: 0xe4ebf3 }, // about
+  { dark: 0x0b1018, light: 0xe9eef5 }, // works
+  { dark: 0x0a1118, light: 0xe3ecf3 }, // contact
+  { dark: 0x0b0e14, light: 0xe9eef5 }, // menu
 ]
 
 const PAVILION_WIDTH = 66

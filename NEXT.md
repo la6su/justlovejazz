@@ -7,7 +7,45 @@ Do not reopen completed migration phases. Current runtime contracts are in
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md); verification is in
 [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md).
 
+## Works direction
+
+Works is a four-room exhibition: Listening, Signal, Atmosphere, After hours.
+Every room remains one viewport in the cinematic track; never insert untracked
+hero/index blocks or filter rooms out of that track. UIkit owns flow components;
+the camera-aligned exhibit layer owns its explicitly positioned hit targets.
+
+- Verify the revised room compositions on physical WebGPU and forced WebGL,
+  including ultrawide and short landscape viewports, before release.
+- Review the three editorial case notes and their proof sources before public
+  publication; do not present review-state entries as approved client evidence.
+
 ## Active engineering queue
+
+### World and project development
+
+- [ ] Validate the revised post graph on physical WebGPU: stable grain,
+      edge-weighted chromatic separation, continuous border interpolation and
+      bounded refraction UVs. Compare direct WebGL presentation separately;
+      the shared CRT bezel is independent of the post graph.
+
+- [ ] Author distinct project-specific scenes for the four featured works,
+      extending the current project-directed installation into richer geometry
+      and reviewed assets. Keep one renderer, canonical slots and explicit
+      disposal.
+- [ ] Connect case chapters to meaningful material changes: initial condition,
+      interaction mechanism, inspectable result and reflection. Define each
+      transition's reduced-motion settled state before adding animation.
+- [ ] Replace provisional project illustrations with reviewed original assets,
+      playable captures and process evidence; approve bilingual case copy before
+      publishing client or performance claims.
+- [ ] Consolidate camera aperture and DOM hit-target sizing into a typed layout
+      contract; verify ultrawide, 320px mobile and short landscape layouts.
+- [ ] Review EnvSphere's remaining basic materials against the TSL material
+      contract and measure both backends before migrating its pavilion shading.
+- [ ] Capture normal/inverse, keyboard and reduced-motion visual baselines for
+      every public route, plus separate physical WebGPU and WebGL runs.
+
+Theme ownership and visual rules: [`docs/THEME.md`](docs/THEME.md).
 
 - [x] **Initialize StateBus before renderer demand** — the animation state
       owner is constructed before async renderer/Tres setup, so an early resize

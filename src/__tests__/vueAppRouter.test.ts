@@ -174,6 +174,13 @@ describe('mountVueApp prerender adoption', () => {
     // render replaces it (no hydration attempt, no mismatch).
     expect(document.getElementById('prerender-marker')).toBeNull()
     expect(document.getElementById('section-works-01')).toBeTruthy()
+    const rooms = document.querySelectorAll(
+      '.jlz-works-page > .jlz-works-section[data-page-section]',
+    )
+    expect(rooms).toHaveLength(4)
+    expect(document.querySelectorAll('.jlz-works-page .jlz-works-aperture')).toHaveLength(4)
+    expect(document.querySelector('.jlz-work-card__case-link.uk-position-cover')).toBeNull()
+    expect(document.querySelector('.jlz-works-hero')).toBeNull()
     expect(document.getElementById('spa-content')?.dataset.pageView).toBe('content')
   })
 

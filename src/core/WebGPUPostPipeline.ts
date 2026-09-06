@@ -13,8 +13,6 @@ import {
   vec3,
   mix,
   smoothstep,
-  step,
-  time,
   sin,
   cos,
   float,
@@ -156,10 +154,10 @@ export class WebGPUPostPipeline {
       const rDist = rCenter.length()
       const rStrength = this._refractStrength.mul(float(0.5).add(rDist.mul(1.5)))
       const rWobble = vec2(
-        sin(uv().y.mul(20.0).add(time.mul(0.5))),
-        cos(uv().x.mul(20.0).add(time.mul(0.5))),
+        sin(uv().y.mul(20.0).add(this._refractStrength.mul(8.0))),
+        cos(uv().x.mul(20.0).add(this._refractStrength.mul(8.0))),
       ).mul(rStrength.mul(0.003))
-      const refractUv = uv().add(rCenter.mul(rStrength).mul(0.04)).add(rWobble)
+      const refractUv = uv().add(rCenter.mul(rStrength).mul(0.04)).add(rWobble).clamp(0.0, 1.0)
 
       // ── 2. Sample scene at refracted UV ──
       // WebGL2: vec3 scene = texture2D(uScene, uv).xyz;
@@ -172,9 +170,13 @@ export class WebGPUPostPipeline {
       // Use max(length, 0.001) to avoid NaN (zero chromatic at center is fine).
       const cCenter = uv().sub(0.5)
       const cLen = max(cCenter.length(), float(0.001))
-      const cDir = cCenter.div(cLen).mul(this._chromaticStrength)
-      const rChan = (sceneColor as any).sample(refractUv.add(cDir)).x
-      const bChan = (sceneColor as any).sample(refractUv.sub(cDir)).z
+      // Keep the focal center clean; spectral separation belongs to the glass edge.
+      const cDir = cCenter
+        .div(cLen)
+        .mul(this._chromaticStrength)
+        .mul(smoothstep(0.1, 0.65, cLen))
+      const rChan = (sceneColor as any).sample(refractUv.add(cDir).clamp(0.0, 1.0)).x
+      const bChan = (sceneColor as any).sample(refractUv.sub(cDir).clamp(0.0, 1.0)).z
       scene = vec3(rChan, scene.y, bChan)
 
       // ── 4. Bloom composite ──
@@ -209,10 +211,10 @@ export class WebGPUPostPipeline {
       // Portable integer-based hash (NOT sin-based — sin() gives different
       // precision in GLSL vs WGSL, causing grain mismatch between WebGL2 and WebGPU).
       // hash(p) = fract((p3.x + p3.y) * p3.z) where p3 = fract(vec3(p.xyx)*0.1031) + dot(...)
-      // This is bit-identical across backends → grain looks the same on WebGPU and WebGL2.
-      const noiseCoord = uv()
-        .mul(1024.0)
-        .add(vec2(time.mul(10.0)))
+      // This graph is admitted only on WebGPU; WebGL currently renders directly.
+      // Static film texture: route uniforms animate its strength, not wall time.
+      // Unrelated demand frames must not restart visible grain or glass wobble.
+      const noiseCoord = uv().mul(1024.0)
       const nFloor = floor(noiseCoord)
       const nFract = fract(noiseCoord)
       const nSmooth = nFract.mul(nFract).mul(float(3.0).sub(nFract.mul(2.0)))
@@ -278,11 +280,10 @@ export class WebGPUPostPipeline {
       const edge = innerEdge.mul(outerEdge) // Node<"vec2">
       const edgeScalar: any = (edge.x as any).mul(edge.y as any) // scalar (Node<"float">)
       // MIRROR WebGL2: color *= edge.x * edge.y (full, no mix attenuate)
-      // R-10 fix: use step(0.001, borderStrength) — was step(0.0, x) which
-      // returns 1 when x>=0 (always true for non-negative) → border applied even
-      // when border=0. WebGL2 uses `if (uBorder > 0.0)`. step(0.001, x) returns
-      // 1 only when x > 0.001, mirroring the WebGL2 skip-when-zero behavior.
-      const borderGate = step(float(0.001), this._borderStrength)
+      // Interpolate authored strength continuously; a binary gate caused a
+      // full black edge to pop in at the beginning of a section crossfade.
+      // The persistent CRT bezel is owned by _crt.less on both backends.
+      const borderGate = this._borderStrength.clamp(0.0, 1.0)
       const borderFactor = mix(float(1.0), edgeScalar, borderGate)
       color = color.mul(borderFactor)
 

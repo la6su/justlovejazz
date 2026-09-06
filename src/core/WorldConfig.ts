@@ -184,7 +184,7 @@ const HOME_RAW: Array<Omit<RawScene, 'domSection' | 'range'>> = [
     ...DEFAULTS,
     id: 'sec_lab',
     context: 'LAB — Experiments',
-    sectionTheme: 'light',
+    sectionTheme: 'dark',
   },
   {
     ...DEFAULTS,
@@ -395,10 +395,7 @@ const PALETTES: Record<string, ContentPalette> = {
 function makeContentScenes(pageId: string): PhaseConfig[] {
   const p = PALETTES[pageId]
   if (!p) return RAW.map(toPhaseConfig)
-  // Alternate section themes so inverse mode creates contrast between sections.
-  // Even indices = dark, odd indices = light. In auto mode, sections alternate
-  // dark/light. In inverse mode, they flip to light/dark.
-  const themes: Array<'light' | 'dark'> = ['dark', 'light', 'dark', 'light', 'dark', 'light']
+  // The world stays dark; inverse is an explicit user preference.
   // Content pages mirror the six-face track geometry: the frame count and
   // story ranges come from the canonical slot tuple; only the DOM anchor
   // namespace is content-page-specific (`content-${idx}`), not the home slot
@@ -410,7 +407,7 @@ function makeContentScenes(pageId: string): PhaseConfig[] {
       context: `Content — ${pageId} face ${idx}`,
       domSection: `content-${idx}`,
       range: [...worldSlotAt(idx).range],
-      sectionTheme: themes[idx]!,
+      sectionTheme: 'dark',
       bakuColor: p.bakuColor,
       bakuEmissive: p.bakuEmissive,
       // Authored per-page voice instead of hard zeros: the route switch now
