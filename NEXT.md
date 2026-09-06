@@ -45,6 +45,20 @@ the camera-aligned exhibit layer owns its explicitly positioned hit targets.
 - [ ] Capture normal/inverse, keyboard and reduced-motion visual baselines for
       every public route, plus separate physical WebGPU and WebGL runs.
 
+### Codebase audit follow-up
+
+- [ ] Remove the stale `eslint-disable` in `JunniParticles.ts` and keep the
+      warning budget at zero errors with an explicit review of remaining
+      boundary casts.
+- [ ] Decide whether `@dietrichgebert/ponytail` belongs in the project
+      manifest or only in the local development toolchain; remove it from the
+      app dependency graph if it is not installed by project contributors.
+- [ ] Replace the remaining renderer-boundary `any` casts with narrow Three.js
+      and WebGPU adapter types when the next renderer maintenance slice lands;
+      do not widen the public scene-owner contracts to silence lint warnings.
+- [ ] Keep the Less ownership split flat: one canonical control-bank block per
+      surface, generated builder Less changed only through its compiler.
+
 Theme ownership and visual rules: [`docs/THEME.md`](docs/THEME.md).
 
 - [x] **Initialize StateBus before renderer demand** — the animation state
