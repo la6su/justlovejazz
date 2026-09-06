@@ -8,7 +8,7 @@
     <link rel="manifest" href="/site.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
-    <meta name="theme-color" content="#050507" />
+    <meta name="theme-color" content="#0b0e14" />
     <meta name="author" content="JUSTLOVEJAZZ" />
     <meta name="color-scheme" content="dark light" />
     <title>JUSTLOVEJAZZ — Web Design & Interactive 3D Studio</title>
@@ -117,12 +117,13 @@
     <!-- Brand variable family with Latin + Cyrillic in one local file. -->
     <link
       rel="preload"
-      href="/fonts/commissioner-variable.ttf"
+      href="/fonts/jetbrains-mono-latin.woff2"
       as="font"
-      type="font/ttf"
+      type="font/woff2"
       crossorigin
     />
     <link rel="stylesheet" href="/fonts/commissioner.css" />
+    <link rel="stylesheet" href="/fonts/jetbrains-mono.css" />
     <link rel="stylesheet" href="/fonts/press-start.css" />
 
     <!-- Inline CSS — minimal, just bg to prevent white flash before app CSS loads -->
@@ -134,15 +135,16 @@
       body {
         margin: 0;
         padding: 0;
-        background: #050507;
+        background: #0b0e14;
         overflow: hidden;
       }
       body {
         font-family:
+          'JetBrains Mono',
           'Commissioner',
           -apple-system,
           BlinkMacSystemFont,
-          sans-serif;
+          monospace;
       }
       #app {
         position: relative;
@@ -167,7 +169,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: #050507;
+        background: #0b0e14;
         overflow: hidden;
         transition: background-color 0.3s ease;
       }
@@ -283,7 +285,7 @@
         left: 0;
         width: 100%;
         height: 50%;
-        background: #050507;
+        background: #0b0e14;
         z-index: 10011;
         transition: transform 0.8s cubic-bezier(0.65, 0, 0.35, 1);
       }

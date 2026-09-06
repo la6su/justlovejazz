@@ -1,23 +1,21 @@
-/* Shared circular navigation controls for project overlay and Works slider. */
+/* Shared navigation controls for project overlay and Works slider — flat
+   hairline console buttons, no glass. */
 
 .jlz-nav-arrow {
   width: clamp(4rem, 5.6vw, 5.75rem);
   height: clamp(4rem, 5.6vw, 5.75rem);
   padding: 0;
-  border: 1px solid color-mix(in srgb, var(--jlz-color-text) 34%, transparent);
-  border-radius: 50%;
+  border: 1px solid var(--jlz-color-border-strong);
+  border-radius: 0;
   color: var(--jlz-color-text);
-  background: color-mix(in srgb, var(--jlz-color-bg-elevated) 58%, transparent);
-  box-shadow: var(--jlz-nav-control-shadow);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: color-mix(in srgb, var(--jlz-color-bg-elevated) 82%, transparent);
+  box-shadow: none;
   cursor: pointer;
   pointer-events: auto;
   transition:
     color 180ms ease,
     border-color 180ms ease,
-    background 180ms ease,
-    transform 260ms var(--jlz-ease-emphasis);
+    background 180ms ease;
 }
 
 .jlz-nav-arrow svg {
@@ -27,14 +25,13 @@
 
 .jlz-nav-arrow:hover,
 .jlz-nav-arrow:focus-visible {
-  border-color: var(--jlz-color-accent);
-  color: var(--jlz-color-accent);
-  background: color-mix(in srgb, var(--jlz-color-bg-elevated) 80%, transparent);
-  transform: scale(1.06);
+  border-color: var(--jlz-color-signal-phosphor);
+  color: var(--jlz-color-signal-phosphor);
+  background: color-mix(in srgb, var(--jlz-color-bg-elevated) 94%, transparent);
 }
 
 .jlz-nav-arrow:focus-visible {
-  outline: 2px solid var(--jlz-color-signal-teal);
+  outline: 2px solid var(--jlz-color-signal-phosphor);
   outline-offset: 4px;
 }
 

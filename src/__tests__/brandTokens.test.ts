@@ -68,8 +68,8 @@ function parseLessTokens(): Map<string, string> {
 }
 
 describe('brand token manifest', () => {
-  it('holds exactly the 96 canonical §1 tokens', () => {
-    expect(BRAND_TOKEN_NAMES).toHaveLength(96)
+  it('holds exactly the 97 canonical §1 tokens', () => {
+    expect(BRAND_TOKEN_NAMES).toHaveLength(97)
     expect(new Set(BRAND_TOKEN_NAMES).size).toBe(BRAND_TOKEN_NAMES.length)
   })
 
@@ -79,26 +79,29 @@ describe('brand token manifest', () => {
     }
   })
 
-  it('locks the Neon Stage literals for the core brand facts', () => {
-    expect(brandToken('jlz-color-bg')).toBe('#08090b')
-    expect(brandToken('jlz-color-text')).toBe('#eef1f5')
+  it('locks the Neuro Console literals for the core brand facts', () => {
+    expect(brandToken('jlz-color-bg')).toBe('#0b0e14')
+    expect(brandToken('jlz-color-text')).toBe('#e6edf3')
     expect(brandToken('jlz-color-accent')).toBe('#ffd60a')
+    expect(brandToken('jlz-color-signal-phosphor')).toBe('#58e6a9')
     expect(brandToken('jlz-color-accent-glow')).toBe('rgba(255, 214, 10, 0.35)')
-    expect(brandToken('jlz-color-status-success')).toBe('#45d68c')
+    expect(brandToken('jlz-color-status-success')).toBe('#58e6a9')
+    expect(brandToken('jlz-color-status-warning')).toBe('#f0883e')
     expect(brandToken('jlz-ease-entrance')).toBe('cubic-bezier(0.16, 1, 0.3, 1)')
     expect(brandToken('jlz-space-8')).toBe('2rem')
     expect(brandToken('jlz-z-modal')).toBe('2000')
     expect(brandToken('jlz-duration-cinematic')).toBe('800ms')
-    expect(brandToken('jlz-nav-control-shadow')).toBe('0 1.4rem 3rem rgba(0, 0, 0, 0.22)')
   })
 
-  it('routes shared navigation shadow through the canonical CSS token', () => {
+  it('keeps the shared navigation chrome flat through the canonical token decision', () => {
     const navigationLess = readFileSync(
       resolve(process.cwd(), 'src/assets/components/_navigation-controls.less'),
       'utf8',
     )
-    expect(navigationLess).toContain('box-shadow: var(--jlz-nav-control-shadow);')
+    // Flat console buttons: the depth shadow is retired with the glass blur.
+    expect(navigationLess).toContain('box-shadow: none;')
     expect(navigationLess).not.toContain('rgba(0, 0, 0, 0.22)')
+    expect(navigationLess).not.toContain('backdrop-filter')
   })
 
   it('records every alias and the aliases resolve to the referenced value', () => {
@@ -106,7 +109,7 @@ describe('brand token manifest', () => {
       'color-accent-secondary',
       'color-signal-teal',
       'color-signal-teal-muted',
-      'color-status-warning',
+      'color-status-success',
       'color-status-danger',
       'color-fluid-warm',
       'button-radius',
@@ -138,7 +141,7 @@ describe('brand token manifest', () => {
 
   it('the manifest mirrors §1 of _import.less key-for-key', () => {
     const less = parseLessTokens()
-    expect(less.size).toBe(96)
+    expect(less.size).toBe(97)
     expect([...less.keys()].sort()).toEqual([...BRAND_TOKEN_NAMES].sort())
   })
 

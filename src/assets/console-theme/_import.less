@@ -17,17 +17,11 @@
 //   - UIKit component imports
 //   - UIKit variable overrides (@global-margin, @global-gutter, etc.)
 
-// ── Primary/secondary font (bold uppercase for headings, nav, labels) ──
-@global-primary-font-family:
-  'Commissioner',
-  -apple-system,
-  BlinkMacSystemFont,
-  'Segoe UI',
-  Roboto,
-  sans-serif;
-@global-primary-font-weight: 800;
-@global-primary-text-transform: uppercase;
-@global-primary-letter-spacing: @jlz-letter-spacing;
+// ── Primary/secondary font (console mono — headings, nav, labels) ──
+@global-primary-font-family: @jlz-font-display;
+@global-primary-font-weight: 600;
+@global-primary-text-transform: none;
+@global-primary-letter-spacing: -0.02em;
 @global-primary-font-style: inherit;
 
 @global-secondary-font-family: inherit;
@@ -38,8 +32,9 @@
 
 // ── Heading typography (replaces main.less h1..h6 selector) ──
 // UIKit base.less reads these via @base-heading-text-transform / @base-heading-letter-spacing.
-@base-heading-text-transform: uppercase;
-@base-heading-letter-spacing: @jlz-letter-spacing;
+// Console headings: mono, sentence case, slightly tracked-in.
+@base-heading-text-transform: none;
+@base-heading-letter-spacing: -0.02em;
 
 // ── Status colors — owned by the brand status tokens (ADR 0007) ──
 @global-success-background: @jlz-color-status-success;

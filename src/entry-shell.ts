@@ -25,7 +25,7 @@ const startApp = () =>
       const fallback = document.createElement('div')
       fallback.style.cssText =
         'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;' +
-        'background:#050507;color:rgba(255,255,255,0.7);font-family:system-ui,sans-serif;' +
+        "background:#0b0e14;color:rgba(255,255,255,0.7);font-family:'JetBrains Mono',system-ui,monospace;" +
         'font-size:14px;text-align:center;padding:2rem;z-index:9999;'
       fallback.innerHTML =
         'Experience failed to load.<br/><br/>' +
