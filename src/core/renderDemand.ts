@@ -10,13 +10,13 @@
 // Two DELIBERATELY DIFFERENT flag sets are preserved — this is real behavior,
 // not a simplification, and must not be "fixed" when the consumer migrates:
 //
-//   - `anyActivity` is the 13-flag OR. It is used BOTH to raise render demand
+//   - `anyActivity` is the 14-flag OR. It is used BOTH to raise render demand
 //     (any active flag re-arms the frame) and to decide whether demand may
 //     settle after a rendered frame.
 //   - `idleForAmbientBreath` is a narrower 10-flag AND-NOT plus the
 //     reduced-motion gate. It decides when the ~2.5 s ambient-breath timer
-//     may run. It intentionally EXCLUDES `drawTrail`, `cubeRotating` and
-//     `camPulsing`: those keep the loop alive on their own
+//     may run. It intentionally EXCLUDES `drawTrail`, `cubeRotating`,
+//     `camPulsing` and `showreel`: those keep the loop alive on their own
 //     and must not also trigger the breath. Phase 7 moves the timer itself to
 //     a wall-clock `setTimeout` owned by the Experience bootstrap; this file
 //     only answers "is the scene idle enough to breathe now".
@@ -30,7 +30,7 @@
 
 /**
  * The per-frame activity flags. Each mirrors a "something is moving" source in
- * the scene. The 13 flags form the `anyActivity` set; the ambient-breath idle
+ * the scene. The 14 flags form the `anyActivity` set; the ambient-breath idle
  * check reads a narrower subset (see `idleForAmbientBreath`).
  */
 export interface RenderActivity {
@@ -60,6 +60,8 @@ export interface RenderActivity {
   particles: boolean
   /** A visible ambient-motion scene needs continuous frames (respects reduced motion). */
   ambientScene: boolean
+  /** The showreel theater is transitioning or its video is playing. */
+  showreel: boolean
 }
 
 /** Every flag clear — the identity activity. */
@@ -77,10 +79,11 @@ export const NO_ACTIVITY: RenderActivity = {
   camPulsing: false,
   particles: false,
   ambientScene: false,
+  showreel: false,
 }
 
 /**
- * The 13-flag OR. Used to RAISE render demand and to decide whether demand may
+ * The 14-flag OR. Used to RAISE render demand and to decide whether demand may
  * SETTLE after a frame. If any flag is set, the scene is still changing.
  */
 export function anyActivity(a: RenderActivity): boolean {
@@ -97,14 +100,15 @@ export function anyActivity(a: RenderActivity): boolean {
     a.cubeRotating ||
     a.camPulsing ||
     a.particles ||
-    a.ambientScene
+    a.ambientScene ||
+    a.showreel
   )
 }
 
 /**
  * The narrower idle check for the ambient-breath timer: reduced motion is off
  * AND the 10 "breath-relevant" flags are all clear. `drawTrail`,
- * `cubeRotating` and `camPulsing` are intentionally excluded —
+ * `cubeRotating`, `camPulsing` and `showreel` are intentionally excluded —
  * setting only one of them must still count as idle for the breath (they keep
  * the loop alive on their own).
  */
@@ -131,7 +135,7 @@ export function shouldRender(needsRender: boolean, a: RenderActivity): boolean {
 
 /**
  * After a rendered frame, demand may settle (the flag may be cleared) only when
- * nothing is still active. This is the same 12-flag set as `anyActivity`.
+ * nothing is still active. This is the same 14-flag set as `anyActivity`.
  */
 export function demandSettles(a: RenderActivity): boolean {
   return !anyActivity(a)

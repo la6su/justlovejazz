@@ -54,6 +54,23 @@ export interface AppEvents {
   'jlz:theme-change': { mode: ThemeMode }
   /** Fired by BakuCarousel on a card wobble tap. */
   'jlz:wobble-pulse': void
+  /** Fired by ShowreelConsole when the showreel trigger requests the theater. */
+  'jlz:showreel-open': void
+  /** Fired by ShowreelConsole (close button / Esc) to exit the theater. */
+  'jlz:showreel-close': void
+  /** Fired by ShowreelConsole (video surface / Space) to toggle playback. */
+  'jlz:showreel-toggle-play': void
+  /**
+   * Fired by the ShowreelTheater whenever its observable state changes
+   * (phase transitions, play/pause, video timeupdate). ShowreelConsole is
+   * the chrome consumer; nothing else should listen.
+   */
+  'jlz:showreel-state': {
+    phase: 'closed' | 'enter' | 'open' | 'exit'
+    playing: boolean
+    time: number
+    duration: number
+  }
 }
 
 type Handler<K extends keyof AppEvents> = (payload: AppEvents[K]) => void

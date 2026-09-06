@@ -28,5 +28,5 @@
   },
 
   "include": ["src", "admin", "vite.config.ts"],
-  "exclude": ["node_modules", "dist", "references"]
+  "exclude": ["node_modules", "dist"]
 }

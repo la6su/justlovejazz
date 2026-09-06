@@ -54,6 +54,7 @@ import type { ContactTypographyStage } from './World/ContactTypographyStage'
 import type { ContactHaloStage } from './World/ContactHaloStage'
 import type { ManifestoInkStage } from './World/ManifestoInkStage'
 import type { ContactCyprusStage } from './World/ContactCyprusStage'
+import { ShowreelTheater } from './World/ShowreelTheater'
 import { getLabExperiment, type LabExperimentObject } from './Lab/manifest'
 import { disposeAllCaseTextures } from './World/caseTexture'
 // DissolveOverlay removed — cover transition in ProjectDetail replaces it.
@@ -183,6 +184,14 @@ export class Experience {
   private servicesStage: ServicesStage | null = null
   private _worksPlaneStagePromise: Promise<void> | null = null
   private _worksPlaneStageRequest = 0
+  // Showreel theater: a private render mode (own scene + ortho camera) swapped
+  // in at the render call while open. Created lazily on the first
+  // `jlz:showreel-open`, so neither the video element nor its texture exist
+  // before the visitor asks for the showreel.
+  private showreelTheater: ShowreelTheater | null = null
+  private _showreelOpenUnsub: (() => void) | null = null
+  private _showreelCloseUnsub: (() => void) | null = null
+  private _showreelTogglePlayUnsub: (() => void) | null = null
   // Phase 8 slice 8: the lazy 3D Agros backdrop (ContactCyprusStage, Draco model),
   // created on the first /contact visit and disposed when leaving, so the
   // decoded assets never look like a navigation leak. The World frame path
@@ -384,6 +393,15 @@ export class Experience {
     this.contactCyprusStage?.resize(this.sizes.width, this.sizes.height)
   }
 
+  private ensureShowreelTheater(): void {
+    if (this.showreelTheater || this._destroyed) return
+    this.showreelTheater = new ShowreelTheater(
+      '/assets/video/coming-soon.mp4',
+      '/assets/video/coming-soon-cover.jpg',
+    )
+    this.showreelTheater.setReducedMotion(this._reducedMotion)
+  }
+
   private lifecycleToken(): number {
     return this._lifecycleGeneration
   }
@@ -420,6 +438,7 @@ export class Experience {
     this.contactTypographyStage?.setReducedMotion(reduced)
     this.contactHaloStage?.setReducedMotion(reduced)
     this.manifestoInkStage?.setReducedMotion(reduced)
+    this.showreelTheater?.setReducedMotion(reduced)
     // Lab object carries authored motion (optional contract) — settle it too.
     this.labGamepad?.setReducedMotion?.(reduced)
     this._storyNav?.setReducedMotion(reduced)
@@ -1062,6 +1081,19 @@ export class Experience {
         if (text) NoiseText.for(activeSection).show(0.8, text)
       }
     })
+    // Showreel theater commands — DOM chrome (ShowreelConsole) emits over the
+    // typed bus; Experience owns the lazy GPU-side stage and the render swap.
+    this._showreelOpenUnsub = eventBus.on('jlz:showreel-open', () => {
+      if (this._destroyed) return
+      this.ensureShowreelTheater()
+      this.showreelTheater?.open()
+    })
+    this._showreelCloseUnsub = eventBus.on('jlz:showreel-close', () => {
+      this.showreelTheater?.close()
+    })
+    this._showreelTogglePlayUnsub = eventBus.on('jlz:showreel-toggle-play', () => {
+      this.showreelTheater?.togglePlay()
+    })
     // Phase 7: with the persistent SceneHost the renderer instance is ADOPTED
     // (the SceneHost factory owns construction + backend inspection); the
     // native world host (rollback) keeps constructing it here as before.
@@ -1439,6 +1471,7 @@ export class Experience {
     activity.camPulsing = camPulsing
     activity.particles = particlesActive
     activity.ambientScene = ambientSceneActive
+    activity.showreel = this.showreelTheater?.isAnimating ?? false
 
     if (anyActivity(activity)) {
       this._needsRender = true
@@ -1463,8 +1496,6 @@ export class Experience {
     const { cameraTarget, worldState } = this.coordinator.updateTransform(ns)
     this.coordinator.update(dt, this._needsRender)
     const sceneDuration = frameTiming ? performance.now() - sceneStart : 0
-    // Update showreel button shader (TSL uniforms + hover/click animation)
-
     // Drive worldDNA section blend — from→to colors + phaseProgress (scroll t).
     if (this.baku) {
       const fromCfg = this.coordinator.getConfig(
@@ -1613,7 +1644,16 @@ export class Experience {
       const cameraDuration = frameTiming ? performance.now() - cameraStart : 0
       // (AudioSystem.update() removed — AudioSystem deleted, was dead code)
       const rendererStart = frameTiming ? performance.now() : 0
-      this.renderer.update(this.scene, this.camera.instance, dt, worldState)
+      // While the showreel theater is open it OWNS the frame: its private
+      // scene renders through the same renderer + post pipeline, the world
+      // simply skips a beat and resumes unchanged on close.
+      const theater = this.showreelTheater
+      if (theater && theater.currentPhase !== 'closed') {
+        theater.update(dt, this.camera.instance.aspect)
+        this.renderer.update(theater.scene, theater.camera, dt, worldState)
+      } else {
+        this.renderer.update(this.scene, this.camera.instance, dt, worldState)
+      }
       const rendererDuration = frameTiming ? performance.now() - rendererStart : 0
       this.devPanel?.recordRenderFrame()
       frameTiming?.record({
@@ -1708,6 +1748,22 @@ export class Experience {
       this._splashEnteredUnsub()
       this._splashEnteredUnsub = null
     }
+    if (this._showreelOpenUnsub) {
+      this._showreelOpenUnsub()
+      this._showreelOpenUnsub = null
+    }
+    if (this._showreelCloseUnsub) {
+      this._showreelCloseUnsub()
+      this._showreelCloseUnsub = null
+    }
+    if (this._showreelTogglePlayUnsub) {
+      this._showreelTogglePlayUnsub()
+      this._showreelTogglePlayUnsub = null
+    }
+    // The showreel theater is a private render mode — dispose it with the
+    // render owner so the video element, its texture and the quad die here.
+    this.showreelTheater?.dispose()
+    this.showreelTheater = null
     // Phase 7 slice 4: the former UI features (their window listeners, the
     // menu, the overlay and the story nav) tear down through ExperienceUI.
     this.features.destroy()

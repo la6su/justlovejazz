@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- The home showreel became a signal theater: a console command trigger opens a
+  fullscreen WebGL render mode (`ShowreelTheater`) with a hash-staggered slice
+  - phosphor scan-bar TSL transition instead of the UIKit showreel modal. The
+    film source loads on first open, the theater chrome (`ShowreelConsole`) owns
+    Esc/Space/focus, and reduced motion snaps the transition. `FullscreenOverlay`
+    remains the Works image presentation only.
+- Removed the vendored `references/` junni source clone and the unused
+  `public/basis/` KTX2 transcoder from the repository; tsconfig/eslint ignores
+  were dropped with them.
+- Removed the dead legacy string templates (`sections/{intro,about,contact,works}/template.ts`);
+  the Vue route views are the single source of route DOM.
 - Reduced-motion settlement now covers Works `CasePlane` deformation and
   `WorksPlaneStage` card reveals, preventing avoidable render-demand tails.
 - Story navigation now clears decorative CSS parallax shifts on live

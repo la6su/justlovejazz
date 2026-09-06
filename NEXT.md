@@ -23,6 +23,15 @@ the camera-aligned exhibit layer owns its explicitly positioned hit targets.
 
 ### World and project development
 
+- [x] **Showreel became a signal theater** — the home showreel is no longer a
+      UIKit modal. `ShowreelTheater` owns a private render mode (fullscreen
+      TSL quad + `VideoTexture`) swapped in at the render call, with a
+      hash-staggered slice + phosphor scan-bar shader transition
+      (enter/exit continuous), first-open media loading, a
+      `jlz:showreel-*` typed-bus contract to the `ShowreelConsole` chrome and
+      a `showreel` render-activity flag. The trigger is now a console command
+      chip (`jlz-showreel-btn`); reduced motion snaps the transition.
+
 - [ ] Validate the revised post graph on physical WebGPU: stable grain,
       edge-weighted chromatic separation, continuous border interpolation and
       bounded refraction UVs. Compare direct WebGL presentation separately;
@@ -856,8 +865,11 @@ Theme ownership and visual rules: [`docs/THEME.md`](docs/THEME.md).
         document-wide traversal across the splash and persistent shell.
   - [x] Baseline/delta parity is verified: every compiler baseline component is
         imported by `_import.less`; only `list` and `divider` remain optional deltas.
-- [ ] **Decide the fate of vendored `references/`** — archive or retain after
-      licensing review; do not publish it accidentally.
+- [x] **Vendored `references/` removed** — the junni source clone (and the
+      unused `public/basis/` KTX2 transcoder) left the repository;
+      tsconfig/eslint ignores were dropped with it. Upstream next.junni.co.jp
+      stays the credited design lineage; ported owners name it in their
+      headers.
 - [ ] **Configure production SPA/SSG hosting** — verify every route, blog
       document, asset and canonical URL against the selected host.
 - [ ] **Turn Works into evidence** — align approved facts and media around the
