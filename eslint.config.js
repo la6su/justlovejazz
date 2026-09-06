@@ -12,7 +12,6 @@ export default tseslint.config(
     ignores: [
       'dist/**',
       'node_modules/**',
-      'references/**',
       'public/**',
       'projects/**',
       'test-results/**',
