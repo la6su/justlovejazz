@@ -17,6 +17,8 @@ const createHost = (sections: unknown[], carousel: unknown = null): ExperienceUI
     ensureContactTypographyStageInitialized: vi.fn(async () => undefined),
     ensureContactCyprusStageInitialized: vi.fn(async () => undefined),
     ensureContactHaloStageInitialized: vi.fn(async () => undefined),
+    ensureManifestoInkStageInitialized: vi.fn(async () => undefined),
+    disposeManifestoInkStage: vi.fn(),
     disposeContactTypographyStage: vi.fn(),
     disposeContactCyprusStage: vi.fn(),
     disposeContactHaloStage: vi.fn(),

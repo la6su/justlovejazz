@@ -51,6 +51,7 @@ import type { BakuCarousel } from './World/BakuCarousel'
 import { WorksPlaneStage } from './World/WorksPlaneStage'
 import type { ContactTypographyStage } from './World/ContactTypographyStage'
 import type { ContactHaloStage } from './World/ContactHaloStage'
+import type { ManifestoInkStage } from './World/ManifestoInkStage'
 import type { ContactCyprusStage } from './World/ContactCyprusStage'
 import { getLabExperiment, type LabExperimentObject } from './Lab/manifest'
 import { disposeAllCaseTextures } from './World/caseTexture'
@@ -195,6 +196,10 @@ export class Experience {
   private _contactCyprusStageRequest = 0
   private _contactHaloStagePromise: Promise<void> | null = null
   private _contactHaloStageRequest = 0
+  // The /manifesto ink wash — same lazy-stage contract as the contact halo.
+  private manifestoInkStage: ManifestoInkStage | null = null
+  private _manifestoInkStagePromise: Promise<void> | null = null
+  private _manifestoInkStageRequest = 0
   // Phase 8 slice 8 (moved from World): the target Cyprus-active state (the
   // Agros frame replaces the shared cube) + the effective text polarity
   // cached so a lazy Contact stage cannot miss it.
@@ -337,6 +342,9 @@ export class Experience {
       disposeContactTypographyStage: () => this.disposeContactTypographyStage(),
       disposeContactCyprusStage: () => this.disposeContactCyprusStage(),
       disposeContactHaloStage: () => this.disposeContactHaloStage(),
+      // The lazy /manifesto ink-wash stage lifecycle (same contract as the halo).
+      ensureManifestoInkStageInitialized: () => this.ensureManifestoInkStageInitialized(),
+      disposeManifestoInkStage: () => this.disposeManifestoInkStage(),
       setContactCyprusStageSection: (index: number) => this.setContactCyprusStageSection(index),
       // Phase 8 slice 9: the lazy Lab object lifecycle moved to Experience;
       // the UI reaches it through the port.
@@ -409,6 +417,7 @@ export class Experience {
     this.contactCyprusStage?.setReducedMotion(reduced)
     this.contactTypographyStage?.setReducedMotion(reduced)
     this.contactHaloStage?.setReducedMotion(reduced)
+    this.manifestoInkStage?.setReducedMotion(reduced)
     // Lab object carries authored motion (optional contract) — settle it too.
     this.labGamepad?.setReducedMotion?.(reduced)
     this._storyNav?.setReducedMotion(reduced)
@@ -442,6 +451,7 @@ export class Experience {
         contactTypographyStage: () => this.contactTypographyStage,
         contactCyprusStage: () => this.contactCyprusStage,
         contactHaloStage: () => this.contactHaloStage,
+        manifestoInkStage: () => this.manifestoInkStage,
         labGamepad: () => this.labGamepad,
       },
       () => this.currentPage(),
@@ -709,6 +719,45 @@ export class Experience {
     this.contactHaloStage?.dispose()
     this.contactHaloStage = null
     this._contactHaloStagePromise = null
+  }
+
+  /** Lazily load the /manifesto ink wash so the TSL graph stays out of the
+   *  shared initial scene graph (same contract as the contact halo). */
+  public ensureManifestoInkStageInitialized(): Promise<void> {
+    if (this._manifestoInkStagePromise) return this._manifestoInkStagePromise
+    const request = ++this._manifestoInkStageRequest
+    this._manifestoInkStagePromise = import('./World/ManifestoInkStage')
+      .then(({ ManifestoInkStage }) => {
+        if (request !== this._manifestoInkStageRequest) return
+        const stage = new ManifestoInkStage()
+        this.manifestoInkStage = stage
+        this.scene.add(stage)
+        // The effective-polarity cache is refreshed on every theme event
+        // regardless of route, so a lazy stage cannot miss the current ink.
+        stage.setTheme(this._contactIsLight)
+        stage.setReducedMotion(this._reducedMotion)
+        stage.setActive(this.currentPage() === 'manifesto')
+      })
+      .catch((error: unknown) => {
+        if (request === this._manifestoInkStageRequest) {
+          this.manifestoInkStage?.removeFromParent()
+          this.manifestoInkStage?.dispose()
+          this.manifestoInkStage = null
+          this._manifestoInkStagePromise = null
+        }
+        if (import.meta.env.DEV) {
+          console.error('[Experience] ManifestoInkStage init failed:', error)
+        }
+      })
+    return this._manifestoInkStagePromise
+  }
+
+  public disposeManifestoInkStage(): void {
+    this._manifestoInkStageRequest++
+    this.manifestoInkStage?.removeFromParent()
+    this.manifestoInkStage?.dispose()
+    this.manifestoInkStage = null
+    this._manifestoInkStagePromise = null
   }
 
   /** Cache the effective polarity so a lazy Contact stage cannot miss it. */
