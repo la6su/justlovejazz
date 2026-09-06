@@ -85,9 +85,7 @@ describe('Experience contact Cyprus lazy owner', () => {
       currentPage: () => 'contact',
       camera: { instance: new THREE.PerspectiveCamera() },
     } as unknown as Partial<Experience>) as Experience
-    const loadSpy = vi
-      .spyOn(ContactCyprusStage.prototype, 'load')
-      .mockResolvedValue(undefined)
+    const loadSpy = vi.spyOn(ContactCyprusStage.prototype, 'load').mockResolvedValue(undefined)
     const prewarmSpy = vi.spyOn(ContactCyprusStage.prototype, 'prewarm')
 
     try {

@@ -88,15 +88,15 @@ matrix is:
 Run `bun run type-check:vue` whenever a Vue SFC changes. It complements the
 existing TypeScript check; it does not replace the release gate.
 
-| Area       | Required evidence                                                    |
-| ---------- | -------------------------------------------------------------------- |
-| Backend    | automatic WebGPU and forced WebGLBackend; software-adapter policy    |
-| Navigation | direct entry, in-app, hash and popstate                              |
-| Preference | EN/RU, normal/inverse, reduced motion, sound                         |
-| Input      | mouse, wheel/trackpad, touch, keyboard and focus                     |
-| Viewport   | desktop, narrow layout and real mobile DPR                           |
-| Lifecycle  | mount, exit during async load, destroy and twenty route cycles       |
-| Runtime    | no uncaught/GPU/material errors, one canvas/loop, settled zero draws |
+| Area       | Required evidence                                                               |
+| ---------- | ------------------------------------------------------------------------------- |
+| Backend    | automatic WebGPU and forced WebGLBackend; software-adapter policy               |
+| Navigation | direct entry, in-app, hash and popstate                                         |
+| Preference | EN/RU, normal/inverse, reduced motion, sound                                    |
+| Input      | mouse, wheel/trackpad, touch, keyboard and focus                                |
+| Viewport   | desktop, narrow layout and real mobile DPR                                      |
+| Lifecycle  | mount, exit during async load, destroy and twenty route cycles                  |
+| Runtime    | no uncaught/GPU/material errors, one canvas/loop, settled zero draws            |
 | Delivery   | startup graph, route-level Vue chunks and separate Vue/Tres/Three/UIkit reports |
 
 ### Renderer gate
@@ -183,14 +183,14 @@ evidence that could be mistaken for a like-for-like comparison.
 
 These budgets protect startup and interaction throughout migration:
 
-| Metric                                    | Budget                                                         |
-| ----------------------------------------- | -------------------------------------------------------------- |
-| Splash startup JavaScript                 | ≤ 5 KB gzip; excludes Vue, TresJS, Three.js, UIkit and World   |
+| Metric                                    | Budget                                                                                                 |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Splash startup JavaScript                 | ≤ 5 KB gzip; excludes Vue, TresJS, Three.js, UIkit and World                                           |
 | Shared Three.js delivery                  | ≤ 350 KB gzip until a separately approved budget ADR; route-local addon chunks are measured separately |
-| Shared UIkit delivery                     | ≤ 56 KB gzip; product graph registers only used extended icons |
-| Idle draw activity                        | zero draw calls and zero active scheduler reasons when settled |
-| Active-burst frame time on tested desktop | p95 ≤ 16.7 ms                                                  |
-| Active-burst frame time on tested mobile  | p95 ≤ 33.3 ms                                                  |
+| Shared UIkit delivery                     | ≤ 56 KB gzip; product graph registers only used extended icons                                         |
+| Idle draw activity                        | zero draw calls and zero active scheduler reasons when settled                                         |
+| Active-burst frame time on tested desktop | p95 ≤ 16.7 ms                                                                                          |
+| Active-burst frame time on tested mobile  | p95 ≤ 33.3 ms                                                                                          |
 
 Vue runtime, TresJS integration, hydrated route chunks and UIkit have separate
 reports and limits during Phase 1. Do not hide dependency regressions inside

@@ -125,7 +125,10 @@ describe('SplashCube reduced-motion transitions', () => {
   it('skips settled update work when another owner raises demand', () => {
     vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))
     const cube = new SplashCube()
-    const applyBlend = vi.spyOn(cube as unknown as { applyMaterialBlend: () => void }, 'applyMaterialBlend')
+    const applyBlend = vi.spyOn(
+      cube as unknown as { applyMaterialBlend: () => void },
+      'applyMaterialBlend',
+    )
 
     cube.snapToFace(0)
     cube.update(0)

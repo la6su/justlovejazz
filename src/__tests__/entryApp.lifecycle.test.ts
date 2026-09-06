@@ -81,7 +81,8 @@ describe('entry-app splash reveal lifecycle', () => {
   })
 
   it('coalesces concurrent starts and permits retry after rejection', async () => {
-    const start = vi.fn()
+    const start = vi
+      .fn()
       .mockRejectedValueOnce(new Error('bootstrap failed'))
       .mockResolvedValue(undefined)
     const gate = createStartGate(start)

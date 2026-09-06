@@ -88,8 +88,8 @@ async function waitForRouter(page: Page): Promise<void> {
       [...document.head.querySelectorAll('style')].some((style) =>
         style.textContent?.includes('.jlz-storyline'),
       ) &&
-        Boolean(document.querySelector('#spa-content')?.getAttribute('data-page-view')) &&
-        (window as unknown as { __jlzRouterReady?: boolean }).__jlzRouterReady === true,
+      Boolean(document.querySelector('#spa-content')?.getAttribute('data-page-view')) &&
+      (window as unknown as { __jlzRouterReady?: boolean }).__jlzRouterReady === true,
   )
 }
 
@@ -606,9 +606,7 @@ test.describe('JustLoveJazz — runtime health', () => {
     test.setTimeout(120000)
     const errors: string[] = []
     attachErrorCapture(page, errors)
-    await page.goto(
-      process.env.JLZ_WEBGL_RECOVERY_CHROME === '1' ? '/?force-webgl-backend=1' : '/',
-    )
+    await page.goto(process.env.JLZ_WEBGL_RECOVERY_CHROME === '1' ? '/?force-webgl-backend=1' : '/')
     await expect(page.locator('main#spa-content')).toBeAttached({ timeout: 20000 })
     await expect(page.locator('#jlz-splash-enter')).toHaveClass(/is-ready/, { timeout: 90000 })
 
