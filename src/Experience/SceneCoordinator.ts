@@ -25,6 +25,7 @@ import type { BakuCarousel } from './World/BakuCarousel'
 import type { WorksPlaneStage } from './World/WorksPlaneStage'
 import type { ContactTypographyStage } from './World/ContactTypographyStage'
 import type { ContactCyprusStage } from './World/ContactCyprusStage'
+import type { ContactHaloStage } from './World/ContactHaloStage'
 import type { LabExperimentObject } from './Lab/manifest'
 
 export interface WorldTransformResult {
@@ -48,6 +49,7 @@ export interface SceneCoordinatorOwners {
   worksPlaneStage: () => WorksPlaneStage | null
   contactTypographyStage?: () => ContactTypographyStage | null
   contactCyprusStage: () => ContactCyprusStage | null
+  contactHaloStage?: () => ContactHaloStage | null
   labGamepad: () => LabExperimentObject | null
 }
 
@@ -107,6 +109,9 @@ export class SceneCoordinator {
   }
   public get contactCyprusStage(): ContactCyprusStage | null {
     return this.owners.contactCyprusStage()
+  }
+  public get contactHaloStage(): ContactHaloStage | null {
+    return this.owners.contactHaloStage?.() ?? null
   }
   public get labGamepad(): LabExperimentObject | null {
     return this.owners.labGamepad()
@@ -274,6 +279,8 @@ export class SceneCoordinator {
       if (particles) particles.visible = !isAgros
     }
     this.contactTypographyStage?.setActive(isContact && !isFinal)
+    // The halo backs the greeting — it shares the flock's chapter gating.
+    this.contactHaloStage?.setActive(isContact && !isFinal)
     this._invalidateTransformCache()
   }
 
@@ -304,12 +311,14 @@ export class SceneCoordinator {
     if (this.owners.envSphere()?.isAnimating) return true
     if (this.owners.baku()?.isAmbientlyAnimated) return true
     if (this.contactTypographyStage?.visible && this.contactTypographyStage.isAnimating) return true
+    if (this.contactHaloStage?.visible && this.contactHaloStage.isAnimating) return true
     return false
   }
 
-  /** Match the opaque 3D words to the effective section/theme contrast. */
+  /** Match the opaque 3D words and the ink halo to the effective contrast. */
   public syncTypographyTheme(isLight: boolean): void {
     this.contactTypographyStage?.setTheme(isLight)
+    this.contactHaloStage?.setTheme(isLight)
   }
 
   public update(deltaTime: number, needsRender: boolean = true): void {
@@ -349,6 +358,7 @@ export class SceneCoordinator {
       worksStage.update(deltaTime)
     }
     this.contactTypographyStage?.update(deltaTime)
+    this.contactHaloStage?.update(deltaTime)
     const contactCyprusStage = this.owners.contactCyprusStage()
     contactCyprusStage?.update(deltaTime)
     const baku = this.owners.baku()
@@ -708,7 +718,11 @@ export class SceneCoordinator {
       toBaku.material.metalness,
       t,
     )
-    worldState.envColor = this._poolEnvColor.lerpColors(fromLight.ambientColor, toLight.ambientColor, t)
+    worldState.envColor = this._poolEnvColor.lerpColors(
+      fromLight.ambientColor,
+      toLight.ambientColor,
+      t,
+    )
     return result
   }
 
