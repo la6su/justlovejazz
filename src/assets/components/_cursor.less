@@ -1,13 +1,14 @@
-/* Pointer-only cursor layer. Cursor.ts owns runtime updates. */
+/* Pointer-only cursor layer. Cursor.ts owns runtime updates.
+   The inner dot is a phosphor block caret — a terminal caret, not a dot. */
 
 .custom-cursor-inner {
   position: fixed;
   top: 0;
   left: 0;
   width: 6px;
-  height: 6px;
-  background-color: var(--jlz-color-signal-teal);
-  border-radius: 50%;
+  height: 10px;
+  background-color: var(--jlz-color-signal-phosphor);
+  border-radius: 0;
   pointer-events: none;
   z-index: 100000;
   will-change: transform;
@@ -19,7 +20,7 @@
 
 .custom-cursor-inner.is-hover {
   width: 4px;
-  height: 4px;
+  height: 14px;
   background-color: var(--jlz-color-accent);
 }
 

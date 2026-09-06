@@ -30,16 +30,10 @@
   position: relative;
   overflow: hidden;
   padding: clamp(1.35rem, 3vw, 2.4rem);
-  border: 0;
+  border: 1px solid var(--jlz-color-border);
   border-radius: 0;
-  background:
-    linear-gradient(
-      115deg,
-      color-mix(in srgb, var(--jlz-color-signal-cool) 5%, transparent),
-      transparent 32%
-    ),
-    color-mix(in srgb, var(--jlz-color-bg-elevated) 91%, transparent);
-  box-shadow: 0 1.5rem 4rem color-mix(in srgb, #000 22%, transparent);
+  background: var(--jlz-color-bg-elevated);
+  box-shadow: none;
 }
 
 .jlz-console-card::before {
@@ -48,7 +42,7 @@
   left: 0;
   width: 0.5rem;
   height: 0.5rem;
-  background: var(--jlz-color-accent);
+  background: var(--jlz-color-signal-phosphor);
   content: '';
 }
 
@@ -61,25 +55,24 @@
 }
 
 .jlz-console-card__chrome > span:not(.jlz-console-card__index) {
-  display: none;
+  display: block;
   width: 0.45rem;
   height: 0.45rem;
   border: 0;
   border-radius: 0;
-  background: var(--jlz-color-border-strong);
 }
 
+/* Terminal window dots — the reference console chrome. */
 .jlz-console-card__chrome > span:nth-child(1) {
-  display: block;
-  background: var(--jlz-color-accent);
+  background: #ff5f56;
 }
 
 .jlz-console-card__chrome > span:nth-child(2) {
-  background: var(--jlz-color-signal-cool);
+  background: #ffbd2e;
 }
 
 .jlz-console-card__chrome > span:nth-child(3) {
-  background: var(--jlz-color-border-strong);
+  background: #27c93f;
 }
 
 .jlz-console-card__index,
@@ -313,19 +306,20 @@
   min-height: 8rem;
   gap: var(--jlz-space-3);
   padding: var(--jlz-space-4);
-  border: 0;
+  border: 1px solid var(--jlz-color-border);
   border-radius: 0;
-  background: color-mix(in srgb, var(--jlz-color-bg-elevated) 88%, transparent);
+  background: var(--jlz-color-bg-elevated);
   transition:
-    transform 180ms ease,
+    border-color 180ms ease,
     background-color 180ms ease;
 }
 
 .jlz-contact-social__channel:hover,
 .jlz-contact-social__channel:focus-visible {
+  border-color: var(--jlz-color-signal-phosphor);
   color: var(--jlz-color-text);
-  background: color-mix(in srgb, var(--jlz-color-accent) 13%, var(--jlz-color-bg-elevated));
-  transform: translate3d(0.35rem, 0, 0);
+  background: color-mix(in srgb, var(--jlz-color-signal-phosphor) 6%, var(--jlz-color-bg-elevated));
+  box-shadow: inset 2px 0 0 var(--jlz-color-signal-phosphor);
 }
 
 .jlz-contact-social__icon {
