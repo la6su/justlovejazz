@@ -24,6 +24,6 @@ record. Historical evidence is preserved under `archive/` and `evidence/`.
 Current source, configuration and tests lead when documentation drifts.
 Accepted ADRs explain why durable boundaries exist; `NEXT.md` is the only
 active outcome queue. `WORKLOG.md` remains historical context rather than a
-required session log.
-Vendored material under `public/basis/` and `references/` sits outside this
-documentation system.
+required session log. The vendored reference source under `references/` was
+removed from the repository; upstream next.junni.co.jp remains the credited
+design lineage.

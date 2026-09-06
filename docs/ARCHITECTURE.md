@@ -78,6 +78,14 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `WebGPUPostPipeline` clears its scene-pass owner before disposal and isolates
   backend teardown exceptions; a failing `PassNode.dispose()` cannot retain a
   detached render target or abort the rest of post/renderer cleanup.
+- The showreel is a dedicated render mode, not a modal: while open,
+  `ShowreelTheater` swaps its private scene (one fullscreen TSL quad sampling
+  a `VideoTexture`) in at the render call, so the world never re-mounts and
+  the shared post graph keeps grading the frame. The `<video>` source is
+  assigned on the first open only, the DOM chrome (`ShowreelConsole`)
+  communicates with the GPU stage exclusively through the typed
+  `jlz:showreel-*` bus events, and the transition/reveal is authored in the
+  stage's TSL graph with a reduced-motion snap.
 - `ContactCyprusStage` uses the same settled camera-pose contract as the Works
   stage: a visible, settled Agros model skips redundant position/quaternion
   writes, while camera movement, fade and prewarm activity remain wakeable.
@@ -487,11 +495,12 @@ navigation instance.
 | Concern              | Owner                                                                                |
 | -------------------- | ------------------------------------------------------------------------------------ |
 | Bootstrap            | `entry-shell.ts`, `entry-app.ts`                                                     |
-| Routes and content   | `app/routes.ts`, `routeManifest.ts`, `sections/*/template.ts`                        |
+| Routes and content   | `app/routes.ts`, `routeManifest.ts`, `sections/nav/template.ts`, Vue route views     |
 | Renderer and loop    | `Experience/Renderer.ts`, `RenderPipeline.ts`, `RenderScheduler.ts`, `SceneHost.vue` |
 | World composition    | `SceneCoordinator.ts`, `WorldConfig.ts`, `Experience/Scene/SectionGroups.ts`         |
 | Navigation and UI    | `CinematicNav.ts`, `UIMenu.ts`, `UIManager.ts`                                       |
 | Project presentation | `WorksPlaneStage.ts`, `FullscreenOverlay.ts`                                         |
+| Showreel theater     | `ShowreelTheater.ts` (GPU surface), `ShowreelConsole.ts` (DOM chrome)                |
 | Contact presentation | Vue semantic contact views + `ContactTypographyStage.ts`                             |
 | Preferences/events   | `ThemeManager.ts`, `i18n.ts`, `EventBus.ts`                                          |
 
@@ -507,7 +516,7 @@ Phase 10 slice 2 2026-08-22).
 `RenderScheduler` combines demand rendering with bounded animation reasons;
 the per-frame raise/settle decision reads the typed
 `RenderActivity` flags through the `src/core/renderDemand.ts` contract (the
-12-flag OR and the narrower ambient-breath idle set are unit-locked). Route
+14-flag OR and the narrower ambient-breath idle set are unit-locked). Route
 replacement releases DOM behavior; `Experience.destroy()` closes the shared
 runtime. `/works` and `/contact` own lazy scene stages that dispose or cache
 according to their current measured policy.

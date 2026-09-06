@@ -9,7 +9,8 @@ The renderer uses `WebGPUBackend` when hardware WebGPU is usable and the same
 `WebGPURenderer` class with `WebGLBackend`/`forceWebGL` when it is not. Rendering
 is demand-driven through one `RenderScheduler`; semantic Vue route content
 remains above an `aria-hidden` canvas. The Vue/TresJS migration is complete;
-the archived record is [here](docs/archive/MIGRATION_VUE_TRES.md), while active
+the archived record is
+[docs/archive/MIGRATION_VUE_TRES.md](docs/archive/MIGRATION_VUE_TRES.md), while active
 architecture decisions live in [ADRs](docs/adr/README.md).
 
 ## Quick start
