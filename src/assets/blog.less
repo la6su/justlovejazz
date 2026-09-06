@@ -26,6 +26,23 @@ body {
   color: var(--jlz-color-text);
 }
 
+// ── Terminal details — the same voice as the SPA chrome ──
+::selection {
+  background: var(--jlz-color-signal-phosphor);
+  color: var(--jlz-color-text-inverse);
+}
+
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--jlz-color-border-strong) transparent;
+}
+
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--jlz-color-signal-phosphor);
+  outline-offset: 3px;
+}
+
 .jlz-blog-brand,
 .jlz-landing-eyebrow {
   font-variation-settings: 'wght' var(--jlz-blog-weight, 650);

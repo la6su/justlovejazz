@@ -1,16 +1,22 @@
 # Console theme
 
-The public interface is a restrained mission console around an authored 3D
-exhibition. Strategy-game references inform instrument hierarchy, measured
-spacing and state signals; they do not introduce imitation game chrome.
+The public interface is a neuro console — a terminal-frame TUI around an
+authored 3D exhibition. Strategy-game references inform instrument hierarchy,
+measured spacing and state signals; they do not introduce imitation game
+chrome.
 
 ## Ownership
 
 `src/assets/_import.less` assembles both the application and blog theme:
-brand tokens, UIkit variables, `console-theme/_import.less`, component mappings
-and hooks, `console-theme/components.less`, UIkit component sources, then the
-generated builder overrides. `main.less` adds only the application composition.
-The removed `_theme.less` must not be reintroduced as a second override layer.
+`console-theme/mixins.less` (canonical TUI primitives, imported first), brand
+tokens, UIkit variables, `console-theme/_import.less`, component mappings and
+hooks, `console-theme/components.less`, UIkit component sources, then the
+generated builder overrides. `main.less` adds the assembly and route
+composition only; `components/_console-language.less` is the single owner of
+persistent console chrome (topbar, control banks, menu sheet, status island,
+boot gates) and is imported last; `components/_fullscreen.less` owns the
+fullscreen project overlay. The removed `_theme.less` must not be
+reintroduced as a second override layer.
 
 The builder compiler owns `builder/theme.generated.less` and
 `builder/components.generated.less`. Change generated settings through the
@@ -21,17 +27,31 @@ YOOtheme section/container/component approach, not a WordPress theme install.
 
 - Cool near-black surfaces, ivory text, yellow emphasis and phosphor secondary
   interaction signals. Blue belongs to spatial context; status colors retain
-  their semantic meaning.
+  their semantic meaning (ember is the failure voice).
 - Commissioner carries headings and prose. Mono carries controls, indices and
-  technical metadata. Large headings use natural case; metadata stays quiet.
+  technical metadata (`.jlz-meta-text()` keeps one terminal voice). Large
+  headings use natural case; metadata stays quiet.
 - Square controls, fine functional borders, no UI glow or decorative scanlines.
   Frames separate controls or information; they do not enclose every section.
+- The TUI frame (`.jlz-tui-frame()`) is the terminal bezel identity: four
+  phosphor corner ticks drawn by one pseudo-element on chrome instruments —
+  the control banks, cinematic sheets and boot gates. A live key lights its
+  bank's bezel to full phosphor (`:has()`); no extra DOM is added for chrome.
 - The top menu bank and bottom navigation island share one flat analog-button
-  language: shallow bevel, one-pixel press offset and a single phosphor state
-  color. Channel meaning is carried by compact SVG glyphs instead of labels
-  that force the control group wider.
-- Keyboard focus is explicit. Core icon targets are 44 pixels; language, theme
-  and sound remain available on mobile. Reduced motion settles scene changes.
+  language (`.jlz-control-bank()` / `.jlz-bank-key()`): square housing,
+  shallow bevel, one-pixel press offset and a single phosphor state color.
+  Channel meaning is carried by compact SVG glyphs instead of labels that
+  force the control group wider.
+- System readouts speak with a blinking block cursor
+  (`.jlz-blink-cursor()`, e.g. the topbar mode); reduced motion holds the
+  cursor steady. Terminal scrollbars (hairline thumb, phosphor on hover)
+  identify scrollable console panes.
+- Failure states use the shared boot gate (`.jlz-boot-gate*`): mono readout,
+  ember signal head, `ERR:` code line and one square retry action. The splash
+  3D gate and the pre-CSS shell fallback mirror the same composition.
+- Keyboard focus is explicit (`.jlz-focus-ring()`, phosphor). Core icon
+  targets are 44 pixels; language, theme and sound remain available on
+  mobile. Reduced motion settles scene changes.
 - UIkit owns component behavior, including accordion, list, form and button
   foundations. Application selectors own camera-aligned scene compositions.
 
