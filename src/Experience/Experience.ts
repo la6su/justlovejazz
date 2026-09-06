@@ -409,6 +409,8 @@ export class Experience {
     this.contactCyprusStage?.setReducedMotion(reduced)
     this.contactTypographyStage?.setReducedMotion(reduced)
     this.contactHaloStage?.setReducedMotion(reduced)
+    // Lab object carries authored motion (optional contract) — settle it too.
+    this.labGamepad?.setReducedMotion?.(reduced)
     this._storyNav?.setReducedMotion(reduced)
     if (reduced) {
       this._cancelBreath()

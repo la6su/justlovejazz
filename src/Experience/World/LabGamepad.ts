@@ -1,14 +1,49 @@
 import * as THREE from 'three'
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js'
+import { input } from '../Input'
+import { prefersReducedMotion } from '../../core/motionPolicy'
 
 /**
  * A self-contained Lab object. It deliberately uses ordinary PBR materials:
  * scene.environment supplies the shared reflection map, so the experiment
  * does not allocate its own PMREM renderer or texture set.
+ *
+ * Motion follows the shared brand language: a damped pointer tilt around the
+ * authored pose, one low-frequency hover clock and a slow crank spin — all
+ * uniform-free CPU transforms advanced only inside update(dt) on rendered
+ * frames (demand-driven contract; never a global `time`). Amplitudes are
+ * capped so the object reads as a resting prop, not a light show, and under
+ * reduced motion everything snaps to the authored static pose.
  */
+
+/** Authored display pose — every motion state settles back to this. */
+const AUTHORED_ROTATION = new THREE.Euler(-0.12, -0.24, 0.04)
+const AUTHORED_POSITION_Y = 0
+
+/** Pointer tilt caps (rad) — bounded so the prop never leaves its framing. */
+const TILT_YAW = 0.2
+const TILT_PITCH = 0.12
+const TILT_ROLL = 0.05
+/** Low-frequency hover clock (world units under the authored framing). */
+const FLOAT_AMPLITUDE = 0.016
+const FLOAT_SPEED = 0.55
+/** Slow authored crank spin (rad/s). */
+const CRANK_SPEED = 0.42
+/** Damp rates — pointer chase and clock-advance parity with the halo stage. */
+const POINTER_DAMP = 3.0
+
 export class LabGamepad extends THREE.Group {
   private readonly _geometries: THREE.BufferGeometry[] = []
   private readonly _materials: THREE.Material[] = []
+
+  private reducedMotion = prefersReducedMotion()
+  // Idle clock — advanced only on rendered frames inside update(dt).
+  private _clock = 0
+  // Damped pointer state (preallocated, mirrors ContactHaloStage).
+  private readonly _pointerTarget = new THREE.Vector2(0, 0)
+  private readonly _pointerSmooth = new THREE.Vector2(0, 0)
+
+  private readonly _crankPivot: THREE.Group
 
   constructor() {
     super()
@@ -75,12 +110,24 @@ export class LabGamepad extends THREE.Group {
       this._addMesh('gamepad-screw', screwGeometry, metal, x, y, 7.4)
     }
 
-    this._addBox('crank-arm', 5.5, 28, 5.5, 65, 0, 0, metal)
+    // Crank: arm + knob live in a pivot at the crank axle so a slow authored
+    // spin orbits the knob without per-frame vector churn.
+    const crankPivot = new THREE.Group()
+    crankPivot.name = 'gamepad-crank'
+    crankPivot.position.set(65, 0, 0)
+    this.add(crankPivot)
+    this._crankPivot = crankPivot
+
+    const arm = new THREE.Mesh(this._geometry(new RoundedBoxGeometry(5.5, 28, 5.5, 6, 3)), metal)
+    arm.name = 'crank-arm'
+    arm.castShadow = true
+    crankPivot.add(arm)
+
     const knob = new THREE.Mesh(this._geometry(new THREE.SphereGeometry(5.5, 24, 16)), accent)
     knob.name = 'gamepad-crank-knob'
-    knob.position.set(65, 17, 0)
+    knob.position.set(0, 17, 0)
     knob.castShadow = true
-    this.add(knob)
+    crankPivot.add(knob)
   }
 
   private _geometry<T extends THREE.BufferGeometry>(geometry: T): T {
@@ -159,6 +206,57 @@ export class LabGamepad extends THREE.Group {
     })
     geometry.center()
     return geometry
+  }
+
+  /** Ambient-motion signal: the hover clock keeps breathing while on /lab
+   *  (mirrors ContactTypographyStage.isAnimating — an intentional primary
+   *  object, not decoration). Reduced motion never advertises animation. */
+  get isAnimating(): boolean {
+    return !this.reducedMotion && this.visible
+  }
+
+  /** Advance the authored motion. Called from SceneCoordinator.update on
+   *  rendered frames only; a hidden object never advances its clock. */
+  update(dt: number): void {
+    if (!this.visible || this.reducedMotion) return
+
+    const mouse = input.getMouse()
+    this._pointerTarget.set(mouse.x, mouse.y)
+    this._pointerSmooth.x += (this._pointerTarget.x - this._pointerSmooth.x) * Math.min(1, dt * POINTER_DAMP)
+    this._pointerSmooth.y += (this._pointerTarget.y - this._pointerSmooth.y) * Math.min(1, dt * POINTER_DAMP)
+
+    this._clock += dt
+
+    // Tilt around the authored pose — damped, amplitude-capped.
+    this.rotation.set(
+      AUTHORED_ROTATION.x - this._pointerSmooth.y * TILT_PITCH,
+      AUTHORED_ROTATION.y + this._pointerSmooth.x * TILT_YAW,
+      AUTHORED_ROTATION.z + this._pointerSmooth.x * TILT_ROLL,
+    )
+    this.position.y = AUTHORED_POSITION_Y + FLOAT_AMPLITUDE * Math.sin(this._clock * FLOAT_SPEED)
+
+    this._crankPivot.rotation.x -= dt * CRANK_SPEED
+  }
+
+  /** Forward a live preference change and settle any live motion. */
+  setReducedMotion(reduced: boolean): void {
+    this.reducedMotion = reduced
+    if (reduced) this.settleReducedMotion()
+  }
+
+  /** Clean re-entry: every route visit starts from the authored pose. */
+  resetMotion(): void {
+    this._clock = 0
+    this._pointerTarget.set(0, 0)
+    this.settleReducedMotion()
+  }
+
+  /** Snap the authored motion to its settled static state. */
+  private settleReducedMotion(): void {
+    this._pointerSmooth.set(0, 0)
+    this.rotation.copy(AUTHORED_ROTATION)
+    this.position.y = AUTHORED_POSITION_Y
+    // The crank freezes at its current angle — a reset would jump visibly.
   }
 
   public dispose(): void {
