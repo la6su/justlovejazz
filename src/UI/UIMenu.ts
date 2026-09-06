@@ -78,10 +78,13 @@ export class UIMenu {
       <div class="jlz-console-bar">
         <span class="jlz-console-bar__signal" aria-hidden="true"></span>
         <div class="jlz-contact-launcher">
-          <span class="jlz-contact-launcher__eyebrow" aria-hidden="true">UPLINK / OPEN CHANNEL</span>
           <button class="uk-button uk-button-default uk-flex uk-flex-middle jlz-contact-launcher__button" type="button"
                   id="jlz-contact-launcher" aria-controls="section-lab" aria-expanded="false">
-            <span class="jlz-contact-launcher__orb uk-display-inline-block" aria-hidden="true"></span>
+            <span class="jlz-contact-launcher__channel" aria-hidden="true">
+              <svg viewBox="0 0 16 16" width="16" height="16" focusable="false">
+                <path d="M2 3h10v8H2ZM5 13v2M9 13v2M5 6h4M5 8.5h2" />
+              </svg>
+            </span>
             <span data-i18n="story.contact">Contact</span>
             <span class="jlz-contact-launcher__arrow" uk-icon="icon: arrow-up; ratio: 0.8" aria-hidden="true"></span>
           </button>

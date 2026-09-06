@@ -26,6 +26,10 @@ YOOtheme section/container/component approach, not a WordPress theme install.
   technical metadata. Large headings use natural case; metadata stays quiet.
 - Square controls, fine functional borders, no UI glow or decorative scanlines.
   Frames separate controls or information; they do not enclose every section.
+- The top menu bank and bottom navigation island share one flat analog-button
+  language: shallow bevel, one-pixel press offset and a single phosphor state
+  color. Channel meaning is carried by compact SVG glyphs instead of labels
+  that force the control group wider.
 - Keyboard focus is explicit. Core icon targets are 44 pixels; language, theme
   and sound remain available on mobile. Reduced motion settles scene changes.
 - UIkit owns component behavior, including accordion, list, form and button
