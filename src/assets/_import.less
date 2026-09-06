@@ -24,39 +24,46 @@
 // §1. DESIGN TOKENS (@jlz-* Less variables)
 // ═══════════════════════════════════════════════════════════════════════
 
-// ── Color (Neon Stage identity — cool near-black ink, cool ivory, one
-// electric accent; see ADR 0007 and docs/BRAND.md) ──
-@jlz-color-bg: #08090b;
-@jlz-color-bg-elevated: #0d1015;
-@jlz-color-surface: #0f131a;
-@jlz-color-surface-hover: #1a2130;
-@jlz-color-border: rgba(238, 241, 245, 0.14);
-@jlz-color-border-strong: rgba(238, 241, 245, 0.3);
+// ── Color (Neuro Console identity — deep terminal field, cool ivory text,
+// hairline rules, one phosphor signal and one electric funk accent; see
+// ADR 0007 and docs/BRAND.md) ──
+@jlz-color-bg: #0b0e14;
+@jlz-color-bg-elevated: #11151e;
+@jlz-color-surface: #161b26;
+@jlz-color-surface-hover: #1d2432;
+@jlz-color-border: rgba(230, 237, 243, 0.08);
+@jlz-color-border-strong: rgba(230, 237, 243, 0.16);
 
-@jlz-color-text: #eef1f5;
-@jlz-color-text-muted: rgba(238, 241, 245, 0.66);
-@jlz-color-text-subtle: rgba(238, 241, 245, 0.4);
+@jlz-color-text: #e6edf3;
+@jlz-color-text-muted: rgba(230, 237, 243, 0.62);
+@jlz-color-text-subtle: rgba(230, 237, 243, 0.38);
 @jlz-color-text-inverse: #0a0c10;
 
 @jlz-color-accent: #ffd60a;
 @jlz-color-accent-hover: #ffe85c;
-// Secondary action/emphasis accent — the cool mineral counterweight to the
-// electric yellow (alias of the cool signal; the builder can author it
+// Secondary action/emphasis accent — the phosphor counterweight to the
+// electric yellow (alias of the console signal; the builder can author it
 // independently through the generated override layer).
-@jlz-color-accent-secondary: @jlz-color-signal-cool;
+@jlz-color-accent-secondary: @jlz-color-signal-phosphor;
 @jlz-color-accent-glow: rgba(255, 214, 10, 0.35);
+
+// ── Console signals ──
+// Phosphor is the interface voice of the TUI chrome: prompts, status dots,
+// focus rings, active states. Yellow stays the brand/display funk accent.
+@jlz-color-signal-phosphor: #58e6a9;
+@jlz-color-signal-phosphor-muted: rgba(88, 230, 169, 0.1);
 // A cool mineral counterbalances the electric yellow.
-@jlz-color-signal-cool: #5eb0ff;
-@jlz-color-signal-cool-muted: rgba(94, 176, 255, 0.22);
-@jlz-color-signal-teal: @jlz-color-signal-cool;
-@jlz-color-signal-teal-muted: @jlz-color-signal-cool-muted;
-@jlz-color-signal-ember: #ff6b5e;
+@jlz-color-signal-cool: #79c0ff;
+@jlz-color-signal-cool-muted: rgba(121, 192, 255, 0.22);
+@jlz-color-signal-teal: @jlz-color-signal-phosphor;
+@jlz-color-signal-teal-muted: @jlz-color-signal-phosphor-muted;
+@jlz-color-signal-ember: #ff7b72;
 
 // Semantic status — the only success/warning/danger source for console and
-// admin UI. Warning and danger alias the brand signals; success is the single
-// green in the system.
-@jlz-color-status-success: #45d68c;
-@jlz-color-status-warning: @jlz-color-accent;
+// admin UI. Success and warning alias the console/terminal signals; danger
+// is the single ember red in the system.
+@jlz-color-status-success: @jlz-color-signal-phosphor;
+@jlz-color-status-warning: #f0883e;
 @jlz-color-status-danger: @jlz-color-signal-ember;
 
 // Inverse (cool paper) polarity. The Style Builder can author this palette
@@ -68,11 +75,14 @@
 @jlz-inverse-accent: #7a5c00;
 
 // ── Typography ──
+// The display face is the console face: one mono family carries headings,
+// labels and data. Commissioner remains the long-form reading face.
 @jlz-font-display:
-  'Commissioner',
-  -apple-system,
-  BlinkMacSystemFont,
-  sans-serif;
+  'JetBrains Mono',
+  'SFMono-Regular',
+  'Cascadia Code',
+  'Consolas',
+  monospace;
 @jlz-font-body:
   'Commissioner',
   -apple-system,
@@ -80,7 +90,12 @@
   'Segoe UI',
   Roboto,
   sans-serif;
-@jlz-font-mono: 'SFMono-Regular', 'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace;
+@jlz-font-mono:
+  'JetBrains Mono',
+  'SFMono-Regular',
+  'Cascadia Code',
+  'Consolas',
+  monospace;
 
 @jlz-weight-light: 300;
 @jlz-weight-regular: 400;
@@ -139,10 +154,10 @@
 
 // ── Console interface surfaces ──
 // Shared technical planes replace the former translucent fluid islands.
-@jlz-color-fluid-surface: #0b0e14;
-@jlz-color-fluid-surface-strong: #141a24;
-@jlz-color-fluid-border: rgba(120, 140, 180, 0.22);
-@jlz-color-fluid-highlight: rgba(255, 214, 10, 0.1);
+@jlz-color-fluid-surface: #11151e;
+@jlz-color-fluid-surface-strong: #161b26;
+@jlz-color-fluid-border: rgba(230, 237, 243, 0.12);
+@jlz-color-fluid-highlight: rgba(88, 230, 169, 0.1);
 @jlz-color-fluid-warm: @jlz-color-accent;
 @jlz-color-telegram: #2aabee;
 
@@ -193,6 +208,8 @@
   --jlz-color-accent-hover: @jlz-color-accent-hover;
   --jlz-color-accent-secondary: @jlz-color-accent-secondary;
   --jlz-color-accent-glow: @jlz-color-accent-glow;
+  --jlz-color-signal-phosphor: @jlz-color-signal-phosphor;
+  --jlz-color-signal-phosphor-muted: @jlz-color-signal-phosphor-muted;
   --jlz-color-signal-teal: @jlz-color-signal-teal;
   --jlz-color-signal-teal-muted: @jlz-color-signal-teal-muted;
   --jlz-color-signal-cool: @jlz-color-signal-cool;
@@ -318,12 +335,14 @@ html.uk-light {
   --jlz-color-fluid-highlight: rgba(255, 255, 255, 0.9);
   --jlz-color-accent: @jlz-inverse-accent;
   --jlz-color-accent-hover: #5c4600;
-  --jlz-color-accent-secondary: var(--jlz-color-signal-cool);
+  --jlz-color-accent-secondary: var(--jlz-color-signal-phosphor);
   --jlz-color-accent-glow: rgba(122, 92, 0, 0.3);
+  --jlz-color-signal-phosphor: #0c7a4f;
+  --jlz-color-signal-phosphor-muted: rgba(12, 122, 79, 0.1);
+  --jlz-color-signal-teal: var(--jlz-color-signal-phosphor);
+  --jlz-color-signal-teal-muted: var(--jlz-color-signal-phosphor-muted);
   --jlz-color-signal-cool: #2c6fb5;
   --jlz-color-signal-cool-muted: rgba(44, 111, 181, 0.2);
-  --jlz-color-signal-teal: var(--jlz-color-signal-cool);
-  --jlz-color-signal-teal-muted: var(--jlz-color-signal-cool-muted);
   --jlz-color-signal-ember: #c03a2e;
   /* Light scrim — soft white veil aids dark-text readability over 3D
      (mirrors the dark scrim in dark mode). */
@@ -348,8 +367,8 @@ html.uk-light {
 @global-emphasis-color: #fff;
 @global-muted-color: @jlz-color-text-muted;
 @global-inverse-color: @jlz-color-text-inverse;
-@global-link-color: @jlz-color-accent;
-@global-link-hover-color: @jlz-color-accent-hover;
+@global-link-color: @jlz-color-signal-phosphor;
+@global-link-hover-color: @jlz-color-accent;
 
 // Backgrounds
 @global-background: @jlz-color-bg;
@@ -464,11 +483,11 @@ html.uk-light {
 }
 
 .hook-button-default-hover() {
-  border-color: @global-primary-background;
+  border-color: @jlz-color-signal-phosphor;
   background: @jlz-color-surface-hover;
   box-shadow:
-    inset 2px 0 0 @jlz-color-signal-teal,
-    inset 0 0 0 1px fade(@global-primary-background, 26%);
+    inset 2px 0 0 @jlz-color-signal-phosphor,
+    inset 0 0 0 1px fade(@jlz-color-signal-phosphor, 22%);
 }
 
 .hook-button-primary() {
@@ -508,17 +527,15 @@ html.uk-light {
 }
 
 .hook-icon-button-hover() {
-  border-color: @global-primary-background;
+  border-color: @jlz-color-signal-phosphor;
   background: @jlz-color-surface-hover;
-  color: @global-primary-background;
-  box-shadow: inset 2px 0 0 @jlz-color-signal-teal;
-  transform: translateY(-1px);
+  color: @jlz-color-signal-phosphor;
+  box-shadow: inset 2px 0 0 @jlz-color-signal-phosphor;
 }
 
 .hook-icon-button-active() {
-  border-color: @global-primary-background;
-  background: fade(@global-primary-background, 18%);
-  transform: scale(0.96);
+  border-color: @jlz-color-signal-phosphor;
+  background: fade(@jlz-color-signal-phosphor, 14%);
 }
 
 // ── Navbar container: Style-owned surface (app-layer CSS may still add glass) ──
