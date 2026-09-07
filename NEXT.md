@@ -31,6 +31,13 @@ the camera-aligned exhibit layer owns its explicitly positioned hit targets.
 
 ### World and project development
 
+- [x] **Remove the retired hostless Three world** — `Experience` now requires
+      the complete persistent SceneHost contract and cannot construct fallback
+      scene, camera or renderer owners. Vue retains terminal disposal for
+      adopted `EnvSphere` and `ServicesStage`; the typed bridge rejects partial
+      forwarding at compile time. The physical WebGL/WebGPU gate evidence is
+      recorded in `docs/TRES_FULL_TRANSITION.md`.
+
 - [x] **Create the single viewport fan-out** — `Sizes` is the only application
       window-resize listener; `Experience` synchronizes the adopted camera,
       renderer and active scene owners after it captures a viewport snapshot.

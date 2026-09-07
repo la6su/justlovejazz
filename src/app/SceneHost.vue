@@ -20,10 +20,6 @@
 // stopped immediately after ready and the `RenderScheduler` (ADR 0004) is the
 // single loop driver. On-demand also avoids manual mode's delayed advance().
 //
-// Rollback: switch AppShell back to the native-world host (no SceneHost);
-// Experience then creates its own scene and `Renderer.init()` constructs its
-// own renderer (the retained pre-Phase-7 path).
-
 import { onBeforeUnmount, ref, shallowRef, toValue } from 'vue'
 import { TresCanvas } from '@tresjs/core'
 import type { TresContext, TresRendererSetupContext } from '@tresjs/core'

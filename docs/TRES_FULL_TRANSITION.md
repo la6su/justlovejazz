@@ -123,4 +123,14 @@ The ready-host type now requires every currently adopted owner. This closes the
 class of forwarding omission that previously let an unforwarded host owner be
 constructed a second time by `Experience`; TypeScript rejects any future
 `SceneHost` → `entry-app` bridge that omits one of those nodes. The native
-fallback remains the absence of a host, rather than a partial host.
+fallback is no longer represented as a partial host.
+
+The retired hostless `Experience` construction path is now removed. A live
+`Experience` requires the complete persistent SceneHost contract and therefore
+cannot create a second scene, camera or renderer. Vue remains the terminal
+owner for `EnvSphere` and `ServicesStage`; Experience only releases its
+references during runtime teardown. The commit remains the rollback point for
+this topology change. The physical gate passed on 2026-09-07 for automatic
+WebGLBackend and hardware WebGPUBackend:
+`docs/evidence/phase7-live-gate/2026-09-07T20-28-47-969Z-report.json` and
+`docs/evidence/phase7-live-gate/2026-09-07T20-29-21-501Z-report.json`.
