@@ -101,23 +101,30 @@ async function waitForRouter(page: Page): Promise<void> {
  * `jlz:navigate` via the typed port; the app exposes the dev/test seam
  * `window.__jlzEmit` (entry-app.ts) to call that port from the test.
  */
-function navigateInApp(page: Page, path: string): Promise<void> {
-  return page
-    .waitForFunction(
-      () => typeof (window as unknown as { __jlzEmit?: unknown }).__jlzEmit === 'function',
-      { timeout: 30000 },
-    )
-    .then(() =>
-      page.evaluate((nextPath) => {
-        const emit = (
-          window as unknown as {
-            __jlzEmit?: (event: string, detail?: unknown) => void
-          }
-        ).__jlzEmit
-        if (!emit) throw new Error('window.__jlzEmit test seam is not available')
-        emit('jlz:navigate', { path: nextPath })
-      }, path),
-    )
+async function navigateInApp(page: Page, path: string): Promise<void> {
+  await page.waitForFunction(
+    () => typeof (window as unknown as { __jlzEmit?: unknown }).__jlzEmit === 'function',
+    { timeout: 30000 },
+  )
+  const escapedPath = path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const expectedUrl = new RegExp(`${escapedPath}$`)
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    await page.evaluate((nextPath) => {
+      const emit = (
+        window as unknown as {
+          __jlzEmit?: (event: string, detail?: unknown) => void
+        }
+      ).__jlzEmit
+      if (!emit) throw new Error('window.__jlzEmit test seam is not available')
+      emit('jlz:navigate', { path: nextPath })
+    }, path)
+    try {
+      await page.waitForURL(expectedUrl, { timeout: attempt === 0 ? 3000 : 15000 })
+      return
+    } catch (error) {
+      if (attempt === 1) throw error
+    }
+  }
 }
 
 test.describe('JustLoveJazz — page boot smoke', () => {
