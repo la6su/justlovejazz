@@ -40,6 +40,15 @@ a measured runtime or maintenance problem justifies a slice.
 Each slice requires one owner, one rollback point, focused lifecycle tests,
 WebGPU and forced-WebGL evidence, reduced-motion coverage, and a route soak.
 
+### Current admission result — 2026-09-08
+
+The remaining owners were re-audited after the route soak. No new isolated
+static leaf is currently available: the remaining candidates either own TSL
+materials, animation state, input, or explicit GPU disposal. This iteration is
+therefore stopped at the admission gate. The next declarative slice must start
+from a newly introduced static scene element or from a measured maintenance or
+runtime bottleneck; existing animated owners are not candidates by default.
+
 ## Loop decision
 
 `RenderScheduler` remains the loop owner. Tres `renderMode="manual"` plus
