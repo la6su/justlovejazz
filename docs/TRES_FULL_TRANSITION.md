@@ -93,3 +93,9 @@ TSL or CPU deformation and explicit disposal. They remain imperative until a
 separate lifecycle adapter is measured and tested; the declarative path
 continues only for owners with static construction and no private animation or
 GPU ownership contract.
+
+The restored orbital-ring composition passed physical WebGLBackend and
+hardware WebGPUBackend gates on 2026-09-07, including reduced motion and idle
+settlement. Evidence:
+`docs/evidence/phase7-live-gate/2026-09-07T19-18-24-949Z-report.json` and
+`docs/evidence/phase7-live-gate/2026-09-07T19-19-03-349Z-report.json`.
