@@ -81,3 +81,8 @@ WebGLBackend and hardware WebGPUBackend, including reduced motion, settled
 zero-demand and root teardown. Evidence:
 `docs/evidence/phase7-live-gate/2026-09-07T14-47-54-134Z-report.json` and
 `docs/evidence/phase7-live-gate/2026-09-07T14-48-28-737Z-report.json`.
+
+The 20-cycle route/resource soak passed on WebGLBackend after this integration:
+one canvas, bounded scene and renderer resources, stable route frame deltas and
+clean root teardown. Evidence:
+`docs/evidence/phase10-route-cycle-soak/2026-09-07T14-58-16-759Z-report.json`.
