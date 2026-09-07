@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- The lazy-stage lifecycle shared by the five route-owned stages (works plane,
+  contact typography/halo/cyprus, manifesto ink) moved into
+  `Experience/LazyStage.ts`: one unit-tested core for the request guard,
+  promise memoization, stale-guard release and failure containment, with the
+  flat owner fields and public ensure/dispose contracts unchanged.
+- The WebGPU post-processing pipeline and its TSL helpers no longer use
+  `as any` casts; the pass/bloom/swizzle boundary now uses the three 0.185
+  declared types, with the two residual declaration gaps bridged by narrow,
+  documented adapters in `tsl-helpers.ts`.
 - The home showreel became a signal theater: a console command trigger opens a
   fullscreen WebGL render mode (`ShowreelTheater`) with a hash-staggered slice
   - phosphor scan-bar TSL transition instead of the UIKit showreel modal. The

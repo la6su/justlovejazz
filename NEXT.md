@@ -62,9 +62,20 @@ the camera-aligned exhibit layer owns its explicitly positioned hit targets.
 - [ ] Decide whether `@dietrichgebert/ponytail` belongs in the project
       manifest or only in the local development toolchain; remove it from the
       app dependency graph if it is not installed by project contributors.
-- [ ] Replace the remaining renderer-boundary `any` casts with narrow Three.js
-      and WebGPU adapter types when the next renderer maintenance slice lands;
-      do not widen the public scene-owner contracts to silence lint warnings.
+- [x] **Replace the remaining renderer-boundary `any` casts with narrow Three.js
+      and WebGPU adapter types** — `WebGPUPostPipeline` and `tsl-helpers` now
+      carry zero `as any` casts: the pass/bloom/swizzle boundary uses the
+      three 0.185 declared types (`PassNode`, `BloomNode`, `TextureNode`), and
+      the two residual declaration gaps (component swizzle getters, scalar-edge
+      smoothstep over a vec2) are bridged by one narrow adapter each in
+      `tsl-helpers.ts`. The public scene-owner contracts were not widened.
+- [x] **Extract the lazy-stage lifecycle into `Experience/LazyStage.ts`** —
+      the request guard, promise memoization, stale-guard release, failure
+      containment and retry flow that five route-owned stages repeated inside
+      `Experience` now run through one unit-tested core (`ensureLazyStage` /
+      `disposeLazyStage`) over the same flat owner fields. Per-stage variation
+      stays local (create/load/configure/release order, the Cyprus dispose
+      flag); `LabGamepad` keeps its distinct static-object ownership.
 - [ ] Keep the Less ownership split flat: one canonical control-bank block per
       surface, generated builder Less changed only through its compiler.
 
