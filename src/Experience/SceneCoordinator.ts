@@ -174,8 +174,6 @@ export class SceneCoordinator {
 
     this.configs.forEach((config, index) => {
       const section = new Section(config, index)
-      this.sceneRef.add(section)
-
       if (index === 1) {
         // Intro = index 1 (canonical Lab/Contact finale = 0)
         section.visible = true
@@ -784,7 +782,6 @@ export class SceneCoordinator {
   private disposeSections(): void {
     this.sections.forEach((s) => {
       s.dispose()
-      this.sceneRef.remove(s)
     })
     this.sections = []
   }

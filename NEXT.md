@@ -984,13 +984,12 @@ Theme ownership and visual rules: [`docs/THEME.md`](docs/THEME.md).
       boot route's configuration. The existing route-generation guard still
       drops stale lazy-stage continuations; lifecycle coverage locks refresh
       ordering.
-- [ ] **Retire or consume the empty `Section` state machines** — the six
-      `Section` objects added by `SceneCoordinator.init()` never receive
-      children (scene content lives in `SectionGroups` groups), yet the
-      coordinator writes `section:<id>:opacity` state channels every frame
-      and the `switchState/fadeIn/applyState` machinery runs against groups
-      nothing renders. Either move the per-frame channel writes out of the
-      frame path or remove the Section layer with its tests.
+- [x] **Retire the empty `Section` scene owners** — `Section` now retains only
+      route transition data and StateBus channels; it is no longer a
+      `THREE.Group`, is never attached to the scene, and performs no mesh
+      traversal or GPU disposal. `SectionGroups` remains the sole renderable
+      section owner, while coordinator state transitions and reduced-motion
+      semantics remain covered by lifecycle tests.
 - [x] **Audit the pointer-ink stage twins** — `ContactHaloStage` and
       `ManifestoInkStage` share lifecycle shape, but their TSL graphs,
       geometry, palette, damping and visual contracts are intentionally

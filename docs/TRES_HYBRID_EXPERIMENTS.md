@@ -105,6 +105,14 @@ it would therefore increase abstraction without improving Tres ownership or
 runtime behavior. Keep both owners local until a third stage or measured
 maintenance/runtime cost justifies a new boundary.
 
+The legacy `Section` objects were a separate confirmed cleanup. Their
+StateBus transition data remains useful to `SceneCoordinator`, but they had no
+renderable children after `SectionGroups` adoption. The scene/GPU shell was
+removed, leaving a plain route-state owner; physical WebGLBackend and hardware
+WebGPUBackend gates still report one canvas, settled zero demand and clean
+teardown: `docs/evidence/phase7-live-gate/2026-09-07T20-57-19-008Z-report.json`
+and `docs/evidence/phase7-live-gate/2026-09-07T20-58-50-811Z-report.json`.
+
 ## Validation baseline — 2026-09-07
 
 This slice passed TypeScript, Vue type checks, ESLint with zero errors,

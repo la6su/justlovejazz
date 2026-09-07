@@ -3,7 +3,6 @@
 import * as THREE from 'three'
 import { StateBus } from './StateBus'
 import { type PhaseConfig, type CameraTransform, type BakuTransform } from './WorldConfig'
-import { disposeMaterialDeep } from '../Utils/dispose'
 
 export enum SectionState {
   READY = 'ready',
@@ -25,9 +24,14 @@ export interface LightData {
   intensity: number
 }
 
-export class Section extends THREE.Group {
+/** Route transition state only; renderable section content lives in SectionGroups. */
+export class Section {
   private _disposed = false
   public phaseConfig: PhaseConfig
+  public readonly name: string
+  public visible = false
+  public readonly scale = new THREE.Vector3(1, 1, 1)
+  public readonly rotation = { y: 0 }
 
   // Transform holders read from PhaseConfig at construction
   public cameraTransform: CameraTransform
@@ -44,14 +48,10 @@ export class Section extends THREE.Group {
   private stateChannel: string
   private opacityChannel: string
 
-  // Cache for setMeshOpacity — avoid traverse every call
-  private _opacityMeshCache: THREE.Mesh[] | null = null
-
   constructor(
     config: PhaseConfig,
     public phaseIndex: number,
   ) {
-    super()
     this.name = `section-${config.id}`
     this.phaseConfig = config
     this.stateChannel = `section:${config.id}:state`
@@ -155,25 +155,9 @@ export class Section extends THREE.Group {
     this.setMeshOpacity(StateBus.getInstance().get(this.opacityChannel))
   }
 
-  private setMeshOpacity(value: number): void {
-    if (this._opacityMeshCache === null) {
-      this._opacityMeshCache = []
-      this.traverse((obj: THREE.Object3D) => {
-        if (obj instanceof THREE.Mesh) {
-          const mat = obj.material
-          if (!Array.isArray(mat) && 'opacity' in mat) {
-            if (mat.userData.baseOpacity === undefined) {
-              mat.userData.baseOpacity = (mat as THREE.Material & { opacity: number }).opacity
-            }
-            this._opacityMeshCache!.push(obj)
-          }
-        }
-      })
-    }
-    for (const mesh of this._opacityMeshCache) {
-      const mat = mesh.material as THREE.Material & { opacity: number }
-      mat.opacity = value
-    }
+  private setMeshOpacity(_value: number): void {
+    // Section has no renderable children. SectionGroups owns visible meshes
+    // and their opacity reconciliation.
   }
 
   public forceState(state: SectionState, reduced: boolean = false): void {
@@ -196,15 +180,5 @@ export class Section extends THREE.Group {
     }
     bus.removeChannel(this.stateChannel)
     bus.removeChannel(this.opacityChannel)
-    this._opacityMeshCache = null
-    this.traverse((obj: THREE.Object3D) => {
-      if (obj instanceof THREE.Mesh) {
-        obj.geometry?.dispose()
-        const mats = Array.isArray(obj.material) ? obj.material : [obj.material]
-        mats.forEach((m) => disposeMaterialDeep(m))
-      }
-    })
-    this.removeFromParent()
-    this.clear()
   }
 }
