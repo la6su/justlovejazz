@@ -94,6 +94,17 @@ Result: continue the limited hybrid path only where a subtree is exclusive,
 static in topology and has a smaller ownership boundary than its imperative
 equivalent. The scheduler bridge remains stopped without measured benefit.
 
+## Iteration 5 decision — 2026-09-08
+
+The pointer-ink stage audit confirms shared lifecycle mechanics but distinct
+rendering contracts. `ContactHaloStage` and `ManifestoInkStage` use different
+plane dimensions, TSL subgraphs, palette defaults, damping constants and
+reduced-motion artwork. Extracting a base class or factory would centralize
+boilerplate while leaving each material, geometry and disposal owner separate;
+it would therefore increase abstraction without improving Tres ownership or
+runtime behavior. Keep both owners local until a third stage or measured
+maintenance/runtime cost justifies a new boundary.
+
 ## Validation baseline — 2026-09-07
 
 This slice passed TypeScript, Vue type checks, ESLint with zero errors,
