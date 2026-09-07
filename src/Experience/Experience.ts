@@ -1205,6 +1205,7 @@ export class Experience {
             __jlzRuntimeSnapshot?: () => {
               resources: unknown
               loop: unknown
+              configIds: readonly string[]
               demand: {
                 needsRender: boolean
                 cursorSettled: boolean | null
@@ -1218,6 +1219,7 @@ export class Experience {
           return {
             resources: this.devPanel.getResourceSnapshot(),
             loop: this._scheduler.diagnostics,
+            configIds: this.coordinator.configIds,
             // Settled-idle evidence (Phase 7+ gates): the exact demand state
             // behind the settle decision — which flag (if any) keeps the
             // single loop driver from stopping after the settled frame.

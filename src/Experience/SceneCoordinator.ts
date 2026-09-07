@@ -82,6 +82,11 @@ export class SceneCoordinator {
     return this._currentSectionIndex
   }
 
+  /** DEV diagnostics: ids currently installed for the active page. */
+  public get configIds(): readonly string[] {
+    return this.configs.map((config) => config.id)
+  }
+
   /** The stable section groups (empty before the SectionGroups owner is built).
    *  Public read accessor: Experience's theme handler + low-fps particle
    *  reduction iterate the groups directly. */
