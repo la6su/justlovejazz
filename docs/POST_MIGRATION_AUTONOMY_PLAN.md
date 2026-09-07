@@ -57,6 +57,19 @@ therefore stopped at the admission gate. The next declarative slice must start
 from a newly introduced static scene element or from a measured maintenance or
 runtime bottleneck; existing animated owners are not candidates by default.
 
+## Next decision queue — 2026-09-08
+
+PR #206's complete CI gate is green (unit, build, Playwright and Lighthouse),
+and the route/config plus demand contract is covered by the 20-cycle soak. The
+migration therefore has no unverified code slice to admit right now.
+
+Continue only when a browser restores a usable WebGL framebuffer after
+`WEBGL_lose_context`, a new isolated static scene leaf appears, or a measured
+runtime/maintenance bottleneck justifies a bounded declarative extraction.
+Until then, retain the current hybrid topology and advance reviewed Works
+assets and case chapters. Do not add speculative wrappers, registries, loops,
+or renderer bridges.
+
 ## Loop decision
 
 `RenderScheduler` remains the loop owner. Tres `renderMode="manual"` plus
