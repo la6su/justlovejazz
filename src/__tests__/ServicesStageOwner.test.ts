@@ -15,12 +15,32 @@ describe('ServicesStageOwner lifecycle spike', () => {
   afterEach(() => document.body.replaceChildren())
 
   it('attaches the imperative owner once and disposes it with Vue teardown', async () => {
-    const renderer = { isRenderer: true, domElement: document.createElement('canvas'), init: vi.fn().mockResolvedValue(undefined), render: vi.fn(), setSize: vi.fn(), setPixelRatio: vi.fn(), setClearColor: vi.fn(), dispose: vi.fn(), shadowMap: { enabled: false, type: 0 } }
+    const renderer = {
+      isRenderer: true,
+      domElement: document.createElement('canvas'),
+      init: vi.fn().mockResolvedValue(undefined),
+      render: vi.fn(),
+      setSize: vi.fn(),
+      setPixelRatio: vi.fn(),
+      setClearColor: vi.fn(),
+      dispose: vi.fn(),
+      shadowMap: { enabled: false, type: 0 },
+    }
     const mounted = { scene: null as Scene | null, stage: null as ServicesStage | null }
     const wrapper = mount(TresCanvas, {
       attachTo: document.body,
-      props: { renderMode: 'manual', renderer: (() => renderer) as never, onReady: (context) => { mounted.scene = context.scene.value; context.renderer.loop.stop() } },
-      slots: { default: () => h(ServicesStageOwner, { onReady: (value: ServicesStage) => (mounted.stage = value) }) },
+      props: {
+        renderMode: 'manual',
+        renderer: (() => renderer) as never,
+        onReady: (context) => {
+          mounted.scene = context.scene.value
+          context.renderer.loop.stop()
+        },
+      },
+      slots: {
+        default: () =>
+          h(ServicesStageOwner, { onReady: (value: ServicesStage) => (mounted.stage = value) }),
+      },
     })
     await flushPromises()
     expect(mounted.stage?.parent).toBe(mounted.scene)
