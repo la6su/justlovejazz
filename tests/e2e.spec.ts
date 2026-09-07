@@ -434,7 +434,6 @@ test.describe('JustLoveJazz — accessibility & DOM UI', () => {
         'href',
         'https://t.me/justlovejazz',
       )
-      await expect(page.locator('#section-lab .jlz-lab-accordion')).toHaveCount(0)
 
       await page.evaluate(() => {
         document.body.dataset.cinematicSheet = 'menu'

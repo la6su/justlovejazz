@@ -182,15 +182,11 @@ export default defineConfig(() => ({
             {
               name(id) {
                 if (id.includes('/src/core/Section')) return 'chunk-sections'
-                if (id.includes('/src/shaders/')) return 'chunk-shaders'
                 if (id.includes('/src/Experience/Camera')) return 'chunk-camera'
                 if (id.includes('/src/Experience/Cursor')) return 'chunk-cursor'
-                if (id.includes('/src/Experience/WebGLText')) return 'chunk-text'
                 if (id.includes('/src/Experience/World/')) return 'chunk-world'
-                if (id.includes('/src/core/World')) return 'chunk-core-world'
                 if (id.includes('/src/Experience/Renderer')) return 'chunk-renderer'
                 if (id.includes('/src/core/PostProcessingManager')) return 'chunk-post'
-                if (id.includes('/src/core/AssetManager')) return 'chunk-assets'
                 if (id.includes('/src/core/')) return 'chunk-core'
                 if (id.includes('/src/UI/')) return 'chunk-ui'
                 if (id.includes('/src/Experience/')) return 'chunk-experience'
