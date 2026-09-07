@@ -91,6 +91,11 @@ the camera-aligned exhibit layer owns its explicitly positioned hit targets.
       WebGLBackend path. A NodeMaterial conversion has no measured visual or
       lifecycle benefit and would add backend-parity and ownership risk; keep
       the ambient owner imperative as recorded in `TRES_HYBRID_EXPERIMENTS.md`.
+- [x] **Validate the declarative EnvSky leaf physically** — Tres now owns the
+      static sky mesh and plane geometry while `EnvSphere` owns the borrowed
+      palette material and its disposal. Gate this split on both real backends
+      before admitting another environment face. WebGLBackend and hardware
+      WebGPUBackend evidence is recorded in `docs/TRES_FULL_TRANSITION.md`.
 - [x] Capture normal/inverse, keyboard and reduced-motion visual baselines for
       every public route, plus separate physical WebGPU and WebGL runs. The
       current inventory and explicit gaps are recorded in

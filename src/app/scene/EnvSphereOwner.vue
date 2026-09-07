@@ -8,7 +8,7 @@ const context = useTresContext()
 const owner = shallowRef<EnvSphere | null>(null)
 
 onMounted(() => {
-  const sphere = new EnvSphere()
+  const sphere = new EnvSphere(false)
   context.scene.value.add(sphere)
   owner.value = sphere
   emit('ready', sphere)

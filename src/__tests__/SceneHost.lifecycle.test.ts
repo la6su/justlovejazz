@@ -89,7 +89,19 @@ vi.mock('../app/scene/EnvSphereOwner.vue', () => ({
   default: defineComponent({
     emits: ['ready'],
     setup(_, { emit }) {
-      onMounted(() => emit('ready', new THREE.Group()))
+      onMounted(() =>
+        emit('ready', Object.assign(new THREE.Group(), { skyMaterial: new THREE.MeshBasicMaterial() })),
+      )
+      return () => null
+    },
+  }),
+}))
+
+vi.mock('../app/scene/EnvSky.vue', () => ({
+  default: defineComponent({
+    emits: ['ready'],
+    setup(_, { emit }) {
+      onMounted(() => emit('ready'))
       return () => null
     },
   }),

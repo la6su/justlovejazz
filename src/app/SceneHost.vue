@@ -24,7 +24,7 @@
 // Experience then creates its own scene and `Renderer.init()` constructs its
 // own renderer (the retained pre-Phase-7 path).
 
-import { onBeforeUnmount, ref, toValue } from 'vue'
+import { onBeforeUnmount, ref, shallowRef, toValue } from 'vue'
 import { TresCanvas } from '@tresjs/core'
 import type { TresContext, TresRendererSetupContext } from '@tresjs/core'
 import type { PerspectiveCamera } from 'three'
@@ -43,6 +43,7 @@ import GroundPlane from './scene/GroundPlane.vue'
 import SectionGroupRoots from './scene/SectionGroupRoots.vue'
 import ServicesStageOwner from './scene/ServicesStageOwner.vue'
 import EnvSphereOwner from './scene/EnvSphereOwner.vue'
+import EnvSky from './scene/EnvSky.vue'
 import type { CinematicLightsNodes } from '../Experience/World/Lights'
 import type { GroundPlaneNode } from '../Experience/Scene/GroundPlane'
 import type { Group } from 'three'
@@ -110,10 +111,15 @@ let resolveDeclarativeServicesStage!: (stage: ServicesStage) => void
 const declarativeServicesStageReady = new Promise<ServicesStage>((resolve) => {
   resolveDeclarativeServicesStage = resolve
 })
-let declarativeEnvSphere: EnvSphere | null = null
+const declarativeEnvSphere = shallowRef<EnvSphere | null>(null)
 let resolveDeclarativeEnvSphere!: (owner: EnvSphere) => void
 const declarativeEnvSphereReady = new Promise<EnvSphere>((resolve) => {
   resolveDeclarativeEnvSphere = resolve
+})
+let declarativeEnvSky = false
+let resolveDeclarativeEnvSky!: () => void
+const declarativeEnvSkyReady = new Promise<void>((resolve) => {
+  resolveDeclarativeEnvSky = resolve
 })
 const disposedRenderers = new WeakSet<object>()
 
@@ -139,8 +145,12 @@ function onDeclarativeServicesStageReady(stage: ServicesStage): void {
   resolveDeclarativeServicesStage(stage)
 }
 function onDeclarativeEnvSphereReady(owner: EnvSphere): void {
-  declarativeEnvSphere = owner
+  declarativeEnvSphere.value = owner
   resolveDeclarativeEnvSphere(owner)
+}
+function onDeclarativeEnvSkyReady(): void {
+  declarativeEnvSky = true
+  resolveDeclarativeEnvSky()
 }
 
 function disposeRendererOnce(renderer: UnifiedRenderSurface | null): void {
@@ -164,7 +174,8 @@ async function onReady(context: TresContext): Promise<void> {
   const ground = declarativeGround ?? (await declarativeGroundReady)
   const sectionRoots = declarativeSectionRoots ?? (await declarativeSectionRootsReady)
   const servicesStage = declarativeServicesStage ?? (await declarativeServicesStageReady)
-  const envSphere = declarativeEnvSphere ?? (await declarativeEnvSphereReady)
+  const envSphere = declarativeEnvSphere.value ?? (await declarativeEnvSphereReady)
+  if (!declarativeEnvSky) await declarativeEnvSkyReady
   if (!isCurrent()) return
   const canvas =
     (tresRef.value?.$el as HTMLCanvasElement | undefined) ?? document.createElement('canvas')
@@ -266,6 +277,11 @@ onBeforeUnmount(() => {
       <SectionGroupRoots @ready="onDeclarativeSectionRootsReady" />
       <ServicesStageOwner @ready="onDeclarativeServicesStageReady" />
       <EnvSphereOwner @ready="onDeclarativeEnvSphereReady" />
+      <EnvSky
+        v-if="declarativeEnvSphere"
+        :material="declarativeEnvSphere.skyMaterial"
+        @ready="onDeclarativeEnvSkyReady"
+      />
     </TresCanvas>
   </div>
 </template>

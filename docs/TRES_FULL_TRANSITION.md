@@ -105,3 +105,16 @@ would have constructed duplicate adopted owners. The corrected physical gates
 record the expected single-owner inventory on WebGLBackend and hardware
 WebGPUBackend: `docs/evidence/phase7-live-gate/2026-09-07T20-14-02-129Z-report.json`
 and `docs/evidence/phase7-live-gate/2026-09-07T20-14-40-284Z-report.json`.
+
+The next static leaf is the pavilion sky. `EnvSky.vue` owns its plane geometry
+and mesh through Tres, while `EnvSphere` retains the borrowed basic material,
+palette interpolation and terminal disposal. The native `EnvSphere()` default
+still constructs its sky for the non-Tres fallback. This remains a narrow
+composition change: it neither changes render-loop ownership nor adds an
+animation callback.
+
+The EnvSky physical gate passed on 2026-09-07 for automatic WebGLBackend and
+hardware WebGPUBackend, including reduced motion, one canvas, stopped settled
+loop and clean root teardown. Evidence:
+`docs/evidence/phase7-live-gate/2026-09-07T20-20-39-043Z-report.json` and
+`docs/evidence/phase7-live-gate/2026-09-07T20-21-17-402Z-report.json`.
