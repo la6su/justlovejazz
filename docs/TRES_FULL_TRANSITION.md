@@ -146,3 +146,15 @@ reduced-motion settlement; Vue/Tres exclusively attaches and disposes lights.
 The cinematic `Camera` wrapper now requires the physical camera emitted by
 `CinematicCamera.vue`; it no longer has a native `PerspectiveCamera`
 construction path.
+
+The initial `Renderer` path now likewise requires the `SceneHost` renderer and
+persistent canvas. It no longer constructs or appends a fallback canvas during
+boot. `Renderer` retains post-processing and bounded device-loss recovery,
+which is the only path permitted to recreate the unified renderer on the same
+Vue-owned canvas; the replacement remains forwarded to the Tres host.
+
+The renderer-adoption physical gate passed on 2026-09-07 for automatic
+WebGLBackend and hardware WebGPUBackend, including reduced motion, stopped
+settled loop, one renderer canvas and clean root teardown:
+`docs/evidence/phase7-live-gate/2026-09-07T20-47-20-104Z-report.json` and
+`docs/evidence/phase7-live-gate/2026-09-07T20-48-11-998Z-report.json`.

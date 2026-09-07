@@ -698,6 +698,10 @@ Theme ownership and visual rules: [`docs/THEME.md`](docs/THEME.md).
 - [x] **Reject late Renderer init candidates** — unified WebGPU candidates now
       carry a lifecycle generation guard; a teardown during async init disposes the
       late candidate before it can create a pipeline, canvas owner, or recovery hook.
+- [x] **Require SceneHost renderer adoption** — initial `Renderer` setup now
+      accepts only the ready SceneHost renderer and persistent canvas, removing its
+      obsolete detached-canvas/backend construction path. Device-loss recovery
+      remains the sole same-canvas renderer recreation owner.
 - [x] **Guard SceneHost fallback teardown** — the persistent Tres root now
       invalidates pending fallback initialization on unmount and disposes a late
       candidate instead of resolving a bridge for a removed Vue root.

@@ -104,10 +104,9 @@ export class Renderer {
   // policy: a SwiftShader WebGPU adapter re-creates on the WebGL backend)
   // — device-loss recovery must match it.
   private _forceWebGL = false
-  // Phase 7: adoption bookkeeping. The SceneHost canvas is Vue-owned DOM —
-  // `dispose()` must not remove it. The replacement hook syncs the Tres
-  // context after a device-loss recovery re-creation.
-  private _ownsCanvas = true
+  // The persistent SceneHost canvas is Vue-owned DOM. The replacement hook
+  // keeps the Tres context in sync after device-loss recovery re-creates the
+  // renderer on that same canvas.
   private _onInstanceReplaced: ((instance: RenderSurface) => void) | null = null
   // Failure-state DOM owner. Keep one overlay per renderer and remove it on
   // terminal teardown so repeated device-loss failures cannot accumulate UI.
@@ -133,24 +132,6 @@ export class Renderer {
     }
   }
 
-  private setupCanvas(canvas: HTMLCanvasElement): void {
-    canvas.className = 'canvas'
-    // The semantic route content describes the experience; the scene is its
-    // decorative visual layer and should not become an unnamed accessibility
-    // tree node.
-    canvas.setAttribute('aria-hidden', 'true')
-    Object.assign(canvas.style, {
-      position: 'fixed',
-      top: '0',
-      left: '0',
-      width: '100vw',
-      height: '100dvh',
-      zIndex: '1',
-      pointerEvents: 'none',
-    })
-    document.body.appendChild(canvas)
-  }
-
   private showUnsupportedMessage(): void {
     if (this._disposed || this._unsupportedOverlay) return
     const overlay = document.createElement('div')
@@ -163,95 +144,20 @@ export class Renderer {
     this._unsupportedOverlay = overlay
   }
 
-  async init(adopted?: AdoptedRenderer): Promise<void> {
+  async init(adopted: AdoptedRenderer): Promise<void> {
     this._disposed = false
     this._recoveryFailed = false
     this._lifecycleGeneration += 1
-    const generation = this._lifecycleGeneration
-    const isCurrent = (): boolean => !this._disposed && generation === this._lifecycleGeneration
-    if (adopted) {
-      // ── Phase 7 adoption path ──────────────────────────────────────────
-      // The SceneHost custom renderer factory owns construction + the single
-      // async init + the actual-backend inspection (software-adapter
-      // re-creation already applied). This wrapper adopts the instance:
-      // capabilities, sizing and the post pipeline are configured exactly as
-      // on the adopted path. The canvas is Vue-owned (`.jlz-scene-host` CSS)
-      // so it is never re-styled or removed here.
-      this.instance = adopted.instance
-      this._ownsCanvas = false
-      this._onInstanceReplaced = adopted.onInstanceReplaced ?? null
-      // Device-loss recovery must re-create on the SAME final backend mode
-      // (a software adapter or automatic WebGLBackend → forceWebGL).
-      this._forceWebGL = adopted.mode === 'webgl'
-      this.capabilities.setFinalRendererMode(adopted.mode)
-    } else {
-      // Phase 6 production default: the unified production renderer —
-      // `WebGPURenderer` is the only renderer class the app constructs.
-      // (The dev-forced classic `?renderer=webgl` QA owner — the retained
-      // forced-WebGLBackend GLSL post chain — was removed in Phase 10 after
-      // its parity evidence was captured.)
-      // The actual backend is inspected AFTER async init; a software
-      // (SwiftShader) WebGPU adapter is re-created with forceWebGL (same
-      // class, never a classic `WebGLRenderer`) and capabilities are
-      // calculated from the actual backend, not the initial `navigator.gpu`
-      // feature detection.
-      this._forceWebGL = false
-      const canvas = document.createElement('canvas')
-      let candidate = createUnifiedWebGPUInstance(canvas, false)
-      await initUnifiedWebGPUInstance(candidate)
-      if (!isCurrent()) {
-        candidate.dispose()
-        return
-      }
-      let plan = planUnifiedBackend(inspectUnifiedBackend(candidate))
-      if (import.meta.env.DEV) {
-        console.info(
-          `[Renderer.init] unified WebGPURenderer backend: ${
-            inspectUnifiedBackend(candidate).backendName ?? '?'
-          } (isFallbackAdapter=${inspectUnifiedBackend(candidate).isFallbackAdapter}) → plan recreate=${plan.recreate} mode=${plan.mode}`,
-        )
-      }
-      if (plan.recreate) {
-        // Software WebGPU (SwiftShader ~2 FPS) → hardware WebGL2 via
-        // forceWebGL, same WebGPURenderer class. The first canvas is not in
-        // the DOM yet (setupCanvas runs later), so just dispose + re-create.
-        if (import.meta.env.DEV) {
-          console.info(
-            '[Renderer.init] unified: software WebGPU adapter — re-creating with forceWebGL',
-          )
-        }
-        candidate.dispose()
-        this._forceWebGL = true
-        candidate = createUnifiedWebGPUInstance(canvas, true)
-        await initUnifiedWebGPUInstance(candidate)
-        if (!isCurrent()) {
-          candidate.dispose()
-          return
-        }
-        plan = planUnifiedBackend(inspectUnifiedBackend(candidate))
-      }
-      if (!isCurrent()) {
-        candidate.dispose()
-        return
-      }
-      this.instance = candidate
-      this.capabilities.setFinalRendererMode(plan.mode)
-      if (import.meta.env.DEV && plan.mode === 'webgpu') {
-        console.info('[Renderer.init] unified premium WebGPU path active')
-      }
-
-      // Size the Vue-owned canvas through the adopted renderer instance.
-      this.instance.setPixelRatio(Math.min(this.sizes.dpr, this.capabilities.maxDpr))
-      this.instance.setSize(this.sizes.width, this.sizes.height)
-      this.setupCanvas(this.instance.domElement)
-    }
-
-    // Adoption path: Tres already sizes the canvas; clamp the DPR cap to the
-    // device capability (identical to the established sizing contract).
-    if (adopted) {
-      this.instance.setPixelRatio(Math.min(this.sizes.dpr, this.capabilities.maxDpr))
-      this.instance.setSize(this.sizes.width, this.sizes.height)
-    }
+    // SceneHost owns construction, async initialization and actual backend
+    // inspection. This wrapper adopts the one live renderer for capability,
+    // sizing, post-processing and device-loss recovery.
+    this.instance = adopted.instance
+    this._onInstanceReplaced = adopted.onInstanceReplaced ?? null
+    // Recovery must preserve the final backend selected by SceneHost.
+    this._forceWebGL = adopted.mode === 'webgl'
+    this.capabilities.setFinalRendererMode(adopted.mode)
+    this.instance.setPixelRatio(Math.min(this.sizes.dpr, this.capabilities.maxDpr))
+    this.instance.setSize(this.sizes.width, this.sizes.height)
 
     // Capability tier and post settings must reflect the backend selected
     // above, not merely the initial navigator.gpu feature detection.
@@ -440,8 +346,7 @@ export class Renderer {
         this._forceWebGL = true
         replacement.dispose()
         replacement = null
-        // Re-create on the SAME canvas element (still in the DOM — do not
-        // remove it, unlike the init-time path where setupCanvas has not run).
+        // Re-create on the same persistent SceneHost canvas.
         replacement = await createUnifiedWebGPUInstanceAndInit(canvas, true)
         if (this._disposed || generation !== this._lifecycleGeneration) {
           replacement.dispose()
@@ -607,12 +512,7 @@ export class Renderer {
     this.instance.dispose()
     this._unsupportedOverlay?.remove()
     this._unsupportedOverlay = null
-    // A-3 fix: remove the canvas DOM element owned by this class (legacy
-    // path). The Phase 7 adopted canvas is Vue-owned (SceneHost unmount) and
-    // must survive Renderer.dispose().
-    if (this._ownsCanvas) {
-      this.instance.domElement?.remove()
-    }
+    // SceneHost owns the persistent canvas and removes it on Vue root teardown.
   }
 }
 
