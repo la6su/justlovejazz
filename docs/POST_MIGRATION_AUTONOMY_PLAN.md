@@ -30,6 +30,14 @@ when a missing assertion is identified.
 Stop if correctness requires moving the scheduler to Tres `useLoop`, changing
 the persistent canvas mode, or adding another state/event abstraction.
 
+### Current route/config result — 2026-09-08
+
+The soak now reads the coordinator's DEV-only config ids after every route
+settles and requires the target page family (`sec_*` for home or
+`content_<page>_*` for content routes). Twenty steady-state cycles passed on
+`WebGLBackend`, including zero-idle demand, resource caps, one-canvas and
+root-destroy checks. No scheduler or canvas ownership change was needed.
+
 ## Iteration 3 — measured declarative admission
 
 Review remaining owners against a strict admission gate. Migrate only a new or
