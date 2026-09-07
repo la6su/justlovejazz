@@ -45,6 +45,16 @@ vi.mock('../app/scene/CinematicLights.vue', () => ({
   }),
 }))
 
+vi.mock('../app/scene/CinematicCamera.vue', () => ({
+  default: defineComponent({
+    emits: ['ready'],
+    setup(_, { emit }) {
+      onMounted(() => emit('ready', new THREE.PerspectiveCamera()))
+      return () => null
+    },
+  }),
+}))
+
 vi.mock('../app/scene/GroundPlane.vue', () => ({
   default: defineComponent({
     emits: ['ready'],

@@ -387,6 +387,12 @@ export class Experience {
   }
 
   private resizeSceneOwners(): void {
+    // Sizes is the single viewport listener. Fan the already-updated snapshot
+    // out synchronously so the camera, renderer and route owners observe one
+    // coherent frame size. This leaves a single adapter point for the future
+    // Tres context-size bridge.
+    this.camera?.resize()
+    this.renderer?.resize()
     this.coordinator?.resize(this.sizes.width, this.sizes.height)
     // Phase 8 slice 7: the /works stage resize moved out of World.resize —
     // forwarded directly (the stage is lazy; null until /works is reached).

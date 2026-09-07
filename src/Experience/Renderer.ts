@@ -122,8 +122,6 @@ export class Renderer {
       if (!this._disposed) this.showUnsupportedMessage()
       throw new Error('Neither WebGPU nor WebGL2 is supported by this browser.')
     }
-    this._onResize = () => this.resize()
-    window.addEventListener('resize', this._onResize, { passive: true })
   }
 
   private buildPipelineConfig(): RenderPipelineConfig {
@@ -134,9 +132,6 @@ export class Renderer {
       grainEnabled: this.capabilities.tier !== 'low',
     }
   }
-
-  // Resize handler ref — cleaned up in dispose().
-  private _onResize: () => void = () => {}
 
   private setupCanvas(canvas: HTMLCanvasElement): void {
     canvas.className = 'canvas'
@@ -601,12 +596,11 @@ export class Renderer {
     })
   }
 
-  /** Dispose: clean up GPU resources + window listener */
+  /** Dispose renderer-owned GPU resources. */
   public dispose(): void {
     if (this._disposed) return
     this._disposed = true
     this._lifecycleGeneration += 1
-    window.removeEventListener('resize', this._onResize)
     this._loopCallback = null
     this._onInstanceReplaced = null
     this.pipeline?.dispose()

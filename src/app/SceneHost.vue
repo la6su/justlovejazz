@@ -8,8 +8,8 @@
 //   canvas, e2e `canvas.canvas`);
 // - the renderer (the custom renderer factory — the single construction
 //   owner; Tres awaits its async `init()` before the ready event);
-// - the camera (created here, passed to Tres and to Experience through the
-//   bridge — wrapped by the `Camera` class for cinematic behavior);
+// - the camera (declared by `CinematicCamera`, passed to Experience through
+//   the bridge and adopted by its cinematic controller);
 // - the scene (the Tres context scene — Experience stops creating its own);
 //
 // and resolves the `sceneHost` bridge after renderer init + actual-backend
@@ -24,10 +24,10 @@
 // Experience then creates its own scene and `Renderer.init()` constructs its
 // own renderer (the retained pre-Phase-7 path).
 
-import { markRaw, onBeforeUnmount, ref, toValue } from 'vue'
+import { onBeforeUnmount, ref, toValue } from 'vue'
 import { TresCanvas } from '@tresjs/core'
 import type { TresContext, TresRendererSetupContext } from '@tresjs/core'
-import { PerspectiveCamera } from 'three'
+import type { PerspectiveCamera } from 'three'
 import { planUnifiedBackend } from '../core/rendererBackend'
 import { DeviceCapability } from '../core/DeviceCapability'
 import {
@@ -38,6 +38,7 @@ import {
 } from '../core/unifiedRenderer'
 import { sceneHost } from './sceneHost'
 import CinematicLights from './scene/CinematicLights.vue'
+import CinematicCamera from './scene/CinematicCamera.vue'
 import GroundPlane from './scene/GroundPlane.vue'
 import type { CinematicLightsNodes } from '../Experience/World/Lights'
 import type { GroundPlaneNode } from '../Experience/Scene/GroundPlane'
@@ -55,10 +56,6 @@ const forceWebGLBackendForTest =
 // Renderer owner; otherwise Tres can overwrite the capped buffer with the
 // raw devicePixelRatio (for example 3× on a mobile browser).
 const initialDprCap = DeviceCapability.getInstance().maxDpr
-
-// Single camera owner (Phase 7). Tres registers it as the active camera and
-// keeps its aspect in sync; the Experience `Camera` wrapper adopts it.
-const camera = markRaw(new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000))
 
 // Single renderer-construction owner (Phase 7): the custom renderer factory.
 // Construction is synchronous (Tres awaits the instance's `init()` itself);
@@ -82,6 +79,11 @@ let liveRenderer: UnifiedRenderSurface | null = null
 let createdRenderer: UnifiedRenderSurface | null = null
 let unbindRendererOwner: (() => void) | null = null
 let stopTresLoop: (() => void) | null = null
+let declarativeCamera: PerspectiveCamera | null = null
+let resolveDeclarativeCamera!: (camera: PerspectiveCamera) => void
+const declarativeCameraReady = new Promise<PerspectiveCamera>((resolve) => {
+  resolveDeclarativeCamera = resolve
+})
 let declarativeLights: CinematicLightsNodes | null = null
 let resolveDeclarativeLights!: (lights: CinematicLightsNodes) => void
 const declarativeLightsReady = new Promise<CinematicLightsNodes>((resolve) => {
@@ -93,6 +95,11 @@ const declarativeGroundReady = new Promise<GroundPlaneNode>((resolve) => {
   resolveDeclarativeGround = resolve
 })
 const disposedRenderers = new WeakSet<object>()
+
+function onDeclarativeCameraReady(camera: PerspectiveCamera): void {
+  declarativeCamera = camera
+  resolveDeclarativeCamera(camera)
+}
 
 function onDeclarativeLightsReady(lights: CinematicLightsNodes): void {
   declarativeLights = lights
@@ -119,6 +126,7 @@ async function onReady(context: TresContext): Promise<void> {
   stopTresLoop()
   const generation = ++lifecycleGeneration
   const isCurrent = (): boolean => !disposed && generation === lifecycleGeneration
+  const camera = declarativeCamera ?? (await declarativeCameraReady)
   const lights = declarativeLights ?? (await declarativeLightsReady)
   const ground = declarativeGround ?? (await declarativeGroundReady)
   if (!isCurrent()) return
@@ -209,11 +217,11 @@ onBeforeUnmount(() => {
       render-mode="on-demand"
       :dpr="[1, initialDprCap]"
       :renderer="rendererFactory"
-      :camera="camera"
       :style="{ pointerEvents: 'none' }"
       @ready="onReady"
       @error="onError"
     >
+      <CinematicCamera @ready="onDeclarativeCameraReady" />
       <CinematicLights @ready="onDeclarativeLightsReady" />
       <GroundPlane @ready="onDeclarativeGroundReady" />
     </TresCanvas>

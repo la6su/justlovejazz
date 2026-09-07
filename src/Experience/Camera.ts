@@ -66,28 +66,34 @@ export class Camera {
    *   SceneHost is the single camera owner). When omitted the wrapper
    *   creates its own — the native-world host (rollback) path.
    */
-  constructor(sizes: Sizes, instance?: THREE.PerspectiveCamera) {
+  constructor(
+    private readonly sizes: Sizes,
+    instance?: THREE.PerspectiveCamera,
+  ) {
     this.instance =
       instance ?? new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 1000)
     this.smoothPosition.set(0, 0, 3)
     this.instance.position.copy(this.smoothPosition)
 
-    // Bound ref so removeEventListener works in destroy().
-    this._onResize = () => {
-      this.instance.aspect = sizes.width / sizes.height
-      this.instance.updateProjectionMatrix()
-    }
-    window.addEventListener('resize', this._onResize, { passive: true })
+    this.resize()
   }
 
-  // Resize handler ref — cleaned up in destroy().
-  private _onResize: () => void = () => {}
+  /**
+   * Apply the current viewport port to the externally-owned camera.
+   * Experience calls this from the single Sizes resize fan-out, so the camera
+   * no longer installs a competing window listener beside Tres's own size
+   * manager.
+   */
+  resize(): void {
+    if (this._disposed) return
+    this.instance.aspect = this.sizes.width / this.sizes.height
+    this.instance.updateProjectionMatrix()
+  }
 
-  /** Remove the window resize listener. Call from Experience.destroy(). */
+  /** Release only wrapper-owned timers and state. */
   destroy(): void {
     if (this._disposed) return
     this._disposed = true
-    window.removeEventListener('resize', this._onResize)
     // C12 fix: clear pending pulse timer so it doesn't fire on a destroyed Camera.
     if (this._pulseTimer) {
       clearTimeout(this._pulseTimer)

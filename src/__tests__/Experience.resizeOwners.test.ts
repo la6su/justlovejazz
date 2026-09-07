@@ -3,10 +3,14 @@ import { Experience } from '../Experience/Experience'
 
 describe('Experience resize owner propagation', () => {
   it('forwards current viewport dimensions to every initialized lazy owner', () => {
+    const cameraResize = vi.fn()
+    const rendererResize = vi.fn()
     const coordinatorResize = vi.fn()
     const cyprusResize = vi.fn()
     const exp = Object.assign(Object.create(Experience.prototype), {
       sizes: { width: 360, height: 800 },
+      camera: { resize: cameraResize },
+      renderer: { resize: rendererResize },
       coordinator: { resize: coordinatorResize },
       worksPlaneStage: null,
       contactCyprusStage: { resize: cyprusResize },
@@ -14,6 +18,8 @@ describe('Experience resize owner propagation', () => {
 
     ;(exp as unknown as { resizeSceneOwners: () => void }).resizeSceneOwners()
 
+    expect(cameraResize).toHaveBeenCalledTimes(1)
+    expect(rendererResize).toHaveBeenCalledTimes(1)
     expect(coordinatorResize).toHaveBeenCalledWith(360, 800)
     expect(cyprusResize).toHaveBeenCalledTimes(1)
     expect(cyprusResize).toHaveBeenCalledWith(360, 800)
@@ -22,6 +28,8 @@ describe('Experience resize owner propagation', () => {
   it('does not initialize a missing lazy Cyprus owner during resize', () => {
     const exp = Object.assign(Object.create(Experience.prototype), {
       sizes: { width: 1920, height: 1080 },
+      camera: undefined,
+      renderer: undefined,
       coordinator: { resize: vi.fn() },
       worksPlaneStage: null,
       contactCyprusStage: null,

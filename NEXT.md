@@ -1,11 +1,12 @@
 # Next work
 
-This file is the active outcome queue. The Vue 3, Vue Router and TresJS
-migration is complete; its phase history, acceptance gates and removal ledger
-are preserved in [`docs/archive/MIGRATION_VUE_TRES.md`](docs/archive/MIGRATION_VUE_TRES.md).
-Do not reopen completed migration phases. Current runtime contracts are in
-[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md); verification is in
-[`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md).
+This file is the active outcome queue. The completed Phase 5–10 migration
+history, acceptance gates and removal ledger are preserved in
+[`docs/archive/MIGRATION_VUE_TRES.md`](docs/archive/MIGRATION_VUE_TRES.md).
+The subsequent full scene-composition transition is active under
+[`docs/TRES_FULL_TRANSITION.md`](docs/TRES_FULL_TRANSITION.md). Current runtime
+contracts are in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md); verification is
+in [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md).
 
 ## Works direction
 
@@ -22,6 +23,20 @@ the camera-aligned exhibit layer owns its explicitly positioned hit targets.
 ## Active engineering queue
 
 ### World and project development
+
+- [x] **Create the single viewport fan-out** — `Sizes` is the only application
+      window-resize listener; `Experience` synchronizes the adopted camera,
+      renderer and active scene owners after it captures a viewport snapshot.
+      This is the first full-Tres transition foundation and retains the existing
+      renderer/canvas/loop topology. The physical WebGLBackend and WebGPUBackend
+      gates pass; evidence is recorded in `docs/TRES_FULL_TRANSITION.md`.
+
+- [x] **Declare the physical camera in Tres** — `CinematicCamera.vue` now
+      owns static camera construction and selects its instance through the
+      Tres active-camera port. The existing `Camera` controller adopts that
+      object for cinematic motion; `RenderScheduler`, renderer recovery and
+      demand behaviour are unchanged. Component, lifecycle, full-unit, build,
+      WebGLBackend and hardware-WebGPUBackend gates pass.
 
 - [x] **Showreel became a signal theater** — the home showreel is no longer a
       UIKit modal. `ShowreelTheater` owns a private render mode (fullscreen
