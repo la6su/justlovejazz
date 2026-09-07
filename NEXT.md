@@ -990,6 +990,12 @@ Theme ownership and visual rules: [`docs/THEME.md`](docs/THEME.md).
       opacity-channel or GPU disposal work. `SectionGroups` remains the sole
       renderable section owner, while coordinator state transitions and
       reduced-motion semantics remain covered by lifecycle tests.
+- [x] **Audit remaining Section StateBus channels** — state channels are read
+      only by the Section transition machine and `SceneCoordinator`; they do
+      not represent renderable resources or a public route contract. Keep this
+      narrow internal animation boundary because StateBus completion timing
+      drives READY/VIEWING/PASSED transitions; replacing it would add a second
+      transition engine without a measured runtime benefit.
 - [x] **Audit the pointer-ink stage twins** — `ContactHaloStage` and
       `ManifestoInkStage` share lifecycle shape, but their TSL graphs,
       geometry, palette, damping and visual contracts are intentionally

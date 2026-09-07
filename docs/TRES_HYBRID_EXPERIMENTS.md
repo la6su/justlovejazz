@@ -118,6 +118,12 @@ soak and the hardware WebGPU live gate:
 `docs/evidence/phase10-route-cycle-soak/2026-09-07T21-00-03-653Z-report.json`
 and `docs/evidence/phase7-live-gate/2026-09-07T21-04-16-394Z-report.json`.
 
+The remaining `Section` StateBus channels are intentionally retained as a
+private transition boundary. They have no renderable or route consumers, but
+their completion events synchronize the coordinator's READY/VIEWING/PASSED
+state machine. Replacing them would introduce a second animation engine with
+no measured Tres or runtime benefit.
+
 ## Validation baseline — 2026-09-07
 
 This slice passed TypeScript, Vue type checks, ESLint with zero errors,
