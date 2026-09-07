@@ -6,7 +6,7 @@
 // Each character: starts offset (translateY + rotate) + blurred, animates
 // to clean position. Staggered timing = wave-like reveal.
 //
-// Used by: entry-app.ts (scrollSpy on .studio-title), ProjectOverlay title.
+// Used by: entry-app.ts (IntersectionObserver reveal on .studio-title), FullscreenOverlay title.
 // For console-style typewriter (eyebrow numbers), see NoiseText.ts.
 
 export class BlurFade {

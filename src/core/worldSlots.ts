@@ -5,7 +5,9 @@
 // framework-neutral readonly tuple that owns the shared slot facts:
 //
 //   - the slot IDs in stable index order;
-//   - each slot's story range (contiguous fifths of the story track);
+//   - each slot's story range (contiguous fifths of the story track; the
+//     menu sheet pins to [5/5, 6/5] so it stays clamped-active at full
+//     scroll — see SceneCoordinator.updateTransform's >= 1.0 special case);
 //   - each slot's DOM section anchor;
 //   - each slot's SplashCube face rotation (Y, radians).
 //

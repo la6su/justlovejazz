@@ -81,7 +81,7 @@ export function useJlzPage(page: PageId, rootEl: () => HTMLElement | null): void
     disposeMenuLifecycle?.()
     disposeMenuLifecycle = initMenuLifecycle(el)
     uiKitUpdate(el)
-    // Typed EventBus emission bridges to window automatically.
+    // Typed EventBus emission — app-lifetime listeners subscribe to this port.
     eventBus.emit('jlz:route-change', { page })
     if ('requestIdleCallback' in window) {
       idleHandle = requestIdleCallback(

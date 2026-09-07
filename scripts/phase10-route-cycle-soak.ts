@@ -11,12 +11,12 @@
  *
  * What one "route cycle" is here: a strict in-app SPA navigation
  * (`jlz:navigate` via the `window.__jlzEmit` facade — the app's own
- * navigation contract), the route settling
- * (`document.documentElement.dataset.page` = the target page), and the full
- * settle window. The settle gate is route-aware: on settle-able routes the
+ * navigation contract), the route settling (a route root carrying the
+ * target `data-page-view` marker), and the full settle window. The settle
+ * gate is route-aware: on settle-able routes the
  * single demand-driven loop driver must stop again
  * (`loop.loopActive === false` = zero settled draws); on the by-design
- * continuous routes (a `worksScroll`/`ambientScene`/`particles` activity
+ * continuous routes (a `worksPlane`/`ambientScene`/`particles` activity
  * flag is active at settle) the loop must stay alive and keep advancing,
  * and the leak gate there is the frame delta between consecutive visits of
  * the same route (stable delta = steady bounded animation; growing delta =
@@ -72,7 +72,7 @@ if (STEADY_CYCLES < 20) throw new Error('Phase 10 requires at least 20 steady-st
  * the loop may be stopped only when NO state activity flag is active and the
  * draw gate is clear. A route whose 14-flag `renderDemand.ts` snapshot has at
  * least one flag active at settle is by-design continuous (e.g. the /works
- * back-text UV scroll — `worksScroll` — visible ambient motion —
+ * back-text UV scroll — `worksPlane` — visible ambient motion —
  * `ambientScene` — or a visible particle field — `particles`): the loop MUST
  * stay installed, and the leak gate there is the frame delta between
  * consecutive visits of the same route (a growing delta = new animation work

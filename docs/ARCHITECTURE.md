@@ -677,9 +677,10 @@ according to their current measured policy.
   newer transition or router error invalidates the previous handoff.
 - `core/` owns the framework-neutral contracts (route manifest, world slots,
   typed event ports, i18n, theme, motion policy) and imports no Vue or TresJS.
-- `sections/` owns the per-route content templates consumed by the route views;
-  `UI/` owns the DOM feature controllers (cinematic navigation, menu, works
-  plane, fullscreen overlay).
+- The per-route content templates are the Vue SFCs in `app/views/`
+  (`sections/` retains only the per-route 3D scene factories + the shared
+  `PageId` type); `UI/` owns the DOM feature controllers (cinematic
+  navigation, menu, works plane, fullscreen overlay).
 - `builder/` retains framework-neutral schema, validation, escaping and
   compilation; `admin/` is the development-only Vue editor application.
 
