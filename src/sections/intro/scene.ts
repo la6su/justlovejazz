@@ -1,7 +1,8 @@
 // Section1 — Intro: white BG, baku cube.
 //
 // Cube is the sole 3D focus on intro. The showreel is triggered from a
-// semantic DOM `uk-button` (see template.ts) that opens FullscreenOverlay
+// semantic DOM `uk-button` rendered by the Vue route view that opens
+// FullscreenOverlay
 // in video mode through UIManager's delegated click handler. No 3D raycaster
 // button belongs to this scene.
 //

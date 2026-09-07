@@ -8,14 +8,9 @@
 // creates the owner (fresh per World instance) and is the single disposal
 // owner.
 //
-// Consumer (temporary, Phase 8): `World.attachSectionGroups` injects the
-// owner; World's frame path (the `updateTransform` group fade/visibility
-// step, the `update()` per-group updates, `setContactSceneSection`,
-// `hasVisibleParticles` / `hasVisibleAmbientMotion`) and the Experience /
-// ExperienceUI reads (`theme` particle blending, low-FPS particle reduction,
-// the Works group reference) all read the groups through the
-// `world.sceneGroups` getter. Removed with the World scene-coordination
-// part when `World` leaves production (Phase 8 completion).
+// `SceneCoordinator`, `Experience` and `ExperienceUI` read this owner through
+// their typed coordination boundary for visibility, particle activity and the
+// Works-group reference. No legacy World adapter remains.
 //
 // Phase 8 slice 6: the BakuCarousel (created by the works section factory as
 // a child of the Works group) keeps its scene-graph position here — its

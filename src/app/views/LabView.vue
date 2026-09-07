@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // src/app/views/LabView.vue — Phase 5: /lab route SFC. 1:1 port of the
-// legacy string template `labPage()` (src/pages/content/lab.ts): four R&D
+// former string page: four R&D
 // experiments + the two shared overlays.
 import { ref } from 'vue'
 

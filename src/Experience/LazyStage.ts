@@ -37,8 +37,12 @@ export interface LazyStageContract<T extends Object3D> {
   label: string
   /** Mutable owner state (backed by the Experience flat fields). */
   owner: LazyStageOwner<T>
-  /** Produce the instance — synchronously, or after a dynamic import. */
-  create: () => T | Promise<T>
+  /**
+   * Produce the instance — synchronously, or after a dynamic import. The
+   * factory receives the request guard so a dynamic-import continuation can
+   * avoid constructing GPU resources after its owner was retired.
+   */
+  create: (isCurrent: () => boolean) => T | null | Promise<T | null>
   /** Attach the instance to the scene. */
   attach: (stage: T) => void
   /** Optional awaitable init/load after the instance is attached. */
@@ -84,7 +88,7 @@ export function ensureLazyStage<T extends Object3D>(contract: LazyStageContract<
     contract.configure(stage)
   }
 
-  const created = contract.create()
+  const created = contract.create(() => request === owner.getRequest())
 
   if (created instanceof Promise) {
     // The assigned instance must survive into the rejection handler so a
@@ -92,6 +96,7 @@ export function ensureLazyStage<T extends Object3D>(contract: LazyStageContract<
     let createdStage: T | null = null
     const settled = created
       .then(async (stage) => {
+        if (!stage) return null
         if (request !== owner.getRequest()) {
           // Disposed while the module/asset was loading: discard the late
           // construction instead of joining the scene.
@@ -122,6 +127,7 @@ export function ensureLazyStage<T extends Object3D>(contract: LazyStageContract<
   // Synchronous creation: the instance joins the scene before the first
   // await, matching the eager-attach contract of the works stage.
   const stage = created
+  if (!stage) return Promise.resolve()
   owner.setStage(stage)
   contract.attach(stage)
   const settled = (contract.load ? Promise.resolve(contract.load(stage)) : Promise.resolve()).then(

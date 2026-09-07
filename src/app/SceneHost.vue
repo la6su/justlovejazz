@@ -37,6 +37,10 @@ import {
   type UnifiedRenderSurface,
 } from '../core/unifiedRenderer'
 import { sceneHost } from './sceneHost'
+import CinematicLights from './scene/CinematicLights.vue'
+import GroundPlane from './scene/GroundPlane.vue'
+import type { CinematicLightsNodes } from '../Experience/World/Lights'
+import type { GroundPlaneNode } from '../Experience/Scene/GroundPlane'
 
 const noScene = new URLSearchParams(window.location.search).has('no-scene')
 // Dev-only physical recovery seam. It preserves the shipped single-renderer
@@ -78,7 +82,26 @@ let liveRenderer: UnifiedRenderSurface | null = null
 let createdRenderer: UnifiedRenderSurface | null = null
 let unbindRendererOwner: (() => void) | null = null
 let stopTresLoop: (() => void) | null = null
+let declarativeLights: CinematicLightsNodes | null = null
+let resolveDeclarativeLights!: (lights: CinematicLightsNodes) => void
+const declarativeLightsReady = new Promise<CinematicLightsNodes>((resolve) => {
+  resolveDeclarativeLights = resolve
+})
+let declarativeGround: GroundPlaneNode | null = null
+let resolveDeclarativeGround!: (ground: GroundPlaneNode) => void
+const declarativeGroundReady = new Promise<GroundPlaneNode>((resolve) => {
+  resolveDeclarativeGround = resolve
+})
 const disposedRenderers = new WeakSet<object>()
+
+function onDeclarativeLightsReady(lights: CinematicLightsNodes): void {
+  declarativeLights = lights
+  resolveDeclarativeLights(lights)
+}
+function onDeclarativeGroundReady(ground: GroundPlaneNode): void {
+  declarativeGround = ground
+  resolveDeclarativeGround(ground)
+}
 
 function disposeRendererOnce(renderer: UnifiedRenderSurface | null): void {
   if (!renderer || disposedRenderers.has(renderer)) return
@@ -96,6 +119,9 @@ async function onReady(context: TresContext): Promise<void> {
   stopTresLoop()
   const generation = ++lifecycleGeneration
   const isCurrent = (): boolean => !disposed && generation === lifecycleGeneration
+  const lights = declarativeLights ?? (await declarativeLightsReady)
+  const ground = declarativeGround ?? (await declarativeGroundReady)
+  if (!isCurrent()) return
   const canvas =
     (tresRef.value?.$el as HTMLCanvasElement | undefined) ?? document.createElement('canvas')
   // The scene is the decorative visual layer over the semantic route content:
@@ -148,6 +174,8 @@ async function onReady(context: TresContext): Promise<void> {
     camera,
     mode: plan.mode,
     backend,
+    lights,
+    ground,
   })
 }
 
@@ -185,6 +213,9 @@ onBeforeUnmount(() => {
       :style="{ pointerEvents: 'none' }"
       @ready="onReady"
       @error="onError"
-    />
+    >
+      <CinematicLights @ready="onDeclarativeLightsReady" />
+      <GroundPlane @ready="onDeclarativeGroundReady" />
+    </TresCanvas>
   </div>
 </template>

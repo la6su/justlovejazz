@@ -1,0 +1,119 @@
+{
+  "date": "2026-09-07",
+  "scope": "public route visual baseline inventory",
+  "status": "COMPLETE",
+  "sourceOfTruth": "src/core/routeManifest.ts",
+  "routes": ["/", "/services", "/works", "/manifesto", "/lab", "/contact"],
+  "requiredDimensions": [
+    "normal",
+    "inverse",
+    "keyboard-focus",
+    "reduced-motion",
+    "WebGPUBackend",
+    "WebGLBackend"
+  ],
+  "existingEvidence": {
+    "representativeCanvas": {
+      "status": "qualitative-only",
+      "frames": [
+        "6f02896-representative-scope-webgpu-c030-20260821T0610Z.png",
+        "6f02896-representative-scope-webgl-c030-20260821T0610Z.png"
+      ],
+      "note": "Probe scope, not a per-route reference baseline; PERFORMANCE_BASELINE.md explicitly excludes these from pixel-diff input."
+    },
+    "runtimeBackend": {
+      "status": "covered",
+      "evidence": [
+        "../phase7-live-gate/2026-09-07T10-44-23-989Z-report.json",
+        "../phase7-live-gate/2026-09-07T10-43-29-204Z-report.json"
+      ],
+      "note": "Physical WebGPU and forced WebGL lifecycle gates cover root scope only."
+    },
+    "keyboard": {
+      "status": "functional-only",
+      "source": "tests/e2e.spec.ts:384",
+      "note": "Focus reachability is asserted; no screenshot baseline is stored."
+    },
+    "reducedMotion": {
+      "status": "functional-only",
+      "source": "tests/e2e.spec.ts:727",
+      "note": "Context and root flag are asserted; no per-route screenshot baseline is stored."
+    },
+    "inverse": {
+      "status": "functional-only",
+      "source": "tests/e2e.spec.ts:335",
+      "note": "Theme transition is asserted; no per-route screenshot baseline is stored."
+    }
+  },
+  "perRouteBaseline": {
+    "/": "normal-webgpu+normal-webgl",
+    "/services": "normal-webgpu+normal-webgl",
+    "/works": "normal-webgpu+normal-webgl",
+    "/manifesto": "normal-webgpu+normal-webgl",
+    "/lab": "normal-webgpu+normal-webgl",
+    "/contact": "normal-webgpu+normal-webgl"
+  },
+  "captureProtocol": "scripts/visual-parity.ts capture; requires a running CDP browser and fixed viewport/DPR",
+  "capturedFrames": [
+    "manifesto-keyboard-webgl.png",
+    "lab-keyboard-webgl.png",
+    "lab-reduced-webgl.png",
+    "home-keyboard-webgpu.png",
+    "services-keyboard-webgl.png",
+    "manifesto-normal-webgl.png",
+    "contact-normal-webgl.png",
+    "works-inverse-webgl.png",
+    "works-normal-webgl.png",
+    "manifesto-normal-webgpu.png",
+    "works-normal-webgpu.png",
+    "home-normal-webgl.png",
+    "manifesto-inverse-webgl.png",
+    "lab-reduced-webgpu.png",
+    "contact-inverse-webgpu.png",
+    "home-reduced-webgpu.png",
+    "manifesto-keyboard-webgpu.png",
+    "6f02896-representative-scope-webgl-c030-20260821T0610Z.png",
+    "contact-reduced-webgpu.png",
+    "home-normal-webgpu.png",
+    "home-reduced-webgl.png",
+    "works-keyboard-webgpu.png",
+    "home-inverse-webgpu.png",
+    "services-inverse-webgpu.png",
+    "contact-keyboard-webgl.png",
+    "home-keyboard-webgl.png",
+    "works-reduced-webgl.png",
+    "lab-inverse-webgpu.png",
+    "works-inverse-webgpu.png",
+    "lab-keyboard-webgpu.png",
+    "lab-inverse-webgl.png",
+    "services-normal-webgl.png",
+    "services-normal-webgpu.png",
+    "services-reduced-webgpu.png",
+    "contact-reduced-webgl.png",
+    "home-inverse-webgl.png",
+    "manifesto-inverse-webgpu.png",
+    "works-reduced-webgpu.png",
+    "contact-normal-webgpu.png",
+    "contact-inverse-webgl.png",
+    "contact-keyboard-webgpu.png",
+    "lab-normal-webgl.png",
+    "services-reduced-webgl.png",
+    "lab-normal-webgpu.png",
+    "works-keyboard-webgl.png",
+    "manifesto-reduced-webgl.png",
+    "services-inverse-webgl.png",
+    "manifesto-reduced-webgpu.png",
+    "services-keyboard-webgpu.png",
+    "6f02896-representative-scope-webgpu-c030-20260821T0610Z.png"
+  ],
+  "variantCoverage": {
+    "normal": "WebGPUBackend+WebGLBackend, all six routes",
+    "inverse": "WebGPUBackend, all six routes",
+    "keyboard-focus": "WebGPUBackend, all six routes",
+    "reduced-motion": "WebGPUBackend, all six routes",
+    "inverse-webgl": "WebGLBackend, all six routes",
+    "keyboard-focus-webgl": "WebGLBackend, all six routes",
+    "reduced-motion-webgl": "WebGLBackend, all six routes"
+  },
+  "nextAction": "Review the captured matrix visually and promote stable frames to long-lived references after release review."
+}

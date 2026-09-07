@@ -78,11 +78,6 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'contactFooter.lead': 'Tell us where the story should go next.',
     'contactFooter.telegram': 'TG',
 
-    // Legacy Lab overlay keys retained for route/content compatibility.
-    'labOverlay.title': 'Lab',
-    'labOverlay.lead': 'Experiments · works · R&D.',
-    'labOverlay.openWorks': 'Open works',
-
     // Navigation submenu section titles and subtitles.
     // Works page section titles are project names (proper nouns), so they are not translated;
     // so only subtitles get keys for works.
@@ -399,10 +394,6 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'contactFooter.telegram': 'TG',
 
     // Lab section (RU)
-    'labOverlay.title': 'Lab',
-    'labOverlay.lead': 'Эксперименты · работы · R&D.',
-    'labOverlay.openWorks': 'Открыть работы',
-
     // Navigation submenu section titles and subtitles.
     // Works page section titles are project names (proper nouns), so they are not translated;
     // so only subtitles get keys for works.

@@ -18,6 +18,8 @@ import type * as THREE from 'three'
 import type { TresContext } from '@tresjs/core'
 import type { BackendFacts, FinalMode } from '../core/rendererBackend'
 import type { UnifiedRenderSurface } from '../core/unifiedRenderer'
+import type { CinematicLightsNodes } from '../Experience/World/Lights'
+import type { GroundPlaneNode } from '../Experience/Scene/GroundPlane'
 
 /** The readiness state published once the persistent Tres root is live. */
 export interface SceneHostReady {
@@ -35,6 +37,8 @@ export interface SceneHostReady {
   mode: FinalMode
   /** Actual backend facts after init (backend parity evidence). */
   backend: BackendFacts
+  lights: CinematicLightsNodes
+  ground: GroundPlaneNode
 }
 
 interface SceneHostState {

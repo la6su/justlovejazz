@@ -4,6 +4,7 @@ import { defineConfig } from '@playwright/test'
 // disabled so the production automatic policy constructs WebGPURenderer on
 // WebGLBackend. CI and the regular suite retain Playwright Chromium defaults.
 const webglRecoveryChrome = process.env.JLZ_WEBGL_RECOVERY_CHROME === '1'
+const webglRecoveryOzone = process.env.JLZ_WEBGL_OZONE ?? 'wayland'
 
 export default defineConfig({
   testDir: './tests',
@@ -33,7 +34,7 @@ export default defineConfig({
               args: [
                 '--disable-features=WebGPU',
                 '--enable-features=UseOzonePlatform',
-                '--ozone-platform=wayland',
+                `--ozone-platform=${webglRecoveryOzone}`,
               ],
             },
           }

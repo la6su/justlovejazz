@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { initMenuNav } from '../sections/nav/template'
+import { initMenuLifecycle } from '../app/menuLifecycle'
+import { eventBus } from '../core/EventBus'
 
 function mountNav(): { root: HTMLElement; toggle: HTMLAnchorElement; content: HTMLElement } {
   const root = document.createElement('main')
@@ -32,7 +33,7 @@ function createBoundableNav(): HTMLElement {
   return nav
 }
 
-describe('initMenuNav visibility reconciliation', () => {
+describe('menu lifecycle visibility reconciliation', () => {
   afterEach(() => {
     document.body.replaceChildren()
     vi.restoreAllMocks()
@@ -46,7 +47,7 @@ describe('initMenuNav visibility reconciliation', () => {
     })
     const cancel = vi.spyOn(window, 'cancelAnimationFrame')
     const { root, toggle, content } = mountNav()
-    const dispose = initMenuNav()
+    const dispose = initMenuLifecycle(root)
 
     toggle.click()
     dispose()
@@ -65,7 +66,7 @@ describe('initMenuNav visibility reconciliation', () => {
       return callbacks.length
     })
     const { toggle, content } = mountNav()
-    initMenuNav()
+    initMenuLifecycle(document.getElementById('spa-content')!)
 
     toggle.click()
     callbacks[0]?.(0)
@@ -81,8 +82,8 @@ describe('initMenuNav visibility reconciliation', () => {
       return callbacks.length
     })
     const cancel = vi.spyOn(window, 'cancelAnimationFrame')
-    const { toggle } = mountNav()
-    const dispose = initMenuNav()
+    const { root, toggle } = mountNav()
+    const dispose = initMenuLifecycle(root)
 
     toggle.click()
     callbacks[0]?.(0)
@@ -101,19 +102,19 @@ describe('initMenuNav visibility reconciliation', () => {
     const detachedNav = createBoundableNav()
     document.body.append(content, detachedNav)
 
-    initMenuNav()
+    initMenuLifecycle(content)
 
-    expect(
-      routeNav.querySelector('.jlz-menu-nav__toggle')?.getAttribute('data-jlz-visibility-bound'),
-    ).toBe('1')
-    expect(routeNav.querySelector('.jlz-menu-nav__sub-link')?.getAttribute('data-jlz-bound')).toBe(
-      '1',
-    )
-    expect(
-      detachedNav.querySelector('.jlz-menu-nav__toggle')?.hasAttribute('data-jlz-visibility-bound'),
-    ).toBe(false)
-    expect(
-      detachedNav.querySelector('.jlz-menu-nav__sub-link')?.hasAttribute('data-jlz-bound'),
-    ).toBe(false)
+    const routeToggle = routeNav.querySelector<HTMLAnchorElement>('.jlz-menu-nav__toggle')!
+    const detachedToggle = detachedNav.querySelector<HTMLAnchorElement>('.jlz-menu-nav__toggle')!
+    const routeSubLink = routeNav.querySelector<HTMLAnchorElement>('.jlz-menu-nav__sub-link')!
+    const emit = vi.spyOn(eventBus, 'emit')
+
+    routeToggle.click()
+    detachedToggle.click()
+    routeSubLink.click()
+
+    expect(routeToggle.dataset.jlzVisibilityBound).toBeUndefined()
+    expect(detachedToggle.dataset.jlzVisibilityBound).toBeUndefined()
+    expect(emit).toHaveBeenCalledWith('jlz:navigate', { path: '/manifesto' })
   })
 })

@@ -4,12 +4,10 @@
 // `PageId`. It owns the render contract the legacy `renderView` implemented
 // imperatively, now split across router + i18n/meta providers:
 //
-// - WorkCards disposal before the next route's DOM is inserted (the leak
-//   contract: detached card listeners would keep the old nodes alive);
 // - home intro activation (the template does not ship `section-active`);
 // - i18n + per-route meta on every render (the router-owned providers);
 // - the route announcer on page change;
-// - the menu toolbar init on freshly rendered DOM;
+// - the menu lifecycle binding on freshly rendered DOM;
 // - UIkit hydration scoped to the page root (`update(el)`, never a
 //   document-wide update), with the idle-callback re-pass.
 //
@@ -26,8 +24,7 @@ import { eventBus } from '../core/EventBus'
 import { applyTranslations } from '../core/i18n'
 import { applyMetaTags } from '../core/pageMeta'
 import type { PageId } from '../sections/_shared/constants'
-import { initMenuToolbar } from '../sections/nav/template'
-import { disposeWorkCards } from '../UI/WorkCards'
+import { initMenuLifecycle } from './menuLifecycle'
 import { setCurrentPage } from '../core/routePage'
 
 export function uiKitUpdate(el: Element): void {
@@ -43,15 +40,12 @@ export function useJlzPage(page: PageId, rootEl: () => HTMLElement | null): void
   let idleHandle: number | null = null
   let announcerRafHandle: number | null = null
   let mounted = false
-  let disposeMenuToolbar: (() => void) | null = null
+  let disposeMenuLifecycle: (() => void) | null = null
 
   onBeforeUnmount(() => {
     mounted = false
-    // Full app teardown must release the module-level WorkCards registry too;
-    // route navigation also calls this before the next DOM settles.
-    disposeWorkCards()
-    disposeMenuToolbar?.()
-    disposeMenuToolbar = null
+    disposeMenuLifecycle?.()
+    disposeMenuLifecycle = null
     if (announcerRafHandle !== null) {
       cancelAnimationFrame(announcerRafHandle)
       announcerRafHandle = null
@@ -84,8 +78,8 @@ export function useJlzPage(page: PageId, rootEl: () => HTMLElement | null): void
         })
       }
     }
-    disposeMenuToolbar?.()
-    disposeMenuToolbar = initMenuToolbar()
+    disposeMenuLifecycle?.()
+    disposeMenuLifecycle = initMenuLifecycle(el)
     uiKitUpdate(el)
     // Typed EventBus emission bridges to window automatically.
     eventBus.emit('jlz:route-change', { page })
@@ -101,10 +95,6 @@ export function useJlzPage(page: PageId, rootEl: () => HTMLElement | null): void
   }
 
   onMounted(() => {
-    // Dispose WorkCards listeners + clear the cards[] array BEFORE the new
-    // page's DOM settles (legacy leak contract, kept even for the first
-    // mount — the prerendered home has no cards, this is a no-op there).
-    disposeWorkCards()
     setCurrentPage(page)
     mounted = true
     postRender()

@@ -131,7 +131,6 @@ export class JunniParticles extends THREE.InstancedMesh {
     // TSL texture() expects a raw THREE.Texture — NOT wrapped in uniform().
     // TSL creates the TextureNode internally. Wrapping in uniform() causes
     // "texture(value) function expects a valid instance of THREE.Texture".
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const uTex = opts.texture ?? null
     const uTiles = uniform(new THREE.Vector2(tiles[0], tiles[1]))
 

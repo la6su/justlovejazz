@@ -6,13 +6,9 @@
 // explicit scene owner: the mesh, its theme/lerp state and its disposal now
 // live here, and Experience is the single disposal owner.
 //
-// Consumer (temporary, Phase 8): `Experience` creates the instance, adds it
-// to the Tres-owned scene, drives it from the frame path and disposes it in
-// `Experience.destroy()`. The one remaining `World` touch point is the
-// injected `applyTransform` call inside `World.updateTransform` (the ground
-// lerp needs World's per-section eased `t`); it is removed together with the
-// scene-coordination part of `World` when `World` leaves production
-// (Phase 8 completion).
+// `Experience` creates this controller around the Vue-owned declarative node,
+// drives its per-section material state, and releases only controller state on
+// destroy. The node itself remains owned by `GroundPlane.vue`.
 //
 // The ground plane belongs to the contact state (AGENTS.md): section index 4
 // is the only section where it is visible — the per-frame gate stays on the
@@ -24,8 +20,10 @@ import type { PhaseConfig } from '../../core/WorldConfig'
 /** The per-section ground config shape (WorldConfig `ground` field). */
 export type GroundConfig = PhaseConfig['ground']
 
+export type GroundPlaneNode = THREE.Mesh<THREE.PlaneGeometry, THREE.MeshStandardMaterial>
+
 export class GroundPlane {
-  readonly object: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshStandardMaterial>
+  readonly object: GroundPlaneNode
   private _disposed = false
 
   // Theme-aware ground adjustment (moved 1:1 from World): the per-section
@@ -43,30 +41,37 @@ export class GroundPlane {
   private _lastTo: GroundConfig | null = null
   private _lastT = Number.NaN
 
-  constructor(scene: THREE.Scene) {
+  private readonly _ownsNode: boolean
+
+  constructor(scene: THREE.Scene, node?: GroundPlaneNode) {
     // Built-in MeshStandardMaterial (NOT NodeMaterial) — reduces uniform group
     // count on WebGL2. FrontSide (default) — only top face visible from camera.
     // frustumCulled = true (default) — ground is large but centered, stays in
     // frustum. (Verbatim from the legacy `World` constructor.)
-    this.object = new THREE.Mesh(
-      new THREE.PlaneGeometry(200, 200),
-      new THREE.MeshStandardMaterial({
-        color: 0x000000,
-        transparent: true,
-        // R-14 fix: depthWrite=false on transparent ground (was default true
-        // → writes depth across huge area, would occlude future transparent
-        // objects below y=-1). Standard practice for transparent surfaces.
-        depthWrite: false,
-        opacity: 0.3,
-        roughness: 1,
-        metalness: 0,
-        side: THREE.FrontSide, // default — only render top face
-      }),
-    )
-    this.object.rotation.x = -Math.PI / 2
-    this.object.position.y = -1
-    this.object.name = 'ground'
-    scene.add(this.object)
+    this._ownsNode = !node
+    this.object =
+      node ??
+      new THREE.Mesh(
+        new THREE.PlaneGeometry(200, 200),
+        new THREE.MeshStandardMaterial({
+          color: 0x000000,
+          transparent: true,
+          // R-14 fix: depthWrite=false on transparent ground (was default true
+          // → writes depth across huge area, would occlude future transparent
+          // objects below y=-1). Standard practice for transparent surfaces.
+          depthWrite: false,
+          opacity: 0.3,
+          roughness: 1,
+          metalness: 0,
+          side: THREE.FrontSide, // default — only render top face
+        }),
+      )
+    if (!node) {
+      this.object.rotation.x = -Math.PI / 2
+      this.object.position.y = -1
+      this.object.name = 'ground'
+      scene.add(this.object)
+    }
   }
 
   /** `World.init()` step: initialize the ground from the intro section config. */
@@ -143,6 +148,7 @@ export class GroundPlane {
   public dispose(): void {
     if (this._disposed) return
     this._disposed = true
+    if (!this._ownsNode) return
     this.object.parent?.remove(this.object)
     this.object.geometry.dispose()
     this.object.material.dispose()

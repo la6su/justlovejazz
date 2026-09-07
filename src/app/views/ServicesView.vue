@@ -1,7 +1,6 @@
 <script setup lang="ts">
 // src/app/views/ServicesView.vue — Phase 5: /services route SFC. 1:1 port
-// of the legacy string template `servicesPage()`
-// (src/pages/content/services.ts): four story beats; the console window is
+// of the former string page: four story beats; the console window is
 // reserved for the opening proposition and the final action, not repeated
 // as page furniture.
 import { ref } from 'vue'

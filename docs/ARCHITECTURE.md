@@ -495,7 +495,7 @@ navigation instance.
 | Concern              | Owner                                                                                |
 | -------------------- | ------------------------------------------------------------------------------------ |
 | Bootstrap            | `entry-shell.ts`, `entry-app.ts`                                                     |
-| Routes and content   | `app/routes.ts`, `routeManifest.ts`, `sections/nav/template.ts`, Vue route views     |
+| Routes and content   | `app/routes.ts`, `routeManifest.ts`, `app/navItems.ts`, Vue route views              |
 | Renderer and loop    | `Experience/Renderer.ts`, `RenderPipeline.ts`, `RenderScheduler.ts`, `SceneHost.vue` |
 | World composition    | `SceneCoordinator.ts`, `WorldConfig.ts`, `Experience/Scene/SectionGroups.ts`         |
 | Navigation and UI    | `CinematicNav.ts`, `UIMenu.ts`, `UIManager.ts`                                       |
@@ -538,14 +538,9 @@ according to their current measured policy.
   document fallback exists only before the Vue route shell is mounted.
 - Bootstrap's route-content observers follow the same boundary; only splash and
   persistent-shell controls intentionally resolve from the document root.
-- `WorkCards` discovers cards and owns delegated grid listeners only within
-  `#spa-content`; detached and persistent-shell grids remain outside that route
-  owner. `useJlzPage` disposes this module-level registry both before the next
-  route settles and when the owning Vue route unmounts, so detached grids do
-  not retain listeners or debounce timers through root teardown.
-- The menu template adapter resolves its nav bindings, preview synchronization
-  and same-page hash targets within `#spa-content`; detached menu markup is not
-  an application owner.
+- `NavMenu.vue` renders the route menu from `app/navItems.ts`; `menuLifecycle.ts`
+  owns only the route-root UIkit reconciliation and preview synchronization.
+  Detached menu markup is not an application owner.
 - Fullscreen project navigation raises the shared `nav` demand after changing
   the carousel target; demand-driven rendering must not rely on unrelated input
   to advance a settled scene.
@@ -647,7 +642,7 @@ according to their current measured policy.
   later retry, and `resetBootstrapBindings()` aborts DOM listeners, event-bus
   subscriptions, watchdogs, splash timers and title observation before the
   next attempt binds them again.
-- `initMenuToolbar()` returns the disposer for the app-owned menu bindings;
+- `initMenuLifecycle()` returns the disposer for the app-owned menu bindings;
   `useJlzPage` invokes it before route-root unmount. Pending visibility RAFs are
   cancelled together with subsection/toggle listeners, while UIkit-owned
   accordion behavior remains outside this disposer.

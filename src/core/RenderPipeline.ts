@@ -272,11 +272,6 @@ export class RenderPipeline {
     }
   }
 
-  /** No-op: the TSL pipeline sizes from the live renderer (WebGPURenderer
-   *  owns the swap chain); the classic RT-based path that needed debounced
-   *  reallocation was removed in Phase 10. */
-  public resize(_width: number, _height: number): void {}
-
   /** Destroy all GPU resources. Call once during teardown. */
   public dispose(): void {
     // WebGPU TSL pipeline cleanup.

@@ -31,6 +31,8 @@ function fakeReady(overrides?: Partial<SceneHostReady>): SceneHostReady {
     camera: new THREE.PerspectiveCamera(),
     mode: 'webgpu',
     backend: { backendName: 'WebGPUBackend', isFallbackAdapter: false },
+    lights: {} as SceneHostReady['lights'],
+    ground: {} as SceneHostReady['ground'],
     ...overrides,
   }
 }

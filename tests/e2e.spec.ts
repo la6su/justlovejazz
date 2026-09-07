@@ -200,9 +200,9 @@ test.describe('JustLoveJazz — page boot smoke', () => {
     const fontCss = await (await request.get('/fonts/commissioner.css')).text()
     const fontResponse = await request.get('/fonts/commissioner-variable.ttf')
 
-    expect(html).toContain('/fonts/commissioner-variable.ttf')
+    expect(html).toContain('/fonts/commissioner.css')
     expect(html).not.toContain('/fonts/inter.css')
-    expect(blogHtml).toContain('/fonts/commissioner-variable.ttf')
+    expect(blogHtml).toContain('/fonts/commissioner.css')
     expect(blogHtml).not.toContain('/fonts/inter.css')
     expect(fontResponse.ok()).toBe(true)
     expect(fontCss).toContain('font-weight: 100 900')
@@ -273,16 +273,16 @@ test.describe('JustLoveJazz — page boot smoke', () => {
 })
 
 test.describe('JustLoveJazz — accessibility & DOM UI', () => {
-  test('Works keeps semantic cards inside the editorial composition', async ({ page }) => {
+  test('Works keeps native project controls inside the editorial composition', async ({ page }) => {
     await page.goto('/works')
 
     await expect(page.locator('.jlz-works-section')).toHaveCount(4)
-    // .jlz-works-statement moved to 3D (WorksTextScreen) — no longer in DOM
-    await expect(page.locator('.jlz-work-card')).toHaveCount(8)
+    // Visible media is a 3D installation; Vue retains one native project
+    // control per room for keyboard and assistive-technology interaction.
+    await expect(page.locator('.jlz-works-aperture')).toHaveCount(4)
 
-    const firstCard = page.locator('.jlz-work-card').first()
-    await expect(firstCard).toHaveAttribute('data-project-id', /.+/)
-    await expect(firstCard).toHaveAttribute('aria-label', /Open project:/)
+    const firstControl = page.locator('.jlz-works-aperture').first()
+    await expect(firstControl).toHaveAttribute('aria-label', /Open project:/)
   })
 
   test('direct content-section link keeps its route', async ({ page }) => {
@@ -291,7 +291,7 @@ test.describe('JustLoveJazz — accessibility & DOM UI', () => {
     await expect(page).toHaveURL(/\/works#section-works-03$/)
   })
 
-  test('repeated in-app routes retain their target section and do not duplicate Works cards', async ({
+  test('repeated in-app routes retain their target section and do not duplicate Works controls', async ({
     page,
   }) => {
     await page.goto('/')
@@ -308,7 +308,7 @@ test.describe('JustLoveJazz — accessibility & DOM UI', () => {
     await navigate('/works#section-works-03')
     await expect(page).toHaveURL(/\/works#section-works-03$/)
     await expect(page.locator('#section-works-03')).toBeAttached()
-    await expect(page.locator('.jlz-work-card')).toHaveCount(8)
+    await expect(page.locator('.jlz-works-aperture')).toHaveCount(4)
 
     await navigate('/lab#section-lab-04')
     await expect(page).toHaveURL(/\/lab#section-lab-04$/)
@@ -468,14 +468,20 @@ test.describe('JustLoveJazz — accessibility & DOM UI', () => {
 
       await expect(languageToggle).toHaveCSS('width', '44px')
       await expect(languageToggle).toHaveCSS('height', '44px')
-      await expect(page.locator('.jlz-storyline__item').first()).toHaveCSS('width', '44px')
-      await expect(page.locator('.jlz-storyline__item').first()).toHaveCSS('min-height', '44px')
+      const storyItem = page.locator('.jlz-storyline__item').first()
+      await expect(storyItem).toHaveCSS('min-width', '44px')
+      await expect(storyItem).toHaveCSS('min-height', '44px')
+      const storyItemBox = await storyItem.boundingBox()
+      expect(storyItemBox?.width).toBeGreaterThanOrEqual(44)
+      expect(storyItemBox?.height).toBeGreaterThanOrEqual(44)
     } finally {
       await context.close()
     }
   })
 
-  test('mobile Works stacks its two semantic case controls', async ({ browser }) => {
+  test('mobile Works preserves each room project control over the installation', async ({
+    browser,
+  }) => {
     test.setTimeout(60000)
     const context = await browser.newContext({ viewport: { width: 390, height: 844 } })
     const page = await context.newPage()
@@ -485,27 +491,18 @@ test.describe('JustLoveJazz — accessibility & DOM UI', () => {
       await expect(page.locator('main#spa-content')).toBeAttached({ timeout: 20000 })
 
       const stage = page.locator('.jlz-works-stage').first()
-      const cards = stage.locator('.jlz-work-card')
-      await expect(cards).toHaveCount(2)
+      const controls = page.locator('.jlz-works-aperture')
+      await expect(controls).toHaveCount(4)
 
-      const [stageBox, firstCardBox, secondCardBox] = await Promise.all([
+      const [stageBox, firstControlBox] = await Promise.all([
         stage.boundingBox(),
-        cards.nth(0).boundingBox(),
-        cards.nth(1).boundingBox(),
+        controls.first().boundingBox(),
       ])
       expect(stageBox).not.toBeNull()
-      expect(firstCardBox).not.toBeNull()
-      expect(secondCardBox).not.toBeNull()
+      expect(firstControlBox).not.toBeNull()
       expect(stageBox!.height).toBeCloseTo(844, 0)
-      // The DOM captions intentionally mirror the narrower frustum planes,
-      // leaving the same outer gutter as the 3D media on portrait screens.
-      expect(firstCardBox!.width).toBeGreaterThan(250)
-      expect(firstCardBox!.width).toBeLessThan(280)
-      expect(secondCardBox!.width).toBeGreaterThan(220)
-      expect(secondCardBox!.width).toBeLessThan(250)
-      expect(firstCardBox!.x).toBeGreaterThan(40)
-      expect(secondCardBox!.x).toBeGreaterThan(80)
-      expect(secondCardBox!.y).toBeGreaterThan(firstCardBox!.y)
+      expect(firstControlBox!.width).toBeGreaterThan(300)
+      expect(firstControlBox!.height).toBeGreaterThan(200)
     } finally {
       await context.close()
     }

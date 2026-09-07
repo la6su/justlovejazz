@@ -1,0 +1,23 @@
+{
+  "tool": "scripts/visual-parity.ts capture",
+  "frame": "manifesto-keyboard-webgl.png",
+  "url": "http://127.0.0.1:5173/manifesto?force-webgl-backend=1",
+  "commit": "working-tree",
+  "capturedAtUtc": "2026-09-07T11:47:27.983Z",
+  "browser": "Chrome/152.0.7977.82",
+  "viewport": "1267x1297 CSS, DPR 1",
+  "dataStatus": null,
+  "dataBackend": null,
+  "dataRenderPath": null,
+  "dataMotionMode": null,
+  "canvasCssWidth": 1267,
+  "canvasCssHeight": 1297,
+  "canvasBackingWidth": 1267,
+  "canvasBackingHeight": 1297,
+  "viewportCss": "1267x1297",
+  "devicePixelRatio": 1,
+  "visibilityState": "visible",
+  "route": "/manifesto",
+  "mode": "keyboard-focus",
+  "backend": "forced-webgl"
+}

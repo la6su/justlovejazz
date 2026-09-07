@@ -304,6 +304,8 @@ async function commandCapture(args: Args): Promise<void> {
     throw new Error('--viewport expects <width>x<height>')
   }
   const dpr = numberArg(args, 'dpr', 1)
+  const reducedMotion =
+    args['reduced-motion'] === true || singleString(args, 'reduced-motion') === '1'
   const extraMeta: Record<string, string> = {}
   const metaValues = args.meta
   const metaList = Array.isArray(metaValues)
@@ -321,6 +323,13 @@ async function commandCapture(args: Args): Promise<void> {
   const tab = await openFreshTab(client, url, viewWidth, viewHeight, dpr)
   try {
     await client.send('Target.activateTarget', { targetId: tab.targetId })
+    if (reducedMotion) {
+      await client.send(
+        'Emulation.setEmulatedMedia',
+        { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] },
+        tab.sessionId,
+      )
+    }
     const status = await new Promise<string | null>((resolve) => {
       const started = Date.now()
       const poll = async () => {
@@ -328,10 +337,22 @@ async function commandCapture(args: Args): Promise<void> {
           const value = (await evaluateExpression(
             client,
             tab.sessionId,
-            `document.querySelector('[data-status]')?.textContent?.trim() ?? ''`,
+            `(() => {
+              const probe = document.querySelector('[data-status]')?.textContent?.trim() ?? ''
+              if (probe) return probe
+              const canvas = document.querySelector('canvas')
+              const routeReady = (window).__jlzRouterReady === true
+              const routeRoot = document.querySelector('[data-page-view]')
+              return routeReady && canvas && routeRoot ? 'production-ready' : ''
+            })()`,
             15_000,
           )) as string
-          if (value === 'ready' || value.startsWith('error') || Date.now() - started > 120_000) {
+          if (
+            value === 'ready' ||
+            value === 'production-ready' ||
+            value.startsWith('error') ||
+            Date.now() - started > 120_000
+          ) {
             resolve(value || null)
             return
           }
@@ -342,7 +363,7 @@ async function commandCapture(args: Args): Promise<void> {
       }
       void poll()
     })
-    if (status !== 'ready') {
+    if (status !== 'ready' && status !== 'production-ready') {
       throw new Error(`Probe did not reach ready (status: ${status ?? 'timeout'})`)
     }
     if (evalFn) {

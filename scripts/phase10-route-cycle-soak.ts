@@ -250,9 +250,11 @@ async function main(): Promise<void> {
       if (!emit) throw new Error('window.__jlzEmit test seam is not available')
       emit('jlz:navigate', { path })
     }, target.path)
-    // Route settled: the app's own page-scoped dataset (useJlzPage).
+    // Route settled: each Vue route root owns its semantic `data-page-view`
+    // marker. Route state deliberately has no document/body dataset mirror;
+    // the scene consumes the typed routePage port instead.
     await page.waitForFunction(
-      (expected) => document.documentElement.dataset.page === expected,
+      (expected) => document.querySelector(`[data-page-view="${expected}"]`) !== null,
       target.page,
       { timeout: 30_000 },
     )
@@ -413,6 +415,14 @@ async function main(): Promise<void> {
         { timeout: 15_000 },
       )
       .catch(() => report.notes.push('loader hide check timed out (not fatal)'))
+    // The renderer can become ready before the Vue router finishes wiring its
+    // typed event-bus listener. Match the browser suite's startup gate before
+    // the first synthetic `jlz:navigate` request.
+    await page.waitForFunction(
+      () => (window as unknown as { __jlzRouterReady?: boolean }).__jlzRouterReady === true,
+      null,
+      { timeout: 30_000 },
+    )
     await page.waitForTimeout(SETTLE_MS)
 
     const baselineRaw = await capture()
@@ -508,15 +518,28 @@ async function main(): Promise<void> {
           `${field}: ${bad.length}/${STEADY_CYCLES} steady snapshots outside the first-pass cap ${fieldCap}`,
         )
       }
-      // No-trend: strict increases must not outnumber non-increases.
+      // No-trend is evaluated within each route. The round-robin contains
+      // deliberately different DOM and scene footprints (for example Works
+      // retains its gallery while Home does not), so comparing adjacent
+      // snapshots across routes turns normal route shape into a false leak.
+      // Each route is revisited three or four times in the steady block;
+      // accumulation must appear within that route's own series.
       let increases = 0
       let decreases = 0
-      for (let k = 1; k < series.length; k++) {
-        const a = series[k - 1]
-        const b = series[k]
-        if (a < 0 || b < 0) continue
-        if (b > a) increases++
-        else decreases++
+      const byRoute = new Map<string, number[]>()
+      for (const snapshot of report.steady) {
+        const values = byRoute.get(snapshot.route) ?? []
+        values.push(snapshot[field])
+        byRoute.set(snapshot.route, values)
+      }
+      for (const values of byRoute.values()) {
+        for (let k = 1; k < values.length; k++) {
+          const a = values[k - 1]
+          const b = values[k]
+          if (a < 0 || b < 0) continue
+          if (b > a) increases++
+          else decreases++
+        }
       }
       const withinCap = bad.length === 0
       report.trend[field] = { series, increases, decreases, withinCap }

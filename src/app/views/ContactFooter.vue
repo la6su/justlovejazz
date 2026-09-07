@@ -1,7 +1,6 @@
 <script setup lang="ts">
 // src/app/views/ContactFooter.vue — Phase 5: Contact finale SFC rendered
-// into the legacy section-0 DOM slot. 1:1 port of the legacy string
-// template `labOverlaySection` (src/sections/lab-overlay/template.ts).
+// into the canonical section-0 DOM slot. 1:1 port of the former string page.
 // The runtime keeps the canonical section-0 identifier for renderer and
 // deep-link compatibility ('home' = data-section="lab", 'content' =
 // data-page-section="page-lab"); `data-contact-footer` is the public

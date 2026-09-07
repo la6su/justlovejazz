@@ -180,7 +180,7 @@ export class Renderer {
       // async init + the actual-backend inspection (software-adapter
       // re-creation already applied). This wrapper adopts the instance:
       // capabilities, sizing and the post pipeline are configured exactly as
-      // on the legacy path. The canvas is Vue-owned (`.jlz-scene-host` CSS)
+      // on the adopted path. The canvas is Vue-owned (`.jlz-scene-host` CSS)
       // so it is never re-styled or removed here.
       this.instance = adopted.instance
       this._ownsCanvas = false
@@ -245,14 +245,14 @@ export class Renderer {
         console.info('[Renderer.init] unified premium WebGPU path active')
       }
 
-      // Size + canvas (the legacy path owns the canvas DOM element).
+      // Size the Vue-owned canvas through the adopted renderer instance.
       this.instance.setPixelRatio(Math.min(this.sizes.dpr, this.capabilities.maxDpr))
       this.instance.setSize(this.sizes.width, this.sizes.height)
       this.setupCanvas(this.instance.domElement)
     }
 
     // Adoption path: Tres already sizes the canvas; clamp the DPR cap to the
-    // device capability (identical to the legacy sizing contract).
+    // device capability (identical to the established sizing contract).
     if (adopted) {
       this.instance.setPixelRatio(Math.min(this.sizes.dpr, this.capabilities.maxDpr))
       this.instance.setSize(this.sizes.width, this.sizes.height)
@@ -590,7 +590,6 @@ export class Renderer {
     const h = this.sizes.height
     this.instance.setPixelRatio(Math.min(this.sizes.dpr, this.capabilities.maxDpr))
     this.instance.setSize(w, h)
-    this.pipeline?.resize(w, h)
   }
 
   public getResourceSnapshot(scene: THREE.Scene): RuntimeResourceSnapshot {

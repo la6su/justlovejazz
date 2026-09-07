@@ -1,0 +1,14 @@
+{
+  "date": "2026-09-07",
+  "test": "tests/e2e.spec.ts: WebGLBackend survives a real webglcontextlost handoff",
+  "backend": "WebGLBackend",
+  "status": "SKIPPED",
+  "observed": "WebGLBackend initialized and WEBGL_lose_context dispatched",
+  "reason": "The installed headed Chrome could not restore a usable WebGL framebuffer after context loss; the probe failed closed before production recovery assertions.",
+  "commands": [
+    "JLZ_WEBGL_RECOVERY_CHROME=1 bunx playwright test tests/e2e.spec.ts --grep \"WebGLBackend survives\" --project=chromium",
+    "JLZ_WEBGL_RECOVERY_CHROME=1 JLZ_WEBGL_OZONE=x11 bunx playwright test tests/e2e.spec.ts --grep \"WebGLBackend survives\" --project=chromium"
+  ],
+  "profiles": ["default-wayland", "x11"],
+  "nextAction": "Repeat on a WebGL-capable browser/driver that restores the framebuffer, then require the production recovery handoff and one-canvas assertions to pass."
+}
