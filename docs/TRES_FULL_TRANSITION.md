@@ -106,6 +106,15 @@ stage and does not dispose the controller-owned geometry, NodeMaterials or
 instanced buffer on primitive unmount. This proves the precondition for the
 next lazy attachment slice; it does not itself transfer scene ownership.
 
+The subsequent Works slices now mount the lazy stage through `WorksStageOwner`
+and declare the installation assembly through `WorksInstallation.vue`. The
+controller retains route-lazy texture loading, cards, motion and its two shared
+NodeMaterials; Vue owns attachment, declared geometry and the instance buffer.
+The material boundary uses explicit no-dispose mesh nodes, because installed
+Tres would otherwise recursively dispose borrowed materials. Local lifecycle,
+unit, build and browser gates pass; physical Works backend evidence remains
+pending before this slice is release-admitted.
+
 The restored orbital-ring composition passed physical WebGLBackend and
 hardware WebGPUBackend gates on 2026-09-07, including reduced motion and idle
 settlement. Evidence:

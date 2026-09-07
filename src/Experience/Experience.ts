@@ -52,6 +52,7 @@ import { ParticleBurst } from './World/ParticleBurst'
 import { DrawTrail } from './World/DrawTrail'
 import type { BakuCarousel } from './World/BakuCarousel'
 import { WorksPlaneStage } from './World/WorksPlaneStage'
+import type { WorksInstallation } from './World/WorksInstallation'
 import type { ServicesStage } from './World/ServicesStage'
 import type { ContactTypographyStage } from './World/ContactTypographyStage'
 import type { ContactHaloStage } from './World/ContactHaloStage'
@@ -94,6 +95,8 @@ export interface ExperienceHost {
   replaceRenderer(renderer: RenderSurface): void
   mountWorksPlaneStage(stage: WorksPlaneStage): Promise<void>
   unmountWorksPlaneStage(stage: WorksPlaneStage): Promise<void>
+  mountWorksInstallation(stage: WorksPlaneStage, installation: WorksInstallation): Promise<void>
+  unmountWorksInstallation(stage: WorksPlaneStage, installation: WorksInstallation): Promise<void>
 }
 
 interface ReadinessGate {
@@ -666,6 +669,8 @@ export class Experience {
       load: async (stage) => {
         await this._host.mountWorksPlaneStage(stage)
         await stage.init()
+        const installation = stage.installationOwner
+        if (installation) await this._host.mountWorksInstallation(stage, installation)
       },
       configure: (stage) => {
         stage.setActive(this.currentPage() === 'works', 0)
@@ -673,6 +678,8 @@ export class Experience {
         stage.setCamera(this.camera.instance)
       },
       release: (stage) => {
+        const installation = stage.installationOwner
+        if (installation) void this._host.unmountWorksInstallation(stage, installation)
         void this._host.unmountWorksPlaneStage(stage)
         stage.dispose()
       },

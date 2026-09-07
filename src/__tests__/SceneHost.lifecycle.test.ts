@@ -112,7 +112,7 @@ vi.mock('../app/scene/EnvSky.vue', () => ({
 
 vi.mock('../app/scene/WorksStageOwner.vue', () => ({
   default: defineComponent({
-    props: { stage: Object },
+    props: { stage: Object, installation: Object },
     render: () => null,
   }),
 }))

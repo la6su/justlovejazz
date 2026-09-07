@@ -24,6 +24,7 @@ import type { Group } from 'three'
 import type { ServicesStage } from '../Experience/World/ServicesStage'
 import type { EnvSphere } from '../Experience/World/EnvSphere'
 import type { WorksPlaneStage } from '../Experience/World/WorksPlaneStage'
+import type { WorksInstallation } from '../Experience/World/WorksInstallation'
 
 /** The readiness state published once the persistent Tres root is live. */
 export interface SceneHostReady {
@@ -51,6 +52,8 @@ export interface SceneHostReady {
   envSphere: EnvSphere
   mountWorksPlaneStage(stage: WorksPlaneStage): Promise<void>
   unmountWorksPlaneStage(stage: WorksPlaneStage): Promise<void>
+  mountWorksInstallation(stage: WorksPlaneStage, installation: WorksInstallation): Promise<void>
+  unmountWorksInstallation(stage: WorksPlaneStage, installation: WorksInstallation): Promise<void>
 }
 
 interface SceneHostState {

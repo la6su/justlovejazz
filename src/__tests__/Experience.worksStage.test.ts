@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Experience } from '../Experience/Experience'
 import { SceneCoordinator, type SceneCoordinatorOwners } from '../Experience/SceneCoordinator'
 import { WorksPlaneStage } from '../Experience/World/WorksPlaneStage'
+import { WorksInstallation } from '../Experience/World/WorksInstallation'
 import type { PageId } from '../sections/_shared/constants'
 import { getCurrentPage, setCurrentPage } from '../core/routePage'
 
@@ -37,6 +38,8 @@ describe('Experience works stage lifecycle', () => {
       _host: {
         mountWorksPlaneStage: vi.fn(async (stage: WorksPlaneStage) => scene.add(stage)),
         unmountWorksPlaneStage: vi.fn(async (stage: WorksPlaneStage) => stage.removeFromParent()),
+        mountWorksInstallation: vi.fn(async () => undefined),
+        unmountWorksInstallation: vi.fn(async () => undefined),
       },
     } as unknown as Partial<Experience>) as Experience
     // The coordinator reads the stage through an owner getter over Experience's
@@ -101,7 +104,12 @@ describe('Experience works stage lifecycle', () => {
   })
 
   it('forwards the active /works stage into the coordinator frame path via the owner getter', async () => {
-    const initSpy = vi.spyOn(WorksPlaneStage.prototype, 'init').mockResolvedValue()
+    const initSpy = vi.spyOn(WorksPlaneStage.prototype, 'init').mockImplementation(async function (
+      this: WorksPlaneStage,
+    ) {
+      ;(this as unknown as { installation: WorksInstallation | null }).installation =
+        new WorksInstallation()
+    })
     const disposeSpy = vi.spyOn(WorksPlaneStage.prototype, 'dispose')
 
     try {
@@ -112,6 +120,12 @@ describe('Experience works stage lifecycle', () => {
       const host = (exp as unknown as { _host: { mountWorksPlaneStage: ReturnType<typeof vi.fn> } })
         ._host
       expect(host.mountWorksPlaneStage).toHaveBeenCalledWith(stage)
+      const installation = stage?.installationOwner
+      expect(installation).toBeInstanceOf(WorksInstallation)
+      expect(
+        (host as unknown as { mountWorksInstallation: ReturnType<typeof vi.fn> })
+          .mountWorksInstallation,
+      ).toHaveBeenCalledWith(stage, installation)
 
       // Leaving /works disposes the owner and clears the field.
       setCurrentPage('home')
@@ -121,6 +135,10 @@ describe('Experience works stage lifecycle', () => {
         (host as unknown as { unmountWorksPlaneStage: ReturnType<typeof vi.fn> })
           .unmountWorksPlaneStage,
       ).toHaveBeenCalledWith(stage)
+      expect(
+        (host as unknown as { unmountWorksInstallation: ReturnType<typeof vi.fn> })
+          .unmountWorksInstallation,
+      ).toHaveBeenCalledWith(stage, installation)
       expect(disposeSpy).toHaveBeenCalledTimes(1)
       expect(stage?.parent).toBeNull()
     } finally {

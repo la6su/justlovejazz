@@ -168,6 +168,21 @@ before/after construction owners; a primitive-only wrapper is not the final
 result. Each integrated slice has a single-commit rollback, not a permanent
 runtime fallback flag.
 
+### Iteration 3 result — 2026-09-08
+
+Completed locally with `WorksInstallation.vue`. The installation is now a
+controller, while Vue/Tres declares its assembly, three arcs, trace and
+48-instance tick scale below the Vue-mounted Works stage. The component
+explicitly prevents Tres from disposing borrowed NodeMaterials, disposes its
+own geometries and instance buffer on unmount, and leaves the two materials to
+the controller exactly once. A nested primitive spike exposed a Three proxy
+violation, so the declared assembly is directly nested under the stage rather
+than introducing a second `Object3D` primitive. Focused lifecycle coverage,
+the full unit suite, type checks, production build, budgets and serial browser
+suite pass locally. Physical Works WebGPU/forced-WebGL visual, route-cycle and
+reduced-motion evidence remains pending and must be collected before final
+admission.
+
 ## Remaining owner queue after Works
 
 Create one bounded task per owner; do not promise all are static or trivial.

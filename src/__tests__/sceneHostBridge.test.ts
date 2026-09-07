@@ -38,6 +38,8 @@ function fakeReady(overrides?: Partial<SceneHostReady>): SceneHostReady {
     envSphere: {} as SceneHostReady['envSphere'],
     mountWorksPlaneStage: async () => undefined,
     unmountWorksPlaneStage: async () => undefined,
+    mountWorksInstallation: async () => undefined,
+    unmountWorksInstallation: async () => undefined,
     ...overrides,
   }
 }

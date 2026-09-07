@@ -165,7 +165,6 @@ export class WorksPlaneStage extends THREE.Group {
       this.installation.setInverse(this.inverse)
       this.installation.setProject(this.activeProject)
       this.installation.setRoom(this._sectionIndex, this._reducedMotion)
-      this.add(this.installation)
       this.cards = stagedCards
       this._layoutDirty = true
       this._installationProject = -1
@@ -179,6 +178,11 @@ export class WorksPlaneStage extends THREE.Group {
       this._initialized = false
       throw error
     }
+  }
+
+  /** The Vue/Tres host attaches this existing lazy controller below this stage. */
+  public get installationOwner(): WorksInstallation | null {
+    return this.installation
   }
 
   setCamera(camera: THREE.Camera): void {
@@ -272,12 +276,10 @@ export class WorksPlaneStage extends THREE.Group {
     this.installation?.update(dt)
     if (this.installation && this._camera instanceof THREE.PerspectiveCamera) {
       const height = 2 * Math.tan(THREE.MathUtils.degToRad(this._camera.fov) / 2) * 5.6
-      this.installation.position.set(
+      this.installation.setCameraLocalLayout(
         this._stackedLayout ? 0 : height * this._viewportAspect * 0.19,
         0,
         -5.6,
-      )
-      this.installation.scale.setScalar(
         Math.min(height * 0.34, height * this._viewportAspect * 0.46),
       )
     }
