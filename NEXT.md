@@ -40,6 +40,10 @@ the camera-aligned exhibit layer owns its explicitly positioned hit targets.
 - [x] **Retire GroundPlane's imperative constructor** — the controller now
       requires the declarative `GroundPlane.vue` node and retains only visual
       state; Tres is its sole mesh, geometry, material and disposal owner.
+- [x] **Retire CinematicLights' imperative constructor** — its controller now
+      requires the complete declarative light-node set and retains only section
+      interpolation and reduced-motion settlement; Vue/Tres owns attachment
+      and terminal disposal.
 
 - [x] **Create the single viewport fan-out** — `Sizes` is the only application
       window-resize listener; `Experience` synchronizes the adopted camera,

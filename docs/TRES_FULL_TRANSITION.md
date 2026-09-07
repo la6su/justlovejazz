@@ -138,3 +138,7 @@ WebGLBackend and hardware WebGPUBackend:
 `GroundPlane` no longer has a hostless construction branch. Its controller
 requires the `GroundPlane.vue` node and only writes palette, opacity and
 visibility state; Tres remains the only geometry/material disposal owner.
+
+`CinematicLights` now likewise requires the node set emitted by
+`CinematicLights.vue`. The controller retains only section interpolation and
+reduced-motion settlement; Vue/Tres exclusively attaches and disposes lights.

@@ -541,7 +541,7 @@ export class Experience {
     // invalidation can never enter `update()` with an undefined ground/light
     // owner. Their section-dependent configuration is applied below once the
     // coordinator has completed its synchronous setup.
-    this.lights = new CinematicLights(this.scene, this._host.lights)
+    this.lights = new CinematicLights(this._host.lights)
     this.ground = new GroundPlane(this._host.ground)
     await this.coordinator.init()
     if (!this.isLifecycleCurrent(token)) return
