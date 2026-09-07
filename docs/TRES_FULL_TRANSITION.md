@@ -134,3 +134,7 @@ this topology change. The physical gate passed on 2026-09-07 for automatic
 WebGLBackend and hardware WebGPUBackend:
 `docs/evidence/phase7-live-gate/2026-09-07T20-28-47-969Z-report.json` and
 `docs/evidence/phase7-live-gate/2026-09-07T20-29-21-501Z-report.json`.
+
+`GroundPlane` no longer has a hostless construction branch. Its controller
+requires the `GroundPlane.vue` node and only writes palette, opacity and
+visibility state; Tres remains the only geometry/material disposal owner.

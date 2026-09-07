@@ -542,7 +542,7 @@ export class Experience {
     // owner. Their section-dependent configuration is applied below once the
     // coordinator has completed its synchronous setup.
     this.lights = new CinematicLights(this.scene, this._host.lights)
-    this.ground = new GroundPlane(this.scene, this._host.ground)
+    this.ground = new GroundPlane(this._host.ground)
     await this.coordinator.init()
     if (!this.isLifecycleCurrent(token)) return
     // Phase 8 slice 6: the home-carousel init await moved out of

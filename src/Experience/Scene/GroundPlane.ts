@@ -1,10 +1,8 @@
 // src/Experience/Scene/GroundPlane.ts — Phase 8 slice 1: the ground owner.
 //
 // Migrates the legacy `World.groundPlane` member and the World ground state
-// (constructor geometry/material, `syncGroundTheme`, the `updateTransform`
-// theme-override/config-lerp write and the dispose block) 1:1 into an
-// explicit scene owner: the mesh, its theme/lerp state and its disposal now
-// live here, and Experience is the single disposal owner.
+// (`syncGroundTheme` and the `updateTransform` theme-override/config-lerp
+// write) into an explicit controller around the Vue-owned scene node.
 //
 // `Experience` creates this controller around the Vue-owned declarative node,
 // drives its per-section material state, and releases only controller state on
@@ -41,37 +39,8 @@ export class GroundPlane {
   private _lastTo: GroundConfig | null = null
   private _lastT = Number.NaN
 
-  private readonly _ownsNode: boolean
-
-  constructor(scene: THREE.Scene, node?: GroundPlaneNode) {
-    // Built-in MeshStandardMaterial (NOT NodeMaterial) — reduces uniform group
-    // count on WebGL2. FrontSide (default) — only top face visible from camera.
-    // frustumCulled = true (default) — ground is large but centered, stays in
-    // frustum. (Verbatim from the legacy `World` constructor.)
-    this._ownsNode = !node
-    this.object =
-      node ??
-      new THREE.Mesh(
-        new THREE.PlaneGeometry(200, 200),
-        new THREE.MeshStandardMaterial({
-          color: 0x000000,
-          transparent: true,
-          // R-14 fix: depthWrite=false on transparent ground (was default true
-          // → writes depth across huge area, would occlude future transparent
-          // objects below y=-1). Standard practice for transparent surfaces.
-          depthWrite: false,
-          opacity: 0.3,
-          roughness: 1,
-          metalness: 0,
-          side: THREE.FrontSide, // default — only render top face
-        }),
-      )
-    if (!node) {
-      this.object.rotation.x = -Math.PI / 2
-      this.object.position.y = -1
-      this.object.name = 'ground'
-      scene.add(this.object)
-    }
+  constructor(node: GroundPlaneNode) {
+    this.object = node
   }
 
   /** `World.init()` step: initialize the ground from the intro section config. */
@@ -148,9 +117,5 @@ export class GroundPlane {
   public dispose(): void {
     if (this._disposed) return
     this._disposed = true
-    if (!this._ownsNode) return
-    this.object.parent?.remove(this.object)
-    this.object.geometry.dispose()
-    this.object.material.dispose()
   }
 }

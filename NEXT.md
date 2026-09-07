@@ -37,6 +37,9 @@ the camera-aligned exhibit layer owns its explicitly positioned hit targets.
       adopted `EnvSphere` and `ServicesStage`; the typed bridge rejects partial
       forwarding at compile time. The physical WebGL/WebGPU gate evidence is
       recorded in `docs/TRES_FULL_TRANSITION.md`.
+- [x] **Retire GroundPlane's imperative constructor** — the controller now
+      requires the declarative `GroundPlane.vue` node and retains only visual
+      state; Tres is its sole mesh, geometry, material and disposal owner.
 
 - [x] **Create the single viewport fan-out** — `Sizes` is the only application
       window-resize listener; `Experience` synchronizes the adopted camera,
