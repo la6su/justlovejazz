@@ -4,6 +4,22 @@ import { SectionGroups } from '../Experience/Scene/SectionGroups'
 import { JunniParticles } from '../Experience/World/JunniParticles'
 
 describe('SectionGroups lifecycle', () => {
+  it('adopts declarative empty roots without removing them on owner disposal', () => {
+    const scene = new THREE.Scene()
+    const roots = [0, 1, 2, 3, 4].map((index) => {
+      const root = new THREE.Group()
+      root.name = `section-${index}`
+      scene.add(root)
+      return root
+    })
+    const owner = new SectionGroups(scene, 3, undefined, undefined, roots)
+
+    expect(owner.groups).toEqual([roots[0], roots[1], roots[2]])
+    owner.dispose()
+
+    expect(roots.slice(0, 3).every((root) => root.parent === scene)).toBe(true)
+  })
+
   it('keeps recursive disposal terminal and makes late lookup inert', () => {
     const scene = new THREE.Scene()
     const owner = new SectionGroups(scene, 0)

@@ -20,6 +20,7 @@ import type { BackendFacts, FinalMode } from '../core/rendererBackend'
 import type { UnifiedRenderSurface } from '../core/unifiedRenderer'
 import type { CinematicLightsNodes } from '../Experience/World/Lights'
 import type { GroundPlaneNode } from '../Experience/Scene/GroundPlane'
+import type { Group } from 'three'
 
 /** The readiness state published once the persistent Tres root is live. */
 export interface SceneHostReady {
@@ -39,6 +40,7 @@ export interface SceneHostReady {
   backend: BackendFacts
   lights: CinematicLightsNodes
   ground: GroundPlaneNode
+  sectionRoots?: readonly Group[]
 }
 
 interface SceneHostState {

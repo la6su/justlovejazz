@@ -94,20 +94,24 @@ function hideSectionGeometry(group: THREE.Group): void {
 export class SectionGroups {
   readonly groups: THREE.Group[] = []
   private _disposed = false
+  private readonly adopted = new Set<THREE.Object3D>()
 
   constructor(
     scene: THREE.Scene,
     count: number = SECTION_GROUP_COUNT,
     page: () => PageId = () => 'home',
     storySide: () => StorySide = () => 'center',
+    sectionRoots?: readonly THREE.Group[],
   ) {
     for (let i = 0; i < count; i++) {
-      const group = createSectionGroupByIndex(i, page, storySide)
+      const adoptedIndex = i === 0 ? 0 : i === 1 ? 1 : i === 2 ? 2 : i === 4 ? 3 : i === 5 ? 4 : -1
+      const group = sectionRoots?.[adoptedIndex] ?? createSectionGroupByIndex(i, page, storySide)
+      if (adoptedIndex >= 0) this.adopted.add(group)
       // Hide non-particle geometry until bespoke visuals are ready (T-070..T-074).
       // Particles remain for atmospheric depth. Remove this call section by section
       // as real visuals are added.
       hideSectionGeometry(group)
-      scene.add(group)
+      if (!group.parent) scene.add(group)
       this.groups.push(group)
       group.visible = i === 1 // Intro = index 1
     }
@@ -153,7 +157,7 @@ export class SectionGroups {
       }
       const ownedSubtrees = new Set([...galleryDescendants, ...particleDescendants])
       disposeSceneObjectResources(group, ownedSubtrees)
-      group.parent?.remove(group)
+      if (!this.adopted.has(group)) group.parent?.remove(group)
     })
     this.groups.length = 0
   }

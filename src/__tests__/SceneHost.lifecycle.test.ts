@@ -65,6 +65,16 @@ vi.mock('../app/scene/GroundPlane.vue', () => ({
   }),
 }))
 
+vi.mock('../app/scene/SectionGroupRoots.vue', () => ({
+  default: defineComponent({
+    emits: ['ready'],
+    setup(_, { emit }) {
+      onMounted(() => emit('ready', []))
+      return () => null
+    },
+  }),
+}))
+
 vi.mock('../core/unifiedRenderer', () => ({
   createUnifiedWebGPUInstance: vi.fn(() => mocks.candidate),
   initUnifiedWebGPUInstance: mocks.init,

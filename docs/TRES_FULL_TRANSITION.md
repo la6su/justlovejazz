@@ -75,3 +75,9 @@ for WebGLBackend and
 `docs/evidence/phase7-live-gate/2026-09-07T14-30-56-995Z-report.json` for
 hardware WebGPUBackend.
 The renderer and scheduler boundary is unchanged.
+
+The section-root integration gate also passed on 2026-09-07 for automatic
+WebGLBackend and hardware WebGPUBackend, including reduced motion, settled
+zero-demand and root teardown. Evidence:
+`docs/evidence/phase7-live-gate/2026-09-07T14-47-54-134Z-report.json` and
+`docs/evidence/phase7-live-gate/2026-09-07T14-48-28-737Z-report.json`.

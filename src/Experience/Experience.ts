@@ -90,6 +90,7 @@ export interface ExperienceHost {
   /** Static light objects created declaratively by the persistent Tres host. */
   lights?: CinematicLightsNodes
   ground?: GroundPlaneNode
+  sectionRoots?: readonly THREE.Group[]
   replaceRenderer(renderer: RenderSurface): void
 }
 
@@ -499,6 +500,7 @@ export class Experience {
       undefined,
       () => this.currentPage(),
       () => this._storyNav?.getSide() ?? 'center',
+      this._host?.sectionRoots,
     )
     this.servicesStage = new ServicesStage()
     this.scene.add(this.servicesStage)

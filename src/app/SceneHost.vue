@@ -40,8 +40,10 @@ import { sceneHost } from './sceneHost'
 import CinematicLights from './scene/CinematicLights.vue'
 import CinematicCamera from './scene/CinematicCamera.vue'
 import GroundPlane from './scene/GroundPlane.vue'
+import SectionGroupRoots from './scene/SectionGroupRoots.vue'
 import type { CinematicLightsNodes } from '../Experience/World/Lights'
 import type { GroundPlaneNode } from '../Experience/Scene/GroundPlane'
+import type { Group } from 'three'
 
 const noScene = new URLSearchParams(window.location.search).has('no-scene')
 // Dev-only physical recovery seam. It preserves the shipped single-renderer
@@ -94,6 +96,11 @@ let resolveDeclarativeGround!: (ground: GroundPlaneNode) => void
 const declarativeGroundReady = new Promise<GroundPlaneNode>((resolve) => {
   resolveDeclarativeGround = resolve
 })
+let declarativeSectionRoots: readonly Group[] | null = null
+let resolveDeclarativeSectionRoots!: (groups: readonly Group[]) => void
+const declarativeSectionRootsReady = new Promise<readonly Group[]>((resolve) => {
+  resolveDeclarativeSectionRoots = resolve
+})
 const disposedRenderers = new WeakSet<object>()
 
 function onDeclarativeCameraReady(camera: PerspectiveCamera): void {
@@ -108,6 +115,10 @@ function onDeclarativeLightsReady(lights: CinematicLightsNodes): void {
 function onDeclarativeGroundReady(ground: GroundPlaneNode): void {
   declarativeGround = ground
   resolveDeclarativeGround(ground)
+}
+function onDeclarativeSectionRootsReady(groups: Group[]): void {
+  declarativeSectionRoots = groups
+  resolveDeclarativeSectionRoots(groups)
 }
 
 function disposeRendererOnce(renderer: UnifiedRenderSurface | null): void {
@@ -129,6 +140,7 @@ async function onReady(context: TresContext): Promise<void> {
   const camera = declarativeCamera ?? (await declarativeCameraReady)
   const lights = declarativeLights ?? (await declarativeLightsReady)
   const ground = declarativeGround ?? (await declarativeGroundReady)
+  const sectionRoots = declarativeSectionRoots ?? (await declarativeSectionRootsReady)
   if (!isCurrent()) return
   const canvas =
     (tresRef.value?.$el as HTMLCanvasElement | undefined) ?? document.createElement('canvas')
@@ -184,6 +196,7 @@ async function onReady(context: TresContext): Promise<void> {
     backend,
     lights,
     ground,
+    sectionRoots,
   })
 }
 
@@ -224,6 +237,7 @@ onBeforeUnmount(() => {
       <CinematicCamera @ready="onDeclarativeCameraReady" />
       <CinematicLights @ready="onDeclarativeLightsReady" />
       <GroundPlane @ready="onDeclarativeGroundReady" />
+      <SectionGroupRoots @ready="onDeclarativeSectionRootsReady" />
     </TresCanvas>
   </div>
 </template>
