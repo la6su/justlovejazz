@@ -22,6 +22,7 @@ import type { CinematicLightsNodes } from '../Experience/World/Lights'
 import type { GroundPlaneNode } from '../Experience/Scene/GroundPlane'
 import type { Group } from 'three'
 import type { ServicesStage } from '../Experience/World/ServicesStage'
+import type { EnvSphere } from '../Experience/World/EnvSphere'
 
 /** The readiness state published once the persistent Tres root is live. */
 export interface SceneHostReady {
@@ -43,6 +44,7 @@ export interface SceneHostReady {
   ground: GroundPlaneNode
   sectionRoots?: readonly Group[]
   servicesStage?: ServicesStage
+  envSphere?: EnvSphere
 }
 
 interface SceneHostState {

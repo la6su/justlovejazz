@@ -92,6 +92,7 @@ export interface ExperienceHost {
   ground?: GroundPlaneNode
   sectionRoots?: readonly THREE.Group[]
   servicesStage?: ServicesStage
+  envSphere?: EnvSphere
   replaceRenderer(renderer: RenderSurface): void
 }
 
@@ -517,8 +518,9 @@ export class Experience {
     // Phase 8 slice 3: the ambient pavilion (EnvSphere) enters the
     // Tres-owned scene under its own owner; the coordinator frame path
     // forwards its per-frame colour-lerp update.
-    this.envSphere = new EnvSphere()
-    this.scene.add(this.envSphere)
+    const envSphere = this._host?.envSphere ?? new EnvSphere()
+    this.envSphere = envSphere
+    if (!envSphere.parent) this.scene.add(envSphere)
     // Phase 8 slice 4: the glass cube (SplashCube) enters the Tres-owned
     // scene under its own owner; the coordinator frame path gates its
     // visibility, forwards its per-frame update and reads the ambient-motion

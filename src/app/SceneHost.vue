@@ -42,10 +42,12 @@ import CinematicCamera from './scene/CinematicCamera.vue'
 import GroundPlane from './scene/GroundPlane.vue'
 import SectionGroupRoots from './scene/SectionGroupRoots.vue'
 import ServicesStageOwner from './scene/ServicesStageOwner.vue'
+import EnvSphereOwner from './scene/EnvSphereOwner.vue'
 import type { CinematicLightsNodes } from '../Experience/World/Lights'
 import type { GroundPlaneNode } from '../Experience/Scene/GroundPlane'
 import type { Group } from 'three'
 import type { ServicesStage } from '../Experience/World/ServicesStage'
+import type { EnvSphere } from '../Experience/World/EnvSphere'
 
 const noScene = new URLSearchParams(window.location.search).has('no-scene')
 // Dev-only physical recovery seam. It preserves the shipped single-renderer
@@ -108,6 +110,11 @@ let resolveDeclarativeServicesStage!: (stage: ServicesStage) => void
 const declarativeServicesStageReady = new Promise<ServicesStage>((resolve) => {
   resolveDeclarativeServicesStage = resolve
 })
+let declarativeEnvSphere: EnvSphere | null = null
+let resolveDeclarativeEnvSphere!: (owner: EnvSphere) => void
+const declarativeEnvSphereReady = new Promise<EnvSphere>((resolve) => {
+  resolveDeclarativeEnvSphere = resolve
+})
 const disposedRenderers = new WeakSet<object>()
 
 function onDeclarativeCameraReady(camera: PerspectiveCamera): void {
@@ -131,6 +138,10 @@ function onDeclarativeServicesStageReady(stage: ServicesStage): void {
   declarativeServicesStage = stage
   resolveDeclarativeServicesStage(stage)
 }
+function onDeclarativeEnvSphereReady(owner: EnvSphere): void {
+  declarativeEnvSphere = owner
+  resolveDeclarativeEnvSphere(owner)
+}
 
 function disposeRendererOnce(renderer: UnifiedRenderSurface | null): void {
   if (!renderer || disposedRenderers.has(renderer)) return
@@ -153,6 +164,7 @@ async function onReady(context: TresContext): Promise<void> {
   const ground = declarativeGround ?? (await declarativeGroundReady)
   const sectionRoots = declarativeSectionRoots ?? (await declarativeSectionRootsReady)
   const servicesStage = declarativeServicesStage ?? (await declarativeServicesStageReady)
+  const envSphere = declarativeEnvSphere ?? (await declarativeEnvSphereReady)
   if (!isCurrent()) return
   const canvas =
     (tresRef.value?.$el as HTMLCanvasElement | undefined) ?? document.createElement('canvas')
@@ -210,6 +222,7 @@ async function onReady(context: TresContext): Promise<void> {
     ground,
     sectionRoots,
     servicesStage,
+    envSphere,
   })
 }
 
@@ -252,6 +265,7 @@ onBeforeUnmount(() => {
       <GroundPlane @ready="onDeclarativeGroundReady" />
       <SectionGroupRoots @ready="onDeclarativeSectionRootsReady" />
       <ServicesStageOwner @ready="onDeclarativeServicesStageReady" />
+      <EnvSphereOwner @ready="onDeclarativeEnvSphereReady" />
     </TresCanvas>
   </div>
 </template>

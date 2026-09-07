@@ -85,6 +85,16 @@ vi.mock('../app/scene/ServicesStageOwner.vue', () => ({
   }),
 }))
 
+vi.mock('../app/scene/EnvSphereOwner.vue', () => ({
+  default: defineComponent({
+    emits: ['ready'],
+    setup(_, { emit }) {
+      onMounted(() => emit('ready', new THREE.Group()))
+      return () => null
+    },
+  }),
+}))
+
 vi.mock('../core/unifiedRenderer', () => ({
   createUnifiedWebGPUInstance: vi.fn(() => mocks.candidate),
   initUnifiedWebGPUInstance: mocks.init,
