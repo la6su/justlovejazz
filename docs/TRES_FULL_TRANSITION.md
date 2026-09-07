@@ -142,3 +142,7 @@ visibility state; Tres remains the only geometry/material disposal owner.
 `CinematicLights` now likewise requires the node set emitted by
 `CinematicLights.vue`. The controller retains only section interpolation and
 reduced-motion settlement; Vue/Tres exclusively attaches and disposes lights.
+
+The cinematic `Camera` wrapper now requires the physical camera emitted by
+`CinematicCamera.vue`; it no longer has a native `PerspectiveCamera`
+construction path.

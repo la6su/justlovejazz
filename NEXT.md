@@ -44,6 +44,9 @@ the camera-aligned exhibit layer owns its explicitly positioned hit targets.
       requires the complete declarative light-node set and retains only section
       interpolation and reduced-motion settlement; Vue/Tres owns attachment
       and terminal disposal.
+- [x] **Retire Camera's imperative constructor** — the cinematic controller
+      now requires the physical camera emitted by `CinematicCamera.vue` and
+      cannot construct a second `PerspectiveCamera`.
 
 - [x] **Create the single viewport fan-out** — `Sizes` is the only application
       window-resize listener; `Experience` synchronizes the adopted camera,

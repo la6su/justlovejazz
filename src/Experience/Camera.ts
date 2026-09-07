@@ -60,18 +60,12 @@ export class Camera {
     this._cursorFollowStrength = strength
   }
 
-  /**
-   * @param sizes Viewport sizes (aspect source).
-   * @param instance Phase 7: an externally owned PerspectiveCamera (the
-   *   SceneHost is the single camera owner). When omitted the wrapper
-   *   creates its own — the native-world host (rollback) path.
-   */
+  /** @param instance Physical camera declared by the persistent SceneHost. */
   constructor(
     private readonly sizes: Sizes,
-    instance?: THREE.PerspectiveCamera,
+    instance: THREE.PerspectiveCamera,
   ) {
-    this.instance =
-      instance ?? new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 1000)
+    this.instance = instance
     this.smoothPosition.set(0, 0, 3)
     this.instance.position.copy(this.smoothPosition)
 
