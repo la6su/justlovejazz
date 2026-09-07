@@ -110,6 +110,13 @@ vi.mock('../app/scene/EnvSky.vue', () => ({
   }),
 }))
 
+vi.mock('../app/scene/WorksStageOwner.vue', () => ({
+  default: defineComponent({
+    props: { stage: Object },
+    render: () => null,
+  }),
+}))
+
 vi.mock('../core/unifiedRenderer', () => ({
   createUnifiedWebGPUInstance: vi.fn(() => mocks.candidate),
   initUnifiedWebGPUInstance: mocks.init,
@@ -151,6 +158,16 @@ describe('SceneHost async lifecycle', () => {
     await flushPromises()
 
     expect(mocks.loopStop).toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
+  it('publishes the lazy Works attachment boundary with the ready host', async () => {
+    const wrapper = mount(SceneHost, { attachTo: document.body })
+    await flushPromises()
+
+    const host = await sceneHost.ready
+    expect(host.mountWorksPlaneStage).toBeTypeOf('function')
+    expect(host.unmountWorksPlaneStage).toBeTypeOf('function')
     wrapper.unmount()
   })
 

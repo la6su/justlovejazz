@@ -34,6 +34,10 @@ describe('Experience works stage lifecycle', () => {
       camera: { instance: new THREE.PerspectiveCamera() },
       _worksPlaneStagePromise: null,
       _worksPlaneStageRequest: 0,
+      _host: {
+        mountWorksPlaneStage: vi.fn(async (stage: WorksPlaneStage) => scene.add(stage)),
+        unmountWorksPlaneStage: vi.fn(async (stage: WorksPlaneStage) => stage.removeFromParent()),
+      },
     } as unknown as Partial<Experience>) as Experience
     // The coordinator reads the stage through an owner getter over Experience's
     // own field (the lazy stage changes identity per route — a stored reference
@@ -105,11 +109,18 @@ describe('Experience works stage lifecycle', () => {
       await pending
       const stage = coordinator.worksPlaneStage
       expect(stage).toBeInstanceOf(WorksPlaneStage)
+      const host = (exp as unknown as { _host: { mountWorksPlaneStage: ReturnType<typeof vi.fn> } })
+        ._host
+      expect(host.mountWorksPlaneStage).toHaveBeenCalledWith(stage)
 
       // Leaving /works disposes the owner and clears the field.
       setCurrentPage('home')
       exp.disposeWorksPlaneStage()
       expect(coordinator.worksPlaneStage).toBeNull()
+      expect(
+        (host as unknown as { unmountWorksPlaneStage: ReturnType<typeof vi.fn> })
+          .unmountWorksPlaneStage,
+      ).toHaveBeenCalledWith(stage)
       expect(disposeSpy).toHaveBeenCalledTimes(1)
       expect(stage?.parent).toBeNull()
     } finally {

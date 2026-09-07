@@ -23,6 +23,7 @@ import type { GroundPlaneNode } from '../Experience/Scene/GroundPlane'
 import type { Group } from 'three'
 import type { ServicesStage } from '../Experience/World/ServicesStage'
 import type { EnvSphere } from '../Experience/World/EnvSphere'
+import type { WorksPlaneStage } from '../Experience/World/WorksPlaneStage'
 
 /** The readiness state published once the persistent Tres root is live. */
 export interface SceneHostReady {
@@ -48,6 +49,8 @@ export interface SceneHostReady {
   servicesStage: ServicesStage
   /** The Vue lifecycle owns construction and teardown of this ambient owner. */
   envSphere: EnvSphere
+  mountWorksPlaneStage(stage: WorksPlaneStage): Promise<void>
+  unmountWorksPlaneStage(stage: WorksPlaneStage): Promise<void>
 }
 
 interface SceneHostState {

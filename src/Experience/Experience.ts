@@ -92,6 +92,8 @@ export interface ExperienceHost {
   servicesStage: ServicesStage
   envSphere: EnvSphere
   replaceRenderer(renderer: RenderSurface): void
+  mountWorksPlaneStage(stage: WorksPlaneStage): Promise<void>
+  unmountWorksPlaneStage(stage: WorksPlaneStage): Promise<void>
 }
 
 interface ReadinessGate {
@@ -658,16 +660,21 @@ export class Experience {
         advanceRequest: () => ++this._worksPlaneStageRequest,
       },
       create: () => new WorksPlaneStage(),
-      attach: (stage) => this.scene.add(stage),
-      load: (stage) => stage.init(),
+      // SceneHost/Vue owns attachment. The controller remains the sole lazy
+      // texture, TSL, animation and explicit GPU-disposal owner for now.
+      attach: () => undefined,
+      load: async (stage) => {
+        await this._host.mountWorksPlaneStage(stage)
+        await stage.init()
+      },
       configure: (stage) => {
         stage.setActive(this.currentPage() === 'works', 0)
         stage.resize(window.innerWidth, window.innerHeight)
         stage.setCamera(this.camera.instance)
       },
       release: (stage) => {
+        void this._host.unmountWorksPlaneStage(stage)
         stage.dispose()
-        stage.removeFromParent()
       },
     }
   }

@@ -20,7 +20,7 @@
 // stopped immediately after ready and the `RenderScheduler` (ADR 0004) is the
 // single loop driver. On-demand also avoids manual mode's delayed advance().
 //
-import { onBeforeUnmount, ref, shallowRef, toValue } from 'vue'
+import { nextTick, onBeforeUnmount, ref, shallowRef, toValue } from 'vue'
 import { TresCanvas } from '@tresjs/core'
 import type { TresContext, TresRendererSetupContext } from '@tresjs/core'
 import type { PerspectiveCamera } from 'three'
@@ -40,11 +40,13 @@ import SectionGroupRoots from './scene/SectionGroupRoots.vue'
 import ServicesStageOwner from './scene/ServicesStageOwner.vue'
 import EnvSphereOwner from './scene/EnvSphereOwner.vue'
 import EnvSky from './scene/EnvSky.vue'
+import WorksStageOwner from './scene/WorksStageOwner.vue'
 import type { CinematicLightsNodes } from '../Experience/World/Lights'
 import type { GroundPlaneNode } from '../Experience/Scene/GroundPlane'
 import type { Group } from 'three'
 import type { ServicesStage } from '../Experience/World/ServicesStage'
 import type { EnvSphere } from '../Experience/World/EnvSphere'
+import type { WorksPlaneStage } from '../Experience/World/WorksPlaneStage'
 
 const noScene = new URLSearchParams(window.location.search).has('no-scene')
 // Dev-only physical recovery seam. It preserves the shipped single-renderer
@@ -108,6 +110,7 @@ const declarativeServicesStageReady = new Promise<ServicesStage>((resolve) => {
   resolveDeclarativeServicesStage = resolve
 })
 const declarativeEnvSphere = shallowRef<EnvSphere | null>(null)
+const declarativeWorksStage = shallowRef<WorksPlaneStage | null>(null)
 let resolveDeclarativeEnvSphere!: (owner: EnvSphere) => void
 const declarativeEnvSphereReady = new Promise<EnvSphere>((resolve) => {
   resolveDeclarativeEnvSphere = resolve
@@ -118,6 +121,18 @@ const declarativeEnvSkyReady = new Promise<void>((resolve) => {
   resolveDeclarativeEnvSky = resolve
 })
 const disposedRenderers = new WeakSet<object>()
+
+async function mountWorksPlaneStage(stage: WorksPlaneStage): Promise<void> {
+  if (disposed) return
+  declarativeWorksStage.value = stage
+  await nextTick()
+}
+
+async function unmountWorksPlaneStage(stage: WorksPlaneStage): Promise<void> {
+  if (declarativeWorksStage.value !== stage) return
+  declarativeWorksStage.value = null
+  await nextTick()
+}
 
 function onDeclarativeCameraReady(camera: PerspectiveCamera): void {
   declarativeCamera = camera
@@ -230,6 +245,8 @@ async function onReady(context: TresContext): Promise<void> {
     sectionRoots,
     servicesStage,
     envSphere,
+    mountWorksPlaneStage,
+    unmountWorksPlaneStage,
   })
 }
 
@@ -252,6 +269,7 @@ onBeforeUnmount(() => {
   if (createdRenderer !== liveRenderer) disposeRendererOnce(createdRenderer)
   liveRenderer = null
   createdRenderer = null
+  declarativeWorksStage.value = null
 })
 </script>
 
@@ -278,6 +296,7 @@ onBeforeUnmount(() => {
         :material="declarativeEnvSphere.skyMaterial"
         @ready="onDeclarativeEnvSkyReady"
       />
+      <WorksStageOwner :stage="declarativeWorksStage" />
     </TresCanvas>
   </div>
 </template>

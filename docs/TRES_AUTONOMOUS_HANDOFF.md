@@ -131,6 +131,17 @@ Continue only when rapid Works/home/Works, failed loading and root teardown
 pass and both actual backends render correctly. Revert the slice if it adds
 duplicate attachment, resources, idle draws or stale route activation.
 
+### Iteration 2 result — 2026-09-08
+
+Completed with `WorksStageOwner.vue`, the existing `SceneHostReady` bridge and
+the Works lazy-stage contract. Vue/Tres now attaches and detaches the same
+lazy `WorksPlaneStage` instance through a shallow object boundary; Experience
+no longer adds or removes that stage from the scene directly. The controller
+still constructs cards and the installation only after `/works` activation,
+and remains its only TSL, texture, motion and GPU-disposal owner. Component,
+bridge and rapid-disposal lifecycle coverage passes locally. Physical Works
+backend and route-soak evidence is still required before milestone admission.
+
 ## Iteration 3: declarative WorksInstallation composition
 
 Files: new `src/app/scene/WorksInstallation.vue`, WorksStageOwner.vue,

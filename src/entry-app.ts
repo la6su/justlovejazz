@@ -419,6 +419,8 @@ async function boot(): Promise<BootResult> {
         servicesStage: host.servicesStage,
         envSphere: host.envSphere,
         replaceRenderer: (renderer) => sceneHost.replaceRenderer(renderer),
+        mountWorksPlaneStage: (stage) => host.mountWorksPlaneStage(stage),
+        unmountWorksPlaneStage: (stage) => host.unmountWorksPlaneStage(stage),
       },
       getCurrentPage,
     )
