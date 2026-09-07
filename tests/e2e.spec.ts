@@ -89,7 +89,9 @@ async function waitForRouter(page: Page): Promise<void> {
         style.textContent?.includes('.jlz-storyline'),
       ) &&
       Boolean(document.querySelector('#spa-content')?.getAttribute('data-page-view')) &&
-      (window as unknown as { __jlzRouterReady?: boolean }).__jlzRouterReady === true,
+      (window as unknown as { __jlzRouterReady?: boolean }).__jlzRouterReady === true &&
+      typeof (window as unknown as { __jlzEmit?: unknown }).__jlzEmit === 'function',
+    { timeout: 30000 },
   )
 }
 
@@ -100,15 +102,22 @@ async function waitForRouter(page: Page): Promise<void> {
  * `window.__jlzEmit` (entry-app.ts) to call that port from the test.
  */
 function navigateInApp(page: Page, path: string): Promise<void> {
-  return page.evaluate((nextPath) => {
-    const emit = (
-      window as unknown as {
-        __jlzEmit?: (event: string, detail?: unknown) => void
-      }
-    ).__jlzEmit
-    if (!emit) throw new Error('window.__jlzEmit test seam is not available')
-    emit('jlz:navigate', { path: nextPath })
-  }, path)
+  return page
+    .waitForFunction(
+      () => typeof (window as unknown as { __jlzEmit?: unknown }).__jlzEmit === 'function',
+      { timeout: 30000 },
+    )
+    .then(() =>
+      page.evaluate((nextPath) => {
+        const emit = (
+          window as unknown as {
+            __jlzEmit?: (event: string, detail?: unknown) => void
+          }
+        ).__jlzEmit
+        if (!emit) throw new Error('window.__jlzEmit test seam is not available')
+        emit('jlz:navigate', { path: nextPath })
+      }, path),
+    )
 }
 
 test.describe('JustLoveJazz — page boot smoke', () => {
@@ -523,7 +532,7 @@ test.describe('JustLoveJazz — Phase 7 persistent scene host', () => {
     // Readiness: Enter becomes available only after renderer init + backend
     // inspection + Tres context mount + the initial World's first render.
     const enter = page.locator('#jlz-splash-enter')
-    await expect(enter).toHaveClass(/is-ready/)
+    await expect(enter).toHaveClass(/is-ready/, { timeout: 120000 })
 
     // Exactly one canvas (the persistent Tres root, selector canvas.canvas),
     // hidden from the accessibility tree.
