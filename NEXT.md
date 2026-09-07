@@ -89,6 +89,10 @@ the camera-aligned exhibit layer owns its explicitly positioned hit targets.
       extending the current project-directed installation into richer geometry
       and reviewed assets. Keep one renderer, canonical slots and explicit
       disposal.
+- [ ] **Create a lazy declarative Works installation boundary** — introduce a
+      route-scoped Vue/Tres mount seam for `WorksInstallation` only after its
+      TSL materials remain owned by one stage and no resources are created
+      before `/works`; preserve `WorksPlaneStage` as the animation/input owner.
 - [ ] Connect case chapters to meaningful material changes: initial condition,
       interaction mechanism, inspectable result and reflection. Define each
       transition's reduced-motion settled state before adding animation.
