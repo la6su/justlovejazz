@@ -42,11 +42,7 @@ defineProps<{
     <div class="uk-container uk-container-expand uk-text-center">
       <!-- Inline SVGs: the prerendered documents carry no JavaScript, so
            uk-icon (a UIkit JS component) never renders there. -->
-      <ul
-        v-if="variant === 'article'"
-        class="jlz-blog-social"
-        aria-label="Social links"
-      >
+      <ul v-if="variant === 'article'" class="jlz-blog-social" aria-label="Social links">
         <li>
           <a href="https://github.com/la6su" rel="noopener" aria-label="GitHub">
             <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" focusable="false">
@@ -70,11 +66,7 @@ defineProps<{
         <li>
           <a href="mailto:hello@justlovejazz.com" aria-label="Email">
             <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" focusable="false">
-              <polyline
-                fill="none"
-                stroke="currentColor"
-                points="1.4,6.5 10,11 18.6,6.5"
-              />
+              <polyline fill="none" stroke="currentColor" points="1.4,6.5 10,11 18.6,6.5" />
               <path
                 fill="none"
                 stroke="currentColor"

@@ -68,7 +68,10 @@ describe('nav deep-link hashes resolve against the rendered route DOM', () => {
       await flushPromises()
 
       for (const hash of hashes) {
-        expect(document.querySelector(hash), `${path}${hash} must exist in the rendered DOM`).not.toBeNull()
+        expect(
+          document.querySelector(hash),
+          `${path}${hash} must exist in the rendered DOM`,
+        ).not.toBeNull()
       }
       wrapper.unmount()
     })

@@ -39,9 +39,6 @@ const STORAGE_KEY = 'jlz:lang'
 const TRANSLATIONS: Record<Lang, Record<string, string>> = {
   EN: {
     // Splash
-    'splash.enter': 'Enter',
-    'splash.loading': 'Loading',
-    'splash.ready': 'Ready',
 
     // Navigation
     'nav.studio': 'Studio',
@@ -53,24 +50,14 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'nav.blog': 'Blog',
 
     // Navigation sheet (section 5)
-    'navOverlay.title': 'Navigate',
-    'navOverlay.lead': 'Choose your destination.',
-    'navOverlay.studio.desc': 'Home · cube experience',
-    'navOverlay.services.desc': 'What we do',
-    'navOverlay.works.desc': 'Selected projects',
-    'navOverlay.manifesto.desc': 'Principles',
-    'navOverlay.lab.desc': 'Experiments',
-    'navOverlay.contact.desc': 'Start a project',
     'blog.undercurrent.title': 'Undercurrent',
     'blog.glass.title': 'Glassmorphism',
     'blog.rendering.title': 'On-demand Rendering',
 
     // Menu section (section 5, two-column navigation template)
     'menu.navigate': 'Menu',
-    'menu.stat.sections': 'LEMONROOM',
 
     // Cinematic shell + contact finale
-    'story.system': 'Cinematic web system · 2026',
     'story.hint': 'Scroll · swipe',
     'story.contact': 'Contact',
     'contactFooter.kicker': 'Final frame · open channel',
@@ -82,73 +69,25 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     // Works page section titles are project names (proper nouns), so they are not translated;
     // so only subtitles get keys for works.
     'dropbar.home.s1.title': 'Studio',
-    'dropbar.home.s1.subtitle': 'Remote · EU · since 2019',
     'dropbar.home.s2.title': 'Services',
-    'dropbar.home.s2.subtitle': 'Strategy to implementation',
     'dropbar.home.s3.title': 'Works',
-    'dropbar.home.s3.subtitle': 'Selected projects · gallery',
     'dropbar.home.s4.title': 'Manifesto',
-    'dropbar.home.s4.subtitle': 'What guides us',
-    'dropbar.home.featured.title': 'Lab',
-    'dropbar.home.featured.subtitle': 'Experiments · always in progress',
     'dropbar.services.s1.title': 'Creative Direction',
-    'dropbar.services.s1.subtitle': 'Concept → visual identity',
     'dropbar.services.s2.title': 'Realtime build',
-    'dropbar.services.s2.subtitle': 'Realtime · performance-first',
     'dropbar.services.s3.title': 'Motion',
-    'dropbar.services.s3.subtitle': 'Motion as interface',
     'dropbar.services.s4.title': 'AI',
-    'dropbar.services.s4.subtitle': 'Generation · automation',
-    'dropbar.services.featured.title': 'Start a project',
-    'dropbar.services.featured.subtitle': 'Open for new work',
     // Works page — project names stay English because they are proper nouns.
-    'dropbar.works.s1.subtitle': 'WebGPU fluid simulation',
-    'dropbar.works.s2.subtitle': 'Minimal portfolio',
-    'dropbar.works.s3.subtitle': 'Audio-reactive 3D',
-    'dropbar.works.s4.subtitle': 'Generative typography',
-    'dropbar.works.featured.title': 'Blog',
-    'dropbar.works.featured.subtitle': 'Process notes + case studies',
     'dropbar.manifesto.s1.title': 'Purpose',
-    'dropbar.manifesto.s1.subtitle': "We don't build what everyone builds",
     'dropbar.manifesto.s2.title': 'Clarity',
-    'dropbar.manifesto.s2.subtitle': 'Clean structure · no noise',
     'dropbar.manifesto.s3.title': 'Emotion',
-    'dropbar.manifesto.s3.subtitle': 'Motion, light, sound',
     'dropbar.manifesto.s4.title': 'Simplicity',
-    'dropbar.manifesto.s4.subtitle': 'Minimalism, not emptiness',
-    'dropbar.manifesto.featured.title': 'Process',
-    'dropbar.manifesto.featured.subtitle': 'Explore · prototype · test · fail · improve',
-    'dropbar.lab.s1.title': 'Shader Lab',
-    'dropbar.lab.s1.subtitle': 'GLSL & TSL fragments',
-    'dropbar.lab.s2.title': 'Audio Reactive',
-    'dropbar.lab.s2.subtitle': 'Web Audio → visuals',
-    'dropbar.lab.s3.title': 'Generative',
-    'dropbar.lab.s3.subtitle': 'Procedural worlds',
-    'dropbar.lab.s4.title': 'GPU Particles',
-    'dropbar.lab.s4.subtitle': '10k instanced points',
-    'dropbar.lab.featured.title': 'Open source',
-    'dropbar.lab.featured.subtitle': 'GitHub · experiments + demos',
     'dropbar.contact.s1.title': 'Email',
-    'dropbar.contact.s1.subtitle': 'Direct line',
     'dropbar.contact.s2.title': 'Social',
-    'dropbar.contact.s2.subtitle': 'Telegram + GitHub',
     'dropbar.contact.s3.title': 'Location',
-    'dropbar.contact.s3.subtitle': 'Remote · EU',
     'dropbar.contact.s4.title': 'Form',
-    'dropbar.contact.s4.subtitle': 'Tell us about your project',
-    'dropbar.contact.featured.title': 'Start a project',
-    'dropbar.contact.featured.subtitle': 'Open for new work',
 
     // Common CTAs
     'common.explore': 'Explore',
-    'common.showreel': 'Showreel',
-    'common.readMore': 'Read more',
-    'common.send': 'Send',
-    'common.startProject': 'Start a project',
-    'common.seeServices': 'See services',
-    'common.email': 'Email',
-    'common.telegram': 'Telegram',
-    'common.github': 'GitHub',
 
     // Home — intro (Studio)
     'home.studio.title': 'Studio',
@@ -165,9 +104,6 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
 
     // Home — works
     'home.works.title': 'Works',
-    'home.works.lead': 'Selected projects that define our way.',
-    'home.works.desc1': 'Selected launches, systems and visual identities.',
-    'home.works.desc2': 'Open the case notes.',
 
     // Home — contact (Manifesto face)
     'home.manifesto.title': 'Manifesto',
@@ -177,16 +113,8 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'home.manifesto.desc3': 'Every page must earn attention.',
 
     // Home — Contact
-    'home.contact.title': 'Contact',
-    'home.contact.lead': "Let's create something great together.",
-    'home.contact.tag': '@ justlovejazz',
 
     // Home — lab
-    'home.lab.title': 'Lab',
-    'home.lab.lead': 'Always in progress.',
-    'home.lab.desc1': 'We explore.',
-    'home.lab.desc2': 'We prototype.',
-    'home.lab.desc3': 'We push boundaries.',
 
     // Services page
     'services.creativeDirection.title': 'Creative Direction',
@@ -208,12 +136,6 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
       'The right workflow creates more room for the decisions that cannot be automated.',
     'services.aiSystems.action': 'Start a project',
     'services.aiSystems.note': 'A short brief is enough to begin the conversation.',
-    'services.lab.title': 'LAB',
-    'services.lab.lead': 'Experiments. Always in progress.',
-    'services.lab.desc1': 'A sandbox for shader, audio, and procedural R&D.',
-    'services.playground.title': 'PLAYGROUND',
-    'services.playground.lead': 'Nothing to sell. Just play.',
-    'services.playground.desc1': 'Open experiments, half-broken demos, things we build for joy.',
 
     // Works page — section headers (project names stay English — proper nouns)
     'works.observatory': 'An observatory of ideas.',
@@ -235,16 +157,11 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'works.room4.context':
       'An open archive of visual music, procedural surfaces and spatial sketches. Select a fragment to explore.',
     'works.enterRooms': 'Explore the four rooms',
-    'works.readCase': 'Read case note',
     'works.roomHint': 'Scroll to explore · Select a work to enter',
     'works.section1.title': 'Listening room',
-    'works.section1.lead': 'Sound becomes space. Two studies in rhythm and silence.',
     'works.section2.title': 'Signal room',
-    'works.section2.lead': 'From analogue instruments to synthetic space.',
     'works.section3.title': 'Atmosphere room',
-    'works.section3.lead': 'Light, particles and the texture of a late hour.',
     'works.section4.title': 'After hours',
-    'works.section4.lead': 'The final pair. Take an idea into your next project.',
 
     // Manifesto page
     'manifesto.purpose.title': 'Purpose',
@@ -259,10 +176,6 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'manifesto.emotion.lead': 'We use motion, light, and sound to evoke a sense of presence.',
     'manifesto.simplicity.title': 'Simplicity',
     'manifesto.simplicity.lead': 'We strive for minimalism — but not emptiness.',
-    'manifesto.process.title': 'Process',
-    'manifesto.process.lead': 'We explore. We prototype. We test. We fail. We improve.',
-    'manifesto.future.title': 'Future',
-    'manifesto.future.lead': 'Technologies change. Principles remain.',
 
     // Lab page
     'lab.shaderLab.title': 'Shader Lab',
@@ -290,8 +203,6 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
 
     // Contact page
     'contact.email.title': 'Email',
-    'contact.email.marquee': 'Make it mean something',
-    'contact.email.lead': 'Direct line.',
     'contact.email.heading': 'Start here.',
     'contact.email.meta': 'For new work, questions and good ideas.',
     'contact.social.title': 'Social',
@@ -300,36 +211,16 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'contact.social.telegram': 'The quickest way to start.',
     'contact.social.github': 'Open work and experiments.',
     'contact.location.title': 'Location',
-    'contact.location.lead': 'Where we work.',
     'contact.location.heading': 'Find us here.',
-    'contact.location.mapTitle': 'Cyprus · Agros',
-    'contact.location.mapDescription': 'A stylised map marker for Agros, Cyprus.',
     'contact.location.caption': 'A quiet base in the Troodos mountains.',
-    'contact.location.fact1.label': 'Base',
-    'contact.location.fact1.value': 'Remote · EU',
-    'contact.location.fact2.label': 'Practice',
-    'contact.location.fact2.value': 'Strategy, interface, realtime',
-    'contact.location.desc1': 'Remote · EU · since 2019',
-    'contact.location.desc2': 'Open for new projects.',
     'contact.form.title': 'Start',
-    'contact.form.lead': 'Tell us about your project.',
     'contact.form.heading': 'Make the move.',
     'contact.form.action': 'Start a project',
     'contact.form.meta': 'We will return with the right next question.',
-    'contact.form.placeholder': "What's the project?",
 
     // Secret-section hints
-    'hint.returnLeft': '← Drag right to return',
-    'hint.returnRight': 'Drag left to return →',
 
     // Navigation help labels
-    'help.title': 'Navigation',
-    'help.sections': 'Sections',
-    'help.up': 'Up',
-    'help.down': 'Down',
-    'help.lab': 'Lab',
-    'help.menu': 'Menu',
-    'help.hint': 'Scroll, swipe or use arrow keys',
 
     // Meta (route-based SEO)
     'meta.home.title': 'JUSTLOVEJAZZ — Web Design Studio | Interactive 3D Portfolio',
@@ -354,9 +245,6 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
 
   RU: {
     // Splash
-    'splash.enter': 'Войти',
-    'splash.loading': 'Загрузка',
-    'splash.ready': 'Готово',
 
     // Navigation
     'nav.studio': 'Студия',
@@ -368,24 +256,14 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'nav.blog': 'Блог',
 
     // Navigation section (RU)
-    'navOverlay.title': 'Навигация',
-    'navOverlay.lead': 'Выберите направление.',
-    'navOverlay.studio.desc': 'Главная · куб',
-    'navOverlay.services.desc': 'Что мы делаем',
-    'navOverlay.works.desc': 'Избранные проекты',
-    'navOverlay.manifesto.desc': 'Принципы',
-    'navOverlay.lab.desc': 'Эксперименты',
-    'navOverlay.contact.desc': 'Начать проект',
     'blog.undercurrent.title': 'Undercurrent',
     'blog.glass.title': 'Glassmorphism',
     'blog.rendering.title': 'Рендеринг по требованию',
 
     // Menu overlay (RU)
     'menu.navigate': 'Меню',
-    'menu.stat.sections': 'LEMONROOM',
 
     // Cinematic shell + contact finale
-    'story.system': 'Кинематографическая web-система · 2026',
     'story.hint': 'Листайте · свайпайте',
     'story.contact': 'Связаться',
     'contactFooter.kicker': 'Финальный кадр · открытый канал',
@@ -398,73 +276,25 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     // Works page section titles are project names (proper nouns), so they are not translated;
     // so only subtitles get keys for works.
     'dropbar.home.s1.title': 'Студия',
-    'dropbar.home.s1.subtitle': 'Удалённо · ЕС · с 2019',
     'dropbar.home.s2.title': 'Услуги',
-    'dropbar.home.s2.subtitle': 'От стратегии до реализации',
     'dropbar.home.s3.title': 'Работы',
-    'dropbar.home.s3.subtitle': 'Избранные проекты · галерея',
     'dropbar.home.s4.title': 'Манифест',
-    'dropbar.home.s4.subtitle': 'Что нами движет',
-    'dropbar.home.featured.title': 'Лаборатория',
-    'dropbar.home.featured.subtitle': 'Эксперименты · всегда в процессе',
     'dropbar.services.s1.title': 'Креатив',
-    'dropbar.services.s1.subtitle': 'Концепция → идентичность',
     'dropbar.services.s2.title': 'Realtime',
-    'dropbar.services.s2.subtitle': 'Реальное время · перфоманс',
     'dropbar.services.s3.title': 'Моушн',
-    'dropbar.services.s3.subtitle': 'Движение как интерфейс',
     'dropbar.services.s4.title': 'AI',
-    'dropbar.services.s4.subtitle': 'Генерация · автоматизация',
-    'dropbar.services.featured.title': 'Начать проект',
-    'dropbar.services.featured.subtitle': 'Открыты для новых проектов',
     // Works page — project names stay English because they are proper nouns.
-    'dropbar.works.s1.subtitle': 'WebGPU симуляция жидкостей',
-    'dropbar.works.s2.subtitle': 'Минималистичное портфолио',
-    'dropbar.works.s3.subtitle': 'Аудио-реактивное 3D',
-    'dropbar.works.s4.subtitle': 'Генеративная типографика',
-    'dropbar.works.featured.title': 'Блог',
-    'dropbar.works.featured.subtitle': 'Заметки о процессе + кейсы',
     'dropbar.manifesto.s1.title': 'Цель',
-    'dropbar.manifesto.s1.subtitle': 'Мы не строим то, что строят все',
     'dropbar.manifesto.s2.title': 'Ясность',
-    'dropbar.manifesto.s2.subtitle': 'Чёткая структура · без шума',
     'dropbar.manifesto.s3.title': 'Эмоция',
-    'dropbar.manifesto.s3.subtitle': 'Движение, свет, звук',
     'dropbar.manifesto.s4.title': 'Простота',
-    'dropbar.manifesto.s4.subtitle': 'Минимализм, а не пустота',
-    'dropbar.manifesto.featured.title': 'Процесс',
-    'dropbar.manifesto.featured.subtitle': 'Исследовать · прототип · тест · провал · улучшить',
-    'dropbar.lab.s1.title': 'Шейдерная лаборатория',
-    'dropbar.lab.s1.subtitle': 'GLSL и TSL фрагменты',
-    'dropbar.lab.s2.title': 'Аудио-реактивность',
-    'dropbar.lab.s2.subtitle': 'Web Audio → визуал',
-    'dropbar.lab.s3.title': 'Генеративность',
-    'dropbar.lab.s3.subtitle': 'Процедурные миры',
-    'dropbar.lab.s4.title': 'GPU-частицы',
-    'dropbar.lab.s4.subtitle': '10k инстансированных точек',
-    'dropbar.lab.featured.title': 'Open source',
-    'dropbar.lab.featured.subtitle': 'GitHub · эксперименты + демо',
     'dropbar.contact.s1.title': 'Почта',
-    'dropbar.contact.s1.subtitle': 'Прямая линия',
     'dropbar.contact.s2.title': 'Соцсети',
-    'dropbar.contact.s2.subtitle': 'Telegram + GitHub',
     'dropbar.contact.s3.title': 'Локация',
-    'dropbar.contact.s3.subtitle': 'Удалённо · ЕС',
     'dropbar.contact.s4.title': 'Форма',
-    'dropbar.contact.s4.subtitle': 'Расскажите о своём проекте',
-    'dropbar.contact.featured.title': 'Начать проект',
-    'dropbar.contact.featured.subtitle': 'Открыты для новых проектов',
 
     // Common CTAs
     'common.explore': 'Исследовать',
-    'common.showreel': 'Шоурил',
-    'common.readMore': 'Подробнее',
-    'common.send': 'Отправить',
-    'common.startProject': 'Начать проект',
-    'common.seeServices': 'Смотреть услуги',
-    'common.email': 'Почта',
-    'common.telegram': 'Telegram',
-    'common.github': 'GitHub',
 
     // Home — intro (Studio)
     'home.studio.title': 'Студия',
@@ -481,9 +311,6 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
 
     // Home — works
     'home.works.title': 'Работы',
-    'home.works.lead': 'Избранные проекты, определяющие наш подход.',
-    'home.works.desc1': 'Запуски, системы и визуальные идентичности.',
-    'home.works.desc2': 'Откройте заметки к кейсам.',
 
     // Home — contact (Manifesto face)
     'home.manifesto.title': 'Манифест',
@@ -493,16 +320,8 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'home.manifesto.desc3': 'Каждая страница заслуживает внимание.',
 
     // Home — Contact
-    'home.contact.title': 'Контакты',
-    'home.contact.lead': 'Давайте создадим что-то великое вместе.',
-    'home.contact.tag': '@ justlovejazz',
 
     // Home — lab
-    'home.lab.title': 'Лаборатория',
-    'home.lab.lead': 'Всегда в процессе.',
-    'home.lab.desc1': 'Мы исследуем.',
-    'home.lab.desc2': 'Мы прототипируем.',
-    'home.lab.desc3': 'Мы расширяем границы.',
 
     // Services page
     'services.creativeDirection.title': 'Креатив',
@@ -523,12 +342,6 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
       'Правильный процесс освобождает место для решений, которые нельзя автоматизировать.',
     'services.aiSystems.action': 'Начать проект',
     'services.aiSystems.note': 'Для начала разговора достаточно короткого брифа.',
-    'services.lab.title': 'Лаб',
-    'services.lab.lead': 'Эксперименты. Всегда в процессе.',
-    'services.lab.desc1': 'Песочница для шейдеров, звука, R&D.',
-    'services.playground.title': 'Плейграунд',
-    'services.playground.lead': 'Нечего продавать. Просто игра.',
-    'services.playground.desc1': 'Открытые эксперименты, демо, вещи для радости.',
 
     // Works page — section headers
     'works.observatory': 'Обсерватория идей.',
@@ -550,16 +363,11 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'works.room4.context':
       'Открытый архив визуальной музыки, процедурных поверхностей и пространственных этюдов. Выберите фрагмент.',
     'works.enterRooms': 'Войти в четыре комнаты',
-    'works.readCase': 'Читать кейс',
     'works.roomHint': 'Листайте комнаты · Откройте работу',
     'works.section1.title': 'Комната звука',
-    'works.section1.lead': 'Звук становится пространством. Два этюда о ритме и тишине.',
     'works.section2.title': 'Комната сигнала',
-    'works.section2.lead': 'От живых инструментов к синтетическому пространству.',
     'works.section3.title': 'Комната атмосферы',
-    'works.section3.lead': 'Свет, частицы и фактура позднего часа.',
     'works.section4.title': 'После полуночи',
-    'works.section4.lead': 'Финальная пара. Возьмите идею в свой следующий проект.',
 
     // Manifesto page
     'manifesto.purpose.title': 'Цель',
@@ -575,11 +383,6 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
       'Мы используем движение, свет и звук, чтобы вызвать чувство присутствия.',
     'manifesto.simplicity.title': 'Простота',
     'manifesto.simplicity.lead': 'Мы стремимся к минимализму — но не к пустоте.',
-    'manifesto.process.title': 'Процесс',
-    'manifesto.process.lead':
-      'Мы исследуем. Мы прототипируем. Мы тестируем. Мы ошибаемся. Мы улучшаем.',
-    'manifesto.future.title': 'Будущее',
-    'manifesto.future.lead': 'Технологии меняются. Принципы остаются.',
 
     // Lab page
     'lab.shaderLab.title': 'Шейдерная лаборатория',
@@ -607,8 +410,6 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
 
     // Contact page
     'contact.email.title': 'Почта',
-    'contact.email.marquee': 'Создаём то, что важно',
-    'contact.email.lead': 'Прямая линия.',
     'contact.email.heading': 'Ну, здрасте `-)',
     'contact.email.meta': 'Для новых проектов, вопросов и хороших идей.',
     'contact.social.title': 'Соцсети',
@@ -617,36 +418,16 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'contact.social.telegram': 'Самый быстрый способ начать.',
     'contact.social.github': 'Открытые работы и эксперименты.',
     'contact.location.title': 'Локация',
-    'contact.location.lead': 'Где мы работаем.',
     'contact.location.heading': 'Мы здесь.',
-    'contact.location.mapTitle': 'Кипр · Агрос',
-    'contact.location.mapDescription': 'Стилизованная карта с маркером Агроса, Кипр.',
     'contact.location.caption': 'Тихая база в горах Троодос.',
-    'contact.location.fact1.label': 'База',
-    'contact.location.fact1.value': 'Удалённо · ЕС',
-    'contact.location.fact2.label': 'Практика',
-    'contact.location.fact2.value': 'Стратегия, интерфейс, realtime',
-    'contact.location.desc1': 'Удалённо · ЕС · с 2019',
-    'contact.location.desc2': 'Открыты для новых проектов.',
     'contact.form.title': 'Старт',
-    'contact.form.lead': 'Расскажите о своём проекте.',
     'contact.form.heading': 'Сделаем шаг.',
     'contact.form.action': 'Начать проект',
     'contact.form.meta': 'Вернёмся с правильным следующим вопросом.',
-    'contact.form.placeholder': 'Какой проект?',
 
     // Secret-section hints
-    'hint.returnLeft': '← Тяните вправо для возврата',
-    'hint.returnRight': 'Тяните влево для возврата →',
 
     // Navigation help labels
-    'help.title': 'Навигация',
-    'help.sections': 'Секции',
-    'help.up': 'вверх',
-    'help.down': 'вниз',
-    'help.lab': 'lab',
-    'help.menu': 'меню',
-    'help.hint': 'используйте джойстик для навигации',
 
     // Meta (route-based SEO)
     'meta.home.title': 'JUSTLOVEJAZZ — Студия веб-дизайна | Интерактивное 3D-портфолио',
