@@ -91,6 +91,7 @@ export interface ExperienceHost {
   lights?: CinematicLightsNodes
   ground?: GroundPlaneNode
   sectionRoots?: readonly THREE.Group[]
+  servicesStage?: ServicesStage
   replaceRenderer(renderer: RenderSurface): void
 }
 
@@ -502,8 +503,9 @@ export class Experience {
       () => this._storyNav?.getSide() ?? 'center',
       this._host?.sectionRoots,
     )
-    this.servicesStage = new ServicesStage()
-    this.scene.add(this.servicesStage)
+    const servicesStage = this._host?.servicesStage ?? new ServicesStage()
+    this.servicesStage = servicesStage
+    if (!servicesStage.parent) this.scene.add(servicesStage)
     // Phase 8 slice 6: the project stream (BakuCarousel) is created by the
     // works section factory as a child of the Works group — it enters the
     // scene graph with the group, but its reference + init + per-frame drive
