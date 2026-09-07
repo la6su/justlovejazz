@@ -14,7 +14,8 @@ export interface NavItemData {
   label: string
   labelKey: string
   href: string
-  subs: NavSubSection[]
+  /** Rendered as an expanding submenu; direct items navigate instead. */
+  subs?: NavSubSection[]
   direct?: boolean
 }
 
@@ -169,28 +170,11 @@ export const NAV_ITEMS: NavItemData[] = [
     label: 'Blog',
     labelKey: 'nav.blog',
     href: '/blog',
+    // Direct link: the blog index/articles are prerendered documents
+    // outside the route manifest, so the item navigates full-page instead
+    // of expanding an SPA submenu. (menuLifecycle's static-document guard
+    // keeps any future non-manifest sub-link working the same way.)
     direct: true,
-    subs: [
-      { num: '01', title: 'Journal', titleKey: 'nav.blog', href: '/blog' },
-      {
-        num: '02',
-        title: 'Undercurrent',
-        titleKey: 'blog.undercurrent.title',
-        href: '/blog/undercurrent-webgpu-fluid',
-      },
-      {
-        num: '03',
-        title: 'Glassmorphism',
-        titleKey: 'blog.glass.title',
-        href: '/blog/glassmorphism-webgpu',
-      },
-      {
-        num: '04',
-        title: 'On-demand Rendering',
-        titleKey: 'blog.rendering.title',
-        href: '/blog/on-demand-rendering',
-      },
-    ],
   },
   {
     num: '07',
