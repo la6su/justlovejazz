@@ -1006,10 +1006,9 @@ Theme ownership and visual rules: [`docs/THEME.md`](docs/THEME.md).
       `Experience/Cursor.ts` now takes its CSS fallback colors from the tested
       manifest while Less remains the canonical source. The manifest is no
       longer test-only; its parity contract stays locked by `brandTokens.test`.
-- [ ] **Give the case-study status gate an owner or drop the field** —
-      `CaseStudy.status` is `'review'` on every entry but nothing validates
-      or gates publication on it (the retired `validateCaseStudy` was removed
-      as dead code in the same sweep that found this).
+- [x] **Remove the unused case-study status field** —
+      `CaseStudyView` already owns the editorial review copy and no production
+      consumer read `CaseStudy.status`; the dead type and data fields are gone.
 
 ## Deferred product queue
 

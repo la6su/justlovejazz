@@ -124,6 +124,11 @@ their completion events synchronize the coordinator's READY/VIEWING/PASSED
 state machine. Replacing them would introduce a second animation engine with
 no measured Tres or runtime benefit.
 
+The case-study status audit found no publication gate or runtime consumer;
+`CaseStudyView` owns the editorial disclosure text directly. The dead status
+field was removed from the shared contract and data records without changing
+route state or published markup.
+
 ## Validation baseline — 2026-09-07
 
 This slice passed TypeScript, Vue type checks, ESLint with zero errors,
