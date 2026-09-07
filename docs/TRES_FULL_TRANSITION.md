@@ -86,3 +86,10 @@ The 20-cycle route/resource soak passed on WebGLBackend after this integration:
 one canvas, bounded scene and renderer resources, stable route frame deltas and
 clean root teardown. Evidence:
 `docs/evidence/phase10-route-cycle-soak/2026-09-07T14-58-16-759Z-report.json`.
+
+The static-owner review now has a stop/continue decision. `ServicesStage`,
+`ParticleBurst` and `SplashCube` all combine animated state with NodeMaterial,
+TSL or CPU deformation and explicit disposal. They remain imperative until a
+separate lifecycle adapter is measured and tested; the declarative path
+continues only for owners with static construction and no private animation or
+GPU ownership contract.
