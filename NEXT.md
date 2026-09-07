@@ -1002,12 +1002,10 @@ Theme ownership and visual rules: [`docs/THEME.md`](docs/THEME.md).
       different. A shared base/factory would add an owner abstraction without
       reducing GPU ownership or disposal work, so the migration stops here
       until a third ink stage or measured maintenance/runtime problem exists.
-- [ ] **Decide the `brandTokens.ts` fate** — the typed token manifest
-      (ADR 0007) has zero production consumers outside its sync test; the
-      anti-duplication it was built for is re-occurring (hard-coded brand
-      hexes in `builder/style.ts` and `entry-shell.ts`). Either consume it
-      (generate/verify the LESS §1 block and builder theme values from the
-      manifest) or retire it and keep the LESS tokens as the single owner.
+- [x] **Consume the typed `brandTokens.ts` manifest at a runtime boundary** —
+      `Experience/Cursor.ts` now takes its CSS fallback colors from the tested
+      manifest while Less remains the canonical source. The manifest is no
+      longer test-only; its parity contract stays locked by `brandTokens.test`.
 - [ ] **Give the case-study status gate an owner or drop the field** —
       `CaseStudy.status` is `'review'` on every entry but nothing validates
       or gates publication on it (the retired `validateCaseStudy` was removed

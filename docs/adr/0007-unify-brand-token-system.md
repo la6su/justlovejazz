@@ -44,6 +44,8 @@ One token chain, one value per fact:
    fallbacks, admin editor and stale dead fallbacks now reference the token
    chain. The admin editor paints from `--jlz-*` runtime variables only; no
    ad-hoc hex remains in `admin/admin.less`.
+6. Runtime CSS fallbacks at the cursor boundary read the typed manifest, so a
+   pre-CSS paint cannot drift from the canonical Less values.
 
 ## Consequences
 
