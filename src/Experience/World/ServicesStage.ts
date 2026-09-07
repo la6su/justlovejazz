@@ -5,6 +5,7 @@ import { MeshStandardNodeMaterial, MeshBasicNodeMaterial } from 'three/webgpu'
  * SceneCoordinator owns attachment, demand updates and terminal disposal.
  */
 export class ServicesStage extends THREE.Group {
+  private disposed = false
   private readonly geometry = new THREE.BoxGeometry(0.8, 0.8, 0.08)
   private readonly metal = new MeshStandardNodeMaterial({
     color: 0x71858f,
@@ -102,6 +103,8 @@ export class ServicesStage extends THREE.Group {
   }
 
   dispose(): void {
+    if (this.disposed) return
+    this.disposed = true
     this.geometry.dispose()
     this.metal.dispose()
     this.signal.dispose()

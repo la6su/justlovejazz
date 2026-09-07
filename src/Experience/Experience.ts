@@ -170,6 +170,7 @@ export class Experience {
   // Phase 8 slice 3: the ambient pavilion owner (Experience is the single
   // disposal owner; World's frame path forwards its per-frame update).
   private envSphere!: EnvSphere
+  private envSphereOwnedByHost = false
   // Phase 8 slice 4: the glass cube owner (World's frame path reads/writes
   // it through the attachBaku adapter + baku getter).
   private baku!: SplashCube
@@ -520,6 +521,7 @@ export class Experience {
     // forwards its per-frame colour-lerp update.
     const envSphere = this._host?.envSphere ?? new EnvSphere()
     this.envSphere = envSphere
+    this.envSphereOwnedByHost = this._host?.envSphere === envSphere
     if (!envSphere.parent) this.scene.add(envSphere)
     // Phase 8 slice 4: the glass cube (SplashCube) enters the Tres-owned
     // scene under its own owner; the coordinator frame path gates its
@@ -1796,7 +1798,7 @@ export class Experience {
     this.lights?.dispose()
     this.ground?.dispose()
     // Phase 8 slice 3: the ambient pavilion owner.
-    this.envSphere?.dispose()
+    if (!this.envSphereOwnedByHost) this.envSphere?.dispose()
     // Phase 8 slice 4: the glass cube owner (6 face geos+mats + 6 edge geos+mats).
     this.baku?.dispose()
     // Phase 8 slice 5: the intro light frames + cursor trail owners. Both are
