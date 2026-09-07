@@ -99,3 +99,9 @@ hardware WebGPUBackend gates on 2026-09-07, including reduced motion and idle
 settlement. Evidence:
 `docs/evidence/phase7-live-gate/2026-09-07T19-18-24-949Z-report.json` and
 `docs/evidence/phase7-live-gate/2026-09-07T19-19-03-349Z-report.json`.
+
+The EnvSphere bridge exposed and fixed an entry-host forwarding omission that
+would have constructed duplicate adopted owners. The corrected physical gates
+record the expected single-owner inventory on WebGLBackend and hardware
+WebGPUBackend: `docs/evidence/phase7-live-gate/2026-09-07T20-14-02-129Z-report.json`
+and `docs/evidence/phase7-live-gate/2026-09-07T20-14-40-284Z-report.json`.
