@@ -147,10 +147,23 @@ export async function mountVueApp(): Promise<void> {
       initialHashGate.defer(to.hash)
       return
     }
-    hashNavigationFrame.schedule(() => {
+    // A first visit to a lazy route swaps the RouterView component only
+    // after the dynamic import resolves — later than one frame. Dispatch
+    // once the target section actually exists in the swapped-in route root
+    // (bounded poll); a stale generation or the bound gives up silently,
+    // matching the legacy no-target no-op.
+    const targetId = to.hash.slice(1)
+    let waitedFrames = 0
+    const dispatchWhenReady = (): void => {
       if (generation !== hashNavigationGeneration) return
-      eventBus.emit('jlz:goto-section-by-hash', { hash: to.hash })
-    })
+      if (document.getElementById(targetId)) {
+        eventBus.emit('jlz:goto-section-by-hash', { hash: to.hash })
+        return
+      }
+      if (waitedFrames++ >= 60) return
+      hashNavigationFrame.schedule(dispatchWhenReady)
+    }
+    dispatchWhenReady()
   })
 
   const app = createApp(AppShell)
