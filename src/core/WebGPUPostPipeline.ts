@@ -4,7 +4,15 @@
 // Vignette + grain via simple TSL Fn. No ShaderMaterial.
 
 import { WebGPURenderer, RenderPipeline as TSLRenderPipeline } from 'three/webgpu'
-import { tslBloom, tslPass } from '../types/tsl-helpers'
+import type { PassNode } from 'three/webgpu'
+import {
+  tslBloom,
+  tslFloat,
+  tslPass,
+  tslSmoothstepPerComponent,
+  tslVec3,
+} from '../types/tsl-helpers'
+import type BloomNode from 'three/addons/tsl/display/BloomNode.js'
 import {
   uniform,
   uv,
@@ -13,6 +21,7 @@ import {
   vec3,
   mix,
   smoothstep,
+  oneMinus,
   sin,
   cos,
   float,
@@ -22,6 +31,7 @@ import {
 } from 'three/tsl'
 import * as THREE from 'three'
 import type { Scene, Camera } from 'three'
+import type { Node } from 'three/webgpu'
 import { withNoToneMapping } from './toneMappingGuard'
 
 export interface WebGPUPostParams {
@@ -52,13 +62,13 @@ interface BloomResourceOwner extends RenderTargetOwner {
  * on the WebGPU path with a bloom + vignette + grain graph.
  */
 export class WebGPUPostPipeline {
-  private _pipeline: any = null
+  private _pipeline: TSLRenderPipeline | null = null
   private _renderer: WebGPURenderer
   private _scene: Scene
   private _camera: Camera
   private _needsBuild = true
-  private _scenePass: ReturnType<typeof tslPass> | null = null
-  private _bloomNode: BloomResourceOwner | null = null
+  private _scenePass: PassNode | null = null
+  private _bloomNode: BloomNode | null = null
 
   private _bloomStrength = uniform(0)
   private _bloomRadius = uniform(0)
@@ -102,8 +112,8 @@ export class WebGPUPostPipeline {
     this._borderStrength.value = params.border
     this._chromaticStrength.value = params.chromatic
     this._refractStrength.value = params.refract
-    ;(this._gradeShadows.value as any).set(...params.gradeShadows)
-    ;(this._gradeHighlights.value as any).set(...params.gradeHighlights)
+    this._gradeShadows.value.set(...params.gradeShadows)
+    this._gradeHighlights.value.set(...params.gradeHighlights)
   }
 
   render(): void {
@@ -138,7 +148,7 @@ export class WebGPUPostPipeline {
 
     // Scene pass: render scene to texture. PassNode clears with
     // scene.background automatically (Background.js handles this).
-    const scenePass = tslPass(this._scene, this._camera) as any
+    const scenePass = tslPass(this._scene, this._camera)
     this._scenePass = scenePass
     try {
       const sceneColor = scenePass.getTextureNode()
@@ -161,7 +171,7 @@ export class WebGPUPostPipeline {
 
       // ── 2. Sample scene at refracted UV ──
       // WebGL2: vec3 scene = texture2D(uScene, uv).xyz;
-      let scene = (sceneColor as any).sample(refractUv)
+      const sampled = sceneColor.sample(refractUv)
 
       // ── 3. Chromatic aberration ──
       // WebGL2: samples uScene at uv+dir and uv-dir (using SAME refracted uv)
@@ -175,9 +185,9 @@ export class WebGPUPostPipeline {
         .div(cLen)
         .mul(this._chromaticStrength)
         .mul(smoothstep(0.1, 0.65, cLen))
-      const rChan = (sceneColor as any).sample(refractUv.add(cDir).clamp(0.0, 1.0)).x
-      const bChan = (sceneColor as any).sample(refractUv.sub(cDir).clamp(0.0, 1.0)).z
-      scene = vec3(rChan, scene.y, bChan)
+      const rChan = tslFloat(sceneColor.sample(refractUv.add(cDir).clamp(0.0, 1.0)), 'x')
+      const bChan = tslFloat(sceneColor.sample(refractUv.sub(cDir).clamp(0.0, 1.0)), 'z')
+      const scene = vec3(rChan, tslFloat(sampled, 'y'), bChan)
 
       // ── 4. Bloom composite ──
       // WebGL2: color = scene + bloom * uBloomIntensity
@@ -186,7 +196,7 @@ export class WebGPUPostPipeline {
         this._bloomStrength,
         this._bloomRadius,
         this._bloomThreshold,
-      ) as unknown as BloomResourceOwner
+      )
       this._bloomNode = bloomNode
       let color = scene.add(bloomNode)
 
@@ -219,20 +229,20 @@ export class WebGPUPostPipeline {
       const nFract = fract(noiseCoord)
       const nSmooth = nFract.mul(nFract).mul(float(3.0).sub(nFract.mul(2.0)))
       // Portable hash: vec3 p3 = fract(vec3(p.xyx) * 0.1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x+p3.y)*p3.z)
-      const _hash = (p: any) => {
-        const p3 = fract(vec3(p.x, p.y, p.x).mul(0.1031))
-        const dotVal = dot(p3, p3.yzx.add(33.33))
+      const hash = (p: Node<'vec2'>): Node<'float'> => {
+        const p3 = fract(vec3(tslFloat(p, 'x'), tslFloat(p, 'y'), tslFloat(p, 'x')).mul(0.1031))
+        const dotVal = dot(p3, tslVec3(p3, 'yzx').add(33.33))
         const p3d = p3.add(dotVal)
-        return fract(p3d.x.add(p3d.y).mul(p3d.z))
+        return fract(tslFloat(p3d, 'x').add(tslFloat(p3d, 'y')).mul(tslFloat(p3d, 'z')))
       }
-      const nA = _hash(nFloor)
-      const nB = _hash(nFloor.add(vec2(1.0, 0.0)))
-      const nC = _hash(nFloor.add(vec2(0.0, 1.0)))
-      const nD = _hash(nFloor.add(vec2(1.0, 1.0)))
+      const nA = hash(nFloor)
+      const nB = hash(nFloor.add(vec2(1.0, 0.0)))
+      const nC = hash(nFloor.add(vec2(0.0, 1.0)))
+      const nD = hash(nFloor.add(vec2(1.0, 1.0)))
       const grainNoise = mix(
-        mix(nA, nB, nSmooth.x as any),
-        mix(nC, nD, nSmooth.x as any),
-        nSmooth.y as any,
+        mix(nA, nB, tslFloat(nSmooth, 'x')),
+        mix(nC, nD, tslFloat(nSmooth, 'x')),
+        tslFloat(nSmooth, 'y'),
       )
       // grain = (noise - 0.5) * 2.0 * strength → adds ±strength per pixel
       const grain = grainNoise.sub(0.5).mul(2.0).mul(this._grainStrength)
@@ -251,7 +261,7 @@ export class WebGPUPostPipeline {
       const vCenter = uv().sub(0.5)
       const vDist = vCenter.length()
       const vigRaw = float(1.0).sub(vDist.mul(this._vignetteStrength))
-      const vig = smoothstep(0.0, 1.0, vigRaw as any) as any
+      const vig = smoothstep(0.0, 1.0, vigRaw)
       color = color.mul(vig)
 
       // ── 9. Screen border ──
@@ -265,20 +275,21 @@ export class WebGPUPostPipeline {
       // scalar → uniform blackening at edges (disabled by project presets).
       // Gate: step(0.0, _borderStrength) → 0 when off, 1 when any border > 0.
       // mix(1.0, edgeScalar, gate) = edgeScalar when border enabled, 1.0 when off.
-      // TSL note: smoothstep() types only accept FloatOrNumber but at runtime WGSL compiles
-      // per-component for vec2. Cast via 'as any' to bypass TS limitation.
-      // TSL note: edge.x / edge.y are getters (not methods) — no parentheses needed.
-      // edge.x is a SplitNode typed as Node by TS; cast to Node<"float"> for .mul().
+      // TSL note: smoothstep() declarations only carry matching-shape overloads,
+      // while WGSL compiles the scalar low/high form per-component — the widened
+      // call lives behind tslSmoothstepPerComponent() in tsl-helpers.ts.
+      // TSL note: swizzle getters like edge.x are runtime Proxy sugar for
+      // split(node, 'x') — the typed call form lives in tsl-helpers.ts too.
       const barrelUV = uv().mul(2.0).sub(1.0)
       const barrelOffset = barrelUV.yx.mul(0.25)
       const barrelDistorted = barrelUV
         .add(barrelUV.mul(barrelOffset).mul(barrelOffset))
         .mul(0.5)
         .add(0.5)
-      const innerEdge = smoothstep(0.0, 0.02, barrelDistorted as any) as any
-      const outerEdge = smoothstep(0.98, 1.0, barrelDistorted as any).oneMinus() as any
+      const innerEdge = tslSmoothstepPerComponent(0.0, 0.02, barrelDistorted)
+      const outerEdge = oneMinus(tslSmoothstepPerComponent(0.98, 1.0, barrelDistorted))
       const edge = innerEdge.mul(outerEdge) // Node<"vec2">
-      const edgeScalar: any = (edge.x as any).mul(edge.y as any) // scalar (Node<"float">)
+      const edgeScalar = tslFloat(edge, 'x').mul(tslFloat(edge, 'y')) // Node<"float">
       // MIRROR WebGL2: color *= edge.x * edge.y (full, no mix attenuate)
       // Interpolate authored strength continuously; a binary gate caused a
       // full black edge to pop in at the beginning of a section crossfade.
@@ -321,7 +332,7 @@ export class WebGPUPostPipeline {
   private _disposeBloomNode(): void {
     const bloom = this._bloomNode
     this._bloomNode = null
-    if (!bloom?.dispose) return
+    if (!bloom) return
     try {
       bloom.dispose()
     } catch {
@@ -363,11 +374,11 @@ export class WebGPUPostPipeline {
   /** Counts only live render targets owned by this post graph. */
   getResourceInfo(): { renderTargets: number; passes: number } {
     const renderTargets = new Set<RenderTargetOwner>()
-    const scenePass = this._scenePass as
-      (ReturnType<typeof tslPass> & { renderTarget?: RenderTargetOwner }) | null
-    if (scenePass?.renderTarget) renderTargets.add(scenePass.renderTarget)
+    if (this._scenePass) renderTargets.add(this._scenePass.renderTarget)
 
-    const bloom = this._bloomNode
+    // The bloom internals below are three-private (undeclared on BloomNode),
+    // so the resource census reads them through one narrow owner view.
+    const bloom = this._bloomNode as (BloomNode & BloomResourceOwner) | null
     if (bloom?._renderTargetBright) renderTargets.add(bloom._renderTargetBright)
     for (const target of bloom?._renderTargetsHorizontal ?? []) {
       if (target) renderTargets.add(target)
@@ -378,7 +389,7 @@ export class WebGPUPostPipeline {
 
     return {
       renderTargets: renderTargets.size,
-      passes: scenePass ? 1 : 0,
+      passes: this._scenePass ? 1 : 0,
     }
   }
 }

@@ -1,40 +1,70 @@
-// tsl-helpers.ts — Typed wrappers around TSL API (three 0.184 has incomplete types).
+// tsl-helpers.ts — Typed boundary for the TSL API surface this project uses.
 //
-// This file isolates all `as any` / `as unknown as` casts for TSL functions
-// into one place. The rest of the codebase imports typed wrappers instead of
-// using raw TSL functions with casts.
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
+// three 0.185 ships near-complete TSL types, so production code consumes
+// pass()/bloom()/swizzles without blind `as any` widening. The two residual
+// gaps in the shipped types — component swizzle getters like `.x` (the
+// runtime Proxy exposes them but the declarations do not) and smoothstep()
+// with scalar low/high over a vec2 operand (the declarations only carry
+// matching-shape overloads) — are bridged here with ONE narrow adapter each
+// instead of scattering casts through the graph code.
+//
+// Both adapters are runtime-identical to the forms they replace:
+// `split(node, components)` materializes exactly the node the `.x` getter
+// would, and WGSL compiles scalar smoothstep edges per-component.
 
 import { bloom as _bloom } from 'three/addons/tsl/display/BloomNode.js'
-import { pass as _pass } from 'three/tsl'
-import type { Scene, Camera } from 'three'
+import { pass as _pass, split as _split, smoothstep as _smoothstep } from 'three/tsl'
+import type BloomNode from 'three/addons/tsl/display/BloomNode.js'
+import type { Camera, Scene } from 'three'
+import type { Node, PassNode, UniformNode } from 'three/webgpu'
 
-/**
- * Typed pass() wrapper. Creates a scene pass node for post-processing.
- * three 0.184 TS types for pass() are incomplete — cast isolated here.
- */
-export function tslPass(
-  scene: Scene,
-  camera: Camera,
-): {
-  getTextureNode: () => unknown
-  scene: Scene
-  camera: Camera
-  dispose: () => void
-} {
-  return _pass(scene as any, camera as any) as any
+/** Scene pass node for post-processing (fully typed since three 0.185). */
+export function tslPass(scene: Scene, camera: Camera): PassNode {
+  return _pass(scene, camera)
 }
 
-/**
- * Typed bloom() wrapper. Accepts UniformNode (runtime-correct) despite
- * TS types expecting numbers.
- */
+/** Typed bloom() wrapper. The live graph feeds a vec3 scene color while the
+ *  shipped declaration narrows the input to vec4 — the boundary keeps the
+ *  honest input type instead of forcing every caller to cast. */
 export function tslBloom(
-  color: unknown,
-  strength: unknown,
-  radius: unknown,
-  threshold: unknown,
-): unknown {
-  return (_bloom as any)(color, strength, radius, threshold)
+  color: Node,
+  strength: UniformNode<'float', number>,
+  radius: UniformNode<'float', number>,
+  threshold: UniformNode<'float', number>,
+): BloomNode {
+  return (
+    _bloom as (
+      color: Node,
+      strength: UniformNode<'float', number>,
+      radius: UniformNode<'float', number>,
+      threshold: UniformNode<'float', number>,
+    ) => BloomNode
+  )(color, strength, radius, threshold)
+}
+
+/** Component swizzle returning a single float channel (`.x`, `.y`, …) — the
+ *  typed call form of the runtime Proxy getter. */
+export function tslFloat(node: Node, components: 'x' | 'y' | 'z' | 'w'): Node<'float'> {
+  return _split(node, components) as Node<'float'>
+}
+
+/** Multi-component swizzle returning a vec3 (`.xyz`, `.yzx`, …). */
+export function tslVec3(node: Node, components: string): Node<'vec3'> {
+  return _split(node, components) as Node<'vec3'>
+}
+
+/** smoothstep(low, high, x) with scalar edges over a vec2 operand — the
+ *  per-component form the WebGL2 composite mirrors. The shipped declarations
+ *  only carry matching-shape overloads, so the boundary owns the one
+ *  function-shape widening. */
+export function tslSmoothstepPerComponent(
+  low: number,
+  high: number,
+  x: Node<'vec2'>,
+): Node<'vec2'> {
+  return (_smoothstep as unknown as (low: number, high: number, x: Node<'vec2'>) => Node<'vec2'>)(
+    low,
+    high,
+    x,
+  )
 }

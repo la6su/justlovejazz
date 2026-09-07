@@ -43,6 +43,7 @@ import { eventBus } from '../core/EventBus'
 import { CinematicLights } from './World/Lights'
 import { GroundPlane } from './Scene/GroundPlane'
 import { SectionGroups } from './Scene/SectionGroups'
+import { disposeLazyStage, ensureLazyStage, type LazyStageContract } from './LazyStage'
 import { EnvSphere } from './World/EnvSphere'
 import { SplashCube } from './World/SplashCube'
 import { ParticleBurst } from './World/ParticleBurst'
@@ -626,41 +627,41 @@ export class Experience {
   /** Lazily create rich `/works` media only on that route, never on first
    *  paint. Phase 8 slice 7: moved from World — Experience owns the lazy
    *  stage (the World frame path reads it through the documented
-   *  `attachWorksPlaneStage` adapter + `worksPlaneStage` getter). */
-  public ensureWorksPlaneStageInitialized(): Promise<void> {
-    if (this._worksPlaneStagePromise) return this._worksPlaneStagePromise
-    const request = ++this._worksPlaneStageRequest
-    const stage = new WorksPlaneStage()
-    this.worksPlaneStage = stage
-    this.scene.add(stage)
-    this._worksPlaneStagePromise = stage.init().then(
-      () => {
-        if (request !== this._worksPlaneStageRequest || this.worksPlaneStage !== stage) {
-          // The route can dispose a stage while its texture decode is still
-          // pending. Dispose again after init so resources created after the
-          // first dispose are released as well.
-          stage.dispose()
-          stage.removeFromParent()
-          return
-        }
+   *  `attachWorksPlaneStage` adapter + `worksPlaneStage` getter). The
+   *  lifecycle flow (request guard, memoization, stale release) lives in
+   *  LazyStage.ts; only the stage-specific wiring stays here. */
+  private _worksPlaneStageContract(): LazyStageContract<WorksPlaneStage> {
+    return {
+      label: 'WorksPlaneStage',
+      owner: {
+        getStage: () => this.worksPlaneStage,
+        setStage: (value) => {
+          this.worksPlaneStage = value
+        },
+        getPromise: () => this._worksPlaneStagePromise,
+        setPromise: (value) => {
+          this._worksPlaneStagePromise = value
+        },
+        getRequest: () => this._worksPlaneStageRequest,
+        advanceRequest: () => ++this._worksPlaneStageRequest,
+      },
+      create: () => new WorksPlaneStage(),
+      attach: (stage) => this.scene.add(stage),
+      load: (stage) => stage.init(),
+      configure: (stage) => {
         stage.setActive(this.currentPage() === 'works', 0)
         stage.resize(window.innerWidth, window.innerHeight)
         stage.setCamera(this.camera.instance)
       },
-      (error) => {
-        if (request !== this._worksPlaneStageRequest || this.worksPlaneStage !== stage) {
-          stage.dispose()
-          stage.removeFromParent()
-          return
-        }
+      release: (stage) => {
         stage.dispose()
         stage.removeFromParent()
-        this.worksPlaneStage = null
-        this._worksPlaneStagePromise = null
-        if (import.meta.env.DEV) console.error('[Experience] WorksPlaneStage init failed:', error)
       },
-    )
-    return this._worksPlaneStagePromise
+    }
+  }
+
+  public ensureWorksPlaneStageInitialized(): Promise<void> {
+    return ensureLazyStage(this._worksPlaneStageContract())
   }
 
   /** Dispose the /works case-plane stage when leaving /works.
@@ -668,124 +669,133 @@ export class Experience {
    *  The stage is lazily re-created on the next /works visit via
    *  ensureWorksPlaneStageInitialized(). Phase 8 slice 7: moved from World. */
   public disposeWorksPlaneStage(): void {
-    this._worksPlaneStageRequest++
-    if (!this.worksPlaneStage) return
-    this.worksPlaneStage.dispose()
-    this.worksPlaneStage.removeFromParent()
-    this.worksPlaneStage = null
-    this._worksPlaneStagePromise = null
+    disposeLazyStage(this._worksPlaneStageContract())
   }
 
   /** Lazily create the Contact greeting so FontLoader/TextGeometry stay out
-   * of the shared initial scene graph. */
-  public ensureContactTypographyStageInitialized(): Promise<void> {
-    if (this._contactTypographyStagePromise) return this._contactTypographyStagePromise
-    const request = ++this._contactTypographyStageRequest
-    this._contactTypographyStagePromise = import('./World/ContactTypographyStage')
-      .then(({ ContactTypographyStage }) => {
-        if (request !== this._contactTypographyStageRequest) return
-        const stage = new ContactTypographyStage()
-        this.contactTypographyStage = stage
-        this.scene.add(stage)
+   * of the shared initial scene graph. Lifecycle flow: LazyStage.ts. */
+  private _contactTypographyStageContract(): LazyStageContract<ContactTypographyStage> {
+    return {
+      label: 'ContactTypographyStage',
+      owner: {
+        getStage: () => this.contactTypographyStage,
+        setStage: (value) => {
+          this.contactTypographyStage = value
+        },
+        getPromise: () => this._contactTypographyStagePromise,
+        setPromise: (value) => {
+          this._contactTypographyStagePromise = value
+        },
+        getRequest: () => this._contactTypographyStageRequest,
+        advanceRequest: () => ++this._contactTypographyStageRequest,
+      },
+      create: () =>
+        import('./World/ContactTypographyStage').then(
+          ({ ContactTypographyStage }) => new ContactTypographyStage(),
+        ),
+      attach: (stage) => this.scene.add(stage),
+      configure: (stage) => {
         stage.setActive(this.currentPage() === 'contact')
         stage.setTheme(this._contactIsLight)
-      })
-      .catch((error: unknown) => {
-        if (request === this._contactTypographyStageRequest) {
-          this.contactTypographyStage?.removeFromParent()
-          this.contactTypographyStage?.dispose()
-          this.contactTypographyStage = null
-          this._contactTypographyStagePromise = null
-        }
-        if (import.meta.env.DEV) {
-          console.error('[Experience] ContactTypographyStage init failed:', error)
-        }
-      })
-    return this._contactTypographyStagePromise
+      },
+      release: (stage) => {
+        stage.removeFromParent()
+        stage.dispose()
+      },
+    }
+  }
+
+  public ensureContactTypographyStageInitialized(): Promise<void> {
+    return ensureLazyStage(this._contactTypographyStageContract())
   }
 
   public disposeContactTypographyStage(): void {
-    this._contactTypographyStageRequest++
-    this.contactTypographyStage?.removeFromParent()
-    this.contactTypographyStage?.dispose()
-    this.contactTypographyStage = null
-    this._contactTypographyStagePromise = null
+    disposeLazyStage(this._contactTypographyStageContract())
   }
 
   /** Lazily load the Contact ink halo so the TSL graph stays out of the
-   * shared initial scene graph. */
-  public ensureContactHaloStageInitialized(): Promise<void> {
-    if (this._contactHaloStagePromise) return this._contactHaloStagePromise
-    const request = ++this._contactHaloStageRequest
-    this._contactHaloStagePromise = import('./World/ContactHaloStage')
-      .then(({ ContactHaloStage }) => {
-        if (request !== this._contactHaloStageRequest) return
-        const stage = new ContactHaloStage()
-        this.contactHaloStage = stage
-        this.scene.add(stage)
+   * shared initial scene graph. Lifecycle flow: LazyStage.ts. */
+  private _contactHaloStageContract(): LazyStageContract<ContactHaloStage> {
+    return {
+      label: 'ContactHaloStage',
+      owner: {
+        getStage: () => this.contactHaloStage,
+        setStage: (value) => {
+          this.contactHaloStage = value
+        },
+        getPromise: () => this._contactHaloStagePromise,
+        setPromise: (value) => {
+          this._contactHaloStagePromise = value
+        },
+        getRequest: () => this._contactHaloStageRequest,
+        advanceRequest: () => ++this._contactHaloStageRequest,
+      },
+      create: () =>
+        import('./World/ContactHaloStage').then(({ ContactHaloStage }) => new ContactHaloStage()),
+      attach: (stage) => this.scene.add(stage),
+      configure: (stage) => {
         stage.setTheme(this._contactIsLight)
         stage.setReducedMotion(this._reducedMotion)
         stage.setActive(this.currentPage() === 'contact')
-      })
-      .catch((error: unknown) => {
-        if (request === this._contactHaloStageRequest) {
-          this.contactHaloStage?.removeFromParent()
-          this.contactHaloStage?.dispose()
-          this.contactHaloStage = null
-          this._contactHaloStagePromise = null
-        }
-        if (import.meta.env.DEV) {
-          console.error('[Experience] ContactHaloStage init failed:', error)
-        }
-      })
-    return this._contactHaloStagePromise
+      },
+      release: (stage) => {
+        stage.removeFromParent()
+        stage.dispose()
+      },
+    }
+  }
+
+  public ensureContactHaloStageInitialized(): Promise<void> {
+    return ensureLazyStage(this._contactHaloStageContract())
   }
 
   public disposeContactHaloStage(): void {
-    this._contactHaloStageRequest++
-    this.contactHaloStage?.removeFromParent()
-    this.contactHaloStage?.dispose()
-    this.contactHaloStage = null
-    this._contactHaloStagePromise = null
+    disposeLazyStage(this._contactHaloStageContract())
   }
 
   /** Lazily load the /manifesto ink wash so the TSL graph stays out of the
-   *  shared initial scene graph (same contract as the contact halo). */
-  public ensureManifestoInkStageInitialized(): Promise<void> {
-    if (this._manifestoInkStagePromise) return this._manifestoInkStagePromise
-    const request = ++this._manifestoInkStageRequest
-    this._manifestoInkStagePromise = import('./World/ManifestoInkStage')
-      .then(({ ManifestoInkStage }) => {
-        if (request !== this._manifestoInkStageRequest) return
-        const stage = new ManifestoInkStage()
-        this.manifestoInkStage = stage
-        this.scene.add(stage)
+   *  shared initial scene graph (same contract as the contact halo).
+   *  Lifecycle flow: LazyStage.ts. */
+  private _manifestoInkStageContract(): LazyStageContract<ManifestoInkStage> {
+    return {
+      label: 'ManifestoInkStage',
+      owner: {
+        getStage: () => this.manifestoInkStage,
+        setStage: (value) => {
+          this.manifestoInkStage = value
+        },
+        getPromise: () => this._manifestoInkStagePromise,
+        setPromise: (value) => {
+          this._manifestoInkStagePromise = value
+        },
+        getRequest: () => this._manifestoInkStageRequest,
+        advanceRequest: () => ++this._manifestoInkStageRequest,
+      },
+      create: () =>
+        import('./World/ManifestoInkStage').then(
+          ({ ManifestoInkStage }) => new ManifestoInkStage(),
+        ),
+      attach: (stage) => this.scene.add(stage),
+      configure: (stage) => {
         // The effective-polarity cache is refreshed on every theme event
         // regardless of route, so a lazy stage cannot miss the current ink.
         stage.setTheme(this._contactIsLight)
         stage.setReducedMotion(this._reducedMotion)
         stage.setActive(this.currentPage() === 'manifesto')
-      })
-      .catch((error: unknown) => {
-        if (request === this._manifestoInkStageRequest) {
-          this.manifestoInkStage?.removeFromParent()
-          this.manifestoInkStage?.dispose()
-          this.manifestoInkStage = null
-          this._manifestoInkStagePromise = null
-        }
-        if (import.meta.env.DEV) {
-          console.error('[Experience] ManifestoInkStage init failed:', error)
-        }
-      })
-    return this._manifestoInkStagePromise
+      },
+      release: (stage) => {
+        stage.removeFromParent()
+        stage.dispose()
+      },
+    }
+  }
+
+  public ensureManifestoInkStageInitialized(): Promise<void> {
+    return ensureLazyStage(this._manifestoInkStageContract())
   }
 
   public disposeManifestoInkStage(): void {
-    this._manifestoInkStageRequest++
-    this.manifestoInkStage?.removeFromParent()
-    this.manifestoInkStage?.dispose()
-    this.manifestoInkStage = null
-    this._manifestoInkStagePromise = null
+    disposeLazyStage(this._manifestoInkStageContract())
   }
 
   /** Cache the effective polarity so a lazy Contact stage cannot miss it. */
@@ -798,55 +808,51 @@ export class Experience {
   /** Lazily load the Contact location asset instead of keeping it in the home
    *  scene. Phase 8 slice 8: moved from World — Experience owns the lazy
    *  stage (the World frame path reads it through the documented
-   *  `attachContactCyprusStage` adapter + `contactCyprusStage` getter). */
-  public ensureContactCyprusStageInitialized(): Promise<void> {
-    if (this._contactCyprusStagePromise) return this._contactCyprusStagePromise
-    const request = ++this._contactCyprusStageRequest
-    this._contactCyprusStagePromise = import('./World/ContactCyprusStage')
-      .then(({ ContactCyprusStage }) => {
-        if (request !== this._contactCyprusStageRequest) return
-        const stage = new ContactCyprusStage()
-        this.contactCyprusStage = stage
-        this.scene.add(stage)
-        return stage.load().then(() => stage)
-      })
-      .then((stage) => {
-        if (!stage) return
-        if (request !== this._contactCyprusStageRequest || this.contactCyprusStage !== stage) {
-          // The route may have been disposed while Draco/GLTF was decoding.
-          // The owner field is already cleared, so dispose the late result
-          // explicitly to release resources created during the load.
-          stage.dispose()
-          stage.removeFromParent()
-          return
-        }
+   *  `attachContactCyprusStage` adapter + `contactCyprusStage` getter).
+   *  Lifecycle flow: LazyStage.ts. */
+  private _contactCyprusStageContract(): LazyStageContract<ContactCyprusStage> {
+    return {
+      label: 'ContactCyprusStage',
+      owner: {
+        getStage: () => this.contactCyprusStage,
+        setStage: (value) => {
+          this.contactCyprusStage = value
+        },
+        getPromise: () => this._contactCyprusStagePromise,
+        setPromise: (value) => {
+          this._contactCyprusStagePromise = value
+        },
+        getRequest: () => this._contactCyprusStageRequest,
+        advanceRequest: () => ++this._contactCyprusStageRequest,
+      },
+      create: () =>
+        import('./World/ContactCyprusStage').then(
+          ({ ContactCyprusStage }) => new ContactCyprusStage(),
+        ),
+      attach: (stage) => this.scene.add(stage),
+      load: (stage) => stage.load(),
+      configure: (stage) => {
         stage.resize(window.innerWidth, window.innerHeight)
         stage.setCamera(this.camera.instance)
         stage.setActive(this.currentPage() === 'contact' && this._contactCyprusActive)
         stage.prewarm()
-      })
-      .catch((error: unknown) => {
-        const stage = this.contactCyprusStage
-        if (stage && request === this._contactCyprusStageRequest) {
-          stage.dispose()
-          stage.removeFromParent()
-          this.contactCyprusStage = null
-          this._contactCyprusStagePromise = null
-        }
-        if (import.meta.env.DEV) {
-          console.error('[Experience] ContactCyprusStage init failed:', error)
-        }
-      })
-    return this._contactCyprusStagePromise
+      },
+      release: (stage) => {
+        stage.dispose()
+        stage.removeFromParent()
+      },
+      onDispose: () => {
+        this._contactCyprusActive = false
+      },
+    }
+  }
+
+  public ensureContactCyprusStageInitialized(): Promise<void> {
+    return ensureLazyStage(this._contactCyprusStageContract())
   }
 
   public disposeContactCyprusStage(): void {
-    this._contactCyprusStageRequest++
-    this.contactCyprusStage?.dispose()
-    this.contactCyprusStage?.removeFromParent()
-    this.contactCyprusStage = null
-    this._contactCyprusStagePromise = null
-    this._contactCyprusActive = false
+    disposeLazyStage(this._contactCyprusStageContract())
   }
 
   /** Frame 03 replaces the shared cube with the Cyprus asset. */
@@ -919,7 +925,7 @@ export class Experience {
    *  processing used to render the glass cube darker on WebGPU with a
    *  concentrated bright-spot artifact). The former classic-generator
    *  branch (dev-forced `?renderer=webgl` QA path) was removed in Phase 10,
-   *  together with that path itself. The former secondary offscreen WebGL
+   *  together with that path itthis. The former secondary offscreen WebGL
    *  context (created solely for PMREM generation on the WebGPU path) was
    *  removed in the Phase 6 unified-renderer slice. */
   private setupEnvironment(): void {
