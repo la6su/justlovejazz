@@ -73,6 +73,11 @@ reduced-motion settlement. Physical WebGLBackend and hardware WebGPUBackend
 gates passed with the same 15 geometry / 29 material scene inventory, one
 canvas and zero settled draws.
 
+`EnvSphereOwner.lifecycle.test.ts` mounts the two owners together under the
+real Tres canvas and proves the teardown split directly: Tres disposes the sky
+geometry, EnvSphere disposes its material exactly once, and neither node stays
+attached to the scene.
+
 Stop before any further EnvSphere migration: its five rounded pavilion faces
 still combine `RoundedBoxGeometry` with palette-owned materials. Moving them
 would transfer their material and resource-disposal contract across the
