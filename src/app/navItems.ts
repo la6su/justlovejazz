@@ -14,7 +14,8 @@ export interface NavItemData {
   label: string
   labelKey: string
   href: string
-  subs: NavSubSection[]
+  /** Rendered as an expanding submenu; direct items navigate instead. */
+  subs?: NavSubSection[]
   direct?: boolean
 }
 
@@ -46,25 +47,25 @@ export const NAV_ITEMS: NavItemData[] = [
         num: '01',
         title: 'Creative Direction',
         titleKey: 'dropbar.services.s1.title',
-        href: '/services#section-services-01',
+        href: '/services#section-services-creativeDirection',
       },
       {
         num: '02',
         title: 'Realtime build',
         titleKey: 'dropbar.services.s2.title',
-        href: '/services#section-services-02',
+        href: '/services#section-services-interactiveDev',
       },
       {
         num: '03',
         title: 'Motion',
         titleKey: 'dropbar.services.s3.title',
-        href: '/services#section-services-03',
+        href: '/services#section-services-motionRealtime',
       },
       {
         num: '04',
         title: 'AI',
         titleKey: 'dropbar.services.s4.title',
-        href: '/services#section-services-04',
+        href: '/services#section-services-aiSystems',
       },
     ],
   },
@@ -110,25 +111,25 @@ export const NAV_ITEMS: NavItemData[] = [
         num: '01',
         title: 'Purpose',
         titleKey: 'dropbar.manifesto.s1.title',
-        href: '/manifesto#section-manifesto-01',
+        href: '/manifesto#section-manifesto-purpose',
       },
       {
         num: '02',
         title: 'Clarity',
         titleKey: 'dropbar.manifesto.s2.title',
-        href: '/manifesto#section-manifesto-02',
+        href: '/manifesto#section-manifesto-clarity',
       },
       {
         num: '03',
         title: 'Emotion',
         titleKey: 'dropbar.manifesto.s3.title',
-        href: '/manifesto#section-manifesto-03',
+        href: '/manifesto#section-manifesto-emotion',
       },
       {
         num: '04',
         title: 'Simplicity',
         titleKey: 'dropbar.manifesto.s4.title',
-        href: '/manifesto#section-manifesto-04',
+        href: '/manifesto#section-manifesto-simplicity',
       },
     ],
   },
@@ -169,28 +170,11 @@ export const NAV_ITEMS: NavItemData[] = [
     label: 'Blog',
     labelKey: 'nav.blog',
     href: '/blog',
+    // Direct link: the blog index/articles are prerendered documents
+    // outside the route manifest, so the item navigates full-page instead
+    // of expanding an SPA submenu. (menuLifecycle's static-document guard
+    // keeps any future non-manifest sub-link working the same way.)
     direct: true,
-    subs: [
-      { num: '01', title: 'Journal', titleKey: 'nav.blog', href: '/blog' },
-      {
-        num: '02',
-        title: 'Undercurrent',
-        titleKey: 'blog.undercurrent.title',
-        href: '/blog/undercurrent-webgpu-fluid',
-      },
-      {
-        num: '03',
-        title: 'Glassmorphism',
-        titleKey: 'blog.glass.title',
-        href: '/blog/glassmorphism-webgpu',
-      },
-      {
-        num: '04',
-        title: 'On-demand Rendering',
-        titleKey: 'blog.rendering.title',
-        href: '/blog/on-demand-rendering',
-      },
-    ],
   },
   {
     num: '07',

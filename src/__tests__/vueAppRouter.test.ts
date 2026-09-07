@@ -204,4 +204,40 @@ describe('mountVueApp prerender adoption', () => {
     ).toBe(true)
     expect(document.getElementById('spa-content')?.dataset.pageView).toBe('home')
   })
+
+  it('dispatches an in-app section hash once the lazy route root renders it', async () => {
+    // First visit to a lazy route swaps the component after the dynamic
+    // import resolves — later than one frame. The hash dispatch must wait
+    // for the target section instead of firing into the old route root.
+    const appEl = document.createElement('div')
+    appEl.id = 'app'
+    document.body.appendChild(appEl)
+    window.history.replaceState(null, '', '/')
+    vi.resetModules()
+    // resetModules forks the module registry: spy on the SAME eventBus
+    // instance the freshly imported app graph will emit on.
+    const { mountVueApp } = await import('../app')
+    const { eventBus: appBus } = await import('../core/EventBus')
+    await mountVueApp()
+    await flushPromises()
+
+    const emitSpy = vi.spyOn(appBus, 'emit')
+    const anchor = document.createElement('a')
+    anchor.href = '/services#section-services-aiSystems'
+    document.body.appendChild(anchor)
+    anchor.click()
+    for (let i = 0; i < 8; i++) {
+      await new Promise((resolve) => requestAnimationFrame(resolve))
+      await flushPromises()
+    }
+
+    expect(document.getElementById('section-services-aiSystems')).toBeTruthy()
+    expect(
+      emitSpy.mock.calls.some(
+        ([name, detail]) =>
+          name === 'jlz:goto-section-by-hash' &&
+          (detail as { hash?: string }).hash === '#section-services-aiSystems',
+      ),
+    ).toBe(true)
+  })
 })

@@ -930,6 +930,45 @@ Theme ownership and visual rules: [`docs/THEME.md`](docs/THEME.md).
       renderer/world failures before `ContentReveal`, `Cursor`, `SceneCoordinator`
       or `StateBus` exist, preserving release of the owners that did initialize.
 
+- [ ] **Rebuild per-route world configs on SPA navigation** —
+      `SceneCoordinator.configs` is written only by `init()` (called once from
+      `Experience.buildWorld` at boot), while the route-change handler calls
+      only `syncRouteVisuals()`. The per-page fog/env/post voices
+      (`WorldConfig` content palettes) therefore apply only to the boot
+      route; navigating home → content keeps the entry route's atmosphere.
+      Proposed slice: rebuild configs on `jlz:route-change` behind the
+      existing route-generation guard (`init()` already documents re-entry
+      reuse), unit-lock the rebuild, and gate the change with the
+      `visual-parity` route matrix on real WebGPU.
+- [ ] **Retire or consume the empty `Section` state machines** — the six
+      `Section` objects added by `SceneCoordinator.init()` never receive
+      children (scene content lives in `SectionGroups` groups), yet the
+      coordinator writes `section:<id>:opacity` state channels every frame
+      and the `switchState/fadeIn/applyState` machinery runs against groups
+      nothing renders. Either move the per-frame channel writes out of the
+      frame path or remove the Section layer with its tests.
+- [ ] **Deduplicate the pointer-ink stage twins** — `ContactHaloStage` and
+      `ManifestoInkStage` are structurally identical (~170 of 210 lines:
+      material/mesh/uniform boilerplate, active/reduced-motion/settle
+      lifecycle, pointer intake) and their lifecycle test files are ~95%
+      identical; `Experience` also repeats five near-identical
+      `LazyStageContract` literals with a drifted `release` order
+      (works/cyprus `dispose→removeFromParent` vs typography/halo/ink
+      `removeFromParent→dispose`). Extract a shared pointer-ink base and a
+      stage-owner factory, pin one release order, keep per-stage constants
+      local. Requires the visual-parity route matrix (TSL post surfaces are
+      not verifiable headless).
+- [ ] **Decide the `brandTokens.ts` fate** — the typed token manifest
+      (ADR 0007) has zero production consumers outside its sync test; the
+      anti-duplication it was built for is re-occurring (hard-coded brand
+      hexes in `builder/style.ts` and `entry-shell.ts`). Either consume it
+      (generate/verify the LESS §1 block and builder theme values from the
+      manifest) or retire it and keep the LESS tokens as the single owner.
+- [ ] **Give the case-study status gate an owner or drop the field** —
+      `CaseStudy.status` is `'review'` on every entry but nothing validates
+      or gates publication on it (the retired `validateCaseStudy` was removed
+      as dead code in the same sweep that found this).
+
 ## Deferred product queue
 
 - [x] **Extend published builder pages** — publish an escaped EN/RU `hreflang`

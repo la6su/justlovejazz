@@ -23,7 +23,7 @@ description: UIKit 3 framework contracts and the JUSTLOVEJAZZ page-builder refer
   (`src/assets/_import.less`). Anything extra a saved builder document
   needs is emitted into `src/assets/builder/components.generated.less` by
   the compiler — never hand-edit generated files.
-- Console icon set: `src/assets/console-icons.ts` registers 15 original
+- Console icon set: `src/assets/console-icons.ts` registers 21 original
   SVGs through `UIkit icon.add`. The `uikit` default export bundles only the
   internal glyphs (spinner, totop, marker) — the official set ships as the
   separate UMD plugin `uikit/dist/js/uikit-icons.js`, which `admin/style-icons.ts`

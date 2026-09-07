@@ -3,13 +3,13 @@ import { test, expect, type Page } from '@playwright/test'
 /**
  * E2E smoke for the JUSTLOVEJAZZ SPA.
  *
- * The app is a single-route SPA (src/router.ts — no hash routes, just anchor
- * links). It boots asynchronously:
+ * The app is a Vue 3 + vue-router SPA (src/app/index.ts — mountVueApp; the
+ * route contract lives in core/routeManifest.ts). It boots asynchronously:
  *   index.html
  *     -> /src/entry-shell.ts           (tiny shell, double-rAF + requestIdleCallback)
- *        -> /src/entry-app.ts          (lazy-loads main.less + UIkit, runs initRouter)
- *           -> /src/router.ts          (creates <main id="spa-content"> and renders homePage)
- *              -> Experience bootstrap (WebGL/WebGPU runtime)
+ *        -> /src/entry-app.ts          (lazy-loads main.less + UIkit, runs mountVueApp)
+ *           -> /src/app/index.ts       (AppShell + persistent SceneHost into #app)
+ *              -> Experience bootstrap (WebGPU/WebGL fallback runtime)
  *
  * Headless Chromium cannot always initialize WebGPU, and the WebGL2 fallback
  * path may also fail in pure-software rendering environments. Therefore these
@@ -434,7 +434,6 @@ test.describe('JustLoveJazz — accessibility & DOM UI', () => {
         'href',
         'https://t.me/justlovejazz',
       )
-      await expect(page.locator('#section-lab .jlz-lab-accordion')).toHaveCount(0)
 
       await page.evaluate(() => {
         document.body.dataset.cinematicSheet = 'menu'

@@ -6,6 +6,7 @@
 // into the typed application event bus.
 
 import { eventBus } from '../core/EventBus'
+import { isRoutePath } from '../core/routeManifest'
 
 export function initMenuLifecycle(routeRoot: HTMLElement): () => void {
   const nav = routeRoot.querySelector('.jlz-menu-nav')
@@ -63,6 +64,14 @@ export function initMenuLifecycle(routeRoot: HTMLElement): () => void {
         if (!href) return
         const url = new URL(href, window.location.origin)
         if (url.origin !== window.location.origin) return
+        if (url.pathname !== window.location.pathname && !isRoutePath(url.pathname)) {
+          // Static document (the blog index/articles): the strict router does
+          // not own the path, so preventDefault + jlz:navigate would be
+          // silently dropped there (a dead click). Close the menu and let the
+          // browser's default navigation load the prerendered document.
+          eventBus.emit('jlz:close-nav')
+          return
+        }
         event.preventDefault()
         if (url.pathname !== window.location.pathname) {
           eventBus.emit('jlz:close-nav')

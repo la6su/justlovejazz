@@ -1,5 +1,5 @@
 // Section4 — Works: an infinite stream of real case planes.
-// Clicking a carousel card opens the fullscreen ProjectOverlay.
+// Clicking a carousel card opens the fullscreen FullscreenOverlay.
 import * as THREE from 'three'
 import { JunniParticles } from '../../Experience/World/JunniParticles'
 import { BakuCarousel } from '../../Experience/World/BakuCarousel'
@@ -28,7 +28,7 @@ export function createSection3(
 
   // BakuCarousel — the project stream resolves from depth around the baku.
   // Once revealed (morphT > 0.5) the stream can be scrolled/dragged,
-  // and clicking a card opens the fullscreen ProjectOverlay.
+  // and clicking a card opens the fullscreen FullscreenOverlay.
   const carousel = new BakuCarousel(page, storySide)
   carousel.userData.keepVisible = true
   g.add(carousel)

@@ -1,7 +1,7 @@
 // src/builder/themeVariables.ts — the preview theme contract.
 //
 // The builder preview paints its content with a fixed set of `--builder-*`
-// CSS custom properties. Before this module those 37 properties were written
+// CSS custom properties. Before this module those 47 properties were written
 // one by one inside the admin editor's `applyPreviewTheme` DOM function (and
 // the card-shadow presets were literals only). This module is their single
 // framework-neutral source: a pure `themeToCssVars` mapping from the typed

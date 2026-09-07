@@ -2,8 +2,6 @@ import { describe, it, expect } from 'vitest'
 import {
   storyProgressFromScroll,
   mainSectionFromPosition,
-  storyProgressWithSide,
-  storySectionIndex,
   type StoryState,
 } from '../core/storyState'
 import { sectionIndexAt } from '../core/storyProgress'
@@ -60,30 +58,12 @@ describe('mainSectionFromPosition (the main-section rounding rule)', () => {
   })
 })
 
-describe('side-state edges', () => {
-  it('the Contact footer pins progress 0 and slot 0', () => {
-    expect(storyProgressWithSide('footer', 0.7)).toBe(0)
-    expect(storySectionIndex('footer', 0.7, SECTIONS)).toBe(0)
-  })
-
-  it('the Menu sheet pins progress 1 and the last slot', () => {
-    expect(storyProgressWithSide('menu', 0.3)).toBe(1)
-    expect(storySectionIndex('menu', 0.3, SECTIONS)).toBe(5)
-  })
-
-  it('the center side passes the scroll-derived state through', () => {
-    expect(storyProgressWithSide('center', 0.3)).toBe(0.3)
-    expect(storySectionIndex('center', 0.3, SECTIONS)).toBe(2) // round(0.3 * 5) = 2
-  })
-
+describe('story state shape', () => {
   it('exposes the readonly story state both observers converge on', () => {
     const state: StoryState = {
       side: 'center',
-      progress: storyProgressWithSide(
-        'center',
-        storyProgressFromScroll(1000, 1000, MAIN_COUNT, FIRST_MAIN, SECTIONS),
-      ),
-      sectionIndex: storySectionIndex('center', 0.4, SECTIONS),
+      progress: storyProgressFromScroll(1000, 1000, MAIN_COUNT, FIRST_MAIN, SECTIONS),
+      sectionIndex: sectionIndexAt(0.4, SECTIONS),
     }
     expect(state.side).toBe('center')
     expect(state.progress).toBeCloseTo(2 / 5)

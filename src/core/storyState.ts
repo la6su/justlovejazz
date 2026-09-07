@@ -38,8 +38,6 @@
 // Pure by design: no DOM, Three or globals — unit-testable without a
 // browser.
 
-import { sectionIndexAt } from './storyProgress'
-
 /** The three side positions of the story track. */
 export type StorySide = 'center' | 'footer' | 'menu'
 
@@ -98,26 +96,4 @@ export function mainSectionFromPosition(
   mainCount: number,
 ): number {
   return firstMain + Math.round(clampStoryPosition(position, mainCount))
-}
-
-/**
- * The side-aware progress: the Contact footer pins the story to its start
- * (slot 0), the Menu sheet to its end (slot 5), and the center side keeps
- * the scroll-derived progress.
- */
-export function storyProgressWithSide(side: StorySide, centerProgress: number): number {
-  if (side === 'footer') return 0
-  if (side === 'menu') return 1
-  return centerProgress
-}
-
-/**
- * The side-aware slot index: the side pins the slot for footer/menu, and
- * the center side resolves the slot from the continuous progress with the
- * midpoint rule (`sectionIndexAt`).
- */
-export function storySectionIndex(side: StorySide, progress: number, sectionCount: number): number {
-  if (side === 'footer') return 0
-  if (side === 'menu') return sectionCount - 1
-  return sectionIndexAt(progress, sectionCount)
 }

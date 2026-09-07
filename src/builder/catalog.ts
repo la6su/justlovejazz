@@ -568,5 +568,3 @@ export const BUILDER_CATALOG_GROUPS: readonly BuilderCatalogGroup[] = [
   { label: 'Typography', types: ['heading', 'text', 'list'] },
   { label: 'Elements', types: ['button', 'link', 'icon', 'image', 'video'] },
 ]
-
-export const BUILDER_ELEMENT_TYPES = Object.keys(BUILDER_CATALOG) as BuilderElementType[]

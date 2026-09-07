@@ -84,12 +84,12 @@ describe('i18n', () => {
 
   describe('t (translate)', () => {
     it('returns the EN translation when lang=EN', () => {
-      expect(t('splash.enter')).toBe('Enter')
+      expect(t('common.explore')).toBe('Explore')
     })
 
     it('returns the RU translation after toggleLang', () => {
       toggleLang() // → RU
-      expect(t('splash.enter')).toBe('Войти')
+      expect(t('common.explore')).toBe('Исследовать')
     })
 
     it('returns the key itself when the key does not exist', () => {
@@ -105,10 +105,10 @@ describe('i18n', () => {
 
     it('returns the same value for a key that is identical across languages', () => {
       // Proper nouns deliberately use the same value in EN and RU.
-      // 'common.github' should be 'GitHub' in both.
-      const en = t('common.github')
+      // 'blog.undercurrent.title' should be 'Undercurrent' in both.
+      const en = t('blog.undercurrent.title')
       toggleLang()
-      const ru = t('common.github')
+      const ru = t('blog.undercurrent.title')
       expect(en).toBe(ru)
     })
   })
@@ -116,32 +116,32 @@ describe('i18n', () => {
   describe('applyTranslations', () => {
     it('updates textContent on [data-i18n] elements', () => {
       const el = document.createElement('button')
-      el.setAttribute('data-i18n', 'splash.enter')
+      el.setAttribute('data-i18n', 'nav.studio')
       el.textContent = 'placeholder'
       document.body.appendChild(el)
 
       applyTranslations()
-      expect(el.textContent).toBe('Enter')
+      expect(el.textContent).toBe('Studio')
 
       toggleLang() // → RU
       applyTranslations()
-      expect(el.textContent).toBe('Войти')
+      expect(el.textContent).toBe('Студия')
     })
 
     it('updates placeholder on [data-i18n-placeholder] input elements', () => {
       const input = document.createElement('input')
-      input.setAttribute('data-i18n-placeholder', 'common.email')
+      input.setAttribute('data-i18n-placeholder', 'contact.email.title')
       input.placeholder = 'old'
       document.body.appendChild(input)
 
       applyTranslations()
-      // common.email is 'Email' in EN (line 110 of i18n.ts).
+      // contact.email.title is 'Email' in EN.
       expect(input.placeholder).toBe('Email')
     })
 
     it('ignores [data-i18n-placeholder] on non-input elements (no crash)', () => {
       const div = document.createElement('div')
-      div.setAttribute('data-i18n-placeholder', 'common.email')
+      div.setAttribute('data-i18n-placeholder', 'contact.email.title')
       document.body.appendChild(div)
       // Should not throw — the guard checks instanceof HTMLInputElement.
       expect(() => applyTranslations()).not.toThrow()
@@ -190,9 +190,6 @@ describe('i18n', () => {
       // Instead, compare key counts by switching languages and checking
       // that every EN key resolves to a non-key value in RU.
       const probeKeys = [
-        'splash.enter',
-        'splash.loading',
-        'splash.ready',
         'nav.studio',
         'nav.services',
         'nav.works',
@@ -201,9 +198,6 @@ describe('i18n', () => {
         'nav.contact',
         'nav.blog',
         'common.explore',
-        'common.readMore',
-        'common.send',
-        'common.email',
         'home.studio.title',
         'home.about.title',
         'home.works.title',
@@ -216,13 +210,19 @@ describe('i18n', () => {
         'meta.lab.title',
         'meta.contact.title',
         'dropbar.home.s1.title',
+        'dropbar.home.s2.title',
         'dropbar.services.s1.title',
+        'dropbar.services.s2.title',
         'dropbar.manifesto.s1.title',
-        'dropbar.lab.s1.title',
         'dropbar.contact.s1.title',
-        'dropbar.works.s1.subtitle', // works has no title (proper nouns) — only subtitle
-        'dropbar.home.featured.title',
-        'dropbar.services.featured.title',
+        'dropbar.contact.s2.title',
+        'works.section1.title',
+        'works.room1.premise',
+        'manifesto.purpose.title',
+        'lab.shaderLab.title',
+        'contact.email.title',
+        'contact.social.title',
+        'blog.undercurrent.title',
       ]
 
       // For each key: EN value should not equal the key (key exists in EN),

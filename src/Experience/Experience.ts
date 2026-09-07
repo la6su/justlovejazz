@@ -1053,7 +1053,7 @@ export class Experience {
     // its listener when a new Experience follows an explicit teardown/HMR.
     input.start()
     // NOTE: SmoothScroll/Lenis remains unnecessary: CinematicNav uses the
-    // browser's vertical scrolling and snap behavior. ProjectOverlay locks
+    // browser's vertical scrolling and snap behavior. FullscreenOverlay locks
     // body overflow directly while the fullscreen overlay is open.
     this._reducedMotion = prefersReducedMotion()
     this._reducedMotionUnsub?.()
@@ -1323,7 +1323,7 @@ export class Experience {
   /**
    * Post-frame settle decision for the single loop driver (ADR 0004): the
    * loop may stop after this frame only when the draw gate would have been
-   * a no-op (demand clear AND nothing active — the demandSettles 12-flag
+   * a no-op (demand clear AND nothing active — the demandSettles 14-flag
    * set) AND the cursor spring has converged (it needs frames even when the
    * scene is settled). Equivalent to "the next frame would draw nothing".
    */
@@ -1468,8 +1468,8 @@ export class Experience {
     const camPulsing = this.camera.isPulsing
 
     // The per-frame activity snapshot — the demand decision below is the
-    // pure renderDemand contract (single source of the 12-flag OR /
-    // 9-flag breath-idle sets, unit-locked against the legacy logic).
+    // pure renderDemand contract (single source of the 14-flag OR /
+    // 10-flag breath-idle sets, unit-locked against the legacy logic).
     const activity = this._activitySnapshot
     activity.nav = navActive
     activity.carousel = carouselActive
@@ -1538,7 +1538,6 @@ export class Experience {
 
     // ContentReveal applies the active section's auto/inverse theme and the
     // jlz:theme-applied listener above keeps the 3D layer in sync.
-    // See docs/UIKIT3.md (State and accessibility).
     const idx = this.coordinator.currentSectionIndex
     // Give World the camera ref for DrawTrail (once, after init).
     this.coordinator.setCamera(this.camera.instance)
@@ -1625,7 +1624,7 @@ export class Experience {
     // Note: _bakuCarouselActive is now computed BEFORE the _needsRender check
     // (above, in the activity snapshot) — was a race condition where stale
     // value caused carousel.update() to never run, morph stalled at ~0.35.
-    // Sync ProjectOverlay (DOM UI layer) — fullscreen opens on card click.
+    // Sync FullscreenOverlay (DOM UI layer) — fullscreen opens on card click.
     if (this.overlay && showGallery && !this.features.portfolioInitialized) {
       this.features.portfolioInitialized = true
       // Preload the first project into the overlay (hidden until card click).
@@ -1685,7 +1684,7 @@ export class Experience {
         resolve()
       }
       // Clear the demand flag only when nothing is still active — the same
-      // 12-flag settle set, now the contract's demandSettles (unit-locked
+      // 14-flag settle set, now the contract's demandSettles (unit-locked
       // against the legacy inline AND-NOT).
       if (demandSettles(activity)) {
         this._needsRender = false
@@ -1849,5 +1848,5 @@ export class Experience {
 
   // (ensurePortfolio / getCarousel / onProjectSelect removed — Phase 7
   //  slice 4: owned by ExperienceUI. The BakuCarousel card click is the SOLE
-  //  entry point for the fullscreen ProjectOverlay, as before.)
+  //  entry point for the fullscreen FullscreenOverlay, as before.)
 }
