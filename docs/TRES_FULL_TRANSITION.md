@@ -158,3 +158,14 @@ WebGLBackend and hardware WebGPUBackend, including reduced motion, stopped
 settled loop, one renderer canvas and clean root teardown:
 `docs/evidence/phase7-live-gate/2026-09-07T20-47-20-104Z-report.json` and
 `docs/evidence/phase7-live-gate/2026-09-07T20-48-11-998Z-report.json`.
+
+The route lifecycle now refreshes `SceneCoordinator` page-specific configs
+before reconciling lazy owners. SPA navigation therefore rebuilds fog, post
+voices and section ranges from the destination route instead of retaining the
+boot route's configuration; the existing route-generation guard still drops
+late lazy-stage continuations.
+
+The follow-up physical gate passed on both automatic WebGLBackend and hardware
+WebGPUBackend, including reduced motion, settled zero demand and clean root
+teardown: `docs/evidence/phase7-live-gate/2026-09-07T20-52-25-469Z-report.json`
+and `docs/evidence/phase7-live-gate/2026-09-07T20-52-19-388Z-report.json`.

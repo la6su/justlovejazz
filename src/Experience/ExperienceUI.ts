@@ -223,51 +223,57 @@ export class ExperienceUI {
           this.host.page(),
         )
       const coordinator = this.host.coordinator()
-      coordinator.syncRouteVisuals()
-      if (newPage === 'home') {
-        void this.host.ensureCarouselInitialized()
-      }
-      if (newPage === 'works') {
-        void this.host.ensureWorksPlaneStageInitialized().then(() => {
-          if (!continuationIsCurrent()) return
-          this.host.coordinator().setWorksPlaneStageSection(0)
-          this.host.raise('nav')
-        })
-      } else {
-        // Works owns eight decoded 1440×810 textures. Keeping an inactive
-        // stage alive makes that GPU allocation look like a navigation leak.
-        this.host.disposeWorksPlaneStage()
-      }
-      if (newPage === 'contact') {
-        this.host.setContactCyprusStageSection(0)
-        coordinator.setContactSceneSection(0)
-        void Promise.all([
-          this.host.ensureContactTypographyStageInitialized(),
-          this.host.ensureContactCyprusStageInitialized(),
-          this.host.ensureContactHaloStageInitialized(),
-        ]).then(() => {
-          if (!continuationIsCurrent()) return
-          this.host.raise('nav')
-        })
-      } else {
-        this.host.disposeContactTypographyStage()
-        this.host.disposeContactCyprusStage()
-        this.host.disposeContactHaloStage()
-        coordinator.setContactSceneSection(0)
-      }
-      if (newPage === 'manifesto') {
-        void this.host.ensureManifestoInkStageInitialized().then(() => {
-          if (!continuationIsCurrent()) return
-          this.host.raise('nav')
-        })
-      } else {
-        this.host.disposeManifestoInkStage()
-      }
-      // Phase 8 slice 9: the Lab object's lazy creation moved to Experience
-      // (created once on the first /lab visit; never disposed per route leave —
-      // the World's `syncRouteVisuals` already hides it off-route).
-      if (newPage === 'lab') void this.host.ensureLabGamepad()
-      this.host.raise('nav')
+      void (async () => {
+        // Rebuild page-specific fog/post/section ranges before route owners
+        // reconcile visibility; otherwise SPA navigation keeps boot config.
+        await coordinator.refreshRouteConfig()
+        if (!continuationIsCurrent()) return
+        coordinator.syncRouteVisuals()
+        if (newPage === 'home') {
+          void this.host.ensureCarouselInitialized()
+        }
+        if (newPage === 'works') {
+          void this.host.ensureWorksPlaneStageInitialized().then(() => {
+            if (!continuationIsCurrent()) return
+            this.host.coordinator().setWorksPlaneStageSection(0)
+            this.host.raise('nav')
+          })
+        } else {
+          // Works owns eight decoded 1440×810 textures. Keeping an inactive
+          // stage alive makes that GPU allocation look like a navigation leak.
+          this.host.disposeWorksPlaneStage()
+        }
+        if (newPage === 'contact') {
+          this.host.setContactCyprusStageSection(0)
+          coordinator.setContactSceneSection(0)
+          void Promise.all([
+            this.host.ensureContactTypographyStageInitialized(),
+            this.host.ensureContactCyprusStageInitialized(),
+            this.host.ensureContactHaloStageInitialized(),
+          ]).then(() => {
+            if (!continuationIsCurrent()) return
+            this.host.raise('nav')
+          })
+        } else {
+          this.host.disposeContactTypographyStage()
+          this.host.disposeContactCyprusStage()
+          this.host.disposeContactHaloStage()
+          coordinator.setContactSceneSection(0)
+        }
+        if (newPage === 'manifesto') {
+          void this.host.ensureManifestoInkStageInitialized().then(() => {
+            if (!continuationIsCurrent()) return
+            this.host.raise('nav')
+          })
+        } else {
+          this.host.disposeManifestoInkStage()
+        }
+        // Phase 8 slice 9: the Lab object's lazy creation moved to Experience
+        // (created once on the first /lab visit; never disposed per route leave —
+        // the World's `syncRouteVisuals` already hides it off-route).
+        if (newPage === 'lab') void this.host.ensureLabGamepad()
+        this.host.raise('nav')
+      })()
     })
 
     // Phase 5: Wobble pulse on card click (work cards + carousel)

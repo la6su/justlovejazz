@@ -226,6 +226,11 @@ export class SceneCoordinator {
     }
   }
 
+  /** Rebuild the page-specific section/config contract after SPA navigation. */
+  public refreshRouteConfig(): Promise<void> {
+    return this.init()
+  }
+
   /**
    * Compile the home Works and one-shot portal materials while the inline
    * splash still covers the scene. They are exposed only to the compiler.

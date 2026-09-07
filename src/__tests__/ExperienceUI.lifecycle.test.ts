@@ -1,11 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ExperienceUI, type ExperienceUIHost } from '../Experience/ExperienceUI'
 import { eventBus } from '../core/EventBus'
+import type { PageId } from '../sections/_shared/constants'
 
 const createHost = (sections: unknown[], carousel: unknown = null): ExperienceUIHost => {
   return {
     page: () => 'home',
-    coordinator: () => ({ sections, carousel }) as never,
+    coordinator: () =>
+      ({
+        sections,
+        carousel,
+        refreshRouteConfig: vi.fn(async () => undefined),
+        syncRouteVisuals: vi.fn(),
+        setContactSceneSection: vi.fn(),
+      }) as never,
     camera: () => ({ instance: {} }) as never,
     ui: () => ({ overlay: {} }) as never,
     sfx: () => ({}) as never,
@@ -119,6 +127,39 @@ describe('ExperienceUI portfolio lifecycle', () => {
     expect(next).toHaveBeenCalledOnce()
     expect(select).toHaveBeenCalledWith(1)
     expect(raise).toHaveBeenCalledWith('nav')
+    experienceUI.destroy()
+  })
+
+  it('refreshes page-specific scene config before route owner reconciliation', async () => {
+    const refreshRouteConfig = vi.fn(async () => undefined)
+    const syncRouteVisuals = vi.fn()
+    let page: PageId = 'home'
+    const host = {
+      ...createHost([{}]),
+      page: () => page,
+      sfx: () => ({ setMuted: vi.fn() }) as never,
+      coordinator: () =>
+        ({
+          sections: [{}],
+          refreshRouteConfig,
+          syncRouteVisuals,
+          setContactSceneSection: vi.fn(),
+          setWorksPlaneStageSection: vi.fn(),
+        }) as never,
+    }
+    const experienceUI = new ExperienceUI(host)
+    experienceUI.init()
+
+    page = 'works'
+    eventBus.emit('jlz:route-change', { page })
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(refreshRouteConfig).toHaveBeenCalledOnce()
+    expect(syncRouteVisuals).toHaveBeenCalledOnce()
+    expect(refreshRouteConfig.mock.invocationCallOrder[0]).toBeLessThan(
+      syncRouteVisuals.mock.invocationCallOrder[0]!,
+    )
     experienceUI.destroy()
   })
 

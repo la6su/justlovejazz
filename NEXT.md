@@ -978,16 +978,12 @@ Theme ownership and visual rules: [`docs/THEME.md`](docs/THEME.md).
       renderer/world failures before `ContentReveal`, `Cursor`, `SceneCoordinator`
       or `StateBus` exist, preserving release of the owners that did initialize.
 
-- [ ] **Rebuild per-route world configs on SPA navigation** —
-      `SceneCoordinator.configs` is written only by `init()` (called once from
-      `Experience.buildWorld` at boot), while the route-change handler calls
-      only `syncRouteVisuals()`. The per-page fog/env/post voices
-      (`WorldConfig` content palettes) therefore apply only to the boot
-      route; navigating home → content keeps the entry route's atmosphere.
-      Proposed slice: rebuild configs on `jlz:route-change` behind the
-      existing route-generation guard (`init()` already documents re-entry
-      reuse), unit-lock the rebuild, and gate the change with the
-      `visual-parity` route matrix on real WebGPU.
+- [x] **Rebuild per-route world configs on SPA navigation** —
+      `ExperienceUI` now refreshes `SceneCoordinator` before reconciling route
+      owners, so destination fog, post voices and section ranges replace the
+      boot route's configuration. The existing route-generation guard still
+      drops stale lazy-stage continuations; lifecycle coverage locks refresh
+      ordering.
 - [ ] **Retire or consume the empty `Section` state machines** — the six
       `Section` objects added by `SceneCoordinator.init()` never receive
       children (scene content lives in `SectionGroups` groups), yet the
