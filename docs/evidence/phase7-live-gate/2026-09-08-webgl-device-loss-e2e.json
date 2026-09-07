@@ -1,0 +1,9 @@
+{
+  "date": "2026-09-08",
+  "test": "tests/e2e.spec.ts: WebGLBackend survives a real webglcontextlost handoff",
+  "backend": "WebGLBackend",
+  "status": "skipped",
+  "reason": "Installed headed Chrome exposed WebGLBackend but could not restore a usable WebGL framebuffer during the preflight context-loss probe.",
+  "productionPathTouched": false,
+  "nextAction": "Repeat on a WebGL-capable browser/driver that restores the framebuffer, then require the production recovery handoff and one-canvas assertions to pass."
+}

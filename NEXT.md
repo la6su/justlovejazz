@@ -1056,6 +1056,18 @@ Theme ownership and visual rules: [`docs/THEME.md`](docs/THEME.md).
 
 ## Engineering policy
 
+- [ ] **Execute the post-migration autonomous plan** — follow
+      `docs/POST_MIGRATION_AUTONOMY_PLAN.md`: close the physical WebGL gate,
+      strengthen route configuration and demand assertions, then admit only
+      measured static Tres owner slices.
+  - [x] Route/config and demand lifecycle replay passed 20 steady-state cycles
+        on forced `WebGLBackend`; the report records one canvas, no fatal errors,
+        stable resource caps and root-destroy baseline in
+        `docs/evidence/phase10-route-cycle-soak/2026-09-07T21-23-19-415Z-report.json`.
+  - [ ] Physical WebGL device-loss recovery remains pending until a browser
+        driver can restore a usable framebuffer; the latest safe preflight is
+        recorded in `docs/evidence/phase7-live-gate/2026-09-08-webgl-device-loss-e2e.json`.
+
 - Do not duplicate route, slot, metadata, preference or render-reason facts.
 - Do not add a dependency without an owner, measured value, bundle impact and
   removal/replacement analysis.
