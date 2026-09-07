@@ -129,6 +129,11 @@ The case-study status audit found no publication gate or runtime consumer;
 field was removed from the shared contract and data records without changing
 route state or published markup.
 
+The production-only adapter audit found no further removable Tres boundary.
+`three-webgpu-compat.ts` remains required by the installed Tres runtime,
+`WebGPUPostPipeline` remains reachable through `RenderPipeline`, and the
+SceneHost/lazy-stage/route-transition modules all have live consumers.
+
 ## Validation baseline — 2026-09-07
 
 This slice passed TypeScript, Vue type checks, ESLint with zero errors,

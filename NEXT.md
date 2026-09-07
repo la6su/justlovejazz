@@ -1006,6 +1006,10 @@ Theme ownership and visual rules: [`docs/THEME.md`](docs/THEME.md).
       `Experience/Cursor.ts` now takes its CSS fallback colors from the tested
       manifest while Less remains the canonical source. The manifest is no
       longer test-only; its parity contract stays locked by `brandTokens.test`.
+- [x] **Audit production-only Tres adapters** — `three-webgpu-compat.ts`,
+      `WebGPUPostPipeline`, `LazyStage`, `SceneHost` and route transition
+      modules all retain live consumers. No obsolete renderer, canvas, loop or
+      compatibility adapter was found after the migration.
 - [x] **Remove the unused case-study status field** —
       `CaseStudyView` already owns the editorial review copy and no production
       consumer read `CaseStudy.status`; the dead type and data fields are gone.
