@@ -42,9 +42,12 @@ export interface SceneHostReady {
   backend: BackendFacts
   lights: CinematicLightsNodes
   ground: GroundPlaneNode
-  sectionRoots?: readonly Group[]
-  servicesStage?: ServicesStage
-  envSphere?: EnvSphere
+  /** All static roots are mounted before the ready bridge settles. */
+  sectionRoots: readonly Group[]
+  /** The Vue lifecycle owns construction and teardown of this adopted stage. */
+  servicesStage: ServicesStage
+  /** The Vue lifecycle owns construction and teardown of this ambient owner. */
+  envSphere: EnvSphere
 }
 
 interface SceneHostState {

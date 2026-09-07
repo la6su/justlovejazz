@@ -88,11 +88,11 @@ export interface ExperienceHost {
   canvas: HTMLCanvasElement
   mode: FinalMode
   /** Static light objects created declaratively by the persistent Tres host. */
-  lights?: CinematicLightsNodes
-  ground?: GroundPlaneNode
-  sectionRoots?: readonly THREE.Group[]
-  servicesStage?: ServicesStage
-  envSphere?: EnvSphere
+  lights: CinematicLightsNodes
+  ground: GroundPlaneNode
+  sectionRoots: readonly THREE.Group[]
+  servicesStage: ServicesStage
+  envSphere: EnvSphere
   replaceRenderer(renderer: RenderSurface): void
 }
 

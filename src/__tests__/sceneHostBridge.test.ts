@@ -33,6 +33,9 @@ function fakeReady(overrides?: Partial<SceneHostReady>): SceneHostReady {
     backend: { backendName: 'WebGPUBackend', isFallbackAdapter: false },
     lights: {} as SceneHostReady['lights'],
     ground: {} as SceneHostReady['ground'],
+    sectionRoots: [],
+    servicesStage: {} as SceneHostReady['servicesStage'],
+    envSphere: {} as SceneHostReady['envSphere'],
     ...overrides,
   }
 }

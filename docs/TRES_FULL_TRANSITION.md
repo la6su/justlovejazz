@@ -118,3 +118,9 @@ hardware WebGPUBackend, including reduced motion, one canvas, stopped settled
 loop and clean root teardown. Evidence:
 `docs/evidence/phase7-live-gate/2026-09-07T20-20-39-043Z-report.json` and
 `docs/evidence/phase7-live-gate/2026-09-07T20-21-17-402Z-report.json`.
+
+The ready-host type now requires every currently adopted owner. This closes the
+class of forwarding omission that previously let an unforwarded host owner be
+constructed a second time by `Experience`; TypeScript rejects any future
+`SceneHost` → `entry-app` bridge that omits one of those nodes. The native
+fallback remains the absence of a host, rather than a partial host.
