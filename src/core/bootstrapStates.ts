@@ -16,11 +16,10 @@
 // rebuild policy (one retry per failure, then an explicit failure state) is
 // application policy layered on top of this machine, not part of it.
 //
-// Pure by design: no DOM, timers, renderer or events — the current implicit
-// bootstrap in `entry-app.ts` (the `is-ready` class, `jlz:webgl-ready` /
-// `jlz:webgl-failed` events and the 60-second fallback) stays the legacy
-// implementation until the Phase 5 shell migration consumes this machine.
-// Unit-testable without a browser.
+// Pure by design: no DOM, timers, renderer or events. `entry-app.ts` owns the
+// concrete splash/event side effects and consumes this machine for its
+// renderer, scene-prewarm, ready and retry transitions. Unit-testable without
+// a browser.
 
 export type BootstrapState =
   | 'shell-painted'

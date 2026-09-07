@@ -38,7 +38,7 @@ export interface AppEvents {
   'jlz:lang-change': { lang: string }
   /** Fired by the nav template on a menu sub-link click — a strict in-app navigation request (hash folded into path). */
   'jlz:navigate': { path: string }
-  /** Fired by WorkCards on a works-page card click. */
+  /** Fired by a semantic project control on a Works or case-study page. */
   'jlz:open-project': { idx: number }
   /** Fired by CinematicNav when a non-home page's active section changes. */
   'jlz:page-section-change': { index: number; count: number }

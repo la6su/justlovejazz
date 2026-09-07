@@ -99,4 +99,26 @@ describe('CinematicLights reduced-motion transitions', () => {
 
     expect(scene.getObjectByName('cinematic-lights')).toBeUndefined()
   })
+
+  it('leaves declaratively-owned light nodes attached for the Vue host to dispose', () => {
+    const scene = new THREE.Scene()
+    const group = new THREE.Group()
+    group.name = 'cinematic-lights'
+    const nodes = {
+      group,
+      key: new THREE.DirectionalLight(),
+      fill: new THREE.DirectionalLight(),
+      rim: new THREE.DirectionalLight(),
+      volumetric: new THREE.PointLight(),
+      hemisphere: new THREE.HemisphereLight(),
+    }
+    group.add(nodes.key, nodes.fill, nodes.rim, nodes.volumetric, nodes.hemisphere)
+    scene.add(group)
+
+    const lights = new CinematicLights(scene, nodes)
+    lights.dispose()
+
+    expect(group.parent).toBe(scene)
+    expect(group.children).toHaveLength(5)
+  })
 })

@@ -1,0 +1,23 @@
+{
+  "tool": "scripts/visual-parity.ts capture",
+  "frame": "services-inverse-webgpu.png",
+  "url": "http://127.0.0.1:5173/services",
+  "commit": "working-tree",
+  "capturedAtUtc": "2026-09-07T11:38:31.415Z",
+  "browser": "Chrome/152.0.7977.82",
+  "viewport": "1267x1297 CSS, DPR 1",
+  "dataStatus": null,
+  "dataBackend": null,
+  "dataRenderPath": null,
+  "dataMotionMode": null,
+  "canvasCssWidth": 1267,
+  "canvasCssHeight": 1297,
+  "canvasBackingWidth": 1267,
+  "canvasBackingHeight": 1297,
+  "viewportCss": "1267x1297",
+  "devicePixelRatio": 1,
+  "visibilityState": "visible",
+  "route": "/services",
+  "mode": "inverse",
+  "backend": "auto"
+}

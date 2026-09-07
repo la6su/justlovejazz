@@ -1,7 +1,6 @@
 import { BlurFade } from './Experience/BlurFade'
 import { NoiseText } from './Experience/NoiseText'
 import { eventBus } from './core/EventBus'
-import { initWorkCards } from './UI/WorkCards'
 import { getSoundMuted, setSoundMutedPreference } from './core/SfxSystem'
 import { prefersReducedMotion } from './core/motionPolicy'
 import { getCurrentPage } from './core/routePage'
@@ -414,6 +413,8 @@ async function boot(): Promise<BootResult> {
         renderer: host.renderer,
         canvas: host.canvas,
         mode: host.mode,
+        lights: host.lights,
+        ground: host.ground,
         replaceRenderer: (renderer) => sceneHost.replaceRenderer(renderer),
       },
       getCurrentPage,
@@ -520,15 +521,6 @@ async function startAppOnce(): Promise<void> {
           /* sceneHost rejection is best-effort; the visible failure state remains */
         })
     })
-
-  // ── Works page 3D cards: bind tilt + click on every route change ──
-  // initWorkCards() is idempotent (skips already-bound cards).
-  _bootstrapUnsubs.push(
-    eventBus.on('jlz:route-change', () => {
-      initWorkCards()
-    }),
-  )
-  initWorkCards()
 
   // jlz:webgl-ready fires when Experience.init() completes — show Enter button.
   // Animations (BlurFade + NoiseText) are DELAYED until jlz:splash-entered

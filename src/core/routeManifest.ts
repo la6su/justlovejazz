@@ -1,8 +1,8 @@
 // src/core/routeManifest.ts — Phase 3 pure route contract.
 //
-// The single source of truth for the application's public paths. Consumers
-// (the legacy router today, Vue Router later) resolve against this manifest
-// instead of re-declaring the mapping. Pure by design: no DOM, no window, no
+// The single source of truth for the application's public paths. Vue Router
+// and static publishing resolve against this manifest instead of re-declaring
+// the mapping. Pure by design: no DOM, no window, no
 // globals — unit-testable without a browser.
 //
 // Adding or renaming a route is a change here plus one line in the router;

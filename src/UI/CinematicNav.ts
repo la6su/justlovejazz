@@ -1,7 +1,7 @@
 // CinematicNav.ts — vertical, scroll-driven section navigation.
 //
 // The four main sections form one native vertical track. Trackpad, mouse-wheel
-// and touch input retain their platform-native behavior. The legacy section-0 runtime slot now presents a
+// and touch input retain their platform-native behavior. The canonical section-0 runtime slot now presents a
 // Contact finale, while Menu remains section 5. Both open as bottom/top sheets
 // without occupying a story frame.
 

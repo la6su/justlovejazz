@@ -1,9 +1,8 @@
 <script setup lang="ts">
 // src/app/views/NavMenu.vue — Phase 5: navigation sheet SFC (canonical
-// section 5, the menu face). 1:1 port of the legacy string template
-// `navOverlaySection` (src/sections/nav/template.ts): the UIkit Nav markup
-// owns expansion, keyboard state and ARIA in both modes; `initMenuNav` wires
-// the subsection SPA-navigation clicks after every render. `mode` switches
+// section 5, the menu face). 1:1 port of the former string page
+// The UIkit Nav markup owns expansion, keyboard state and ARIA in both modes;
+// `menuLifecycle.ts` wires submenu SPA-navigation after every render. `mode` switches
 // the section attribute namespace: 'home' = data-section (3D cube-face
 // sync), 'content' = data-page-section. The root `id`/`data-cinematic-menu`
 // stay constant; the page class is added only on content pages so the

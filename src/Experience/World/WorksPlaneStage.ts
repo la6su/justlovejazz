@@ -10,7 +10,6 @@ import { PROJECTS } from '../../Data/Projects'
 import { CasePlane, CLOTH_PARAMS } from './CasePlane'
 import { loadCaseTexture, releaseCaseTexture } from './caseTexture'
 import { observeReducedMotion, prefersReducedMotion } from '../../core/motionPolicy'
-import type { RenderSurface } from '../Renderer'
 
 import { WORKS_ROOMS, getWorksCaseProject } from '../../core/worksExperience'
 import { eventBus } from '../../core/EventBus'
@@ -180,29 +179,6 @@ export class WorksPlaneStage extends THREE.Group {
       this._initialized = false
       throw error
     }
-  }
-
-  /**
-   * Shader pre-warm (inspired by the Ridgeline article).
-   *
-   * Currently a no-op: WebGPURenderer.compileAsync throws synchronously
-   * during TSL node build because it needs a render-context camera stack
-   * that isn't set up outside of a render call. Even with try/catch, the
-   * partial node build can corrupt the CasePlane material state, making
-   * textures invisible on /works.
-   *
-   * The WebGPURenderer compiles shaders lazily during the first actual
-   * render (which has a proper render context), so pre-warming is not
-   * needed. The first visible frame may have a slight jank while the TSL
-   * nodes build, but the scene renders correctly.
-   *
-   * Re-enable only after upgrading to a Three.js version that fixes
-   * compileAsync on the WebGPU backend, or after switching to a
-   * WebGL2-only renderer that supports KHR_parallel_shader_compile.
-   */
-  prewarmShaders(_renderer: RenderSurface): Promise<void> {
-    if (this._disposed) return Promise.resolve()
-    return Promise.resolve()
   }
 
   setCamera(camera: THREE.Camera): void {

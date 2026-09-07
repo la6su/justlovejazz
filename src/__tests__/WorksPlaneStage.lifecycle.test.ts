@@ -243,8 +243,6 @@ describe('WorksPlaneStage async lifecycle', () => {
     stage.setCamera(new THREE.PerspectiveCamera())
     stage.resize(320, 640)
     stage.setActive(true, 1)
-    await stage.prewarmShaders({} as never)
-
     expect(stage.openProject(0, overlay)).toBe(false)
     expect(stage.handleTap(20, 20, overlay)).toBe(false)
     expect(stage.hitTest(20, 20)).toBe(-1)

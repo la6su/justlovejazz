@@ -1203,7 +1203,7 @@ body[data-cinematic-sheet] .jlz-console-bar {
     bottom: max(0.8rem, calc(env(safe-area-inset-bottom) + 0.65rem));
     left: auto;
     width: calc(100vw - 1.6rem);
-    height: 2.4rem;
+    height: calc(44px + 0.36rem);
     padding: 0.18rem;
   }
 
@@ -1213,16 +1213,25 @@ body[data-cinematic-sheet] .jlz-console-bar {
   }
 
   .jlz-topbar-controls .uk-icon-button {
-    width: 2.1rem;
-    height: 2.1rem;
-    min-height: 2.1rem;
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
   }
 
   .jlz-topbar-controls .jlz-menu-launcher {
     min-width: 5.45rem;
-    height: 2.1rem;
-    min-height: 2.1rem;
+    height: 44px;
+    min-height: 44px;
     padding-inline: 0.58rem;
+  }
+
+  // The control-bank rules above are deliberately compact on wide screens.
+  // Keep each mobile control independently reachable at the 44px target size.
+  .jlz-storyline__item {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
   }
 }
 

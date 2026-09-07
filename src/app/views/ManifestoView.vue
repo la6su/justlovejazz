@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // src/app/views/ManifestoView.vue — Phase 5: /manifesto route SFC. 1:1
-// port of the legacy string template `manifestoPage()`
-// (src/pages/content/manifesto.ts): four principles + the two shared
+// port of the former string page
+// four principles + the two shared
 // overlays (section 0 contact finale, section 5 menu).
 import { ref } from 'vue'
 

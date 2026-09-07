@@ -1,8 +1,7 @@
 <script setup lang="ts">
 // src/app/views/HomeView.vue — Phase 5: home route SFC (the 3D cube
-// experience face). 1:1 port of the legacy string template
-// `homePage()` (src/pages/home.ts): the four main sections form the native
-// horizontal story track; sections 0/5 enter as Contact/Menu sheets. The
+// experience face. The four main sections form the native horizontal story
+// track; sections 0/5 enter as Contact/Menu sheets. The
 // section order matches the displayed cube orientation (see
 // src/sections/_shared/constants.ts). The scene sync reads `data-section`
 // on these nodes — the attributes are the 3D contract.

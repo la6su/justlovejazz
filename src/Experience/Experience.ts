@@ -41,7 +41,9 @@ import { eventBus } from '../core/EventBus'
 // stable section groups are owned by the SectionGroups owner (attached to
 // the World before init).
 import { CinematicLights } from './World/Lights'
+import type { CinematicLightsNodes } from './World/Lights'
 import { GroundPlane } from './Scene/GroundPlane'
+import type { GroundPlaneNode } from './Scene/GroundPlane'
 import { SectionGroups } from './Scene/SectionGroups'
 import { disposeLazyStage, ensureLazyStage, type LazyStageContract } from './LazyStage'
 import { EnvSphere } from './World/EnvSphere'
@@ -85,6 +87,9 @@ export interface ExperienceHost {
   renderer: RenderSurface
   canvas: HTMLCanvasElement
   mode: FinalMode
+  /** Static light objects created declaratively by the persistent Tres host. */
+  lights?: CinematicLightsNodes
+  ground?: GroundPlaneNode
   replaceRenderer(renderer: RenderSurface): void
 }
 
@@ -529,8 +534,8 @@ export class Experience {
     // invalidation can never enter `update()` with an undefined ground/light
     // owner. Their section-dependent configuration is applied below once the
     // coordinator has completed its synchronous setup.
-    this.lights = new CinematicLights(this.scene)
-    this.ground = new GroundPlane(this.scene)
+    this.lights = new CinematicLights(this.scene, this._host?.lights)
+    this.ground = new GroundPlane(this.scene, this._host?.ground)
     await this.coordinator.init()
     if (!this.isLifecycleCurrent(token)) return
     // Phase 8 slice 6: the home-carousel init await moved out of
@@ -689,9 +694,9 @@ export class Experience {
         getRequest: () => this._contactTypographyStageRequest,
         advanceRequest: () => ++this._contactTypographyStageRequest,
       },
-      create: () =>
-        import('./World/ContactTypographyStage').then(
-          ({ ContactTypographyStage }) => new ContactTypographyStage(),
+      create: (isCurrent) =>
+        import('./World/ContactTypographyStage').then(({ ContactTypographyStage }) =>
+          isCurrent() ? new ContactTypographyStage() : null,
         ),
       attach: (stage) => this.scene.add(stage),
       configure: (stage) => {
@@ -730,8 +735,10 @@ export class Experience {
         getRequest: () => this._contactHaloStageRequest,
         advanceRequest: () => ++this._contactHaloStageRequest,
       },
-      create: () =>
-        import('./World/ContactHaloStage').then(({ ContactHaloStage }) => new ContactHaloStage()),
+      create: (isCurrent) =>
+        import('./World/ContactHaloStage').then(({ ContactHaloStage }) =>
+          isCurrent() ? new ContactHaloStage() : null,
+        ),
       attach: (stage) => this.scene.add(stage),
       configure: (stage) => {
         stage.setTheme(this._contactIsLight)
@@ -771,9 +778,9 @@ export class Experience {
         getRequest: () => this._manifestoInkStageRequest,
         advanceRequest: () => ++this._manifestoInkStageRequest,
       },
-      create: () =>
-        import('./World/ManifestoInkStage').then(
-          ({ ManifestoInkStage }) => new ManifestoInkStage(),
+      create: (isCurrent) =>
+        import('./World/ManifestoInkStage').then(({ ManifestoInkStage }) =>
+          isCurrent() ? new ManifestoInkStage() : null,
         ),
       attach: (stage) => this.scene.add(stage),
       configure: (stage) => {
@@ -825,9 +832,9 @@ export class Experience {
         getRequest: () => this._contactCyprusStageRequest,
         advanceRequest: () => ++this._contactCyprusStageRequest,
       },
-      create: () =>
-        import('./World/ContactCyprusStage').then(
-          ({ ContactCyprusStage }) => new ContactCyprusStage(),
+      create: (isCurrent) =>
+        import('./World/ContactCyprusStage').then(({ ContactCyprusStage }) =>
+          isCurrent() ? new ContactCyprusStage() : null,
         ),
       attach: (stage) => this.scene.add(stage),
       load: (stage) => stage.load(),
@@ -1800,6 +1807,11 @@ export class Experience {
     this.disposeContactTypographyStage()
     this.disposeContactCyprusStage()
     this.disposeContactHaloStage()
+    // The /manifesto ink owner follows the same lazy-stage contract. Retire
+    // its import generation before renderer teardown so a module resolving
+    // after root destruction can neither attach a stage nor retain its TSL
+    // material graph.
+    this.disposeManifestoInkStage()
     // Phase 8 slice 9: the Lab experiment object (created once on the first
     // /lab visit; a direct child of the Tres-owned scene, never disposed per
     // route leave).

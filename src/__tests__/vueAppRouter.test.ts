@@ -21,13 +21,9 @@ vi.mock('../core/i18n', () => ({
 vi.mock('../core/pageMeta', () => ({
   applyMetaTags: vi.fn(),
 }))
-vi.mock('../UI/WorkCards', () => ({
-  disposeWorkCards: vi.fn(),
-  initWorkCards: vi.fn(),
-}))
-vi.mock('../sections/nav/template', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../sections/nav/template')>()
-  return { ...actual, initMenuToolbar: vi.fn() }
+vi.mock('../app/menuLifecycle', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../app/menuLifecycle')>()
+  return { ...actual, initMenuLifecycle: vi.fn(() => () => undefined) }
 })
 // Phase 7: AppShell now mounts the persistent SceneHost (a real TresCanvas).
 // This suite is routing-scoped — the Tres canvas must not boot in jsdom (no
@@ -179,7 +175,6 @@ describe('mountVueApp prerender adoption', () => {
     )
     expect(rooms).toHaveLength(4)
     expect(document.querySelectorAll('.jlz-works-page .jlz-works-aperture')).toHaveLength(4)
-    expect(document.querySelector('.jlz-work-card__case-link.uk-position-cover')).toBeNull()
     expect(document.querySelector('.jlz-works-hero')).toBeNull()
     expect(document.getElementById('spa-content')?.dataset.pageView).toBe('content')
   })

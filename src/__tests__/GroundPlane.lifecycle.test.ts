@@ -61,4 +61,16 @@ describe('GroundPlane lifecycle', () => {
     expect(ground.object.visible).toBe(true)
     expect(ground.object.parent).toBeNull()
   })
+
+  it('leaves a declaratively-owned node attached for the Vue host to dispose', () => {
+    const scene = new THREE.Scene()
+    const node = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshStandardMaterial())
+    scene.add(node)
+    const ground = new GroundPlane(scene, node)
+
+    ground.dispose()
+
+    expect(node.parent).toBe(scene)
+    expect(node.geometry.parameters.width).toBe(200)
+  })
 })

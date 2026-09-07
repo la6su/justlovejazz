@@ -1,7 +1,6 @@
 // src/app/navItems.ts — Phase 5: menu destination data shared by the nav
-// overlay SFC and its consumers. Ported verbatim from the legacy string
-// template (src/sections/nav/template.ts NAV_ITEMS); the template is the
-// string-template removal target, this data is the typed SFC source.
+// overlay SFC and its consumers. Ported from the former string
+// template; this typed data is now the only menu-content source for the SFC.
 
 export interface NavSubSection {
   num: string

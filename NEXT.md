@@ -32,10 +32,19 @@ the camera-aligned exhibit layer owns its explicitly positioned hit targets.
       a `showreel` render-activity flag. The trigger is now a console command
       chip (`jlz-showreel-btn`); reduced motion snaps the transition.
 
-- [ ] Validate the revised post graph on physical WebGPU: stable grain,
-      edge-weighted chromatic separation, continuous border interpolation and
-      bounded refraction UVs. Compare direct WebGL presentation separately;
-      the shared CRT bezel is independent of the post graph.
+- [x] **Validate post-graph runtime ownership on physical backends** — the
+      current Chrome WebGPU gate records the active TSL graph (12 targets, one
+      pass), one canvas, settled zero-demand, reduced-motion settlement and
+      clean disposal; the matching WebGLBackend gate records its intended
+      direct-render path with no post targets. Evidence:
+      `docs/evidence/phase7-live-gate/2026-09-07T10-44-23-989Z-report.json`
+      and `2026-09-07T10-43-29-204Z-report.json`.
+- [x] **Review the revised post graph visually on physical backends** — the
+      Works state stayed stable through the WebGPU post path without a central
+      chromatic split, edge seams or refraction UV artifacts; direct WebGL
+      retained the same scene composition without post-target artifacts. The
+      fallback is intentionally direct-render, not post-parity. See
+      `docs/evidence/phase7-live-gate/2026-09-07-visual-post-review.md`.
 
 - [ ] Author distinct project-specific scenes for the four featured works,
       extending the current project-directed installation into richer geometry
@@ -47,21 +56,79 @@ the camera-aligned exhibit layer owns its explicitly positioned hit targets.
 - [ ] Replace provisional project illustrations with reviewed original assets,
       playable captures and process evidence; approve bilingual case copy before
       publishing client or performance claims.
-- [ ] Consolidate camera aperture and DOM hit-target sizing into a typed layout
-      contract; verify ultrawide, 320px mobile and short landscape layouts.
-- [ ] Review EnvSphere's remaining basic materials against the TSL material
-      contract and measure both backends before migrating its pavilion shading.
-- [ ] Capture normal/inverse, keyboard and reduced-motion visual baselines for
-      every public route, plus separate physical WebGPU and WebGL runs.
+- [x] **Keep camera and DOM aperture layouts independently owned** — audit
+      found no duplicated geometry fact: `WorksPlaneStage` derives its
+      camera-space installation and card layout from FOV, distance and aspect,
+      while Vue's aperture is an editorial percentage hit target. A shared
+      contract would create a false CSS/Three coupling. Existing lifecycle
+      coverage exercises 320px resize; verify ultrawide and short-landscape as
+      visual-release evidence with the room-composition review.
+- [x] **Retain EnvSphere's explicit basic-material contract** — all six
+      pavilion faces are unlit, texture-free palette surfaces whose shared
+      `MeshBasicMaterial` behavior is required on both WebGPU and the direct
+      WebGLBackend path. A NodeMaterial conversion has no measured visual or
+      lifecycle benefit and would add backend-parity and ownership risk; keep
+      the ambient owner imperative as recorded in `TRES_HYBRID_EXPERIMENTS.md`.
+- [x] Capture normal/inverse, keyboard and reduced-motion visual baselines for
+      every public route, plus separate physical WebGPU and WebGL runs. The
+      current inventory and explicit gaps are recorded in
+      `docs/evidence/visual-parity/2026-09-07-route-matrix.json`; do not mark
+      all required variants now exist for all six canonical routes on both
+      backends. The complete capture inventory is recorded in
+      `docs/evidence/visual-parity/2026-09-07-route-matrix.json` and kept in
+      sync with `ROUTE_MANIFEST` by `visualBaselineMatrix.test.ts`.
 
 ### Codebase audit follow-up
 
-- [ ] Remove the stale `eslint-disable` in `JunniParticles.ts` and keep the
-      warning budget at zero errors with an explicit review of remaining
-      boundary casts.
-- [ ] Decide whether `@dietrichgebert/ponytail` belongs in the project
-      manifest or only in the local development toolchain; remove it from the
-      app dependency graph if it is not installed by project contributors.
+- [x] **Remove the retired menu string-template path** — `NavMenu.vue` and
+      `app/navItems.ts` are now the sole menu markup/data sources. The former
+      renderer in `sections/nav/template.ts` duplicated that surface but had no
+      production renderer consumer; its live binding is now
+      `app/menuLifecycle.ts`, scoped to the active route root. The focused
+      lifecycle/router suite and Vue type-check pass. The continuing audit
+      ledger is `docs/TRES_POST_MIGRATION_AUDIT.md`.
+- [x] **Remove retired Works and pipeline no-op APIs** — `WorksPlaneStage`
+      no longer exposes the unused `prewarmShaders()` hook, and
+      `RenderPipeline.resize()` no longer pretends to own renderer sizing.
+      Focused Works/cache, pipeline and renderer lifecycle tests pass; the
+      actual first-render shader compilation and renderer resize paths remain
+      unchanged.
+- [x] **Remove the retired Lab overlay template** — `ContactFooter.vue` is
+      the sole live contact-finale renderer; the unused
+      `sections/lab-overlay/template.ts` and its orphaned `labOverlay.*` locale
+      keys are gone. The canonical `lab` route/deep-link identifier remains.
+- [x] **Remove legacy HTML template helpers** — the shared section string
+      helpers were test-only after the Vue route migration; `_shared/constants.ts`
+      now retains only `PageId` and the obsolete template fixture is removed.
+
+- [x] **Repair and pass the 20-cycle route soak** — the runner now waits for
+      Vue's `__jlzRouterReady` and route-root `data-page-view` marker instead
+      of the retired document-level route dataset, and evaluates resource
+      trends per route rather than comparing intentionally different route
+      footprints. The successful WebGLBackend report records one canvas,
+      within-cap resources, stable per-route frame deltas and clean teardown.
+
+- [x] **Reconcile the serial browser baseline with the Vue Works contract** —
+      typography now verifies the actual `HTML → commissioner.css → font`
+      delivery chain; browser tests exercise the four native project controls,
+      not the retired card grid; and the final mobile control-bank rules retain
+      44px minimum targets. `WorkCards` and its route lifecycle registry were
+      removed because no current route renders its selector.
+
+- [x] **Close Manifesto lazy-stage root teardown** — `Experience.destroy()` now
+      invalidates the pending import and disposes its live owner, with a
+      deferred-import regression test. The TresJS 5.8.3 loop characterization
+      confirms that `advance()` and `invalidate()` cannot progress a stopped
+      internal RAF; keep the production scheduler unless a measured bottleneck
+      justifies the much larger clock/recovery integration.
+- [x] **Remove the stale `eslint-disable` in `JunniParticles.ts`** — the
+      typed texture value no longer suppresses a rule it does not violate.
+      Keep the warning budget at zero errors and review remaining boundary
+      casts explicitly.
+- [x] **Remove the one-off Ponytail audit package** — it was added only for a
+      historical agent audit and has no imports, scripts, configuration or
+      contributor workflow. The manifest and lockfile now contain only
+      reproducible project dependencies.
 - [x] **Replace the remaining renderer-boundary `any` casts with narrow Three.js
       and WebGPU adapter types** — `WebGPUPostPipeline` and `tsl-helpers` now
       carry zero `as any` casts: the pass/bloom/swizzle boundary uses the
@@ -75,9 +142,25 @@ the camera-aligned exhibit layer owns its explicitly positioned hit targets.
       `Experience` now run through one unit-tested core (`ensureLazyStage` /
       `disposeLazyStage`) over the same flat owner fields. Per-stage variation
       stays local (create/load/configure/release order, the Cyprus dispose
-      flag); `LabGamepad` keeps its distinct static-object ownership.
-- [ ] Keep the Less ownership split flat: one canonical control-bank block per
-      surface, generated builder Less changed only through its compiler.
+      flag); its request guard reaches dynamic-import factories before class
+      construction, so a retired owner creates no late TSL/GPU graph.
+      `LabGamepad` keeps its distinct static-object ownership.
+- [x] **Admit the first declarative Tres subtree** — `SceneHost` now owns the
+      five static cinematic lights through `app/scene/CinematicLights.vue`.
+      `CinematicLights` remains the imperative preset/motion controller and
+      does not dispose adopted Vue-owned nodes; the canvas, unified renderer,
+      scene, RenderScheduler and backend policy are unchanged. Physical WebGPU
+      and forced-WebGL visual/resource checks remain required before release.
+- [x] **Admit the declarative ground subtree** — `SceneHost` owns the ground
+      mesh, geometry and built-in material through `app/scene/GroundPlane.vue`.
+      `GroundPlane` retains theme, opacity and section-visibility state but
+      never disposes an adopted Vue-owned node. The renderer, canvas, scheduler
+      and backend policy remain unchanged.
+- [x] **Confirm flat control-bank ownership** — the TUI mixins have one source
+      in `console-theme/mixins.less`, while `_console-language.less` has one
+      final bank application per surface (top bar and status island). Earlier
+      selector blocks own layout only; generated builder Less remains compiler-
+      owned. Do not merge the cascade blocks merely for line-count reduction.
 
 Theme ownership and visual rules: [`docs/THEME.md`](docs/THEME.md).
 
@@ -519,7 +602,10 @@ Theme ownership and visual rules: [`docs/THEME.md`](docs/THEME.md).
       context; the runtime now fails closed with an explicit recovery reason
       instead of entering Three's `WebGLState` with a null framebuffer. Execute
       the probe on a WebGL-capable browser before accepting recovery as
-      integration-proven.
+      integration-proven. The 2026-09-07 headed Chrome run reached
+      `WebGLBackend` but was correctly skipped because its restored framebuffer
+      was unusable. A second X11 Chrome profile reproduced the same result; see
+      `docs/evidence/phase7-live-gate/2026-09-07-webgl-device-loss-e2e.json`.
 
 - [x] **Harden async route-owner cancellation** — `ExperienceUI` route-change
       promises now use a shared generation/page predicate, so late Works/Contact
@@ -629,9 +715,9 @@ Theme ownership and visual rules: [`docs/THEME.md`](docs/THEME.md).
 - [x] **Single-own builder card CSS** — published Less no longer emits a second
       `card.less` import already owned by the application baseline; the baseline
       now contains the real import and generated deltas are parity-tested.
-- [x] **Dispose route WorkCards on owner teardown** — `useJlzPage` now releases
-      the module-level card/grid registry on full unmount as well as before route
-      replacement, with lifecycle coverage for both paths.
+- [x] **Retire the obsolete WorkCards route registry** — the earlier delegated
+      card lifecycle was removed after Vue Works adopted direct native controls;
+      no active route renders `.jlz-work-card` or `.jlz-works-grid`.
 - [x] **Keep Contact prewarm request-owned** — the lazy Cyprus stage now has one
       guarded prewarm continuation; stale entry-route promises cannot prewarm a
       newer Contact stage or add an unnecessary render frame.
@@ -665,10 +751,6 @@ Theme ownership and visual rules: [`docs/THEME.md`](docs/THEME.md).
 - [x] **Clear the bootstrap readiness watchdog** — the 60-second failed-boot
       timer is now owned by `entry-app` and cancelled as soon as readiness or an
       explicit failure arrives, including before a retry.
-- [x] **Delegate WorkCards clicks per grid** — card activation keeps its
-      debounce and project event contract while each grid owns one listener
-      instead of one listener per card; disposal removes the grid owners and
-      their release timers together.
 - [x] **Keep secondary route views out of startup** — `HomeView` remains the
       eager landing target, while the five secondary Vue route views use explicit
       route-level imports; the measured `app` chunk fell from 10.00 kB to 3.37 kB

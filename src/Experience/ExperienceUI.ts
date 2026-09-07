@@ -166,8 +166,8 @@ export class ExperienceUI {
       this.host.sfx().setMuted(muted)
     })
 
-    // ── Works page card click → open fullscreen overlay ──
-    // Dispatched by WorkCards.ts when a .jlz-work-card is clicked (works page).
+    // ── Semantic project control → open fullscreen overlay ──
+    // Works and case-study Vue views emit this port from their native controls.
     // All opens (showreel, slider, /works) use the same unified DOM cinematic
     // reveal — no 3D plane-to-fullscreen handoff, which caused a double effect.
     this._openProjectUnsub = eventBus.on('jlz:open-project', ({ idx }) => {
@@ -301,7 +301,11 @@ export class ExperienceUI {
       // present. It must not be reinterpreted as a click on the first 3D plane.
       if (document.getElementById('jlz-app-loader')) return
       const target = e.target as HTMLElement | null
-      if (target?.closest('.jlz-work-card, #jlz-fs-overlay, .jlz-topbar, [data-cinematic-menu]'))
+      if (
+        target?.closest(
+          '.jlz-works-aperture, .jlz-works-actions, #jlz-fs-overlay, .jlz-topbar, [data-cinematic-menu]',
+        )
+      )
         return
       // Raycast against the 3D planes to find which project was tapped, then
       // open the overlay with the unified cinematic reveal (no 3D handoff).
@@ -438,8 +442,7 @@ export class ExperienceUI {
   private getCarousel(): import('./World/BakuCarousel').BakuCarousel | null {
     // BakuCarousel only exists on home page — content pages don't init it
     if (this.host.page() !== 'home') return null
-    // Phase 8 slice 6: the reference lives on Experience (injected through
-    // World.attachBakuCarousel); read it through the documented getter.
+    // The reference lives on SceneCoordinator's typed owner boundary.
     return this.host.coordinator()?.carousel ?? null
   }
 

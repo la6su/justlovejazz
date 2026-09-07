@@ -16,7 +16,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@tresjs/core', () => ({
   TresCanvas: defineComponent({
     emits: ['ready'],
-    setup(_, { emit }) {
+    setup(_, { emit, slots }) {
       onMounted(() => {
         emit('ready', {
           scene: { value: new THREE.Scene() },
@@ -30,7 +30,27 @@ vi.mock('@tresjs/core', () => ({
           },
         })
       })
-      return () => h('canvas')
+      return () => h('div', [h('canvas'), slots.default?.()])
+    },
+  }),
+}))
+
+vi.mock('../app/scene/CinematicLights.vue', () => ({
+  default: defineComponent({
+    emits: ['ready'],
+    setup(_, { emit }) {
+      onMounted(() => emit('ready', {}))
+      return () => null
+    },
+  }),
+}))
+
+vi.mock('../app/scene/GroundPlane.vue', () => ({
+  default: defineComponent({
+    emits: ['ready'],
+    setup(_, { emit }) {
+      onMounted(() => emit('ready', {}))
+      return () => null
     },
   }),
 }))
