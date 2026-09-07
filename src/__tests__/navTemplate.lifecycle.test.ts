@@ -117,4 +117,30 @@ describe('menu lifecycle visibility reconciliation', () => {
     expect(detachedToggle.dataset.jlzVisibilityBound).toBeUndefined()
     expect(emit).toHaveBeenCalledWith('jlz:navigate', { path: '/manifesto' })
   })
+
+  it('lets the browser navigate for static documents instead of a dead SPA no-op', () => {
+    // The blog index/articles are prerendered documents outside the route
+    // manifest: preventDefault + jlz:navigate would be silently dropped by
+    // the strict router (a dead click), so the default navigation must survive.
+    const content = document.createElement('main')
+    content.id = 'spa-content'
+    const nav = document.createElement('ul')
+    nav.className = 'jlz-menu-nav'
+    nav.innerHTML = `
+      <li><a class="jlz-menu-nav__sub-link" href="/blog/undercurrent-webgpu-fluid"
+        data-nav-href="/blog/undercurrent-webgpu-fluid">Undercurrent</a></li>
+    `
+    content.append(nav)
+    document.body.append(content)
+    initMenuLifecycle(content)
+
+    const emit = vi.spyOn(eventBus, 'emit')
+    const link = nav.querySelector<HTMLAnchorElement>('.jlz-menu-nav__sub-link')!
+    const event = new MouseEvent('click', { bubbles: true, cancelable: true })
+    link.dispatchEvent(event)
+
+    expect(event.defaultPrevented).toBe(false)
+    expect(emit).not.toHaveBeenCalledWith('jlz:navigate', expect.anything())
+    expect(emit).toHaveBeenCalledWith('jlz:close-nav')
+  })
 })

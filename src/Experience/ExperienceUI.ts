@@ -336,7 +336,7 @@ export class ExperienceUI {
     }
     window.addEventListener('pointerup', this._worksPlaneTapHandler)
 
-    // ── Hash navigation from menu overlay (e.g. /manifesto#section-manifesto-02) ──
+    // ── Hash navigation from menu overlay (e.g. /manifesto#section-manifesto-clarity) ──
     // Dispatched by the router after renderView. CinematicNav finds
     // the target section by hash ID and activates it. Without this, menu
     // subsection clicks always land on section 1 (hash silently dropped).
