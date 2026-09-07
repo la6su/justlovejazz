@@ -22,6 +22,13 @@ the camera-aligned exhibit layer owns its explicitly positioned hit targets.
 
 ## Active engineering queue
 
+- [x] **Restore the orbital room composition** — `/services` now carries
+      three low-frequency orbit rings around the existing glass assembly. The
+      additive layer preserves UI readability, reduced-motion settlement,
+      explicit NodeMaterial disposal and backend parity; Manifesto keeps its
+      distinct ink/cube composition. Physical WebGL/WebGPU evidence is recorded
+      in `docs/TRES_FULL_TRANSITION.md`.
+
 ### World and project development
 
 - [x] **Create the single viewport fan-out** — `Sizes` is the only application
