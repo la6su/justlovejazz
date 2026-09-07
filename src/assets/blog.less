@@ -354,6 +354,26 @@ code[class*='language-'] {
   text-align: center;
 }
 
+.jlz-blog-social {
+  display: flex;
+  justify-content: center;
+  gap: var(--jlz-space-4);
+  padding: 0;
+  margin: 0 0 var(--jlz-space-2);
+  list-style: none;
+}
+
+.jlz-blog-social a {
+  display: inline-flex;
+  padding: 0.5rem;
+  color: var(--jlz-color-text-muted);
+  transition: color 260ms var(--jlz-ease-out-quint, ease-out);
+}
+
+.jlz-blog-social a:hover {
+  color: var(--jlz-color-signal-phosphor);
+}
+
 // ── Article reading field ──
 main.uk-section > article.uk-container-small {
   max-width: 48rem;
