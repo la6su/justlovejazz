@@ -2,7 +2,6 @@ import { PROJECTS } from '../Data/Projects'
 import { localizedProp, type BuilderLocale } from './localization'
 
 export const BUILDER_SOURCE_IDS = ['projects'] as const
-export type BuilderSourceId = (typeof BUILDER_SOURCE_IDS)[number]
 
 export const BUILDER_SOURCE_FIELDS = ['title', 'description', 'year', 'category'] as const
 export type BuilderSourceField = (typeof BUILDER_SOURCE_FIELDS)[number]

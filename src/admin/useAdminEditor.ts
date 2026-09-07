@@ -32,6 +32,7 @@ import UIkit from 'uikit'
 
 import { eventBus } from '../core/EventBus'
 import { getLang, type Lang } from '../core/i18n'
+import { prefersReducedMotion } from '../core/motionPolicy'
 import * as editorCommands from '../builder/commands'
 import { BUILDER_CATALOG, BUILDER_CATALOG_GROUPS } from '../builder/catalog'
 import { DEFAULT_BUILDER_DOCUMENT } from '../builder/default-document'
@@ -104,8 +105,7 @@ const isFormControl = (target: EventTarget | null): boolean => {
   return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || element.isContentEditable
 }
 
-const reducedMotion = (): boolean =>
-  typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+const reducedMotion = prefersReducedMotion
 
 export function useAdminEditor(
   elements: AdminEditorElements,
@@ -779,5 +779,3 @@ export function useAdminEditor(
     outlineHost,
   }
 }
-
-export type AdminEditor = ReturnType<typeof useAdminEditor>

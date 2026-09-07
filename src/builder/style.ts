@@ -597,10 +597,6 @@ export const STYLE_GROUPS: readonly StyleGroupDefinition[] = [
   },
 ]
 
-export const STYLE_GROUP_BY_ID = Object.fromEntries(
-  STYLE_GROUPS.map((group) => [group.id, group]),
-) as Record<StyleGroupId, StyleGroupDefinition>
-
 const COLOR_KEYS = new Set<BuilderThemeKey>(
   STYLE_GROUPS.flatMap((group) =>
     group.fields.filter((field) => field.type === 'color').map((field) => field.key),
