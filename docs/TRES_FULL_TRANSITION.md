@@ -2,6 +2,11 @@
 
 Status: active by product direction, 2026-09-07.
 
+Execution queue: [TRES_AUTONOMOUS_HANDOFF.md](TRES_AUTONOMOUS_HANDOFF.md).
+The 2026-09-08 user direction defers only WebGL device-loss restoration and
+continues bounded animated-owner composition work. Historical static-only
+admission stops below are superseded; implementation remains incomplete.
+
 The completed Phase 5–10 migration remains historical context. This document
 governs the subsequent transition of remaining scene composition from
 imperative owners into Vue/Tres components.
@@ -33,7 +38,8 @@ imperative owners into Vue/Tres components.
    recovery, resize and root teardown.
 3. **Section composition** — move stable groups and static geometry into small
    route-neutral components. Each component must own all of its geometry and
-   material resources; no borrowed-material primitive adapters.
+   material resources in the final state. Intermediate borrowed-resource
+   boundaries must name one disposal owner and test Tres unmount behavior.
 4. **Animated owners** — migrate `SplashCube`, particles, carousel and route
    stages only after their lifecycle controls become explicit component inputs.
    No `useLoop` callbacks while the project scheduler owns animation frames.
@@ -93,6 +99,12 @@ TSL or CPU deformation and explicit disposal. They remain imperative until a
 separate lifecycle adapter is measured and tested; the declarative path
 continues only for owners with static construction and no private animation or
 GPU ownership contract.
+
+The Works primitive characterization passed on 2026-09-08. Tres 5.8.3 retains
+the existing `WorksInstallation` parent/child transform under a primitive
+stage and does not dispose the controller-owned geometry, NodeMaterials or
+instanced buffer on primitive unmount. This proves the precondition for the
+next lazy attachment slice; it does not itself transfer scene ownership.
 
 The restored orbital-ring composition passed physical WebGLBackend and
 hardware WebGPUBackend gates on 2026-09-07, including reduced motion and idle

@@ -4,6 +4,7 @@ import { Experience } from '../Experience/Experience'
 import { SceneCoordinator, type SceneCoordinatorOwners } from '../Experience/SceneCoordinator'
 import { WorksPlaneStage } from '../Experience/World/WorksPlaneStage'
 import type { PageId } from '../sections/_shared/constants'
+import { getCurrentPage, setCurrentPage } from '../core/routePage'
 
 // Phase 8 slice 7: the /works case-plane stage lifecycle (lazy creation +
 // disposal) moved from World to Experience. Phase 8 slice 10: the `World`
@@ -51,17 +52,13 @@ describe('Experience works stage lifecycle', () => {
       contactCyprusStage: () => null,
       labGamepad: () => null,
     }
-    coordinator = new SceneCoordinator(
-      scene,
-      owners,
-      () => (document.body.dataset.page ?? 'home') as PageId,
-    )
+    coordinator = new SceneCoordinator(scene, owners, () => getCurrentPage() as PageId)
     exp.coordinator = coordinator
     return exp
   }
 
   beforeEach(() => {
-    document.body.dataset.page = 'works'
+    setCurrentPage('works')
     getContext = vi
       .spyOn(HTMLCanvasElement.prototype, 'getContext')
       .mockReturnValue(canvasContext as unknown as CanvasRenderingContext2D)
@@ -70,7 +67,7 @@ describe('Experience works stage lifecycle', () => {
 
   afterEach(() => {
     getContext.mockRestore()
-    delete document.body.dataset.page
+    setCurrentPage('home')
   })
 
   it('releases a Works stage that finishes after the route was disposed', async () => {
@@ -110,7 +107,7 @@ describe('Experience works stage lifecycle', () => {
       expect(stage).toBeInstanceOf(WorksPlaneStage)
 
       // Leaving /works disposes the owner and clears the field.
-      document.body.dataset.page = 'home'
+      setCurrentPage('home')
       exp.disposeWorksPlaneStage()
       expect(coordinator.worksPlaneStage).toBeNull()
       expect(disposeSpy).toHaveBeenCalledTimes(1)

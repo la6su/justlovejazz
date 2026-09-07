@@ -1,5 +1,10 @@
 # Post-migration autonomous plan
 
+Superseded for execution by [TRES_AUTONOMOUS_HANDOFF.md](TRES_AUTONOMOUS_HANDOFF.md).
+The user deferred WebGL device-loss testing and authorized continued animated
+owner migration. The static-only stop below is historical, not an execution
+blocker. Completed CI and route soak do not complete the remaining migration.
+
 This plan extends the completed Vue/TresJS migration while preserving the
 single canvas, renderer and animation-loop ownership boundaries.
 

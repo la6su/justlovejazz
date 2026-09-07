@@ -22,6 +22,11 @@ the camera-aligned exhibit layer owns its explicitly positioned hit targets.
 
 ## Active engineering queue
 
+Priority: execute [the autonomous Tres handoff](docs/TRES_AUTONOMOUS_HANDOFF.md),
+starting with the Works parent/disposal characterization, then lazy attachment
+and declarative installation geometry. WebGL device-loss restoration is deferred
+by the user; it does not block these tasks and is not a passed gate.
+
 - [x] **Restore the orbital room composition** — `/services` now carries
       three low-frequency orbit rings around the existing glass assembly. The
       additive layer preserves UI readability, reduced-motion settlement,
@@ -1061,9 +1066,9 @@ Theme ownership and visual rules: [`docs/THEME.md`](docs/THEME.md).
 ## Engineering policy
 
 - [ ] **Execute the post-migration autonomous plan** — follow
-      `docs/POST_MIGRATION_AUTONOMY_PLAN.md`: close the physical WebGL gate,
-      strengthen route configuration and demand assertions, then admit only
-      measured static Tres owner slices.
+      `docs/TRES_AUTONOMOUS_HANDOFF.md`: implement the three Works iterations,
+      then proceed through the owner queue with lifecycle and backend evidence.
+      The prior static-only admission restriction is superseded.
   - [x] Route/config and demand lifecycle replay passed 20 steady-state cycles
         on forced `WebGLBackend`; the report records one canvas, no fatal errors,
         stable resource caps and root-destroy baseline in
