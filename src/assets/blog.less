@@ -27,6 +27,9 @@ body {
 }
 
 // ── Terminal details — the same voice as the SPA chrome ──
+// Intentional duplication: the blog is a standalone document bundle that
+// does not load the app chrome, so this rule is maintained here AND in
+// components/_console-language.less (the app owner).
 ::selection {
   background: var(--jlz-color-signal-phosphor);
   color: var(--jlz-color-text-inverse);
