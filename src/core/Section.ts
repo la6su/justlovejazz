@@ -46,7 +46,6 @@ export class Section {
   }
 
   private stateChannel: string
-  private opacityChannel: string
 
   constructor(
     config: PhaseConfig,
@@ -55,7 +54,6 @@ export class Section {
     this.name = `section-${config.id}`
     this.phaseConfig = config
     this.stateChannel = `section:${config.id}:state`
-    this.opacityChannel = `section:${config.id}:opacity`
     this.visible = false
 
     // Extract transforms from PhaseConfig
@@ -87,7 +85,6 @@ export class Section {
 
     const bus = StateBus.getInstance()
     bus.channel(this.stateChannel, STATE_VALUE[SectionState.READY])
-    bus.channel(this.opacityChannel, 0)
     // Listen for animation completion to sync _state. When the animate()
     // completes, StateBus emits 'done:${name}' and we resolve _state.
     this._stateDoneHandler = (_eventName: string, data: unknown) => {
@@ -121,27 +118,19 @@ export class Section {
     }
   }
 
-  public fadeIn(duration: number = 0.8): void {
-    if (this._disposed) return
-    StateBus.getInstance().animate(this.opacityChannel, 1, duration, 'easeOutQuart')
-  }
-
   private applyState(reduced: boolean = false): void {
     switch (this._state) {
       case SectionState.READY:
         this.visible = false
         this.setTransforms(0.9, -0.15, reduced)
-        this.setMeshOpacity(0)
         break
       case SectionState.VIEWING:
         this.visible = true
-        this.applyOpacity()
         this.setTransforms(1.0, 0, reduced)
         break
       case SectionState.PASSED:
         this.visible = false
         this.setTransforms(1.15, 0.1, reduced)
-        this.setMeshOpacity(0)
         break
     }
   }
@@ -149,15 +138,6 @@ export class Section {
   private setTransforms(scale: number, ry: number, reduced: boolean = false): void {
     this.scale.setScalar(scale)
     this.rotation.y = reduced ? 0 : ry
-  }
-
-  private applyOpacity(): void {
-    this.setMeshOpacity(StateBus.getInstance().get(this.opacityChannel))
-  }
-
-  private setMeshOpacity(_value: number): void {
-    // Section has no renderable children. SectionGroups owns visible meshes
-    // and their opacity reconciliation.
   }
 
   public forceState(state: SectionState, reduced: boolean = false): void {
@@ -173,12 +153,10 @@ export class Section {
     this._disposed = true
     const bus = StateBus.getInstance()
     bus.cancel(this.stateChannel)
-    bus.cancel(this.opacityChannel)
     if (this._stateDoneHandler) {
       bus.off(`done:${this.stateChannel}`, this._stateDoneHandler)
       this._stateDoneHandler = null
     }
     bus.removeChannel(this.stateChannel)
-    bus.removeChannel(this.opacityChannel)
   }
 }

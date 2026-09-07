@@ -32,14 +32,10 @@ describe('StateBus completion contract', () => {
     const section = new Section(config, 1)
     const bus = StateBus.getInstance()
     const stateChannel = `section:${config.id}:state`
-    const opacityChannel = `section:${config.id}:opacity`
-
     expect(bus.hasChannel(stateChannel)).toBe(true)
-    expect(bus.hasChannel(opacityChannel)).toBe(true)
     section.dispose()
 
     expect(bus.hasChannel(stateChannel)).toBe(false)
-    expect(bus.hasChannel(opacityChannel)).toBe(false)
   })
 
   it('drops an empty listener bucket after the last unsubscribe', () => {

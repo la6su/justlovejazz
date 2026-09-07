@@ -113,6 +113,11 @@ WebGPUBackend gates still report one canvas, settled zero demand and clean
 teardown: `docs/evidence/phase7-live-gate/2026-09-07T20-57-19-008Z-report.json`
 and `docs/evidence/phase7-live-gate/2026-09-07T20-58-50-811Z-report.json`.
 
+The subsequent opacity-channel removal also passed the 20-cycle WebGL route
+soak and the hardware WebGPU live gate:
+`docs/evidence/phase10-route-cycle-soak/2026-09-07T21-00-03-653Z-report.json`
+and `docs/evidence/phase7-live-gate/2026-09-07T21-04-16-394Z-report.json`.
+
 ## Validation baseline — 2026-09-07
 
 This slice passed TypeScript, Vue type checks, ESLint with zero errors,

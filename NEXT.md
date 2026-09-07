@@ -986,10 +986,10 @@ Theme ownership and visual rules: [`docs/THEME.md`](docs/THEME.md).
       ordering.
 - [x] **Retire the empty `Section` scene owners** — `Section` now retains only
       route transition data and StateBus channels; it is no longer a
-      `THREE.Group`, is never attached to the scene, and performs no mesh
-      traversal or GPU disposal. `SectionGroups` remains the sole renderable
-      section owner, while coordinator state transitions and reduced-motion
-      semantics remain covered by lifecycle tests.
+      `THREE.Group`, is never attached to the scene, and performs no mesh,
+      opacity-channel or GPU disposal work. `SectionGroups` remains the sole
+      renderable section owner, while coordinator state transitions and
+      reduced-motion semantics remain covered by lifecycle tests.
 - [x] **Audit the pointer-ink stage twins** — `ContactHaloStage` and
       `ManifestoInkStage` share lifecycle shape, but their TSL graphs,
       geometry, palette, damping and visual contracts are intentionally
