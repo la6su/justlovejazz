@@ -137,6 +137,9 @@ async function mountWorksPlaneStage(stage: WorksPlaneStage): Promise<void> {
 async function unmountWorksPlaneStage(stage: WorksPlaneStage): Promise<void> {
   if (declarativeWorksStage.value !== stage) return
   declarativeWorksStage.value = null
+  // The installation is a child of this stage. Clear the child boundary with
+  // its parent so a later stage can never inherit a retired installation.
+  declarativeWorksInstallation.value = null
   await nextTick()
 }
 

@@ -113,7 +113,13 @@ vi.mock('../app/scene/EnvSky.vue', () => ({
 vi.mock('../app/scene/WorksStageOwner.vue', () => ({
   default: defineComponent({
     props: { stage: Object, installation: Object },
-    render: () => null,
+    setup(props) {
+      return () =>
+        h('div', {
+          'data-stage-mounted': props.stage ? 'true' : 'false',
+          'data-installation-mounted': props.installation ? 'true' : 'false',
+        })
+    },
   }),
 }))
 
@@ -166,8 +172,33 @@ describe('SceneHost async lifecycle', () => {
     await flushPromises()
 
     const host = await sceneHost.ready
-    expect(host.mountWorksPlaneStage).toBeTypeOf('function')
-    expect(host.unmountWorksPlaneStage).toBeTypeOf('function')
+    const stage =
+      new THREE.Group() as unknown as import('../Experience/World/WorksPlaneStage').WorksPlaneStage
+    const installation =
+      new THREE.Group() as unknown as import('../Experience/World/WorksInstallation').WorksInstallation
+    await host.mountWorksPlaneStage(stage)
+    await host.mountWorksInstallation(stage, installation)
+    expect(
+      document
+        .querySelector('[data-stage-mounted="true"]')
+        ?.getAttribute('data-installation-mounted'),
+    ).toBe('true')
+
+    const staleStage =
+      new THREE.Group() as unknown as import('../Experience/World/WorksPlaneStage').WorksPlaneStage
+    await host.unmountWorksPlaneStage(staleStage)
+    expect(
+      document
+        .querySelector('[data-stage-mounted="true"]')
+        ?.getAttribute('data-installation-mounted'),
+    ).toBe('true')
+
+    await host.unmountWorksPlaneStage(stage)
+    expect(
+      document
+        .querySelector('[data-stage-mounted="false"]')
+        ?.getAttribute('data-installation-mounted'),
+    ).toBe('false')
     wrapper.unmount()
   })
 
