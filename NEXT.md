@@ -9,9 +9,11 @@ checklists are available in Git before this documentation consolidation.
 - [ ] Validate ownership teardown: host-first/runtime-first unmount, stale
       primitive replacement, exactly-once geometries/materials/instance cleanup.
       User-reported Contact instability remains unverified visually.
-- [ ] Consolidate deterministic checks: reuse existing Bun and CI commands;
-      short summaries, full log artifacts, targeted checks during edits and one
-      full release gate. No new dependency or recurring model polling.
+- [x] Consolidate deterministic checks: reuse existing Bun and CI commands;
+      targeted checks during edits and one full release gate. On 2026-09-08 the
+      local gate passed format, lint (0 errors), TypeScript, Vue TypeScript,
+      production build, budgets, 705 unit tests and serial Playwright (23
+      passed, 1 expected skip). No new dependency or recurring model polling.
 - [ ] Complete Services declarative geometry as a separate optional slice.
       ServicesStageGeometry.vue currently creates meshes in onMounted; its Vue
       lifecycle wrapper is not fully declarative composition.
