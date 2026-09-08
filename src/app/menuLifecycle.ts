@@ -6,7 +6,6 @@
 export function initMenuLifecycle(routeRoot: HTMLElement): () => void {
   const nav = routeRoot.querySelector('.jlz-menu-nav')
   const abortController = new AbortController()
-  let disposed = false
   if (!nav) return () => abortController.abort()
 
   nav.querySelectorAll<HTMLAnchorElement>('.jlz-menu-nav__toggle').forEach((toggle) => {
@@ -23,8 +22,6 @@ export function initMenuLifecycle(routeRoot: HTMLElement): () => void {
   })
 
   return () => {
-    if (disposed) return
-    disposed = true
     abortController.abort()
   }
 }
