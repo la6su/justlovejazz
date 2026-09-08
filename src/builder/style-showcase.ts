@@ -106,7 +106,7 @@ const showcaseSections: Record<StyleGroupId, string> = {
   image: `
     <section class="jlz-style-sample" data-style-sample="image">
       <span class="jlz-style-eyebrow">Image / responsive media</span>
-      <img class="jlz-builder-image" src="/assets/projects/velvet-echo/cover.webp" alt="Velvet Echo cover" />
+      <img class="jlz-builder-image" src="/assets/projects/ebb-vibes/cover.webp" alt="Project cover placeholder" />
     </section>`,
   video: `
     <section class="jlz-style-sample" data-style-sample="video">

@@ -76,7 +76,7 @@ const open = (idx: number): void => eventBus.emit('jlz:open-project', { idx })
           </button>
           <footer class="jlz-works-footnote">
             <span data-i18n="works.experiment"
-              >Independent study / art direction + creative development</span
+              >Selected work / art direction + creative development</span
             >
             <span class="jlz-works-scroll" data-i18n="works.continue"
               >Scroll to the next world ↓</span

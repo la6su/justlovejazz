@@ -26,7 +26,7 @@ const labels = computed(() =>
     ? {
         back: 'Все работы',
         chapters: ['Замысел', 'Устройство', 'Материал', 'Вывод'],
-        study: 'Студийный эксперимент',
+        study: 'Избранная работа',
         role: 'Роль',
         question: 'Отправная точка.',
         response: 'Решение',
@@ -37,12 +37,12 @@ const labels = computed(() =>
         next: 'Продолжить исследование',
         contact: 'Обсудить похожий проект',
         unavailable: 'Кейс ещё не подготовлен',
-        status: 'Авторский прототип. Описание и доказательства проходят редакционную проверку.',
+        status: 'Материалы проекта готовятся к публикации.',
       }
     : {
         back: 'All works',
         chapters: ['Intent', 'System', 'Material', 'Reflection'],
-        study: 'Independent study',
+        study: 'Selected work',
         role: 'Role',
         question: 'The starting point.',
         response: 'The response',
@@ -53,7 +53,7 @@ const labels = computed(() =>
         next: 'Continue exploring',
         contact: 'Discuss a similar project',
         unavailable: 'Case study not yet available',
-        status: 'Independent prototype. Editorial claims and evidence are under review.',
+        status: 'Project material is being prepared for publication.',
       },
 )
 const related = computed(() => CASE_STUDIES.filter((item) => item.projectId !== projectId.value))
