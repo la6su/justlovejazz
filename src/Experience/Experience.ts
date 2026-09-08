@@ -97,6 +97,8 @@ export interface ExperienceHost {
   unmountWorksPlaneStage(stage: WorksPlaneStage): Promise<void>
   mountWorksInstallation(stage: WorksPlaneStage, installation: WorksInstallation): Promise<void>
   unmountWorksInstallation(stage: WorksPlaneStage, installation: WorksInstallation): Promise<void>
+  mountContactHaloStage(stage: ContactHaloStage): Promise<void>
+  unmountContactHaloStage(stage: ContactHaloStage): Promise<void>
 }
 
 interface ReadinessGate {
@@ -762,16 +764,14 @@ export class Experience {
         import('./World/ContactHaloStage').then(({ ContactHaloStage }) =>
           isCurrent() ? new ContactHaloStage() : null,
         ),
-      attach: (stage) => {
-        this.scene.add(stage)
-      },
+      attach: (stage) => this._host.mountContactHaloStage(stage),
       configure: (stage) => {
         stage.setTheme(this._contactIsLight)
         stage.setReducedMotion(this._reducedMotion)
         stage.setActive(this.currentPage() === 'contact')
       },
       release: (stage) => {
-        stage.removeFromParent()
+        void this._host.unmountContactHaloStage(stage)
         stage.dispose()
       },
     }

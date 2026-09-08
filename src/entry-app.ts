@@ -423,6 +423,8 @@ async function boot(): Promise<BootResult> {
         unmountWorksPlaneStage: (stage) => host.unmountWorksPlaneStage(stage),
         mountWorksInstallation: (stage, installation) =>
           host.mountWorksInstallation(stage, installation),
+        mountContactHaloStage: (stage) => host.mountContactHaloStage(stage),
+        unmountContactHaloStage: (stage) => host.unmountContactHaloStage(stage),
         unmountWorksInstallation: (stage, installation) =>
           host.unmountWorksInstallation(stage, installation),
       },
