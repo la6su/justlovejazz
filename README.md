@@ -44,9 +44,9 @@ The full quality gate is documented in
 | `/blog` and `/blog/[slug]` | Standalone prerendered blog pages |
 
 Each SPA route uses the same six-face navigation model: four visible main
-sections plus auxiliary Lab and Menu slots. Routes support section deep links,
-for example `/services#section-services-creativeDirection`. The pending flat-menu
-change exposes top-level routes without removing section URLs.
+sections plus auxiliary Lab and Menu slots. The flat menu exposes top-level
+routes, while direct section URLs remain supported, for example
+`/services#section-services-creativeDirection`.
 
 ## Runtime at a glance
 

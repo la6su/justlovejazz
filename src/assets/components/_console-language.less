@@ -493,15 +493,13 @@ body[data-cinematic-sheet='menu'] .jlz-menu-preview {
 }
 
 .jlz-menu-overlay .jlz-menu-nav__toggle:hover,
-.jlz-menu-overlay .jlz-menu-nav__toggle:focus-visible,
-.jlz-menu-overlay .jlz-menu-nav__item.uk-open > .jlz-menu-nav__toggle {
+.jlz-menu-overlay .jlz-menu-nav__toggle:focus-visible {
   padding-left: 1.3rem;
   color: var(--jlz-color-text);
 }
 
 .jlz-menu-overlay .jlz-menu-nav__toggle:hover::before,
-.jlz-menu-overlay .jlz-menu-nav__toggle:focus-visible::before,
-.jlz-menu-overlay .jlz-menu-nav__item.uk-open > .jlz-menu-nav__toggle::before {
+.jlz-menu-overlay .jlz-menu-nav__toggle:focus-visible::before {
   opacity: 1;
   transform: translate(0, -50%);
 }
@@ -537,14 +535,8 @@ body[data-cinematic-sheet='menu'] .jlz-menu-preview {
   opacity: 1;
 }
 
-.jlz-menu-nav__item.uk-open .jlz-menu-nav__arrow {
-  color: var(--jlz-color-signal-phosphor);
-  opacity: 1;
-  transform: rotate(90deg);
-}
-
 .jlz-menu-overlay .jlz-menu-nav__toggle:hover .jlz-menu-nav__num,
-.jlz-menu-overlay .jlz-menu-nav__item.uk-open .jlz-menu-nav__num {
+.jlz-menu-overlay .jlz-menu-nav__toggle:focus-visible .jlz-menu-nav__num {
   color: var(--jlz-color-signal-phosphor);
 }
 
@@ -575,62 +567,6 @@ body[data-cinematic-sheet='menu'] .jlz-menu-nav__item:nth-child(6) .jlz-menu-nav
 
 body[data-cinematic-sheet='menu'] .jlz-menu-nav__item:nth-child(7) .jlz-menu-nav__toggle {
   transition-delay: 390ms;
-}
-
-.jlz-menu-nav__subs {
-  gap: 0.125rem;
-}
-
-.jlz-menu-nav__sub-link {
-  gap: var(--jlz-space-2);
-  padding: 0.4rem var(--jlz-space-2);
-  border-radius: 0;
-  color: var(--jlz-color-text-subtle);
-  font-size: 0.85rem;
-  font-weight: 500;
-  text-decoration: none;
-  transition:
-    color 0.2s ease,
-    background 0.2s ease,
-    padding-left 0.2s ease;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.jlz-menu-nav__sub-link:hover,
-.jlz-menu-nav__sub-link:focus-visible {
-  padding-left: @global-small-margin;
-  color: var(--jlz-color-signal-phosphor);
-  background: var(--jlz-color-signal-phosphor-muted);
-  outline: none;
-}
-
-.jlz-menu-nav__sub-num {
-  flex-shrink: 0;
-  color: var(--jlz-color-text-subtle);
-  font-size: 0.6rem;
-  font-weight: 600;
-  opacity: 0.6;
-}
-
-.jlz-menu-nav__sub-link:hover .jlz-menu-nav__sub-num {
-  color: var(--jlz-color-signal-phosphor);
-  opacity: 1;
-}
-
-.jlz-menu-nav__sub-arrow {
-  color: var(--jlz-color-text-subtle);
-  font-size: 0.75rem;
-  opacity: 0;
-  transform: translateX(-3px);
-  transition:
-    opacity 0.2s ease,
-    transform 0.2s ease;
-}
-
-.jlz-menu-nav__sub-link:hover .jlz-menu-nav__sub-arrow {
-  color: var(--jlz-color-signal-phosphor);
-  opacity: 1;
-  transform: translateX(0);
 }
 
 // ── Bottom status: signal, contact launcher, storyline ──
@@ -857,12 +793,6 @@ body[data-cinematic-sheet] .jlz-console-bar {
 
   .jlz-menu-overlay .jlz-menu-nav__label {
     font-size: clamp(@jlz-type-step-2, 8vw, @jlz-type-step-3); // φ steps 2–3
-  }
-
-  .jlz-menu-nav__subs {
-    padding-top: 0.25rem;
-    padding-bottom: 0.5rem;
-    padding-left: var(--jlz-space-4);
   }
 }
 
