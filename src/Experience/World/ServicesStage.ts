@@ -20,6 +20,7 @@ export class ServicesStage extends THREE.Group {
   ]
   private readonly targets = Array.from({ length: 7 }, () => new THREE.Vector3())
   private readonly worldPosition = new THREE.Vector3()
+  private readonly offset = new THREE.Vector3()
   private state = -1
   private settled = true
 
@@ -88,13 +89,9 @@ export class ServicesStage extends THREE.Group {
       ring.rotation.y += dt * (0.08 + index * 0.025)
     })
     this.scale.setScalar(scale)
-    const offset = new THREE.Vector3(
-      mobile ? 0 : height * camera.aspect * 0.22,
-      mobile ? height * 0.05 : 0,
-      -5,
-    )
-    offset.applyQuaternion(camera.quaternion)
-    this.position.add(offset)
+    this.offset.set(mobile ? 0 : height * camera.aspect * 0.22, mobile ? height * 0.05 : 0, -5)
+    this.offset.applyQuaternion(camera.quaternion)
+    this.position.add(this.offset)
   }
 
   dispose(): void {

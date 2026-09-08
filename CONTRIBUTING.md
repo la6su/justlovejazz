@@ -30,7 +30,7 @@ result and verification in the PR.
 
 ## Migration changes
 
-The Vue/TresJS program uses `tres-vue-dev` as its integration branch. A pull
+Use a scoped branch from current `main`; inspect remote state before starting. A pull
 request or commit should complete one migration phase, experiment or bounded
 owner slice. Do not replace the router, renderer and scene owners in the same
 change. Keep the current path available until the replacement passes its named
@@ -49,9 +49,8 @@ A migration change documents and verifies the relevant parts of this matrix:
 - listener, timer, async-load and GPU-resource disposal;
 - startup, bundle, frame-time and idle-render differences.
 
-Do not add commands to documentation before the matching script exists. After
-Vue SFC tooling lands, the release gate will add Vue type and component checks
-through the scripts recorded in `package.json`.
+Do not add commands before the matching script exists. Vue SFC tooling is
+installed: run `bun run type-check:vue` alongside the checks in DEVELOPMENT.md.
 
 ## Report an issue
 

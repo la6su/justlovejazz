@@ -1,5 +1,9 @@
 # Bounded TresJS hybrid experiments
 
+Historical experiment record: the decisions and queues below describe their
+dated revisions, not current instructions. Use [NEXT](../NEXT.md) for work and
+[transition status](TRES_FULL_TRANSITION.md) for current ownership/evidence.
+
 Status: limited hybrid path. Audited and first production slice admitted
 2026-09-07. Implementation proceeds one bounded outcome at a time.
 

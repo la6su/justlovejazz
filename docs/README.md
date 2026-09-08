@@ -1,29 +1,44 @@
-# Documentation map
+# Documentation
 
-Keep each fact with the source that owns it:
+Choose the question you need answered. Reading every document is unnecessary.
 
-| Source                                                         | Purpose                                           |
-| -------------------------------------------------------------- | ------------------------------------------------- |
-| [ARCHITECTURE.md](ARCHITECTURE.md)                             | Stable boundaries and runtime contracts           |
-| [archive/MIGRATION_VUE_TRES.md](archive/MIGRATION_VUE_TRES.md) | Completed migration record and acceptance history |
-| [adr/](adr/)                                                   | Durable architecture decisions                    |
-| [DEVELOPMENT.md](DEVELOPMENT.md)                               | Setup, verification and performance budgets       |
-| [PERFORMANCE_BASELINE.md](PERFORMANCE_BASELINE.md)             | Comparable delivery/runtime evidence              |
-| [BRAND.md](BRAND.md)                                           | Visual and editorial direction                    |
-| [PAGE_BUILDER.md](PAGE_BUILDER.md)                             | Dev-only UIkit builder and compile boundary       |
-| [CHANGELOG.md](CHANGELOG.md)                                   | Released user-visible or operational changes      |
-| [evidence/](evidence/)                                         | Machine-readable gate reports and visual evidence |
-| [agents/](agents/)                                             | Private agent-operation workflow (no credentials) |
-| [../NEXT.md](../NEXT.md)                                       | Open outcomes                                     |
-| [../skills](../skills)                                         | Procedures loaded for matching tasks              |
+| Question                              | Source                                                                                            |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| How do I start the project?           | [Project README](../README.md)                                                                    |
+| What should we do next?               | [NEXT](../NEXT.md) — the only task queue                                                          |
+| Where did the agent stop?             | [Resume checkpoint](../AGENT_HANDOFF.md)                                                          |
+| How do I test and release?            | [Development](DEVELOPMENT.md)                                                                     |
+| Who owns a runtime responsibility?    | [Architecture](ARCHITECTURE.md)                                                                   |
+| What is actually migrated to Tres?    | [Transition status](TRES_FULL_TRANSITION.md)                                                      |
+| How should the product look and read? | [Brand](BRAND.md), [theme](THEME.md)                                                              |
+| How does the page builder work?       | [Page builder](PAGE_BUILDER.md)                                                                   |
+| What rules should an agent follow?    | [AGENTS](../AGENTS.md), [workflow](agents/README.md)                                              |
+| Why was a decision made?              | [ADRs](adr/README.md)                                                                             |
+| What was measured or released?        | [Evidence](evidence/README.md), [performance](PERFORMANCE_BASELINE.md), [changelog](CHANGELOG.md) |
 
-`docs/` is the project reference layer. Agent-operation procedures live in
-the repository skills and the private homelab runbooks, not in the migration
-record. Historical evidence is preserved under `archive/` and `evidence/`.
+## Historical references
 
-Current source, configuration and tests lead when documentation drifts.
-Accepted ADRs explain why durable boundaries exist; `NEXT.md` is the only
-active outcome queue. `WORKLOG.md` remains historical context rather than a
-required session log. The vendored reference source under `references/` was
-removed from the repository; upstream next.junni.co.jp remains the credited
-design lineage.
+[Foundational migration](archive/MIGRATION_VUE_TRES.md),
+[hybrid experiments](TRES_HYBRID_EXPERIMENTS.md) and
+[post-migration audit](TRES_POST_MIGRATION_AUDIT.md) describe their dated state.
+They are not active task queues or instructions to repeat completed work.
+Older handoff and autonomy-plan URLs remain short pointers for existing links.
+
+## Maintenance rules
+
+- Keep each fact in one place and link to it. Tasks belong only in NEXT;
+  handoff contains only unfinished state; architecture contains runtime contracts.
+- Update affected documentation with its code change. Remove completed tasks;
+  use changelog/evidence only when they add durable information.
+- Source and configuration win over prose. Link commands to DEVELOPMENT and
+  dependencies to package.json instead of copying lists into multiple guides.
+- Evidence names the revision, environment and limitations. A historical PASS
+  never proves a later change passed; skipped cases remain skipped.
+- Keep dated records intact. Do not rewrite historic measurements as current.
+- Agents read AGENTS, NEXT and the small handoff first; load reference headings
+  only for the task. Do not create another plan or status file for each session.
+- Review local links after moving files. A documentation-only change needs
+  formatting/link checks, not a repeated GPU or full browser gate.
+
+Large technical references are intentionally consulted by topic. Further
+condensation is queued in NEXT rather than claiming all prose has been verified.

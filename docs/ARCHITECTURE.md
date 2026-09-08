@@ -643,9 +643,10 @@ according to their current measured policy.
   subscriptions, watchdogs, splash timers and title observation before the
   next attempt binds them again.
 - `initMenuLifecycle()` returns the disposer for the app-owned menu bindings;
-  `useJlzPage` invokes it before route-root unmount. Pending visibility RAFs are
-  cancelled together with subsection/toggle listeners, while UIkit-owned
-  accordion behavior remains outside this disposer.
+  `useJlzPage` invokes it before route-root unmount. It owns preview hover/focus
+  listeners only; the flat menu uses direct anchors, while accordion markup and
+  delayed visibility RAFs are absent. Route transitions use the shared
+  navigation handler.
 - `RouteTransition` is cancelled from the Vue Router error port; failed async
   navigation must invalidate pending reveal work and return the transition
   surface to `idle`.

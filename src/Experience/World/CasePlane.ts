@@ -24,7 +24,21 @@ import { prefersReducedMotion } from '../../core/motionPolicy'
 
 // Shared geometry — reused by all CasePlane instances (GPU buffer, not uniforms).
 // 20×12 segments for smooth cloth deformation without excessive vertex count.
-const sharedGeometry = new THREE.PlaneGeometry(1, 9 / 16, 20, 12)
+let sharedGeometry: THREE.PlaneGeometry | null = null
+let sharedGeometryUsers = 0
+
+function acquireGeometry(): THREE.PlaneGeometry {
+  sharedGeometry ??= new THREE.PlaneGeometry(1, 9 / 16, 20, 12)
+  sharedGeometryUsers += 1
+  return sharedGeometry
+}
+
+function releaseGeometry(): void {
+  sharedGeometryUsers -= 1
+  if (sharedGeometryUsers !== 0) return
+  sharedGeometry?.dispose()
+  sharedGeometry = null
+}
 
 /**
  * Unified cloth wobble animation parameters.
@@ -114,7 +128,7 @@ export class CasePlane extends THREE.Mesh {
       return state.x
     })()
 
-    super(sharedGeometry, mat)
+    super(acquireGeometry(), mat)
     this._texture = mapTexture
     this.name = 'works-case-plane'
     this.frustumCulled = false
@@ -183,9 +197,11 @@ export class CasePlane extends THREE.Mesh {
   dispose(): void {
     if (this._disposed) return
     this._disposed = true
-    // Dispose per-instance material (geometry is shared — don't dispose).
+    // Dispose the per-instance material and release the shared geometry when
+    // the final card owner retires.
     const mat = this.material as MeshBasicNodeMaterial
     mat.dispose()
+    releaseGeometry()
     this.removeFromParent()
   }
 }

@@ -43,4 +43,32 @@ describe('UIMenu UIkit ownership', () => {
     expect(update).toHaveBeenLastCalledWith(soundIcon)
     menu.dispose()
   })
+
+  it('keeps one close action while fullscreen owns interaction', () => {
+    const menu = new UIMenu() as unknown as MenuInternals
+    const launcher = menu.navEl.querySelector<HTMLButtonElement>('#jlz-menu-launcher')!
+    const brand = menu.navEl.querySelector<HTMLElement>('.jlz-topbar__brand')!
+    const consoleBar = menu.navEl.querySelector<HTMLElement>('.jlz-console-bar')!
+    const closeLayer = vi.fn()
+    const unsubscribe = eventBus.on('jlz:close-media-layer', closeLayer)
+
+    eventBus.emit('jlz:fullscreen-change', { open: true })
+    expect(menu.navEl.classList.contains('is-fullscreen-open')).toBe(true)
+    expect(launcher.textContent).toContain('Close')
+    expect(launcher.getAttribute('aria-label')).toBe('Close')
+    expect(brand.getAttribute('aria-hidden')).toBe('true')
+    expect(brand.inert).toBe(true)
+    expect(consoleBar.getAttribute('aria-hidden')).toBe('true')
+    expect(consoleBar.inert).toBe(true)
+    launcher.click()
+    expect(closeLayer).toHaveBeenCalledOnce()
+
+    eventBus.emit('jlz:fullscreen-change', { open: false })
+    expect(menu.navEl.classList.contains('is-fullscreen-open')).toBe(false)
+    expect(launcher.textContent).toContain('Menu')
+    expect(brand.getAttribute('aria-hidden')).toBe('false')
+    expect(brand.inert).toBe(false)
+    unsubscribe()
+    menu.dispose()
+  })
 })

@@ -15,7 +15,13 @@ describe('WorksInstallation project direction', () => {
     const ticks = new THREE.InstancedMesh(new THREE.BoxGeometry(), material, 48)
     arcs.forEach((arc) => assembly.add(arc))
     assembly.add(trace, ticks)
-    installation.adopt({ assembly, arcs, trace, ticks })
+    const retiredNodes = { assembly: new THREE.Group(), arcs: [], trace, ticks }
+    installation.adopt(retiredNodes)
+    const nodes = { assembly, arcs, trace, ticks }
+    installation.adopt(nodes)
+    installation.release(retiredNodes)
+    installation.setCameraLocalLayout(1, 2, 3, 1)
+    expect(assembly.position.toArray()).toEqual([1, 2, 3])
     installation.setProject(0)
     expect(ticks.visible).toBe(true)
 

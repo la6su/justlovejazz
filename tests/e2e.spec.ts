@@ -352,7 +352,7 @@ test.describe('JustLoveJazz — accessibility & DOM UI', () => {
     await page.goto('/')
 
     // UIMenu injects top-bar controls. The menu is rendered in runtime section 5
-    // and uses .jlz-menu-nav__sub-link anchors. UIMenu is only constructed after
+    // and uses direct top-level route anchors. UIMenu is only constructed after
     // the Experience finishes init() — which requires WebGPU or WebGL2. In
     // headless CI without a real GPU this may never happen, so skip gracefully.
     const soundToggle = page.locator('#jlz-sound-toggle')
@@ -380,21 +380,18 @@ test.describe('JustLoveJazz — accessibility & DOM UI', () => {
     await expect(themeToggle).toHaveAttribute('aria-pressed', 'false')
     await expect(themeToggle).toHaveAttribute('title', 'Theme: auto')
 
-    // The navigation template exposes section links plus a direct Blog route.
-    const links = page.locator('.jlz-menu-nav__sub-link')
+    // The navigation template exposes exactly the seven top-level routes.
+    const links = page.locator('.jlz-menu-nav__direct-link')
     await expect(links.first()).toBeAttached({ timeout: 5000 })
     const count = await links.count()
-    expect(count).toBeGreaterThanOrEqual(24)
+    expect(count).toBe(7)
 
-    await expect(
-      page.locator('.jlz-menu-nav__sub-link[data-nav-href="/lab#section-lab-01"]'),
-    ).toHaveCount(1)
+    await expect(page.locator('.jlz-menu-nav__direct-link[href="/lab"]')).toHaveCount(1)
     await expect(
       page.locator('.jlz-menu-nav__direct-link[href="/blog"][data-page-transition]'),
     ).toHaveCount(1)
 
-    const firstLinkHref = await links.first().getAttribute('data-nav-href')
-    expect(firstLinkHref).toMatch(/^\//)
+    await expect(links.first()).toHaveAttribute('href', '/')
   })
 
   test('keyboard: Tab from top of page reaches the skip link first', async ({ page }) => {
@@ -457,10 +454,8 @@ test.describe('JustLoveJazz — accessibility & DOM UI', () => {
 
       await expect(page.locator('#section-menu')).toBeVisible()
       const menuToggle = page.locator('#section-menu .jlz-menu-nav__toggle').first()
-      await expect(menuToggle).toHaveAttribute('role', 'button')
-      await menuToggle.dispatchEvent('click')
-      await expect(menuToggle).toHaveAttribute('aria-expanded', 'true')
-      await expect(page.locator('#section-menu .jlz-menu-nav__subs').first()).toBeVisible()
+      await expect(menuToggle).toHaveAttribute('href', '/')
+      await expect(page.locator('#section-menu .jlz-menu-nav__direct-link')).toHaveCount(7)
     } finally {
       await context.close()
     }

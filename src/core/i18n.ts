@@ -65,29 +65,9 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'contactFooter.lead': 'Tell us where the story should go next.',
     'contactFooter.telegram': 'TG',
 
-    // Navigation submenu section titles and subtitles.
-    // Works page section titles are project names (proper nouns), so they are not translated;
-    // so only subtitles get keys for works.
-    'dropbar.home.s1.title': 'Studio',
-    'dropbar.home.s2.title': 'Services',
-    'dropbar.home.s3.title': 'Works',
-    'dropbar.home.s4.title': 'Manifesto',
-    'dropbar.services.s1.title': 'Creative Direction',
-    'dropbar.services.s2.title': 'Realtime build',
-    'dropbar.services.s3.title': 'Motion',
-    'dropbar.services.s4.title': 'AI',
-    // Works page — project names stay English because they are proper nouns.
-    'dropbar.manifesto.s1.title': 'Purpose',
-    'dropbar.manifesto.s2.title': 'Clarity',
-    'dropbar.manifesto.s3.title': 'Emotion',
-    'dropbar.manifesto.s4.title': 'Simplicity',
-    'dropbar.contact.s1.title': 'Email',
-    'dropbar.contact.s2.title': 'Social',
-    'dropbar.contact.s3.title': 'Location',
-    'dropbar.contact.s4.title': 'Form',
-
     // Common CTAs
     'common.explore': 'Explore',
+    'common.close': 'Close',
 
     // Home — intro (Studio)
     'home.studio.title': 'Studio',
@@ -141,27 +121,27 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'works.observatory': 'An observatory of ideas.',
     'works.enterCase': 'Inside the project',
     'works.viewMaterial': 'View material',
-    'works.experiment': 'Independent study / art direction + creative development',
+    'works.experiment': 'Selected work / art direction + creative development',
     'works.continue': 'Scroll to the next world ↓',
     'works.archive': 'The archive',
-    'works.room1.premise': 'What if a listening session became a place?',
+    'works.room1.premise': 'How can a car become the only thing in the frame?',
     'works.room1.context':
-      'An exploration of sound, spatial rhythm and an interface that gives music room to breathe.',
-    'works.room2.premise': 'How little can an experience need?',
+      'Porsche 911 Spider: light, silhouette and movement build a focused CG presence.',
+    'works.room2.premise': 'Can form, texture and light hold one mood?',
     'works.room2.context':
-      'A study in restraint. Texture and silence carry the identity; interaction leaves the composition intact.',
-    'works.room3.premise': 'Give the invisible a sense of depth.',
+      'Alise: a CG image system where material and measured movement form one character.',
+    'works.room3.premise': 'How can a cosmetics product feel clear and close?',
     'works.room3.context':
-      'A particle-led study of ambient frequencies, liquid light and the boundary between image and space.',
-    'works.room4.premise': 'Every finished idea begins as an experiment.',
+      '19 Lab: a product website that makes care, detail and brand character easy to read.',
+    'works.room4.premise': 'What makes a specialised store easy to choose from?',
     'works.room4.context':
-      'An open archive of visual music, procedural surfaces and spatial sketches. Select a fragment to explore.',
+      'Pro193: an online store for tall men, centred on fit, clothing and a clear path to product.',
     'works.enterRooms': 'Explore the four rooms',
     'works.roomHint': 'Scroll to explore · Select a work to enter',
-    'works.section1.title': 'Listening room',
-    'works.section2.title': 'Signal room',
-    'works.section3.title': 'Atmosphere room',
-    'works.section4.title': 'After hours',
+    'works.section1.title': 'Motion & CG',
+    'works.section2.title': 'Motion & CG',
+    'works.section3.title': 'Product website',
+    'works.section4.title': 'E-commerce',
 
     // Manifesto page
     'manifesto.purpose.title': 'Purpose',
@@ -173,7 +153,7 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'manifesto.clarity.desc1': 'Clear logic.',
     'manifesto.clarity.desc2': 'No noise.',
     'manifesto.emotion.title': 'Emotion',
-    'manifesto.emotion.lead': 'We use motion, light, and sound to evoke a sense of presence.',
+    'manifesto.emotion.lead': 'We use motion, light and interaction to create a sense of presence.',
     'manifesto.simplicity.title': 'Simplicity',
     'manifesto.simplicity.lead': 'We strive for minimalism — but not emptiness.',
 
@@ -272,29 +252,9 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'contactFooter.telegram': 'TG',
 
     // Lab section (RU)
-    // Navigation submenu section titles and subtitles.
-    // Works page section titles are project names (proper nouns), so they are not translated;
-    // so only subtitles get keys for works.
-    'dropbar.home.s1.title': 'Студия',
-    'dropbar.home.s2.title': 'Услуги',
-    'dropbar.home.s3.title': 'Работы',
-    'dropbar.home.s4.title': 'Манифест',
-    'dropbar.services.s1.title': 'Креатив',
-    'dropbar.services.s2.title': 'Realtime',
-    'dropbar.services.s3.title': 'Моушн',
-    'dropbar.services.s4.title': 'AI',
-    // Works page — project names stay English because they are proper nouns.
-    'dropbar.manifesto.s1.title': 'Цель',
-    'dropbar.manifesto.s2.title': 'Ясность',
-    'dropbar.manifesto.s3.title': 'Эмоция',
-    'dropbar.manifesto.s4.title': 'Простота',
-    'dropbar.contact.s1.title': 'Почта',
-    'dropbar.contact.s2.title': 'Соцсети',
-    'dropbar.contact.s3.title': 'Локация',
-    'dropbar.contact.s4.title': 'Форма',
-
     // Common CTAs
     'common.explore': 'Исследовать',
+    'common.close': 'Закрыть',
 
     // Home — intro (Studio)
     'home.studio.title': 'Студия',
@@ -347,27 +307,26 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'works.observatory': 'Обсерватория идей.',
     'works.enterCase': 'Внутри проекта',
     'works.viewMaterial': 'Смотреть материал',
-    'works.experiment': 'Студийный эксперимент / арт-дирекшн + разработка',
+    'works.experiment': 'Избранная работа / арт-дирекшн + разработка',
     'works.continue': 'Дальше — другой мир ↓',
     'works.archive': 'Архив',
-    'works.room1.premise': 'Что, если прослушивание музыки станет местом?',
+    'works.room1.premise': 'Как сделать автомобиль единственным героем кадра?',
     'works.room1.context':
-      'Исследование звука, пространственного ритма и интерфейса, который оставляет музыке воздух.',
-    'works.room2.premise': 'Как мало нужно, чтобы почувствовать?',
+      'Porsche 911 Spider: свет, силуэт и движение создают собранное CG-присутствие.',
+    'works.room2.premise': 'Могут ли форма, фактура и свет удержать одно настроение?',
     'works.room2.context':
-      'Этюд о сдержанности. Фактура и тишина создают характер, а взаимодействие сохраняет композицию.',
-    'works.room3.premise': 'Придать невидимому глубину.',
-    'works.room3.context':
-      'Частицы, текучий свет и эмбиентные частоты. Исследование границы между изображением и пространством.',
-    'works.room4.premise': 'Каждая идея начинается с эксперимента.',
+      'Alise: CG-система, где материал и сдержанное движение собирают один характер.',
+    'works.room3.premise': 'Как сделать косметический продукт понятным и близким?',
+    'works.room3.context': '19 Lab: сайт о продукте, заботе, деталях и характере бренда.',
+    'works.room4.premise': 'Что делает специализированный магазин понятным с первого шага?',
     'works.room4.context':
-      'Открытый архив визуальной музыки, процедурных поверхностей и пространственных этюдов. Выберите фрагмент.',
+      'Pro193: интернет-магазин для высоких мужчин, построенный вокруг посадки, вещей и ясного выбора.',
     'works.enterRooms': 'Войти в четыре комнаты',
     'works.roomHint': 'Листайте комнаты · Откройте работу',
-    'works.section1.title': 'Комната звука',
-    'works.section2.title': 'Комната сигнала',
-    'works.section3.title': 'Комната атмосферы',
-    'works.section4.title': 'После полуночи',
+    'works.section1.title': 'Моушн и CG',
+    'works.section2.title': 'Моушн и CG',
+    'works.section3.title': 'Продуктовый сайт',
+    'works.section4.title': 'E-commerce',
 
     // Manifesto page
     'manifesto.purpose.title': 'Цель',
@@ -380,7 +339,7 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'manifesto.clarity.desc2': 'Без шума.',
     'manifesto.emotion.title': 'Эмоция',
     'manifesto.emotion.lead':
-      'Мы используем движение, свет и звук, чтобы вызвать чувство присутствия.',
+      'Мы используем движение, свет и взаимодействие, чтобы создать чувство присутствия.',
     'manifesto.simplicity.title': 'Простота',
     'manifesto.simplicity.lead': 'Мы стремимся к минимализму — но не к пустоте.',
 

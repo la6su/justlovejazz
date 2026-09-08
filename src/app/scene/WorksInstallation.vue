@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { markRaw, onBeforeUnmount, onMounted, shallowRef, toRaw } from 'vue'
+import { computed, onBeforeUnmount, onMounted, shallowRef, toRaw, watch } from 'vue'
 import * as THREE from 'three'
 import {
   WorksInstallation,
@@ -7,7 +7,7 @@ import {
 } from '../../Experience/World/WorksInstallation'
 
 const props = defineProps<{ installation: WorksInstallation }>()
-const installation = markRaw(toRaw(props.installation))
+const installation = computed(() => toRaw(props.installation))
 const assembly = shallowRef<THREE.Group | null>(null)
 const arcs = shallowRef<THREE.Mesh[]>([])
 const trace = shallowRef<THREE.Mesh | null>(null)
@@ -35,6 +35,7 @@ function nodes(): WorksInstallationNodes | null {
 function disposeGeometry(): void {
   const mounted = mountedNodes
   if (!mounted) return
+  installation.value.release(mounted)
   mounted.arcs.forEach((arc) => arc.geometry.dispose())
   mounted.trace.geometry.dispose()
   mounted.ticks.geometry.dispose()
@@ -54,7 +55,13 @@ onMounted(() => {
     mounted.ticks.setMatrixAt(index, instance.matrix)
   }
   mounted.ticks.instanceMatrix.needsUpdate = true
-  installation.adopt(mounted)
+  installation.value.adopt(mounted)
+})
+
+watch(installation, (owner, previous) => {
+  if (!mountedNodes) return
+  previous.release(mountedNodes)
+  owner.adopt(mountedNodes)
 })
 
 onBeforeUnmount(disposeGeometry)

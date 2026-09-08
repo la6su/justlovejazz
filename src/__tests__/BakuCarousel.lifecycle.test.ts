@@ -68,7 +68,7 @@ describe('BakuCarousel texture lifecycle', () => {
     const carousel = new BakuCarousel()
     await expect(carousel.init()).rejects.toBe(failure)
 
-    expect(mocks.releaseCaseTexture).toHaveBeenCalledTimes(7)
+    expect(mocks.releaseCaseTexture).toHaveBeenCalledTimes(3)
     expect(mocks.releaseCaseTexture).not.toHaveBeenCalledWith(
       '/assets/projects/mono-sunday/cover-studio-v2.jpg',
     )

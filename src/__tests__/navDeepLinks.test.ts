@@ -26,26 +26,52 @@ vi.mock('../core/motionPolicy', () => ({
 
 import AppShell from '../app/AppShell.vue'
 import { jlzRouteRecords } from '../app/routes'
-import { NAV_ITEMS } from '../app/navItems'
 
-// path → hash targets collected from every nav subsection
+// Published section URLs are a route contract, not menu data. Keeping this
+// fixture beside the route test prevents production navigation from carrying
+// fields that only exist to prove deep links.
+const NAV_SECTION_LINKS = [
+  '/#section-intro',
+  '/#section-about',
+  '/#section-works',
+  '/#section-contact',
+  '/services#section-services-creativeDirection',
+  '/services#section-services-interactiveDev',
+  '/services#section-services-motionRealtime',
+  '/services#section-services-aiSystems',
+  '/works#section-works-01',
+  '/works#section-works-02',
+  '/works#section-works-03',
+  '/works#section-works-04',
+  '/manifesto#section-manifesto-purpose',
+  '/manifesto#section-manifesto-clarity',
+  '/manifesto#section-manifesto-emotion',
+  '/manifesto#section-manifesto-simplicity',
+  '/lab#section-lab-01',
+  '/lab#section-lab-02',
+  '/lab#section-lab-03',
+  '/lab#section-lab-04',
+  '/contact#section-contact-01',
+  '/contact#section-contact-02',
+  '/contact#section-contact-03',
+  '/contact#section-contact-04',
+] as const
+
+// path → hash targets collected from stable published section URLs.
 const hashTargets = new Map<string, string[]>()
-for (const item of NAV_ITEMS) {
-  for (const sub of item.subs ?? []) {
-    const url = new URL(sub.href, 'http://localhost/')
-    if (!url.hash) continue
-    const targets = hashTargets.get(url.pathname) ?? []
-    targets.push(url.hash)
-    hashTargets.set(url.pathname, targets)
-  }
+for (const href of NAV_SECTION_LINKS) {
+  const url = new URL(href, 'http://localhost/')
+  const targets = hashTargets.get(url.pathname) ?? []
+  targets.push(url.hash)
+  hashTargets.set(url.pathname, targets)
 }
 
 afterEach(() => {
   document.body.innerHTML = ''
 })
 
-describe('nav deep-link hashes resolve against the rendered route DOM', () => {
-  it('collects hash targets from the app-route nav subsections', () => {
+describe('published section hashes resolve against the rendered route DOM', () => {
+  it('collects hash targets for every public SPA route', () => {
     expect([...hashTargets.keys()]).toEqual(
       expect.arrayContaining(['/', '/services', '/works', '/manifesto', '/lab', '/contact']),
     )

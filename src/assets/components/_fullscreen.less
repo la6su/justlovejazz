@@ -19,6 +19,12 @@
   z-index: 30010 !important;
 }
 
+/* Keep the fullscreen owner above UIkit menus and route chrome. The modal
+   owns focus and Escape while open; underlying navigation remains inert. */
+.jlz-fs-overlay.uk-open .jlz-fs-dialog {
+  isolation: isolate;
+}
+
 .jlz-fs-overlay .jlz-fs-dialog {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
@@ -166,13 +172,33 @@
 
 .jlz-fs-close {
   z-index: 6;
+  top: max(1rem, env(safe-area-inset-top)) !important;
+  right: max(1rem, env(safe-area-inset-right)) !important;
   background: transparent;
+}
+
+/* The shared top-bar launcher is the visible exit. Retain this dialog-local
+   control for the modal focus trap and assistive technology. */
+body.jlz-media-layer-open .jlz-fs-close {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 @media (max-width: 639px) {
   .jlz-fs-meta {
     min-height: 5rem;
     padding: 0.9rem 3.75rem 0.75rem 1rem;
+  }
+  .jlz-fs-close {
+    top: max(0.65rem, env(safe-area-inset-top)) !important;
+    right: max(0.65rem, env(safe-area-inset-right)) !important;
   }
   .jlz-fs-controls {
     min-height: 4rem;

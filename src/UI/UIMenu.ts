@@ -5,7 +5,7 @@
 // CinematicNav owns story position and the panel section state.
 
 import UIkit from 'uikit'
-import { toggleLang, getLang } from '../core/i18n'
+import { toggleLang, getLang, t } from '../core/i18n'
 import { themeManager } from '../core/ThemeManager'
 import { getSoundMuted, setSoundMutedPreference } from '../core/SfxSystem'
 import { eventBus } from '../core/EventBus'
@@ -22,10 +22,12 @@ export class UIMenu {
   private _langUnsub: (() => void) | null = null
   private _themeChangeUnsub: (() => void) | null = null
   private _soundToggleUnsub: (() => void) | null = null
+  private _fullscreenChangeUnsub: (() => void) | null = null
   private _soundMuted = getSoundMuted()
   private _menuBtn: HTMLButtonElement | null = null
   private _contactBtn: HTMLButtonElement | null = null
   private _navigate: ((index: number) => void) | null = null
+  private _fullscreenOpen = false
   private readonly _clickHandler = (event: MouseEvent): void => {
     const target = event.target as Element | null
     if (target?.closest('#jlz-lang-toggle')) {
@@ -35,7 +37,8 @@ export class UIMenu {
     } else if (target?.closest('#jlz-sound-toggle')) {
       eventBus.emit('jlz:sound-toggle', { muted: !this._soundMuted })
     } else if (target?.closest('#jlz-menu-launcher')) {
-      this._navigate?.(5)
+      if (this._fullscreenOpen) eventBus.emit('jlz:close-media-layer')
+      else this._navigate?.(5)
     } else if (target?.closest('#jlz-contact-launcher')) {
       this._navigate?.(0)
     }
@@ -124,6 +127,9 @@ export class UIMenu {
       setSoundMutedPreference(this._soundMuted)
       this._syncSoundButton()
     })
+    this._fullscreenChangeUnsub = eventBus.on('jlz:fullscreen-change', ({ open }) => {
+      this._setFullscreenOpen(open)
+    })
 
     // Initialize button states
     this.updateLangLabel()
@@ -151,6 +157,27 @@ export class UIMenu {
       iconSpan.setAttribute('uk-icon', `icon: ${muted ? 'muted' : 'sound'}`)
       ;(UIkit as unknown as { update(element: Element): void }).update(iconSpan)
     }
+  }
+
+  /**
+   * Fullscreen media keeps one persistent exit in the top bar. Every other
+   * shell control becomes inert, so its fixed chrome cannot overlap the media
+   * owner or receive focus behind it.
+   */
+  private _setFullscreenOpen(open: boolean): void {
+    this._fullscreenOpen = open
+    this.navEl.classList.toggle('is-fullscreen-open', open)
+    const hiddenControls = this.navEl.querySelectorAll<HTMLElement>(
+      '.jlz-topbar__brand, #jlz-lang-toggle, #jlz-theme-toggle, #jlz-sound-toggle, .jlz-console-bar',
+    )
+    for (const control of hiddenControls) {
+      control.setAttribute('aria-hidden', String(open))
+      ;(control as HTMLElement & { inert: boolean }).inert = open
+    }
+    const label = this._menuBtn?.querySelector<HTMLElement>('.jlz-menu-launcher__label')
+    if (label) label.textContent = t(open ? 'common.close' : 'menu.navigate')
+    this._menuBtn?.setAttribute('aria-label', t(open ? 'common.close' : 'menu.navigate'))
+    this._menuBtn?.setAttribute('aria-expanded', 'false')
   }
 
   onNavigate(callback: (index: number) => void): void {
@@ -181,7 +208,12 @@ export class UIMenu {
     this._langUnsub?.()
     this._themeChangeUnsub?.()
     this._soundToggleUnsub?.()
-    this._langUnsub = this._themeChangeUnsub = this._soundToggleUnsub = null
+    this._fullscreenChangeUnsub?.()
+    this._langUnsub =
+      this._themeChangeUnsub =
+      this._soundToggleUnsub =
+      this._fullscreenChangeUnsub =
+        null
     this._navigate = null
     this.navEl.remove()
   }

@@ -36,7 +36,7 @@ export interface AppEvents {
   'jlz:goto-section-by-hash': { hash: string }
   /** Fired by core/i18n after the active language is switched + persisted. */
   'jlz:lang-change': { lang: string }
-  /** Fired by the nav template on a menu sub-link click — a strict in-app navigation request (hash folded into path). */
+  /** Fired by a UI control or test seam to request strict in-app navigation. */
   'jlz:navigate': { path: string }
   /** Fired by a semantic project control on a Works or case-study page. */
   'jlz:open-project': { idx: number }
@@ -44,6 +44,10 @@ export interface AppEvents {
   'jlz:page-section-change': { index: number; count: number }
   /** Fired by FullscreenOverlay on prev/next project navigation. */
   'jlz:project-navigate': { direction: -1 | 1 }
+  /** Fullscreen media becomes the active interaction layer. */
+  'jlz:fullscreen-change': { open: boolean }
+  /** Requests that the active fullscreen media owner closes itself. */
+  'jlz:close-media-layer': void
   /** Fired by the UIMenu sound button. */
   'jlz:sound-toggle': { muted: boolean }
   /** Fired by the index.html splash Enter control. */
@@ -56,7 +60,7 @@ export interface AppEvents {
   'jlz:wobble-pulse': void
   /** Fired by ShowreelConsole when the showreel trigger requests the theater. */
   'jlz:showreel-open': void
-  /** Fired by ShowreelConsole (close button / Esc) to exit the theater. */
+  /** Fired by the shared media exit or Esc to exit the showreel theater. */
   'jlz:showreel-close': void
   /** Fired by ShowreelConsole (video surface / Space) to toggle playback. */
   'jlz:showreel-toggle-play': void

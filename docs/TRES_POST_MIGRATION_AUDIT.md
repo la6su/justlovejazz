@@ -1,5 +1,9 @@
 # TresJS post-migration audit
 
+Historical audit record. The queue below belongs to the original audit;
+[NEXT](../NEXT.md) is the only current execution queue. Check source before
+reusing a finding or a completed-test claim.
+
 ## Scope
 
 This audit removes code only when source, imports and runtime contracts prove

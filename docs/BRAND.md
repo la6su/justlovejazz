@@ -57,19 +57,18 @@ polarities; its accompanying 3D pixel title follows the same effective theme.
 
 ## Works as the narrative centre
 
-The portfolio is a sequence of four rooms: Listening (rhythm and silence),
-Signal (analogue and synthetic), Atmosphere (light and texture), and After hours
-(the archive and an invitation to collaborate). Each room presents one
-featured work, a framing question and an unobstructed project action. The last
-room exposes the complete eight-work archive. A shared spatial installation
-frames the media; its finite transitions follow the selected room.
+The portfolio is a sequence of four featured works: Porsche 911 Spider and
+Alise (motion and CG), 19 Lab (a product website), and Pro193 (e-commerce).
+Each room presents one work, a framing question and an unobstructed project
+action. A shared spatial installation frames the media; its finite transitions
+follow the selected room.
 Case-note links are separate from immersive viewing and appear only for
 existing notes. The persistent room navigator connects the sequence.
 
-Case studies use four chapters: intent, system, material and reflection.
-Review-state descriptions must remain identified as independent prototypes;
-do not invent client results or claim approved evidence. Theme assembly and
-component rules are documented in [THEME.md](THEME.md).
+Case studies use four chapters: intent, system, material and reflection. Do not
+invent client results, performance claims or approved evidence. Mark temporary
+media and unapproved proof clearly. Theme assembly and component rules are
+documented in [THEME.md](THEME.md).
 
 Use the YOOtheme section/container/content hierarchy through UIkit. Reserve
 absolute positioning for controls that must align with camera-local media.

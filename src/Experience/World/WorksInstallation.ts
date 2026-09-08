@@ -55,6 +55,11 @@ export class WorksInstallation {
     if (this.room >= 0) this.setRoom(this.room, false)
   }
 
+  /** Release Vue-owned nodes without retiring the shared material controller. */
+  release(nodes: WorksInstallationNodes): void {
+    if (this.nodes === nodes) this.nodes = null
+  }
+
   setRoom(index: number, snap: boolean): void {
     if (this.disposed) return
     if (this.room !== index) {
