@@ -1,15 +1,13 @@
 <script setup lang="ts">
-import { useTresContext } from '@tresjs/core'
-import { onBeforeUnmount, onMounted, shallowRef } from 'vue'
+import { onBeforeUnmount, onMounted, shallowRef, markRaw } from 'vue'
 import { ServicesStage } from '../../Experience/World/ServicesStage'
+import ServicesStageGeometry from './ServicesStageGeometry.vue'
 
 const emit = defineEmits<{ ready: [stage: ServicesStage] }>()
-const context = useTresContext()
 const stage = shallowRef<ServicesStage | null>(null)
 
 onMounted(() => {
-  const owner = new ServicesStage()
-  context.scene.value.add(owner)
+  const owner = markRaw(new ServicesStage())
   stage.value = owner
   emit('ready', owner)
 })
@@ -22,4 +20,8 @@ onBeforeUnmount(() => {
 })
 </script>
 
-<template><TresGroup name="services-stage-owner-anchor" /></template>
+<template>
+  <primitive v-if="stage" :object="stage" :dispose="null">
+    <ServicesStageGeometry :stage="stage" />
+  </primitive>
+</template>
