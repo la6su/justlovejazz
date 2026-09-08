@@ -3,7 +3,7 @@
 // The GPU-side theater (ShowreelTheater, owned by Experience) renders the
 // film through the shared pipeline; this owner owns the persistent console
 // chrome that floats above it: the signal readout line, the timecode/progress
-// strip and the close control. It also owns the interaction contract while
+// strip. It also owns the interaction contract while
 // the theater is open — Esc to close, Space to toggle playback, suppressed
 // wheel/touch navigation, focus in and back out.
 //
@@ -24,7 +24,6 @@ function formatTime(seconds: number): string {
 
 export class ShowreelConsole {
   private root: HTMLElement | null = null
-  private closeBtn: HTMLButtonElement | null = null
   private timeEl: HTMLElement | null = null
   private durationEl: HTMLElement | null = null
   private phaseEl: HTMLElement | null = null
@@ -77,6 +76,11 @@ export class ShowreelConsole {
 
   constructor() {
     this.unsubs.push(eventBus.on('jlz:showreel-state', this.onState))
+    this.unsubs.push(
+      eventBus.on('jlz:close-media-layer', () => {
+        if (this.lastPhase !== 'closed') this.requestClose()
+      }),
+    )
     document.addEventListener('keydown', this.onKeydown, { signal: this.listeners.signal })
   }
 
@@ -98,6 +102,10 @@ export class ShowreelConsole {
     this.listeners.abort()
     for (const unsub of this.unsubs) unsub()
     this.unsubs.length = 0
+    if (this.lastPhase !== 'closed') {
+      eventBus.emit('jlz:fullscreen-change', { open: false })
+      document.body.classList.remove('jlz-media-layer-open')
+    }
     this.root?.remove()
     this.root = null
   }
@@ -118,16 +126,19 @@ export class ShowreelConsole {
   private showChrome(): void {
     const root = this.ensureRoot()
     root.dataset.state = 'open'
-    root.setAttribute('role', 'dialog')
-    root.setAttribute('aria-modal', 'true')
-    root.setAttribute('aria-label', 'Showreel theater')
-    // Focus lands on the close control — the only persistent actionable
-    // element while the film owns the viewport.
-    this.closeBtn?.focus({ preventScroll: true })
+    root.setAttribute('role', 'region')
+    root.setAttribute('aria-label', 'Showreel theater status')
+    eventBus.emit('jlz:close-nav')
+    eventBus.emit('jlz:fullscreen-change', { open: true })
+    document.body.classList.add('jlz-media-layer-open')
+    // The persistent menu launcher is the shared exit for all media layers.
+    document.getElementById('jlz-menu-launcher')?.focus({ preventScroll: true })
   }
 
   private hideChrome(): void {
     if (this.root) this.root.dataset.state = 'closed'
+    eventBus.emit('jlz:fullscreen-change', { open: false })
+    document.body.classList.remove('jlz-media-layer-open')
     this.restoreFocus?.focus({ preventScroll: true })
     this.restoreFocus = null
   }
@@ -174,9 +185,6 @@ export class ShowreelConsole {
         <span class="jlz-showreel-console__phase" aria-hidden="true">ACQUIRING</span>
         <span class="jlz-showreel-console__sr" aria-live="polite"></span>
       </header>
-      <button class="jlz-showreel-console__close" type="button" aria-label="Close showreel">
-        [ESC] CLOSE
-      </button>
       <footer class="jlz-showreel-console__status" aria-hidden="true">
         <span class="jlz-showreel-console__state">HOLD</span>
         <span class="jlz-showreel-console__track">
@@ -210,7 +218,6 @@ export class ShowreelConsole {
 
     document.body.appendChild(root)
     this.root = root
-    this.closeBtn = root.querySelector('.jlz-showreel-console__close')
     this.phaseEl = root.querySelector('.jlz-showreel-console__phase')
     this.playStateEl = root.querySelector('.jlz-showreel-console__state')
     this.progressEl = root.querySelector('.jlz-showreel-console__progress')
@@ -218,13 +225,6 @@ export class ShowreelConsole {
     this.durationEl = root.querySelector('.jlz-showreel-console__time-total')
     this.liveEl = root.querySelector('.jlz-showreel-console__sr')
 
-    this.closeBtn?.addEventListener(
-      'click',
-      () => {
-        this.requestClose()
-      },
-      { signal: this.listeners.signal },
-    )
     return root
   }
 }

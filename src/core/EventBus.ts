@@ -46,6 +46,8 @@ export interface AppEvents {
   'jlz:project-navigate': { direction: -1 | 1 }
   /** Fullscreen media becomes the active interaction layer. */
   'jlz:fullscreen-change': { open: boolean }
+  /** Requests that the active fullscreen media owner closes itself. */
+  'jlz:close-media-layer': void
   /** Fired by the UIMenu sound button. */
   'jlz:sound-toggle': { muted: boolean }
   /** Fired by the index.html splash Enter control. */
@@ -58,7 +60,7 @@ export interface AppEvents {
   'jlz:wobble-pulse': void
   /** Fired by ShowreelConsole when the showreel trigger requests the theater. */
   'jlz:showreel-open': void
-  /** Fired by ShowreelConsole (close button / Esc) to exit the theater. */
+  /** Fired by the shared media exit or Esc to exit the showreel theater. */
   'jlz:showreel-close': void
   /** Fired by ShowreelConsole (video surface / Space) to toggle playback. */
   'jlz:showreel-toggle-play': void

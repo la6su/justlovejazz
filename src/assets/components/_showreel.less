@@ -169,31 +169,6 @@
   white-space: nowrap;
 }
 
-.jlz-showreel-console__close {
-  position: absolute;
-  top: 1rem;
-  right: 1.1rem;
-  padding: 0.55rem 0.8rem;
-  border: 1px solid var(--jlz-color-border);
-  color: var(--jlz-color-text);
-  background: color-mix(in srgb, var(--jlz-color-bg-elevated) 72%, transparent);
-  cursor: pointer;
-  .jlz-meta-text(0.62rem; 0.16em; 600);
-
-  transition:
-    border-color var(--jlz-duration-fast) var(--jlz-ease-state),
-    color var(--jlz-duration-fast) var(--jlz-ease-state);
-}
-
-.jlz-showreel-console__close:hover {
-  border-color: var(--jlz-color-signal-phosphor);
-  color: var(--jlz-color-signal-phosphor);
-}
-
-.jlz-showreel-console__close:focus-visible {
-  .jlz-focus-ring();
-}
-
 .jlz-showreel-console__status {
   position: absolute;
   right: 0;
@@ -237,11 +212,6 @@
 @media (max-width: 639px) {
   .jlz-showreel-console__meta {
     padding: 0.9rem 4.75rem 0.7rem 1rem;
-  }
-
-  .jlz-showreel-console__close {
-    top: 0.75rem;
-    right: 0.75rem;
   }
 
   .jlz-showreel-console__status {

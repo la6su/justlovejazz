@@ -59,12 +59,27 @@ describe('FullscreenOverlay close ownership', () => {
 
     try {
       overlay.container.dispatchEvent(new Event('show'))
+      expect(document.body.classList.contains('jlz-media-layer-open')).toBe(true)
       overlay.container.dispatchEvent(new Event('hide'))
       expect(closeNav).toHaveBeenCalledOnce()
       expect(states).toEqual([true, false])
+      expect(document.body.classList.contains('jlz-media-layer-open')).toBe(false)
     } finally {
       unsubscribeClose()
       unsubscribeState()
+      overlay.dispose()
+    }
+  })
+
+  it('closes when the shared media exit is requested', () => {
+    const overlay = new FullscreenOverlay() as unknown as OverlayInternals
+    const close = vi.spyOn(overlay as unknown as { close: () => void }, 'close')
+
+    try {
+      overlay.container.classList.add('uk-open')
+      eventBus.emit('jlz:close-media-layer')
+      expect(close).toHaveBeenCalledOnce()
+    } finally {
       overlay.dispose()
     }
   })

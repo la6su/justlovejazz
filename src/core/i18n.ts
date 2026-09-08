@@ -67,6 +67,7 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
 
     // Common CTAs
     'common.explore': 'Explore',
+    'common.close': 'Close',
 
     // Home — intro (Studio)
     'home.studio.title': 'Studio',
@@ -253,6 +254,7 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     // Lab section (RU)
     // Common CTAs
     'common.explore': 'Исследовать',
+    'common.close': 'Закрыть',
 
     // Home — intro (Studio)
     'home.studio.title': 'Студия',

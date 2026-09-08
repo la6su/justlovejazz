@@ -69,12 +69,16 @@ export class FullscreenOverlay {
   private _perOpenOnClose: (() => void) | null = null
   private _restoreFocus: HTMLElement | null = null
   private _hideHandled = false
+  private readonly _closeMediaLayerUnsub: () => void
 
   private readonly _onModalHide = (): void => {
     this.handleHide()
   }
 
   constructor() {
+    this._closeMediaLayerUnsub = eventBus.on('jlz:close-media-layer', () => {
+      if (this.isOpen) this.close()
+    })
     this.container = document.createElement('div')
     this.container.id = 'jlz-fs-overlay'
     this.container.setAttribute('uk-modal', 'bg-close: true; esc-close: true; stack: false')
@@ -235,6 +239,7 @@ export class FullscreenOverlay {
     UIkit.util.on(this.container, 'show', () => {
       eventBus.emit('jlz:close-nav')
       eventBus.emit('jlz:fullscreen-change', { open: true })
+      document.body.classList.add('jlz-media-layer-open')
       // Store the element that had focus before the overlay opened so we can
       // restore it on close (B-2 a11y fix).
       if (document.activeElement instanceof HTMLElement) {
@@ -335,6 +340,7 @@ export class FullscreenOverlay {
     if (this._hideHandled) return
     this._hideHandled = true
     eventBus.emit('jlz:fullscreen-change', { open: false })
+    document.body.classList.remove('jlz-media-layer-open')
     if (this._enterFallback) {
       cancelAnimationFrame(this._enterFallback)
       this._enterFallback = null
@@ -593,6 +599,7 @@ export class FullscreenOverlay {
   }
 
   dispose(): void {
+    this._closeMediaLayerUnsub()
     if (this.isOpen) {
       const modal = UIkit.modal(this.container)
       modal.hide()
