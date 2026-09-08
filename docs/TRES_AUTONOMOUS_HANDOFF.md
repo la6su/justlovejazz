@@ -1,6 +1,8 @@
 # Vue/Tres implementation handoff
 
-Status: implementation pending, audited 2026-09-08 at `8c5d21b5`.
+Status: Works iterations 1–3 implemented; Services geometry iteration 1 and
+EnvSphere attachment iteration 1 implemented; physical backend admission
+remains pending, audited 2026-09-08.
 This is the execution queue for the remaining scene-composition transition.
 It supersedes the static-only admission restriction in
 `POST_MIGRATION_AUTONOMY_PLAN.md`. Historical evidence is not verification of
@@ -30,8 +32,10 @@ its responsibilities, not a prerequisite name-change exercise.
   Vite 8.1.5, Vue plugin 6.0.8, TypeScript 6.0.3. No upgrade is planned.
 - Camera, lights, ground and section roots have declarative construction.
 - EnvSky declares mesh/geometry but borrows EnvSphere's material.
-- ServicesStageOwner and EnvSphereOwner call imperative constructors and
-  scene.add in Vue hooks. They are lifecycle wrappers, not fully declarative.
+- ServicesStage retains its imperative motion controller, while Vue/Tres now
+  declares its seven parts and three orbital rings; EnvSphereOwner remains an
+  explicit retained owner whose attachment is now declarative through
+  `primitive`; its pavilion geometry/material construction remains imperative.
 - WorksPlaneStage constructs WorksInstallation inside init after textures
   resolve; both modules currently have static imports. Resource-lazy creation
   is present; module-lazy loading is not established for these two modules.

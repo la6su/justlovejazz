@@ -97,6 +97,8 @@ export interface ExperienceHost {
   unmountWorksPlaneStage(stage: WorksPlaneStage): Promise<void>
   mountWorksInstallation(stage: WorksPlaneStage, installation: WorksInstallation): Promise<void>
   unmountWorksInstallation(stage: WorksPlaneStage, installation: WorksInstallation): Promise<void>
+  mountContactHaloStage(stage: ContactHaloStage): Promise<void>
+  unmountContactHaloStage(stage: ContactHaloStage): Promise<void>
 }
 
 interface ReadinessGate {
@@ -719,7 +721,9 @@ export class Experience {
         import('./World/ContactTypographyStage').then(({ ContactTypographyStage }) =>
           isCurrent() ? new ContactTypographyStage() : null,
         ),
-      attach: (stage) => this.scene.add(stage),
+      attach: (stage) => {
+        this.scene.add(stage)
+      },
       configure: (stage) => {
         stage.setActive(this.currentPage() === 'contact')
         stage.setTheme(this._contactIsLight)
@@ -760,14 +764,14 @@ export class Experience {
         import('./World/ContactHaloStage').then(({ ContactHaloStage }) =>
           isCurrent() ? new ContactHaloStage() : null,
         ),
-      attach: (stage) => this.scene.add(stage),
+      attach: (stage) => this._host.mountContactHaloStage(stage),
       configure: (stage) => {
         stage.setTheme(this._contactIsLight)
         stage.setReducedMotion(this._reducedMotion)
         stage.setActive(this.currentPage() === 'contact')
       },
       release: (stage) => {
-        stage.removeFromParent()
+        void this._host.unmountContactHaloStage(stage)
         stage.dispose()
       },
     }
@@ -803,7 +807,9 @@ export class Experience {
         import('./World/ManifestoInkStage').then(({ ManifestoInkStage }) =>
           isCurrent() ? new ManifestoInkStage() : null,
         ),
-      attach: (stage) => this.scene.add(stage),
+      attach: (stage) => {
+        this.scene.add(stage)
+      },
       configure: (stage) => {
         // The effective-polarity cache is refreshed on every theme event
         // regardless of route, so a lazy stage cannot miss the current ink.
@@ -857,7 +863,9 @@ export class Experience {
         import('./World/ContactCyprusStage').then(({ ContactCyprusStage }) =>
           isCurrent() ? new ContactCyprusStage() : null,
         ),
-      attach: (stage) => this.scene.add(stage),
+      attach: (stage) => {
+        this.scene.add(stage)
+      },
       load: (stage) => stage.load(),
       configure: (stage) => {
         stage.resize(window.innerWidth, window.innerHeight)

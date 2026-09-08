@@ -94,10 +94,18 @@ by the user; it does not block these tasks and is not a passed gate.
       extending the current project-directed installation into richer geometry
       and reviewed assets. Keep one renderer, canonical slots and explicit
       disposal.
-- [ ] **Create a lazy declarative Works installation boundary** — introduce a
-      route-scoped Vue/Tres mount seam for `WorksInstallation` only after its
-      TSL materials remain owned by one stage and no resources are created
-      before `/works`; preserve `WorksPlaneStage` as the animation/input owner.
+- [x] **Create a lazy declarative Works installation boundary** — the
+      route-scoped Vue/Tres mount seam now attaches `WorksPlaneStage` and
+      declares `WorksInstallation` geometry without creating resources before
+      `/works`; `WorksPlaneStage` remains the animation/input owner. Physical
+      WebGPU/forced-WebGL Works evidence is the remaining admission gate.
+- [x] **Declare the Services orbital assembly in Tres** — `ServicesStage`
+      retains camera-relative motion and NodeMaterial ownership while Vue/Tres
+      owns the seven parts and three orbital ring meshes with explicit geometry
+      disposal.
+- [x] **Move EnvSphere attachment into Tres** — `EnvSphereOwner` now mounts the
+      existing ambient owner through a Tres primitive while preserving its
+      palette animation and explicit material/geometry disposal boundary.
 - [ ] Connect case chapters to meaningful material changes: initial condition,
       interaction mechanism, inspectable result and reflection. Define each
       transition's reduced-motion settled state before adding animation.

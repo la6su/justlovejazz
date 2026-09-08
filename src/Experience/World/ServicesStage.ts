@@ -6,7 +6,6 @@ import { MeshStandardNodeMaterial, MeshBasicNodeMaterial } from 'three/webgpu'
  */
 export class ServicesStage extends THREE.Group {
   private disposed = false
-  private readonly geometry = new THREE.BoxGeometry(0.8, 0.8, 0.08)
   private readonly metal = new MeshStandardNodeMaterial({
     color: 0x71858f,
     metalness: 0.65,
@@ -14,9 +13,6 @@ export class ServicesStage extends THREE.Group {
     fog: false,
   })
   private readonly signal = new MeshBasicNodeMaterial({ color: 0x58e6a9, fog: false })
-  private readonly parts: THREE.Mesh[] = []
-  private readonly rings: THREE.Mesh[] = []
-  private readonly ringGeometry = new THREE.TorusGeometry(1, 0.012, 8, 64)
   private readonly ringMaterials = [
     new MeshBasicNodeMaterial({ color: 0x2a4a7a, transparent: true, opacity: 0.4, fog: false }),
     new MeshBasicNodeMaterial({ color: 0x1a3a6a, transparent: true, opacity: 0.3, fog: false }),
@@ -31,25 +27,18 @@ export class ServicesStage extends THREE.Group {
     super()
     this.name = 'services-assembly'
     this.visible = false
-    for (let i = 0; i < 7; i++) {
-      const part = new THREE.Mesh(this.geometry, i === 3 ? this.signal : this.metal)
-      this.parts.push(part)
-      this.add(part)
-    }
-    const ringConfigs = [
-      [1.5, 0.3, 0],
-      [2.2, -0.5, 0.4],
-      [2.8, 0.8, -0.3],
-    ] as const
-    ringConfigs.forEach(([radius, rotX, rotZ], index) => {
-      const ring = new THREE.Mesh(this.ringGeometry, this.ringMaterials[index]!)
-      ring.scale.setScalar(radius)
-      ring.rotation.set(rotX, 0, rotZ)
-      ring.position.z = -1
-      ring.name = `services-orbit-${index}`
-      this.rings.push(ring)
-      this.add(ring)
-    })
+  }
+
+  private parts: THREE.Mesh[] = []
+  private rings: THREE.Mesh[] = []
+
+  get metalMaterial(): MeshStandardNodeMaterial { return this.metal }
+  get signalMaterial(): MeshBasicNodeMaterial { return this.signal }
+  get orbitMaterials(): readonly MeshBasicNodeMaterial[] { return this.ringMaterials }
+
+  adopt(nodes: { parts: THREE.Mesh[]; rings: THREE.Mesh[] }): void {
+    this.parts = nodes.parts
+    this.rings = nodes.rings
   }
 
   get isAnimating(): boolean {
@@ -105,12 +94,11 @@ export class ServicesStage extends THREE.Group {
   dispose(): void {
     if (this.disposed) return
     this.disposed = true
-    this.geometry.dispose()
     this.metal.dispose()
     this.signal.dispose()
-    this.ringGeometry.dispose()
     this.ringMaterials.forEach((material) => material.dispose())
     this.rings.length = 0
+    this.parts.length = 0
     this.clear()
     this.removeFromParent()
   }

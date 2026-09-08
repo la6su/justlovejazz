@@ -48,6 +48,7 @@ import type { ServicesStage } from '../Experience/World/ServicesStage'
 import type { EnvSphere } from '../Experience/World/EnvSphere'
 import type { WorksPlaneStage } from '../Experience/World/WorksPlaneStage'
 import type { WorksInstallation } from '../Experience/World/WorksInstallation'
+import type { ContactHaloStage } from '../Experience/World/ContactHaloStage'
 
 const noScene = new URLSearchParams(window.location.search).has('no-scene')
 // Dev-only physical recovery seam. It preserves the shipped single-renderer
@@ -113,6 +114,7 @@ const declarativeServicesStageReady = new Promise<ServicesStage>((resolve) => {
 const declarativeEnvSphere = shallowRef<EnvSphere | null>(null)
 const declarativeWorksStage = shallowRef<WorksPlaneStage | null>(null)
 const declarativeWorksInstallation = shallowRef<WorksInstallation | null>(null)
+const declarativeContactHalo = shallowRef<ContactHaloStage | null>(null)
 let resolveDeclarativeEnvSphere!: (owner: EnvSphere) => void
 const declarativeEnvSphereReady = new Promise<EnvSphere>((resolve) => {
   resolveDeclarativeEnvSphere = resolve
@@ -152,6 +154,18 @@ async function unmountWorksInstallation(
   if (declarativeWorksStage.value !== stage || declarativeWorksInstallation.value !== installation)
     return
   declarativeWorksInstallation.value = null
+  await nextTick()
+}
+
+async function mountContactHaloStage(stage: ContactHaloStage): Promise<void> {
+  if (disposed) return
+  declarativeContactHalo.value = markRaw(stage)
+  await nextTick()
+}
+
+async function unmountContactHaloStage(stage: ContactHaloStage): Promise<void> {
+  if (declarativeContactHalo.value !== stage) return
+  declarativeContactHalo.value = null
   await nextTick()
 }
 
@@ -270,6 +284,8 @@ async function onReady(context: TresContext): Promise<void> {
     unmountWorksPlaneStage,
     mountWorksInstallation,
     unmountWorksInstallation,
+    mountContactHaloStage,
+    unmountContactHaloStage,
   })
 }
 
@@ -320,6 +336,7 @@ onBeforeUnmount(() => {
         :material="declarativeEnvSphere.skyMaterial"
         @ready="onDeclarativeEnvSkyReady"
       />
+      <primitive v-if="declarativeContactHalo" :object="declarativeContactHalo" :dispose="null" />
       <WorksStageOwner
         :stage="declarativeWorksStage"
         :installation="declarativeWorksInstallation"

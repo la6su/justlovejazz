@@ -43,8 +43,8 @@ export interface LazyStageContract<T extends Object3D> {
    * avoid constructing GPU resources after its owner was retired.
    */
   create: (isCurrent: () => boolean) => T | null | Promise<T | null>
-  /** Attach the instance to the scene. */
-  attach: (stage: T) => void
+  /** Attach the instance to the scene; Tres-backed mounts may be awaitable. */
+  attach: (stage: T) => void | Promise<void>
   /** Optional awaitable init/load after the instance is attached. */
   load?: (stage: T) => Promise<unknown>
   /** Route wiring after the stale guard passes. */
@@ -105,7 +105,7 @@ export function ensureLazyStage<T extends Object3D>(contract: LazyStageContract<
         }
         createdStage = stage
         owner.setStage(stage)
-        contract.attach(stage)
+        await contract.attach(stage)
         if (contract.load) await contract.load(stage)
         return stage
       })
@@ -129,8 +129,13 @@ export function ensureLazyStage<T extends Object3D>(contract: LazyStageContract<
   const stage = created
   if (!stage) return Promise.resolve()
   owner.setStage(stage)
-  contract.attach(stage)
-  const settled = (contract.load ? Promise.resolve(contract.load(stage)) : Promise.resolve()).then(
+  const attached = contract.attach(stage)
+  const settled = (attached instanceof Promise
+    ? attached.then(() => (contract.load ? contract.load(stage) : undefined))
+    : contract.load
+      ? Promise.resolve(contract.load(stage))
+      : Promise.resolve()
+  ).then(
     () => {
       try {
         settle(stage)
