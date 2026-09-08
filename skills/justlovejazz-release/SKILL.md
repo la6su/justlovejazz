@@ -13,9 +13,11 @@ gate before opening a pull request:
 bun run format:check
 bun run lint
 bun run type-check
+bun run type-check:vue
 bun run build
+bun run budget:build
 bun run test:unit
-bun run test
+bun run test:serial
 ```
 
 Inspect the final diff and `git diff --check`. Work from a scoped non-default

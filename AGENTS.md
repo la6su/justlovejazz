@@ -74,6 +74,10 @@ in a dirty tree and keep each change to one coherent outcome.
 
 ## Context on demand
 
+Read AGENT_HANDOFF.md for the current working-tree checkpoint and NEXT.md for
+the only active queue. Load other documents by task, not as a startup bundle.
+Historical migration plans do not authorize repeating completed work.
+
 - [NEXT.md](NEXT.md) — open product outcomes.
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — stable boundaries and
   non-obvious runtime contracts.
