@@ -65,27 +65,6 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'contactFooter.lead': 'Tell us where the story should go next.',
     'contactFooter.telegram': 'TG',
 
-    // Navigation submenu section titles and subtitles.
-    // Works page section titles are project names (proper nouns), so they are not translated;
-    // so only subtitles get keys for works.
-    'dropbar.home.s1.title': 'Studio',
-    'dropbar.home.s2.title': 'Services',
-    'dropbar.home.s3.title': 'Works',
-    'dropbar.home.s4.title': 'Manifesto',
-    'dropbar.services.s1.title': 'Creative Direction',
-    'dropbar.services.s2.title': 'Realtime build',
-    'dropbar.services.s3.title': 'Motion',
-    'dropbar.services.s4.title': 'AI',
-    // Works page — project names stay English because they are proper nouns.
-    'dropbar.manifesto.s1.title': 'Purpose',
-    'dropbar.manifesto.s2.title': 'Clarity',
-    'dropbar.manifesto.s3.title': 'Emotion',
-    'dropbar.manifesto.s4.title': 'Simplicity',
-    'dropbar.contact.s1.title': 'Email',
-    'dropbar.contact.s2.title': 'Social',
-    'dropbar.contact.s3.title': 'Location',
-    'dropbar.contact.s4.title': 'Form',
-
     // Common CTAs
     'common.explore': 'Explore',
 
@@ -272,27 +251,6 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'contactFooter.telegram': 'TG',
 
     // Lab section (RU)
-    // Navigation submenu section titles and subtitles.
-    // Works page section titles are project names (proper nouns), so they are not translated;
-    // so only subtitles get keys for works.
-    'dropbar.home.s1.title': 'Студия',
-    'dropbar.home.s2.title': 'Услуги',
-    'dropbar.home.s3.title': 'Работы',
-    'dropbar.home.s4.title': 'Манифест',
-    'dropbar.services.s1.title': 'Креатив',
-    'dropbar.services.s2.title': 'Realtime',
-    'dropbar.services.s3.title': 'Моушн',
-    'dropbar.services.s4.title': 'AI',
-    // Works page — project names stay English because they are proper nouns.
-    'dropbar.manifesto.s1.title': 'Цель',
-    'dropbar.manifesto.s2.title': 'Ясность',
-    'dropbar.manifesto.s3.title': 'Эмоция',
-    'dropbar.manifesto.s4.title': 'Простота',
-    'dropbar.contact.s1.title': 'Почта',
-    'dropbar.contact.s2.title': 'Соцсети',
-    'dropbar.contact.s3.title': 'Локация',
-    'dropbar.contact.s4.title': 'Форма',
-
     // Common CTAs
     'common.explore': 'Исследовать',
 
