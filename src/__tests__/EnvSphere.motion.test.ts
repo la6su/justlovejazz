@@ -5,6 +5,20 @@ import { EnvSphere } from '../Experience/World/EnvSphere'
 describe('EnvSphere reduced-motion transitions', () => {
   afterEach(() => vi.unstubAllGlobals())
 
+  it('can delegate the static sky geometry while retaining its palette material', () => {
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: true }))
+    const sphere = new EnvSphere(false)
+    const dispose = vi.spyOn(sphere.skyMaterial, 'dispose')
+    const initialSkyColor = sphere.skyMaterial.color.getHex()
+
+    expect(sphere.getObjectByName('pavilion-sky')).toBeUndefined()
+    sphere.changeSection(3, false)
+    expect(sphere.skyMaterial.color.getHex()).not.toBe(initialSkyColor)
+
+    sphere.dispose()
+    expect(dispose).toHaveBeenCalledOnce()
+  })
+
   it('snaps the palette instead of leaving an intermediate color', () => {
     vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: true }))
     const sphere = new EnvSphere()

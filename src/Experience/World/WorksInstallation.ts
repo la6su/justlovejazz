@@ -6,11 +6,19 @@ const PROJECT_SIGNALS = [
   0xffd60a, 0x58e6a9, 0xb18cff, 0x79c0ff, 0x6fc7ff, 0xff9f68, 0x9d8cff, 0x6dd5bc,
 ]
 
-/** A finite, camera-local kinetic sculpture. The parent stage owns update and disposal.
- * No loop, lights, textures or background owner are created here.
+export interface WorksInstallationNodes {
+  assembly: THREE.Group
+  arcs: readonly THREE.Mesh[]
+  trace: THREE.Mesh
+  ticks: THREE.InstancedMesh
+}
+
+/**
+ * Camera-local motion and material controller for the Works instrument.
+ * Vue/Tres declares its mesh and geometry subtree; this owner deliberately
+ * retains the two shared NodeMaterials until their own lifecycle slice.
  */
-export class WorksInstallation extends THREE.Group {
-  private readonly assembly = new THREE.Group()
+export class WorksInstallation {
   private readonly metal = new MeshStandardNodeMaterial({
     color: 0x81949c,
     metalness: 0.85,
@@ -20,51 +28,31 @@ export class WorksInstallation extends THREE.Group {
     fog: false,
   })
   private readonly signal = new MeshBasicNodeMaterial({ color: 0x79c0ff, fog: false })
-  private readonly geometries: THREE.BufferGeometry[] = []
   private readonly target = new THREE.Quaternion()
   private readonly targetColor = new THREE.Color()
   private readonly euler = new THREE.Euler()
+  private nodes: WorksInstallationNodes | null = null
   private disposed = false
   private room = -1
   private inverse = false
   private project = -1
 
-  constructor() {
-    super()
-    this.name = 'works-observatory'
-    this.add(this.assembly)
-    // Open arcs give the installation depth and a directional entrance.
-    for (let i = 0; i < 3; i += 1) {
-      const geometry = new THREE.TorusGeometry(
-        1 + i * 0.15,
-        0.045 - i * 0.008,
-        10,
-        100,
-        Math.PI * 1.65,
-      )
-      this.geometries.push(geometry)
-      const arc = new THREE.Mesh(geometry, this.metal)
-      arc.rotation.set(i * 0.42, i * -0.3, i * 1.8)
-      this.assembly.add(arc)
-    }
-    const traceGeometry = new THREE.TorusGeometry(1.03, 0.006, 5, 100, Math.PI * 1.45)
-    this.geometries.push(traceGeometry)
-    const trace = new THREE.Mesh(traceGeometry, this.signal)
-    trace.position.z = 0.055
-    this.assembly.add(trace)
-    // One instanced draw for the instrument's graduated scale.
-    const tickGeometry = new THREE.BoxGeometry(0.006, 0.055, 0.008)
-    this.geometries.push(tickGeometry)
-    const ticks = new THREE.InstancedMesh(tickGeometry, this.signal, 48)
-    const transform = new THREE.Object3D()
-    for (let i = 0; i < 48; i += 1) {
-      const angle = (i / 48) * Math.PI * 1.6
-      transform.position.set(Math.sin(angle) * 1.42, Math.cos(angle) * 1.42, -0.12)
-      transform.rotation.z = -angle
-      transform.updateMatrix()
-      ticks.setMatrixAt(i, transform.matrix)
-    }
-    this.assembly.add(ticks)
+  constructor() {}
+
+  get metalMaterial(): MeshStandardNodeMaterial {
+    return this.metal
+  }
+
+  get signalMaterial(): MeshBasicNodeMaterial {
+    return this.signal
+  }
+
+  /** Vue emits the declared nodes once their real Tres instances are mounted. */
+  adopt(nodes: WorksInstallationNodes): void {
+    if (this.disposed) return
+    this.nodes = nodes
+    this.applyProject(this.project < 0 ? 0 : this.project)
+    if (this.room >= 0) this.setRoom(this.room, false)
   }
 
   setRoom(index: number, snap: boolean): void {
@@ -76,8 +64,8 @@ export class WorksInstallation extends THREE.Group {
       this.targetColor.setHex(room.signal)
     }
     if (this.project < 0) this.setProject(WORKS_ROOMS[index]?.projectIndex ?? 0)
-    if (snap) {
-      this.assembly.quaternion.copy(this.target)
+    if (snap && this.nodes) {
+      this.nodes.assembly.quaternion.copy(this.target)
       this.signal.color.copy(this.targetColor)
     }
   }
@@ -86,23 +74,26 @@ export class WorksInstallation extends THREE.Group {
   setProject(index: number): void {
     if (this.disposed || this.project === index) return
     this.project = index
+    this.applyProject(index)
+  }
+
+  private applyProject(index: number): void {
     const signal = PROJECT_SIGNALS[index] ?? PROJECT_SIGNALS[0]!
     this.targetColor.setHex(signal)
     this.signal.color.setHex(signal)
-    const arcs = this.assembly.children.slice(0, 3)
-    const trace = this.assembly.children[3]!
-    const ticks = this.assembly.children[4]!
+    const nodes = this.nodes
+    if (!nodes) return
     const mode = index % 4
-    arcs.forEach((arc, arcIndex) => {
+    nodes.arcs.forEach((arc, arcIndex) => {
       arc.scale.setScalar(mode === 1 ? 0.72 + arcIndex * 0.08 : mode === 2 ? 1.05 : 1)
       arc.rotation.x =
         mode === 0 ? arcIndex * 0.42 : mode === 1 ? 0.12 : mode === 2 ? -0.35 + arcIndex * 0.2 : 0.6
       arc.rotation.y = mode === 3 ? arcIndex * 0.48 : -0.3
     })
-    trace.position.set(mode === 1 ? 0 : mode === 2 ? 0.12 : 0, mode === 3 ? 0.14 : 0, 0.055)
-    trace.scale.setScalar(mode === 2 ? 1.16 : 1)
-    ticks.visible = mode !== 1
-    this.assembly.rotation.z = mode === 3 ? -0.7 : mode === 2 ? 0.35 : 0
+    nodes.trace.position.set(mode === 1 ? 0 : mode === 2 ? 0.12 : 0, mode === 3 ? 0.14 : 0, 0.055)
+    nodes.trace.scale.setScalar(mode === 2 ? 1.16 : 1)
+    nodes.ticks.visible = mode !== 1
+    nodes.assembly.rotation.z = mode === 3 ? -0.7 : mode === 2 ? 0.35 : 0
   }
 
   setInverse(inverse: boolean): void {
@@ -111,16 +102,25 @@ export class WorksInstallation extends THREE.Group {
     this.metal.color.setHex(inverse ? 0x38444b : 0x81949c)
   }
 
+  /** Apply the parent stage's camera-local layout to the declared assembly. */
+  setCameraLocalLayout(x: number, y: number, z: number, scale: number): void {
+    if (this.disposed || !this.nodes) return
+    this.nodes.assembly.position.set(x, y, z)
+    this.nodes.assembly.scale.setScalar(scale)
+  }
+
   get isAnimating(): boolean {
-    return !this.disposed && this.assembly.quaternion.angleTo(this.target) > 0.001
+    return (
+      !this.disposed && !!this.nodes && this.nodes.assembly.quaternion.angleTo(this.target) > 0.001
+    )
   }
 
   update(dt: number): void {
-    if (this.disposed || !this.isAnimating) return
-    this.assembly.quaternion.slerp(this.target, 1 - Math.exp(-dt * 5))
+    if (this.disposed || !this.isAnimating || !this.nodes) return
+    this.nodes.assembly.quaternion.slerp(this.target, 1 - Math.exp(-dt * 5))
     this.signal.color.lerp(this.targetColor, 1 - Math.exp(-dt * 5))
     if (!this.isAnimating) {
-      this.assembly.quaternion.copy(this.target)
+      this.nodes.assembly.quaternion.copy(this.target)
       this.signal.color.copy(this.targetColor)
     }
   }
@@ -128,13 +128,8 @@ export class WorksInstallation extends THREE.Group {
   dispose(): void {
     if (this.disposed) return
     this.disposed = true
-    this.traverse((object) => {
-      if (object instanceof THREE.InstancedMesh) object.dispose()
-    })
-    this.geometries.forEach((geometry) => geometry.dispose())
+    this.nodes = null
     this.metal.dispose()
     this.signal.dispose()
-    this.clear()
-    this.removeFromParent()
   }
 }

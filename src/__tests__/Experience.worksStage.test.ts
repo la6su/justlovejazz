@@ -3,7 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Experience } from '../Experience/Experience'
 import { SceneCoordinator, type SceneCoordinatorOwners } from '../Experience/SceneCoordinator'
 import { WorksPlaneStage } from '../Experience/World/WorksPlaneStage'
+import { WorksInstallation } from '../Experience/World/WorksInstallation'
 import type { PageId } from '../sections/_shared/constants'
+import { getCurrentPage, setCurrentPage } from '../core/routePage'
 
 // Phase 8 slice 7: the /works case-plane stage lifecycle (lazy creation +
 // disposal) moved from World to Experience. Phase 8 slice 10: the `World`
@@ -33,6 +35,12 @@ describe('Experience works stage lifecycle', () => {
       camera: { instance: new THREE.PerspectiveCamera() },
       _worksPlaneStagePromise: null,
       _worksPlaneStageRequest: 0,
+      _host: {
+        mountWorksPlaneStage: vi.fn(async (stage: WorksPlaneStage) => scene.add(stage)),
+        unmountWorksPlaneStage: vi.fn(async (stage: WorksPlaneStage) => stage.removeFromParent()),
+        mountWorksInstallation: vi.fn(async () => undefined),
+        unmountWorksInstallation: vi.fn(async () => undefined),
+      },
     } as unknown as Partial<Experience>) as Experience
     // The coordinator reads the stage through an owner getter over Experience's
     // own field (the lazy stage changes identity per route — a stored reference
@@ -51,17 +59,13 @@ describe('Experience works stage lifecycle', () => {
       contactCyprusStage: () => null,
       labGamepad: () => null,
     }
-    coordinator = new SceneCoordinator(
-      scene,
-      owners,
-      () => (document.body.dataset.page ?? 'home') as PageId,
-    )
+    coordinator = new SceneCoordinator(scene, owners, () => getCurrentPage() as PageId)
     exp.coordinator = coordinator
     return exp
   }
 
   beforeEach(() => {
-    document.body.dataset.page = 'works'
+    setCurrentPage('works')
     getContext = vi
       .spyOn(HTMLCanvasElement.prototype, 'getContext')
       .mockReturnValue(canvasContext as unknown as CanvasRenderingContext2D)
@@ -70,7 +74,7 @@ describe('Experience works stage lifecycle', () => {
 
   afterEach(() => {
     getContext.mockRestore()
-    delete document.body.dataset.page
+    setCurrentPage('home')
   })
 
   it('releases a Works stage that finishes after the route was disposed', async () => {
@@ -100,7 +104,12 @@ describe('Experience works stage lifecycle', () => {
   })
 
   it('forwards the active /works stage into the coordinator frame path via the owner getter', async () => {
-    const initSpy = vi.spyOn(WorksPlaneStage.prototype, 'init').mockResolvedValue()
+    const initSpy = vi.spyOn(WorksPlaneStage.prototype, 'init').mockImplementation(async function (
+      this: WorksPlaneStage,
+    ) {
+      ;(this as unknown as { installation: WorksInstallation | null }).installation =
+        new WorksInstallation()
+    })
     const disposeSpy = vi.spyOn(WorksPlaneStage.prototype, 'dispose')
 
     try {
@@ -108,11 +117,28 @@ describe('Experience works stage lifecycle', () => {
       await pending
       const stage = coordinator.worksPlaneStage
       expect(stage).toBeInstanceOf(WorksPlaneStage)
+      const host = (exp as unknown as { _host: { mountWorksPlaneStage: ReturnType<typeof vi.fn> } })
+        ._host
+      expect(host.mountWorksPlaneStage).toHaveBeenCalledWith(stage)
+      const installation = stage?.installationOwner
+      expect(installation).toBeInstanceOf(WorksInstallation)
+      expect(
+        (host as unknown as { mountWorksInstallation: ReturnType<typeof vi.fn> })
+          .mountWorksInstallation,
+      ).toHaveBeenCalledWith(stage, installation)
 
       // Leaving /works disposes the owner and clears the field.
-      document.body.dataset.page = 'home'
+      setCurrentPage('home')
       exp.disposeWorksPlaneStage()
       expect(coordinator.worksPlaneStage).toBeNull()
+      expect(
+        (host as unknown as { unmountWorksPlaneStage: ReturnType<typeof vi.fn> })
+          .unmountWorksPlaneStage,
+      ).toHaveBeenCalledWith(stage)
+      expect(
+        (host as unknown as { unmountWorksInstallation: ReturnType<typeof vi.fn> })
+          .unmountWorksInstallation,
+      ).toHaveBeenCalledWith(stage, installation)
       expect(disposeSpy).toHaveBeenCalledTimes(1)
       expect(stage?.parent).toBeNull()
     } finally {

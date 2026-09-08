@@ -85,4 +85,27 @@ describe('Camera reduced-motion settlement', () => {
     expect(instance.fov).toBe(initialFov)
     sizes.destroy()
   })
+
+  it('updates the adopted camera only through the viewport port', () => {
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))
+    const sizes = new Sizes()
+    const instance = new THREE.PerspectiveCamera()
+    const camera = new Camera(sizes, instance)
+    const projection = vi.spyOn(instance, 'updateProjectionMatrix')
+
+    vi.stubGlobal('innerWidth', 900)
+    vi.stubGlobal('innerHeight', 600)
+    window.dispatchEvent(new Event('resize'))
+
+    // Camera owns no window listener; Experience performs this fan-out after
+    // Sizes has captured the browser viewport.
+    expect(instance.aspect).not.toBeCloseTo(1.5)
+    sizes.resize()
+    camera.resize()
+
+    expect(instance.aspect).toBeCloseTo(1.5)
+    expect(projection).toHaveBeenCalled()
+    camera.destroy()
+    sizes.destroy()
+  })
 })

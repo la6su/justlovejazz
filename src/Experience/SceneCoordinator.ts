@@ -82,6 +82,11 @@ export class SceneCoordinator {
     return this._currentSectionIndex
   }
 
+  /** DEV diagnostics: ids currently installed for the active page. */
+  public get configIds(): readonly string[] {
+    return this.configs.map((config) => config.id)
+  }
+
   /** The stable section groups (empty before the SectionGroups owner is built).
    *  Public read accessor: Experience's theme handler + low-fps particle
    *  reduction iterate the groups directly. */
@@ -174,15 +179,12 @@ export class SceneCoordinator {
 
     this.configs.forEach((config, index) => {
       const section = new Section(config, index)
-      this.sceneRef.add(section)
-
       if (index === 1) {
         // Intro = index 1 (canonical Lab/Contact finale = 0)
         section.visible = true
         section.scale.setScalar(1.0)
         section.rotation.y = 0
         bus.set(`section:${config.id}:state`, 1)
-        bus.set(`section:${config.id}:opacity`, 1)
         section.forceState(SectionState.VIEWING)
       } else {
         section.forceState(SectionState.READY)
@@ -224,6 +226,11 @@ export class SceneCoordinator {
         this.sceneGroups.map((g, i) => `g[${i}]=${g.visible}`),
       )
     }
+  }
+
+  /** Rebuild the page-specific section/config contract after SPA navigation. */
+  public refreshRouteConfig(): Promise<void> {
+    return this.init()
   }
 
   /**
@@ -458,7 +465,6 @@ export class SceneCoordinator {
       if (i === index) {
         // Active section → viewing
         s.switchState(SectionState.VIEWING, 0.8, reduced)
-        s.fadeIn(0.6)
       } else if (i < index) {
         // Previous sections → passed
         s.switchState(SectionState.PASSED, 0.5, reduced)
@@ -678,11 +684,9 @@ export class SceneCoordinator {
     const reduced = this.isReducedMotion
     if (fromSec.state === SectionState.READY) {
       fromSec.switchState(SectionState.VIEWING, 0.8, reduced)
-      fromSec.fadeIn(0.6)
     }
     if (toSec.state === SectionState.READY && t > 0.1) {
       toSec.switchState(SectionState.VIEWING, 0.8, reduced)
-      toSec.fadeIn(0.6)
     }
     if (t > 0.7 && fromSec.state === SectionState.VIEWING) {
       fromSec.switchState(SectionState.PASSED, 0.5, reduced)
@@ -696,7 +700,6 @@ export class SceneCoordinator {
     const fromLight = fromSec.lightData
     const toLight = toSec.lightData
 
-    const bus = StateBus.getInstance()
     // fromCfg/toCfg already declared above (for easing selection)
     // Use the config from section's phaseConfig for ground/post/lighting
 
@@ -705,10 +708,6 @@ export class SceneCoordinator {
     // it to a contrasting tone per theme); the coordinator forwards its eased
     // `t` (the lerp needs the per-section eased t from here).
     this.owners.ground()?.applyTransform(fromCfg.ground, toCfg.ground, t)
-
-    // Crossfade opacity (bgT holds each section's opacity longer)
-    bus.set(`section:${fromCfg.id}:opacity`, 1 - bgT)
-    bus.set(`section:${toCfg.id}:opacity`, bgT)
 
     // Scroll-driven parallax: subtle camera depth drift within a section.
     // sin(t * PI) peaks at mid-transition (t=0.5) — camera nudges forward,
@@ -779,7 +778,6 @@ export class SceneCoordinator {
   private disposeSections(): void {
     this.sections.forEach((s) => {
       s.dispose()
-      this.sceneRef.remove(s)
     })
     this.sections = []
   }

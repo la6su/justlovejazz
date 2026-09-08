@@ -32,10 +32,11 @@ vi.mock('../core/RenderPipeline', () => ({
   RenderPipeline: { create: mocks.pipelineCreate },
 }))
 
-import { Renderer } from '../Experience/Renderer'
+import { Renderer, type AdoptedRenderer } from '../Experience/Renderer'
 
 type RendererInternals = {
-  init: () => Promise<void>
+  instance: ReturnType<typeof fakeRenderer>
+  init: (adopted: AdoptedRenderer) => Promise<void>
   recoverFromDeviceLost: () => Promise<void>
   dispose: () => void
   setAnimationLoop: (callback: ((time: number) => void) | null) => void
@@ -71,7 +72,6 @@ function makeRenderer(
     _disposed: false,
     _lifecycleGeneration: 0,
     _forceWebGL: false,
-    _ownsCanvas: false,
     _onInstanceReplaced: onInstanceReplaced,
     _loopCallback: vi.fn(),
     _onResize: vi.fn(),
@@ -96,20 +96,25 @@ describe('Renderer device-loss lifecycle', () => {
     document.querySelectorAll('.renderer-unsupported').forEach((el) => el.remove())
   })
 
-  it('disposes a late init candidate instead of reviving after teardown', async () => {
-    const candidate = fakeRenderer()
-    let resolveInit!: () => void
-    mocks.create.mockReturnValueOnce(candidate)
-    mocks.init.mockImplementationOnce(() => new Promise<void>((resolve) => (resolveInit = resolve)))
-    const renderer = makeRenderer(fakeRenderer(), vi.fn())
+  it('adopts the SceneHost renderer without constructing a legacy canvas or backend', async () => {
+    const adopted = fakeRenderer()
+    const onInstanceReplaced = vi.fn()
+    const renderer = makeRenderer(fakeRenderer(), onInstanceReplaced)
 
-    const initPromise = renderer.init()
-    renderer.dispose()
-    resolveInit()
-    await initPromise
+    await renderer.init({
+      instance: adopted as unknown as AdoptedRenderer['instance'],
+      canvas: adopted.domElement,
+      mode: 'webgpu',
+      onInstanceReplaced,
+    })
 
-    expect(candidate.dispose).toHaveBeenCalledOnce()
-    expect(mocks.pipelineCreate).not.toHaveBeenCalled()
+    expect(renderer.instance).toBe(adopted)
+    expect(adopted.setPixelRatio).toHaveBeenCalledWith(1)
+    expect(adopted.setSize).toHaveBeenCalledWith(640, 480)
+    expect(mocks.create).not.toHaveBeenCalled()
+    expect(mocks.init).not.toHaveBeenCalled()
+    expect(mocks.inspect).not.toHaveBeenCalled()
+    expect(mocks.plan).not.toHaveBeenCalled()
   })
 
   it('disposes a late replacement instead of reviving after teardown', async () => {

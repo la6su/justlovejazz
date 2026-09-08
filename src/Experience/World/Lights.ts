@@ -112,7 +112,6 @@ export class CinematicLights {
   private rimLight: THREE.DirectionalLight
   private volumetricLight: THREE.PointLight
   private hemiLight: THREE.HemisphereLight
-  private readonly group: THREE.Group
 
   // Lerp targets — set by changeSection(), consumed by update()
   private _targetKeyColor = new THREE.Color()
@@ -127,53 +126,15 @@ export class CinematicLights {
   private _reducedMotionSettled = false
   private _reducedMotion = prefersReducedMotion()
   private _transitionActive = false
-  private readonly _ownsNodes: boolean
-
   // Speed multiplier for lerp — higher = faster transition (junni: ~0.5s)
   private static readonly LERP_SPEED = 3.0
 
-  constructor(scene: THREE.Scene, nodes?: CinematicLightsNodes) {
-    this._ownsNodes = !nodes
-    if (nodes) {
-      this.group = nodes.group
-      this.keyLight = nodes.key
-      this.fillLight = nodes.fill
-      this.rimLight = nodes.rim
-      this.volumetricLight = nodes.volumetric
-      this.hemiLight = nodes.hemisphere
-    } else {
-      this.group = new THREE.Group()
-      this.group.name = 'cinematic-lights'
-
-      // ── Key light (main directional, casts shadow) ──
-      // Initial intensity 2.0 — sec_intro preset overrides to 0.0 (lights off
-      // on intro). Other sections set their own via changeSection().
-      this.keyLight = new THREE.DirectionalLight(0xffffff, 2.0)
-      this.keyLight.position.set(4, 6, 4)
-      this.keyLight.castShadow = false // shadow disabled for perf (WebGPU)
-      this.group.add(this.keyLight)
-
-      // ── Fill light (soft fill from opposite side) ──
-      this.fillLight = new THREE.DirectionalLight(0xd0d8e8, 0.6)
-      this.fillLight.position.set(-4, 2, 1)
-      this.group.add(this.fillLight)
-
-      // ── Rim light (back-light, defines object edges) ──
-      this.rimLight = new THREE.DirectionalLight(0xb0c0d8, 0.8)
-      this.rimLight.position.set(0, 2, -4)
-      this.group.add(this.rimLight)
-
-      // ── Volumetric (PointLight, orbits slowly for organic atmosphere) ──
-      this.volumetricLight = new THREE.PointLight(0x6677bb, 0.0, 14)
-      this.volumetricLight.position.set(0, 1.5, 0)
-      this.group.add(this.volumetricLight)
-
-      // ── Hemisphere (ambient sky/ground gradient) ──
-      this.hemiLight = new THREE.HemisphereLight(0xffffff, 0xe8e8e8, 0.5)
-      this.group.add(this.hemiLight)
-
-      scene.add(this.group)
-    }
+  constructor(nodes: CinematicLightsNodes) {
+    this.keyLight = nodes.key
+    this.fillLight = nodes.fill
+    this.rimLight = nodes.rim
+    this.volumetricLight = nodes.volumetric
+    this.hemiLight = nodes.hemisphere
 
     // Initialise targets from intro preset
     this._applyPresetToTargets(SECTION_PRESETS['sec_intro']!)
@@ -261,12 +222,6 @@ export class CinematicLights {
   public dispose(): void {
     if (this._disposed) return
     this._disposed = true
-    if (!this._ownsNodes) return
-    this.group.traverse((obj) => {
-      if (obj instanceof THREE.Light) obj.dispose()
-    })
-    this.group.parent?.remove(this.group)
-    this.group.clear()
   }
 
   // ── Private ──────────────────────────────────────────────────────────────

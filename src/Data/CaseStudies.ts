@@ -7,7 +7,6 @@ import type { CaseStudy } from '../core/caseStudies'
 export const CASE_STUDIES: readonly CaseStudy[] = [
   {
     projectId: 'ebb-vibes',
-    status: 'review',
     disclosure: 'self-initiated',
     outcome: 'A realtime visual music interface for an immersive listening session.',
     context: 'A studio experiment exploring how sound can become a navigable visual state.',
@@ -37,7 +36,6 @@ export const CASE_STUDIES: readonly CaseStudy[] = [
   },
   {
     projectId: 'mono-sunday',
-    status: 'review',
     disclosure: 'experimental',
     outcome: 'A quiet interface study built around texture, rhythm and absence.',
     context: 'An experimental visual system for a minimal ambient release.',
@@ -67,7 +65,6 @@ export const CASE_STUDIES: readonly CaseStudy[] = [
   },
   {
     projectId: 'nocturne-blue',
-    status: 'review',
     disclosure: 'self-initiated',
     outcome: 'A particle-led visual language for late-hour ambient frequencies.',
     context: 'A self-initiated study in translating low-frequency atmosphere into motion.',

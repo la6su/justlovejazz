@@ -21,12 +21,14 @@ the one loop driver.
 
 ## Iteration 2 decision — 2026-09-07
 
-Stop A before implementation. The proposed EnvSky leaf would have to borrow an
-EnvSphere material while Tres owns attachment. The available primitive route
-would reparent/detach the already imperative EnvSphere owner at Vue unmount,
-or require a new bridge and acknowledgement protocol larger than the removed
-leaf constructor. That is not a net ownership reduction and has no measured
-runtime benefit.
+The first EnvSky assessment stopped the primitive-adapter route: it would have
+reparented the imperative EnvSphere owner or added a lifecycle protocol larger
+than the removed mesh constructor. A later real Tres spike established a
+smaller safe boundary instead. `EnvSphere(false)` retains its palette material
+and the five rounded pavilion faces; `EnvSky.vue` declares only the exclusive
+sky mesh and `PlaneGeometry`. The material remains borrowed and is disposed by
+EnvSphere, never by Tres. `SceneHost` waits for the declared leaf before it
+publishes the host bridge, so the first successful world frame is complete.
 
 C is superseded by upstream `88542de`: `Experience/LazyStage.ts` already
 centralizes the requested lazy-stage contract for all five route-owned stages
@@ -63,14 +65,25 @@ changes.
 
 ## Iteration 4 decision — 2026-09-07
 
-Stop before implementation: `EnvSphere` remains an imperative ambient owner.
-Its six meshes borrow six palette-controlled materials and its rounded-pavilion
-geometry is created through `RoundedBoxGeometry`. Moving any single face would
-reintroduce the material-borrowing detach acknowledgement that the original
-audit rejected, while moving the full pavilion would transfer palette and
-resource disposal across the controller boundary. `ServicesStage` and
+Completed: `EnvSky` is the third production declarative static leaf. Its
+focused lifecycle test proves Tres removes the mesh/geometry without disposing
+the borrowed palette material. `EnvSphere` owns that material's terminal
+disposal and remains the controller for palette interpolation and
+reduced-motion settlement. Physical WebGLBackend and hardware WebGPUBackend
+gates passed with the same 15 geometry / 29 material scene inventory, one
+canvas and zero settled draws.
+
+`EnvSphereOwner.lifecycle.test.ts` mounts the two owners together under the
+real Tres canvas and proves the teardown split directly: Tres disposes the sky
+geometry, EnvSphere disposes its material exactly once, and neither node stays
+attached to the scene.
+
+Stop before any further EnvSphere migration: its five rounded pavilion faces
+still combine `RoundedBoxGeometry` with palette-owned materials. Moving them
+would transfer their material and resource-disposal contract across the
+controller boundary without a measured benefit. `ServicesStage` and
 `WorksInstallation` are also rejected: their topology is coupled to active
-camera-local or project-driven animation and TSL NodeMaterials. No third
+camera-local or project-driven animation and TSL NodeMaterials. No fourth
 exclusive static subtree was found in the audited owners.
 
 Continue condition: profile or introduce a new exclusive built-in subtree with
@@ -80,6 +93,46 @@ merely to increase declarative coverage.
 Result: continue the limited hybrid path only where a subtree is exclusive,
 static in topology and has a smaller ownership boundary than its imperative
 equivalent. The scheduler bridge remains stopped without measured benefit.
+
+## Iteration 5 decision — 2026-09-08
+
+The pointer-ink stage audit confirms shared lifecycle mechanics but distinct
+rendering contracts. `ContactHaloStage` and `ManifestoInkStage` use different
+plane dimensions, TSL subgraphs, palette defaults, damping constants and
+reduced-motion artwork. Extracting a base class or factory would centralize
+boilerplate while leaving each material, geometry and disposal owner separate;
+it would therefore increase abstraction without improving Tres ownership or
+runtime behavior. Keep both owners local until a third stage or measured
+maintenance/runtime cost justifies a new boundary.
+
+The legacy `Section` objects were a separate confirmed cleanup. Their
+StateBus transition data remains useful to `SceneCoordinator`, but they had no
+renderable children after `SectionGroups` adoption. The scene/GPU shell was
+removed, leaving a plain route-state owner; physical WebGLBackend and hardware
+WebGPUBackend gates still report one canvas, settled zero demand and clean
+teardown: `docs/evidence/phase7-live-gate/2026-09-07T20-57-19-008Z-report.json`
+and `docs/evidence/phase7-live-gate/2026-09-07T20-58-50-811Z-report.json`.
+
+The subsequent opacity-channel removal also passed the 20-cycle WebGL route
+soak and the hardware WebGPU live gate:
+`docs/evidence/phase10-route-cycle-soak/2026-09-07T21-00-03-653Z-report.json`
+and `docs/evidence/phase7-live-gate/2026-09-07T21-04-16-394Z-report.json`.
+
+The remaining `Section` StateBus channels are intentionally retained as a
+private transition boundary. They have no renderable or route consumers, but
+their completion events synchronize the coordinator's READY/VIEWING/PASSED
+state machine. Replacing them would introduce a second animation engine with
+no measured Tres or runtime benefit.
+
+The case-study status audit found no publication gate or runtime consumer;
+`CaseStudyView` owns the editorial disclosure text directly. The dead status
+field was removed from the shared contract and data records without changing
+route state or published markup.
+
+The production-only adapter audit found no further removable Tres boundary.
+`three-webgpu-compat.ts` remains required by the installed Tres runtime,
+`WebGPUPostPipeline` remains reachable through `RenderPipeline`, and the
+SceneHost/lazy-stage/route-transition modules all have live consumers.
 
 ## Validation baseline — 2026-09-07
 
@@ -209,34 +262,33 @@ that later adopt decoders must also own their partial results and cancellation.
 
 ## 6. Experiment A: declarative static subtree
 
+Status: completed in `611b95e` (2026-09-07).
+
 Target: only EnvSphere's pavilion-sky mesh geometry/attachment. This is a
 static leaf within a moving palette owner, not a rewrite of EnvSphere.
 
 Proposed files:
 
 - src/app/scene/EnvSky.vue (new).
-- src/app/SceneHost.vue; src/app/sceneHost.ts.
-- src/Experience/World/EnvSphere.ts; src/Experience/Experience.ts.
+- src/app/SceneHost.vue.
+- src/Experience/World/EnvSphere.ts.
 - src/**tests**/EnvSky.lifecycle.test.ts (new).
 - src/**tests**/EnvSphere.motion.test.ts; SceneHost.lifecycle.test.ts.
 
-Minimal slice: replace only creation/add/removal of the sky mesh and its
-PlaneGeometry(140, 96). Keep its position, renderOrder=-1001, culling, existing
-material class and palette writes. Pass a shallow descriptor containing the
-parent and borrowed material through the existing sceneHost bridge. Mount the
-child within the one TresCanvas after that descriptor is available. An explicit
-primitive parent adapter may be used; it must not become a second parent or
-GPU owner. If that cannot be expressed without reparenting or extra registry
-machinery, stop A and retain the imperative leaf.
+Minimal slice completed: replace only creation/add/removal of the sky mesh and
+its PlaneGeometry(140, 96). Position, renderOrder=-1001, culling, existing
+material class and palette writes are unchanged. `EnvSphereOwner` publishes an
+`EnvSphere(false)` instance; the existing SceneHost one-shot bridge waits for
+the child after that owner becomes available. No primitive parent adapter,
+second registry or acknowledgement protocol was added.
 
 Ownership: EnvSky/Tres owns the exclusive mesh attachment and declared
 geometry; EnvSphere retains sole ownership of the borrowed material and all
 palette state. Borrowed resources use dispose=null and are never declared as
 new material constructors. No shared geometry/material traversal disposal.
-Verify real Tres node removal as well as full root teardown. The existing host
-bridge must expose a completed-detach acknowledgement for destruction ordering:
-stop work, unpublish/detach the component, then release the borrowed material.
-If this handshake outweighs the leaf construction removed, do not admit A.
+Verify real Tres node removal as well as full root teardown. Root teardown is
+synchronous after the scheduler has stopped; `EnvSky` owns no material
+disposal, and `EnvSphereOwner` performs the one terminal material disposal.
 
 Backend: same live renderer, factory, direct WebGL and WebGPU post paths.
 No material modernization in the same diff. Reduced motion and demand stay
@@ -245,12 +297,11 @@ raise the existing dirty demand once through the typed port, because Tres's
 own invalidation cannot wake the stopped project driver. First app readiness
 must await the declared leaf's attachment before its successful world frame.
 
-Tests: geometry/material ownership, failed mount, detach-before-dispose,
-theme transition, live reduced motion, no duplicate sky on route cycles,
-first-frame completeness and backend visual baseline. GPU counts/draws must
-match the original leaf. Roll back the entire A slice to the pre-A commit.
-Expected gain is evidence and clearer composition; runtime gain is not claimed.
-Risk: medium, primarily cross-owner mount/unmount ordering and added plumbing.
+Tests: geometry/material ownership, theme transition, live reduced motion,
+first-frame completeness and backend visual baseline. GPU counts/draws match
+the original leaf. Roll back the entire A slice with `611b95e`. Expected gain
+is evidence and clearer composition; runtime gain is not claimed. Remaining
+risk is limited to cross-owner mount/unmount ordering.
 
 Run the first spike outside the production entry graph. If admitted, replace
 the old construction branch; do not ship permanent dual implementations.

@@ -16,6 +16,11 @@
 
 // (DeviceCapability import removed — mobile detection now handled by CSS
 //  @media (pointer: coarse) in main.less, which is more reliable than JS.)
+import { brandToken } from '../core/brandTokens'
+
+const CURSOR_ACCENT = brandToken('jlz-color-accent')!
+const CURSOR_ACCENT_GLOW = brandToken('jlz-color-accent-glow')!
+const CURSOR_TEAL = brandToken('jlz-color-signal-teal')!
 
 function noise2D(x: number, y: number): number {
   const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453
@@ -48,9 +53,9 @@ export class Cursor {
 
   // Cached theme colors — read once from CSS variables, refreshed on theme change.
   // Avoids 4× getComputedStyle per redraw (was a per-frame allocation hotspot).
-  private _cachedAccent = '#ffd60a'
-  private _cachedAccentGlow = 'rgba(255, 214, 10, 0.35)'
-  private _cachedTeal = '#58e6a9'
+  private _cachedAccent = CURSOR_ACCENT
+  private _cachedAccentGlow = CURSOR_ACCENT_GLOW
+  private _cachedTeal = CURSOR_TEAL
   private readonly _themeColors: CursorThemeColors = {
     accent: this._cachedAccent,
     accentGlow: this._cachedAccentGlow,
@@ -67,10 +72,10 @@ export class Cursor {
   refreshThemeCache(): void {
     if (this._disposed) return
     const styles = getComputedStyle(document.documentElement)
-    this._cachedAccent = styles.getPropertyValue('--jlz-color-accent').trim() || '#ffd60a'
+    this._cachedAccent = styles.getPropertyValue('--jlz-color-accent').trim() || CURSOR_ACCENT
     this._cachedAccentGlow =
-      styles.getPropertyValue('--jlz-color-accent-glow').trim() || 'rgba(255, 214, 10, 0.35)'
-    this._cachedTeal = styles.getPropertyValue('--jlz-color-signal-teal').trim() || '#58e6a9'
+      styles.getPropertyValue('--jlz-color-accent-glow').trim() || CURSOR_ACCENT_GLOW
+    this._cachedTeal = styles.getPropertyValue('--jlz-color-signal-teal').trim() || CURSOR_TEAL
     this._themeColors.accent = this._cachedAccent
     this._themeColors.accentGlow = this._cachedAccentGlow
     this._themeColors.teal = this._cachedTeal

@@ -8,8 +8,8 @@
 //   canvas, e2e `canvas.canvas`);
 // - the renderer (the custom renderer factory — the single construction
 //   owner; Tres awaits its async `init()` before the ready event);
-// - the camera (created here, passed to Tres and to Experience through the
-//   bridge — wrapped by the `Camera` class for cinematic behavior);
+// - the camera (declared by `CinematicCamera`, passed to Experience through
+//   the bridge and adopted by its cinematic controller);
 // - the scene (the Tres context scene — Experience stops creating its own);
 //
 // and resolves the `sceneHost` bridge after renderer init + actual-backend
@@ -20,14 +20,10 @@
 // stopped immediately after ready and the `RenderScheduler` (ADR 0004) is the
 // single loop driver. On-demand also avoids manual mode's delayed advance().
 //
-// Rollback: switch AppShell back to the native-world host (no SceneHost);
-// Experience then creates its own scene and `Renderer.init()` constructs its
-// own renderer (the retained pre-Phase-7 path).
-
-import { markRaw, onBeforeUnmount, ref, toValue } from 'vue'
+import { markRaw, nextTick, onBeforeUnmount, ref, shallowRef, toValue } from 'vue'
 import { TresCanvas } from '@tresjs/core'
 import type { TresContext, TresRendererSetupContext } from '@tresjs/core'
-import { PerspectiveCamera } from 'three'
+import type { PerspectiveCamera } from 'three'
 import { planUnifiedBackend } from '../core/rendererBackend'
 import { DeviceCapability } from '../core/DeviceCapability'
 import {
@@ -38,9 +34,20 @@ import {
 } from '../core/unifiedRenderer'
 import { sceneHost } from './sceneHost'
 import CinematicLights from './scene/CinematicLights.vue'
+import CinematicCamera from './scene/CinematicCamera.vue'
 import GroundPlane from './scene/GroundPlane.vue'
+import SectionGroupRoots from './scene/SectionGroupRoots.vue'
+import ServicesStageOwner from './scene/ServicesStageOwner.vue'
+import EnvSphereOwner from './scene/EnvSphereOwner.vue'
+import EnvSky from './scene/EnvSky.vue'
+import WorksStageOwner from './scene/WorksStageOwner.vue'
 import type { CinematicLightsNodes } from '../Experience/World/Lights'
 import type { GroundPlaneNode } from '../Experience/Scene/GroundPlane'
+import type { Group } from 'three'
+import type { ServicesStage } from '../Experience/World/ServicesStage'
+import type { EnvSphere } from '../Experience/World/EnvSphere'
+import type { WorksPlaneStage } from '../Experience/World/WorksPlaneStage'
+import type { WorksInstallation } from '../Experience/World/WorksInstallation'
 
 const noScene = new URLSearchParams(window.location.search).has('no-scene')
 // Dev-only physical recovery seam. It preserves the shipped single-renderer
@@ -55,10 +62,6 @@ const forceWebGLBackendForTest =
 // Renderer owner; otherwise Tres can overwrite the capped buffer with the
 // raw devicePixelRatio (for example 3× on a mobile browser).
 const initialDprCap = DeviceCapability.getInstance().maxDpr
-
-// Single camera owner (Phase 7). Tres registers it as the active camera and
-// keeps its aspect in sync; the Experience `Camera` wrapper adopts it.
-const camera = markRaw(new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000))
 
 // Single renderer-construction owner (Phase 7): the custom renderer factory.
 // Construction is synchronous (Tres awaits the instance's `init()` itself);
@@ -82,6 +85,11 @@ let liveRenderer: UnifiedRenderSurface | null = null
 let createdRenderer: UnifiedRenderSurface | null = null
 let unbindRendererOwner: (() => void) | null = null
 let stopTresLoop: (() => void) | null = null
+let declarativeCamera: PerspectiveCamera | null = null
+let resolveDeclarativeCamera!: (camera: PerspectiveCamera) => void
+const declarativeCameraReady = new Promise<PerspectiveCamera>((resolve) => {
+  resolveDeclarativeCamera = resolve
+})
 let declarativeLights: CinematicLightsNodes | null = null
 let resolveDeclarativeLights!: (lights: CinematicLightsNodes) => void
 const declarativeLightsReady = new Promise<CinematicLightsNodes>((resolve) => {
@@ -92,7 +100,65 @@ let resolveDeclarativeGround!: (ground: GroundPlaneNode) => void
 const declarativeGroundReady = new Promise<GroundPlaneNode>((resolve) => {
   resolveDeclarativeGround = resolve
 })
+let declarativeSectionRoots: readonly Group[] | null = null
+let resolveDeclarativeSectionRoots!: (groups: readonly Group[]) => void
+const declarativeSectionRootsReady = new Promise<readonly Group[]>((resolve) => {
+  resolveDeclarativeSectionRoots = resolve
+})
+let declarativeServicesStage: ServicesStage | null = null
+let resolveDeclarativeServicesStage!: (stage: ServicesStage) => void
+const declarativeServicesStageReady = new Promise<ServicesStage>((resolve) => {
+  resolveDeclarativeServicesStage = resolve
+})
+const declarativeEnvSphere = shallowRef<EnvSphere | null>(null)
+const declarativeWorksStage = shallowRef<WorksPlaneStage | null>(null)
+const declarativeWorksInstallation = shallowRef<WorksInstallation | null>(null)
+let resolveDeclarativeEnvSphere!: (owner: EnvSphere) => void
+const declarativeEnvSphereReady = new Promise<EnvSphere>((resolve) => {
+  resolveDeclarativeEnvSphere = resolve
+})
+let declarativeEnvSky = false
+let resolveDeclarativeEnvSky!: () => void
+const declarativeEnvSkyReady = new Promise<void>((resolve) => {
+  resolveDeclarativeEnvSky = resolve
+})
 const disposedRenderers = new WeakSet<object>()
+
+async function mountWorksPlaneStage(stage: WorksPlaneStage): Promise<void> {
+  if (disposed) return
+  declarativeWorksStage.value = stage
+  await nextTick()
+}
+
+async function unmountWorksPlaneStage(stage: WorksPlaneStage): Promise<void> {
+  if (declarativeWorksStage.value !== stage) return
+  declarativeWorksStage.value = null
+  await nextTick()
+}
+
+async function mountWorksInstallation(
+  stage: WorksPlaneStage,
+  installation: WorksInstallation,
+): Promise<void> {
+  if (disposed || declarativeWorksStage.value !== stage) return
+  declarativeWorksInstallation.value = markRaw(installation)
+  await nextTick()
+}
+
+async function unmountWorksInstallation(
+  stage: WorksPlaneStage,
+  installation: WorksInstallation,
+): Promise<void> {
+  if (declarativeWorksStage.value !== stage || declarativeWorksInstallation.value !== installation)
+    return
+  declarativeWorksInstallation.value = null
+  await nextTick()
+}
+
+function onDeclarativeCameraReady(camera: PerspectiveCamera): void {
+  declarativeCamera = camera
+  resolveDeclarativeCamera(camera)
+}
 
 function onDeclarativeLightsReady(lights: CinematicLightsNodes): void {
   declarativeLights = lights
@@ -101,6 +167,22 @@ function onDeclarativeLightsReady(lights: CinematicLightsNodes): void {
 function onDeclarativeGroundReady(ground: GroundPlaneNode): void {
   declarativeGround = ground
   resolveDeclarativeGround(ground)
+}
+function onDeclarativeSectionRootsReady(groups: Group[]): void {
+  declarativeSectionRoots = groups
+  resolveDeclarativeSectionRoots(groups)
+}
+function onDeclarativeServicesStageReady(stage: ServicesStage): void {
+  declarativeServicesStage = stage
+  resolveDeclarativeServicesStage(stage)
+}
+function onDeclarativeEnvSphereReady(owner: EnvSphere): void {
+  declarativeEnvSphere.value = owner
+  resolveDeclarativeEnvSphere(owner)
+}
+function onDeclarativeEnvSkyReady(): void {
+  declarativeEnvSky = true
+  resolveDeclarativeEnvSky()
 }
 
 function disposeRendererOnce(renderer: UnifiedRenderSurface | null): void {
@@ -119,8 +201,13 @@ async function onReady(context: TresContext): Promise<void> {
   stopTresLoop()
   const generation = ++lifecycleGeneration
   const isCurrent = (): boolean => !disposed && generation === lifecycleGeneration
+  const camera = declarativeCamera ?? (await declarativeCameraReady)
   const lights = declarativeLights ?? (await declarativeLightsReady)
   const ground = declarativeGround ?? (await declarativeGroundReady)
+  const sectionRoots = declarativeSectionRoots ?? (await declarativeSectionRootsReady)
+  const servicesStage = declarativeServicesStage ?? (await declarativeServicesStageReady)
+  const envSphere = declarativeEnvSphere.value ?? (await declarativeEnvSphereReady)
+  if (!declarativeEnvSky) await declarativeEnvSkyReady
   if (!isCurrent()) return
   const canvas =
     (tresRef.value?.$el as HTMLCanvasElement | undefined) ?? document.createElement('canvas')
@@ -176,6 +263,13 @@ async function onReady(context: TresContext): Promise<void> {
     backend,
     lights,
     ground,
+    sectionRoots,
+    servicesStage,
+    envSphere,
+    mountWorksPlaneStage,
+    unmountWorksPlaneStage,
+    mountWorksInstallation,
+    unmountWorksInstallation,
   })
 }
 
@@ -198,6 +292,8 @@ onBeforeUnmount(() => {
   if (createdRenderer !== liveRenderer) disposeRendererOnce(createdRenderer)
   liveRenderer = null
   createdRenderer = null
+  declarativeWorksStage.value = null
+  declarativeWorksInstallation.value = null
 })
 </script>
 
@@ -209,13 +305,25 @@ onBeforeUnmount(() => {
       render-mode="on-demand"
       :dpr="[1, initialDprCap]"
       :renderer="rendererFactory"
-      :camera="camera"
       :style="{ pointerEvents: 'none' }"
       @ready="onReady"
       @error="onError"
     >
+      <CinematicCamera @ready="onDeclarativeCameraReady" />
       <CinematicLights @ready="onDeclarativeLightsReady" />
       <GroundPlane @ready="onDeclarativeGroundReady" />
+      <SectionGroupRoots @ready="onDeclarativeSectionRootsReady" />
+      <ServicesStageOwner @ready="onDeclarativeServicesStageReady" />
+      <EnvSphereOwner @ready="onDeclarativeEnvSphereReady" />
+      <EnvSky
+        v-if="declarativeEnvSphere"
+        :material="declarativeEnvSphere.skyMaterial"
+        @ready="onDeclarativeEnvSkyReady"
+      />
+      <WorksStageOwner
+        :stage="declarativeWorksStage"
+        :installation="declarativeWorksInstallation"
+      />
     </TresCanvas>
   </div>
 </template>

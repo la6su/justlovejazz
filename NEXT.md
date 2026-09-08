@@ -1,11 +1,12 @@
 # Next work
 
-This file is the active outcome queue. The Vue 3, Vue Router and TresJS
-migration is complete; its phase history, acceptance gates and removal ledger
-are preserved in [`docs/archive/MIGRATION_VUE_TRES.md`](docs/archive/MIGRATION_VUE_TRES.md).
-Do not reopen completed migration phases. Current runtime contracts are in
-[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md); verification is in
-[`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md).
+This file is the active outcome queue. The completed Phase 5–10 migration
+history, acceptance gates and removal ledger are preserved in
+[`docs/archive/MIGRATION_VUE_TRES.md`](docs/archive/MIGRATION_VUE_TRES.md).
+The subsequent full scene-composition transition is active under
+[`docs/TRES_FULL_TRANSITION.md`](docs/TRES_FULL_TRANSITION.md). Current runtime
+contracts are in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md); verification is
+in [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md).
 
 ## Works direction
 
@@ -21,7 +22,50 @@ the camera-aligned exhibit layer owns its explicitly positioned hit targets.
 
 ## Active engineering queue
 
+Priority: execute [the autonomous Tres handoff](docs/TRES_AUTONOMOUS_HANDOFF.md),
+starting with the Works parent/disposal characterization, then lazy attachment
+and declarative installation geometry. WebGL device-loss restoration is deferred
+by the user; it does not block these tasks and is not a passed gate.
+
+- [x] **Restore the orbital room composition** — `/services` now carries
+      three low-frequency orbit rings around the existing glass assembly. The
+      additive layer preserves UI readability, reduced-motion settlement,
+      explicit NodeMaterial disposal and backend parity; Manifesto keeps its
+      distinct ink/cube composition. Physical WebGL/WebGPU evidence is recorded
+      in `docs/TRES_FULL_TRANSITION.md`.
+
 ### World and project development
+
+- [x] **Remove the retired hostless Three world** — `Experience` now requires
+      the complete persistent SceneHost contract and cannot construct fallback
+      scene, camera or renderer owners. Vue retains terminal disposal for
+      adopted `EnvSphere` and `ServicesStage`; the typed bridge rejects partial
+      forwarding at compile time. The physical WebGL/WebGPU gate evidence is
+      recorded in `docs/TRES_FULL_TRANSITION.md`.
+- [x] **Retire GroundPlane's imperative constructor** — the controller now
+      requires the declarative `GroundPlane.vue` node and retains only visual
+      state; Tres is its sole mesh, geometry, material and disposal owner.
+- [x] **Retire CinematicLights' imperative constructor** — its controller now
+      requires the complete declarative light-node set and retains only section
+      interpolation and reduced-motion settlement; Vue/Tres owns attachment
+      and terminal disposal.
+- [x] **Retire Camera's imperative constructor** — the cinematic controller
+      now requires the physical camera emitted by `CinematicCamera.vue` and
+      cannot construct a second `PerspectiveCamera`.
+
+- [x] **Create the single viewport fan-out** — `Sizes` is the only application
+      window-resize listener; `Experience` synchronizes the adopted camera,
+      renderer and active scene owners after it captures a viewport snapshot.
+      This is the first full-Tres transition foundation and retains the existing
+      renderer/canvas/loop topology. The physical WebGLBackend and WebGPUBackend
+      gates pass; evidence is recorded in `docs/TRES_FULL_TRANSITION.md`.
+
+- [x] **Declare the physical camera in Tres** — `CinematicCamera.vue` now
+      owns static camera construction and selects its instance through the
+      Tres active-camera port. The existing `Camera` controller adopts that
+      object for cinematic motion; `RenderScheduler`, renderer recovery and
+      demand behaviour are unchanged. Component, lifecycle, full-unit, build,
+      WebGLBackend and hardware-WebGPUBackend gates pass.
 
 - [x] **Showreel became a signal theater** — the home showreel is no longer a
       UIKit modal. `ShowreelTheater` owns a private render mode (fullscreen
@@ -50,6 +94,10 @@ the camera-aligned exhibit layer owns its explicitly positioned hit targets.
       extending the current project-directed installation into richer geometry
       and reviewed assets. Keep one renderer, canonical slots and explicit
       disposal.
+- [ ] **Create a lazy declarative Works installation boundary** — introduce a
+      route-scoped Vue/Tres mount seam for `WorksInstallation` only after its
+      TSL materials remain owned by one stage and no resources are created
+      before `/works`; preserve `WorksPlaneStage` as the animation/input owner.
 - [ ] Connect case chapters to meaningful material changes: initial condition,
       interaction mechanism, inspectable result and reflection. Define each
       transition's reduced-motion settled state before adding animation.
@@ -69,6 +117,11 @@ the camera-aligned exhibit layer owns its explicitly positioned hit targets.
       WebGLBackend path. A NodeMaterial conversion has no measured visual or
       lifecycle benefit and would add backend-parity and ownership risk; keep
       the ambient owner imperative as recorded in `TRES_HYBRID_EXPERIMENTS.md`.
+- [x] **Validate the declarative EnvSky leaf physically** — Tres now owns the
+      static sky mesh and plane geometry while `EnvSphere` owns the borrowed
+      palette material and its disposal. Gate this split on both real backends
+      before admitting another environment face. WebGLBackend and hardware
+      WebGPUBackend evidence is recorded in `docs/TRES_FULL_TRANSITION.md`.
 - [x] Capture normal/inverse, keyboard and reduced-motion visual baselines for
       every public route, plus separate physical WebGPU and WebGL runs. The
       current inventory and explicit gaps are recorded in
@@ -654,6 +707,10 @@ Theme ownership and visual rules: [`docs/THEME.md`](docs/THEME.md).
 - [x] **Reject late Renderer init candidates** — unified WebGPU candidates now
       carry a lifecycle generation guard; a teardown during async init disposes the
       late candidate before it can create a pipeline, canvas owner, or recovery hook.
+- [x] **Require SceneHost renderer adoption** — initial `Renderer` setup now
+      accepts only the ready SceneHost renderer and persistent canvas, removing its
+      obsolete detached-canvas/backend construction path. Device-loss recovery
+      remains the sole same-canvas renderer recreation owner.
 - [x] **Guard SceneHost fallback teardown** — the persistent Tres root now
       invalidates pending fallback initialization on unmount and disposes a late
       candidate instead of resolving a bridge for a removed Vue root.
@@ -930,44 +987,41 @@ Theme ownership and visual rules: [`docs/THEME.md`](docs/THEME.md).
       renderer/world failures before `ContentReveal`, `Cursor`, `SceneCoordinator`
       or `StateBus` exist, preserving release of the owners that did initialize.
 
-- [ ] **Rebuild per-route world configs on SPA navigation** —
-      `SceneCoordinator.configs` is written only by `init()` (called once from
-      `Experience.buildWorld` at boot), while the route-change handler calls
-      only `syncRouteVisuals()`. The per-page fog/env/post voices
-      (`WorldConfig` content palettes) therefore apply only to the boot
-      route; navigating home → content keeps the entry route's atmosphere.
-      Proposed slice: rebuild configs on `jlz:route-change` behind the
-      existing route-generation guard (`init()` already documents re-entry
-      reuse), unit-lock the rebuild, and gate the change with the
-      `visual-parity` route matrix on real WebGPU.
-- [ ] **Retire or consume the empty `Section` state machines** — the six
-      `Section` objects added by `SceneCoordinator.init()` never receive
-      children (scene content lives in `SectionGroups` groups), yet the
-      coordinator writes `section:<id>:opacity` state channels every frame
-      and the `switchState/fadeIn/applyState` machinery runs against groups
-      nothing renders. Either move the per-frame channel writes out of the
-      frame path or remove the Section layer with its tests.
-- [ ] **Deduplicate the pointer-ink stage twins** — `ContactHaloStage` and
-      `ManifestoInkStage` are structurally identical (~170 of 210 lines:
-      material/mesh/uniform boilerplate, active/reduced-motion/settle
-      lifecycle, pointer intake) and their lifecycle test files are ~95%
-      identical; `Experience` also repeats five near-identical
-      `LazyStageContract` literals with a drifted `release` order
-      (works/cyprus `dispose→removeFromParent` vs typography/halo/ink
-      `removeFromParent→dispose`). Extract a shared pointer-ink base and a
-      stage-owner factory, pin one release order, keep per-stage constants
-      local. Requires the visual-parity route matrix (TSL post surfaces are
-      not verifiable headless).
-- [ ] **Decide the `brandTokens.ts` fate** — the typed token manifest
-      (ADR 0007) has zero production consumers outside its sync test; the
-      anti-duplication it was built for is re-occurring (hard-coded brand
-      hexes in `builder/style.ts` and `entry-shell.ts`). Either consume it
-      (generate/verify the LESS §1 block and builder theme values from the
-      manifest) or retire it and keep the LESS tokens as the single owner.
-- [ ] **Give the case-study status gate an owner or drop the field** —
-      `CaseStudy.status` is `'review'` on every entry but nothing validates
-      or gates publication on it (the retired `validateCaseStudy` was removed
-      as dead code in the same sweep that found this).
+- [x] **Rebuild per-route world configs on SPA navigation** —
+      `ExperienceUI` now refreshes `SceneCoordinator` before reconciling route
+      owners, so destination fog, post voices and section ranges replace the
+      boot route's configuration. The existing route-generation guard still
+      drops stale lazy-stage continuations; lifecycle coverage locks refresh
+      ordering.
+- [x] **Retire the empty `Section` scene owners** — `Section` now retains only
+      route transition data and StateBus channels; it is no longer a
+      `THREE.Group`, is never attached to the scene, and performs no mesh,
+      opacity-channel or GPU disposal work. `SectionGroups` remains the sole
+      renderable section owner, while coordinator state transitions and
+      reduced-motion semantics remain covered by lifecycle tests.
+- [x] **Audit remaining Section StateBus channels** — state channels are read
+      only by the Section transition machine and `SceneCoordinator`; they do
+      not represent renderable resources or a public route contract. Keep this
+      narrow internal animation boundary because StateBus completion timing
+      drives READY/VIEWING/PASSED transitions; replacing it would add a second
+      transition engine without a measured runtime benefit.
+- [x] **Audit the pointer-ink stage twins** — `ContactHaloStage` and
+      `ManifestoInkStage` share lifecycle shape, but their TSL graphs,
+      geometry, palette, damping and visual contracts are intentionally
+      different. A shared base/factory would add an owner abstraction without
+      reducing GPU ownership or disposal work, so the migration stops here
+      until a third ink stage or measured maintenance/runtime problem exists.
+- [x] **Consume the typed `brandTokens.ts` manifest at a runtime boundary** —
+      `Experience/Cursor.ts` now takes its CSS fallback colors from the tested
+      manifest while Less remains the canonical source. The manifest is no
+      longer test-only; its parity contract stays locked by `brandTokens.test`.
+- [x] **Audit production-only Tres adapters** — `three-webgpu-compat.ts`,
+      `WebGPUPostPipeline`, `LazyStage`, `SceneHost` and route transition
+      modules all retain live consumers. No obsolete renderer, canvas, loop or
+      compatibility adapter was found after the migration.
+- [x] **Remove the unused case-study status field** —
+      `CaseStudyView` already owns the editorial review copy and no production
+      consumer read `CaseStudy.status`; the dead type and data fields are gone.
 
 ## Deferred product queue
 
@@ -1010,6 +1064,18 @@ Theme ownership and visual rules: [`docs/THEME.md`](docs/THEME.md).
       and a real contact endpoint after the route/resource boundaries are ready.
 
 ## Engineering policy
+
+- [ ] **Execute the post-migration autonomous plan** — follow
+      `docs/TRES_AUTONOMOUS_HANDOFF.md`: implement the three Works iterations,
+      then proceed through the owner queue with lifecycle and backend evidence.
+      The prior static-only admission restriction is superseded.
+  - [x] Route/config and demand lifecycle replay passed 20 steady-state cycles
+        on forced `WebGLBackend`; the report records one canvas, no fatal errors,
+        stable resource caps and root-destroy baseline in
+        `docs/evidence/phase10-route-cycle-soak/2026-09-07T21-23-19-415Z-report.json`.
+  - [ ] Physical WebGL device-loss recovery remains pending until a browser
+        driver can restore a usable framebuffer; the latest safe preflight is
+        recorded in `docs/evidence/phase7-live-gate/2026-09-08-webgl-device-loss-e2e.json`.
 
 - Do not duplicate route, slot, metadata, preference or render-reason facts.
 - Do not add a dependency without an owner, measured value, bundle impact and

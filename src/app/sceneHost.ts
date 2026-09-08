@@ -20,6 +20,11 @@ import type { BackendFacts, FinalMode } from '../core/rendererBackend'
 import type { UnifiedRenderSurface } from '../core/unifiedRenderer'
 import type { CinematicLightsNodes } from '../Experience/World/Lights'
 import type { GroundPlaneNode } from '../Experience/Scene/GroundPlane'
+import type { Group } from 'three'
+import type { ServicesStage } from '../Experience/World/ServicesStage'
+import type { EnvSphere } from '../Experience/World/EnvSphere'
+import type { WorksPlaneStage } from '../Experience/World/WorksPlaneStage'
+import type { WorksInstallation } from '../Experience/World/WorksInstallation'
 
 /** The readiness state published once the persistent Tres root is live. */
 export interface SceneHostReady {
@@ -39,6 +44,16 @@ export interface SceneHostReady {
   backend: BackendFacts
   lights: CinematicLightsNodes
   ground: GroundPlaneNode
+  /** All static roots are mounted before the ready bridge settles. */
+  sectionRoots: readonly Group[]
+  /** The Vue lifecycle owns construction and teardown of this adopted stage. */
+  servicesStage: ServicesStage
+  /** The Vue lifecycle owns construction and teardown of this ambient owner. */
+  envSphere: EnvSphere
+  mountWorksPlaneStage(stage: WorksPlaneStage): Promise<void>
+  unmountWorksPlaneStage(stage: WorksPlaneStage): Promise<void>
+  mountWorksInstallation(stage: WorksPlaneStage, installation: WorksInstallation): Promise<void>
+  unmountWorksInstallation(stage: WorksPlaneStage, installation: WorksInstallation): Promise<void>
 }
 
 interface SceneHostState {

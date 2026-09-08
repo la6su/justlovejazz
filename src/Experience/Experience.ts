@@ -46,13 +46,14 @@ import { GroundPlane } from './Scene/GroundPlane'
 import type { GroundPlaneNode } from './Scene/GroundPlane'
 import { SectionGroups } from './Scene/SectionGroups'
 import { disposeLazyStage, ensureLazyStage, type LazyStageContract } from './LazyStage'
-import { EnvSphere } from './World/EnvSphere'
+import type { EnvSphere } from './World/EnvSphere'
 import { SplashCube } from './World/SplashCube'
 import { ParticleBurst } from './World/ParticleBurst'
 import { DrawTrail } from './World/DrawTrail'
 import type { BakuCarousel } from './World/BakuCarousel'
 import { WorksPlaneStage } from './World/WorksPlaneStage'
-import { ServicesStage } from './World/ServicesStage'
+import type { WorksInstallation } from './World/WorksInstallation'
+import type { ServicesStage } from './World/ServicesStage'
 import type { ContactTypographyStage } from './World/ContactTypographyStage'
 import type { ContactHaloStage } from './World/ContactHaloStage'
 import type { ManifestoInkStage } from './World/ManifestoInkStage'
@@ -78,8 +79,6 @@ const WORKS_SLOT_INDEX = worldSlotIndex('works')!
  * slice 10 removed the `attachWorld` primitive slot — the SceneCoordinator
  * adds its section groups + scene owners to the Tres scene directly.
  * `replaceRenderer` syncs the Tres context after a device-loss recovery.
- * Without a host (native-world host rollback) Experience creates its own
- * scene and `Renderer.init()` constructs its own renderer.
  */
 export interface ExperienceHost {
   scene: THREE.Scene
@@ -88,9 +87,16 @@ export interface ExperienceHost {
   canvas: HTMLCanvasElement
   mode: FinalMode
   /** Static light objects created declaratively by the persistent Tres host. */
-  lights?: CinematicLightsNodes
-  ground?: GroundPlaneNode
+  lights: CinematicLightsNodes
+  ground: GroundPlaneNode
+  sectionRoots: readonly THREE.Group[]
+  servicesStage: ServicesStage
+  envSphere: EnvSphere
   replaceRenderer(renderer: RenderSurface): void
+  mountWorksPlaneStage(stage: WorksPlaneStage): Promise<void>
+  unmountWorksPlaneStage(stage: WorksPlaneStage): Promise<void>
+  mountWorksInstallation(stage: WorksPlaneStage, installation: WorksInstallation): Promise<void>
+  unmountWorksInstallation(stage: WorksPlaneStage, installation: WorksInstallation): Promise<void>
 }
 
 interface ReadinessGate {
@@ -164,8 +170,8 @@ export class Experience {
   // Phase 8 slice 2: the six stable section groups owner (attached to the
   // World before init — World's frame path reads them via the getter).
   private sectionGroups!: SectionGroups
-  // Phase 8 slice 3: the ambient pavilion owner (Experience is the single
-  // disposal owner; World's frame path forwards its per-frame update).
+  // Phase 8 slice 3: the ambient pavilion owner. Vue owns its construction
+  // and terminal disposal; the coordinator forwards its per-frame update.
   private envSphere!: EnvSphere
   // Phase 8 slice 4: the glass cube owner (World's frame path reads/writes
   // it through the attachBaku adapter + baku getter).
@@ -237,7 +243,7 @@ export class Experience {
   // Phase 7 slice 4: the former UI features (cinematic nav, menu, overlay,
   // Works portfolio, UI-facing window handlers) live in ExperienceUI.
   private features!: ExperienceUI
-  private _host: ExperienceHost | null = null
+  private readonly _host: ExperienceHost
   private _destroyed = false
   private _lifecycleGeneration = 0
 
@@ -321,17 +327,16 @@ export class Experience {
   // rendered, translated section headings.
   constructor(
     private _ui: UIManager,
-    host?: ExperienceHost,
+    host: ExperienceHost,
     private page: () => PageId = () => 'home',
   ) {
     this.sizes = new Sizes()
     this.time = new Time()
-    // Phase 7: the SceneHost is the single camera + scene owner (the native
-    // world host — the Phase 7 rollback — passes no host and Experience
-    // creates its own scene; the camera wrapper then creates its own too).
-    this._host = host ?? null
-    this.scene = host?.scene ?? new THREE.Scene()
-    this.camera = new Camera(this.sizes, host?.camera)
+    // SceneHost is the single scene + camera owner. Experience adopts those
+    // instances for cinematic state and never creates a fallback world.
+    this._host = host
+    this.scene = host.scene
+    this.camera = new Camera(this.sizes, host.camera)
     this.renderer = new Renderer(this.sizes)
 
     // Phase 7 slice 4: the former UI features reach the scene through a
@@ -387,6 +392,12 @@ export class Experience {
   }
 
   private resizeSceneOwners(): void {
+    // Sizes is the single viewport listener. Fan the already-updated snapshot
+    // out synchronously so the camera, renderer and route owners observe one
+    // coherent frame size. This leaves a single adapter point for the future
+    // Tres context-size bridge.
+    this.camera?.resize()
+    this.renderer?.resize()
     this.coordinator?.resize(this.sizes.width, this.sizes.height)
     // Phase 8 slice 7: the /works stage resize moved out of World.resize —
     // forwarded directly (the stage is lazy; null until /works is reached).
@@ -493,9 +504,10 @@ export class Experience {
       undefined,
       () => this.currentPage(),
       () => this._storyNav?.getSide() ?? 'center',
+      this._host.sectionRoots,
     )
-    this.servicesStage = new ServicesStage()
-    this.scene.add(this.servicesStage)
+    const servicesStage = this._host.servicesStage
+    this.servicesStage = servicesStage
     // Phase 8 slice 6: the project stream (BakuCarousel) is created by the
     // works section factory as a child of the Works group — it enters the
     // scene graph with the group, but its reference + init + per-frame drive
@@ -507,8 +519,8 @@ export class Experience {
     // Phase 8 slice 3: the ambient pavilion (EnvSphere) enters the
     // Tres-owned scene under its own owner; the coordinator frame path
     // forwards its per-frame colour-lerp update.
-    this.envSphere = new EnvSphere()
-    this.scene.add(this.envSphere)
+    const envSphere = this._host.envSphere
+    this.envSphere = envSphere
     // Phase 8 slice 4: the glass cube (SplashCube) enters the Tres-owned
     // scene under its own owner; the coordinator frame path gates its
     // visibility, forwards its per-frame update and reads the ambient-motion
@@ -534,8 +546,8 @@ export class Experience {
     // invalidation can never enter `update()` with an undefined ground/light
     // owner. Their section-dependent configuration is applied below once the
     // coordinator has completed its synchronous setup.
-    this.lights = new CinematicLights(this.scene, this._host?.lights)
-    this.ground = new GroundPlane(this.scene, this._host?.ground)
+    this.lights = new CinematicLights(this._host.lights)
+    this.ground = new GroundPlane(this._host.ground)
     await this.coordinator.init()
     if (!this.isLifecycleCurrent(token)) return
     // Phase 8 slice 6: the home-carousel init await moved out of
@@ -651,16 +663,25 @@ export class Experience {
         advanceRequest: () => ++this._worksPlaneStageRequest,
       },
       create: () => new WorksPlaneStage(),
-      attach: (stage) => this.scene.add(stage),
-      load: (stage) => stage.init(),
+      // SceneHost/Vue owns attachment. The controller remains the sole lazy
+      // texture, TSL, animation and explicit GPU-disposal owner for now.
+      attach: () => undefined,
+      load: async (stage) => {
+        await this._host.mountWorksPlaneStage(stage)
+        await stage.init()
+        const installation = stage.installationOwner
+        if (installation) await this._host.mountWorksInstallation(stage, installation)
+      },
       configure: (stage) => {
         stage.setActive(this.currentPage() === 'works', 0)
         stage.resize(window.innerWidth, window.innerHeight)
         stage.setCamera(this.camera.instance)
       },
       release: (stage) => {
+        const installation = stage.installationOwner
+        if (installation) void this._host.unmountWorksInstallation(stage, installation)
+        void this._host.unmountWorksPlaneStage(stage)
         stage.dispose()
-        stage.removeFromParent()
       },
     }
   }
@@ -1107,20 +1128,12 @@ export class Experience {
     this._showreelTogglePlayUnsub = eventBus.on('jlz:showreel-toggle-play', () => {
       this.showreelTheater?.togglePlay()
     })
-    // Phase 7: with the persistent SceneHost the renderer instance is ADOPTED
-    // (the SceneHost factory owns construction + backend inspection); the
-    // native world host (rollback) keeps constructing it here as before.
-    const host = this._host
-    await this.renderer.init(
-      host
-        ? {
-            instance: host.renderer,
-            canvas: host.canvas,
-            mode: host.mode,
-            onInstanceReplaced: (instance) => host.replaceRenderer(instance),
-          }
-        : undefined,
-    )
+    await this.renderer.init({
+      instance: this._host.renderer,
+      canvas: this._host.canvas,
+      mode: this._host.mode,
+      onInstanceReplaced: (instance) => this._host.replaceRenderer(instance),
+    })
     if (!this.isLifecycleCurrent(token)) return
     await this.buildWorld(token)
     if (!this.isLifecycleCurrent(token)) return
@@ -1206,6 +1219,7 @@ export class Experience {
             __jlzRuntimeSnapshot?: () => {
               resources: unknown
               loop: unknown
+              configIds: readonly string[]
               demand: {
                 needsRender: boolean
                 cursorSettled: boolean | null
@@ -1219,6 +1233,7 @@ export class Experience {
           return {
             resources: this.devPanel.getResourceSnapshot(),
             loop: this._scheduler.diagnostics,
+            configIds: this.coordinator.configIds,
             // Settled-idle evidence (Phase 7+ gates): the exact demand state
             // behind the settle decision — which flag (if any) keeps the
             // single loop driver from stopping after the settled frame.
@@ -1783,8 +1798,7 @@ export class Experience {
     // single disposal owner — the legacy World no longer disposes them).
     this.lights?.dispose()
     this.ground?.dispose()
-    // Phase 8 slice 3: the ambient pavilion owner.
-    this.envSphere?.dispose()
+    // Vue owns the ambient pavilion and its borrowed EnvSky material.
     // Phase 8 slice 4: the glass cube owner (6 face geos+mats + 6 edge geos+mats).
     this.baku?.dispose()
     // Phase 8 slice 5: the intro light frames + cursor trail owners. Both are
@@ -1798,7 +1812,7 @@ export class Experience {
     // Phase 8 slice 7: the /works case-plane stage owner (lazy — only alive
     // when /works was reached; a direct child of the Tres-owned scene).
     this.disposeWorksPlaneStage()
-    this.servicesStage?.dispose()
+    // ServicesStageOwner owns terminal disposal when the persistent host unmounts.
     this.servicesStage = null
     // Phase 8 slice 8: the Contact typography + Cyprus stage owners (lazy — only
     // alive when /contact was reached; direct children of the Tres-owned

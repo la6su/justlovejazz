@@ -5,6 +5,7 @@ import { MeshStandardNodeMaterial, MeshBasicNodeMaterial } from 'three/webgpu'
  * SceneCoordinator owns attachment, demand updates and terminal disposal.
  */
 export class ServicesStage extends THREE.Group {
+  private disposed = false
   private readonly geometry = new THREE.BoxGeometry(0.8, 0.8, 0.08)
   private readonly metal = new MeshStandardNodeMaterial({
     color: 0x71858f,
@@ -14,6 +15,13 @@ export class ServicesStage extends THREE.Group {
   })
   private readonly signal = new MeshBasicNodeMaterial({ color: 0x58e6a9, fog: false })
   private readonly parts: THREE.Mesh[] = []
+  private readonly rings: THREE.Mesh[] = []
+  private readonly ringGeometry = new THREE.TorusGeometry(1, 0.012, 8, 64)
+  private readonly ringMaterials = [
+    new MeshBasicNodeMaterial({ color: 0x2a4a7a, transparent: true, opacity: 0.4, fog: false }),
+    new MeshBasicNodeMaterial({ color: 0x1a3a6a, transparent: true, opacity: 0.3, fog: false }),
+    new MeshBasicNodeMaterial({ color: 0x0a2a5a, transparent: true, opacity: 0.2, fog: false }),
+  ]
   private readonly targets = Array.from({ length: 7 }, () => new THREE.Vector3())
   private readonly worldPosition = new THREE.Vector3()
   private state = -1
@@ -28,6 +36,20 @@ export class ServicesStage extends THREE.Group {
       this.parts.push(part)
       this.add(part)
     }
+    const ringConfigs = [
+      [1.5, 0.3, 0],
+      [2.2, -0.5, 0.4],
+      [2.8, 0.8, -0.3],
+    ] as const
+    ringConfigs.forEach(([radius, rotX, rotZ], index) => {
+      const ring = new THREE.Mesh(this.ringGeometry, this.ringMaterials[index]!)
+      ring.scale.setScalar(radius)
+      ring.rotation.set(rotX, 0, rotZ)
+      ring.position.z = -1
+      ring.name = `services-orbit-${index}`
+      this.rings.push(ring)
+      this.add(ring)
+    })
   }
 
   get isAnimating(): boolean {
@@ -67,6 +89,9 @@ export class ServicesStage extends THREE.Group {
       else part.position.copy(target)
       part.rotation.set(-0.32, -0.55, chapter === 2 ? (i - 3) * 0.12 : 0)
     }
+    this.rings.forEach((ring, index) => {
+      ring.rotation.y += dt * (0.08 + index * 0.025)
+    })
     this.scale.setScalar(scale)
     const offset = new THREE.Vector3(
       mobile ? 0 : height * camera.aspect * 0.22,
@@ -78,9 +103,14 @@ export class ServicesStage extends THREE.Group {
   }
 
   dispose(): void {
+    if (this.disposed) return
+    this.disposed = true
     this.geometry.dispose()
     this.metal.dispose()
     this.signal.dispose()
+    this.ringGeometry.dispose()
+    this.ringMaterials.forEach((material) => material.dispose())
+    this.rings.length = 0
     this.clear()
     this.removeFromParent()
   }

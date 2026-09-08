@@ -151,6 +151,7 @@ interface CycleSnapshot extends SoakCounter {
   fatalErrors: number
   ok: boolean
   notes: string[]
+  configIds: string[]
 }
 
 function counterOf(r: Record<string, unknown>): SoakCounter {
@@ -203,6 +204,7 @@ async function main(): Promise<void> {
           __jlzRuntimeSnapshot?: () => {
             resources: Record<string, unknown> | null
             loop: { loopActive: boolean; frames: number } | null
+            configIds?: readonly string[]
             demand: { activity: Record<string, boolean> } | null
           } | null
         }
@@ -216,6 +218,7 @@ async function main(): Promise<void> {
         resources: snap?.resources ?? null,
         loop: snap?.loop ?? null,
         activity: snap?.demand?.activity ?? null,
+        configIds: snap?.configIds ?? [],
         heapUsed: mem?.usedJSHeapSize ?? null,
         domNodes: document.querySelectorAll('*').length,
         // The single scene canvas carries the `canvas` class (SceneHost
@@ -265,6 +268,7 @@ async function main(): Promise<void> {
     const counters = counterOf(raw)
     const loop = raw.loop as { loopActive: boolean; frames: number } | null
     const activity = raw.activity as Record<string, boolean> | null
+    const configIds = Array.isArray(raw.configIds) ? raw.configIds.map(String) : []
     const continuous = activity != null && Object.values(activity).some((v) => v === true)
     let frameDelta: number | null = null
     if (loop?.frames != null) {
@@ -289,6 +293,13 @@ async function main(): Promise<void> {
     if (counters.canvas !== 1) {
       ok = false
       notes.push(`canvas=${counters.canvas} (expected exactly 1)`)
+    }
+    const expectedConfigPrefix = target.page === 'home' ? 'sec_' : `content_${target.page}_`
+    if (!configIds.some((id) => id.startsWith(expectedConfigPrefix))) {
+      ok = false
+      notes.push(
+        `route config mismatch: expected an id starting with ${expectedConfigPrefix}, got ${JSON.stringify(configIds)}`,
+      )
     }
     if (loop == null) {
       ok = false
@@ -324,6 +335,7 @@ async function main(): Promise<void> {
       fatalErrors: fatalBefore,
       ok,
       notes,
+      configIds,
       ...counters,
     }
     return { snapshot, nextRoute: target.path }

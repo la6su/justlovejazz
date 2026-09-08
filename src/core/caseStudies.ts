@@ -1,5 +1,4 @@
 /** Client-facing case-study contract shared by routes and static publishing. */
-export type CaseStudyStatus = 'draft' | 'review' | 'published'
 export type CaseStudyDisclosure = 'client' | 'self-initiated' | 'experimental' | 'ai-assisted'
 
 export interface CaseStudyProof {
@@ -19,7 +18,6 @@ export interface CaseStudyMedia {
 
 export interface CaseStudy {
   projectId: string
-  status: CaseStudyStatus
   disclosure: CaseStudyDisclosure
   outcome: string
   context: string

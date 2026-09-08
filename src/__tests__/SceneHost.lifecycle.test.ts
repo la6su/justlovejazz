@@ -45,6 +45,16 @@ vi.mock('../app/scene/CinematicLights.vue', () => ({
   }),
 }))
 
+vi.mock('../app/scene/CinematicCamera.vue', () => ({
+  default: defineComponent({
+    emits: ['ready'],
+    setup(_, { emit }) {
+      onMounted(() => emit('ready', new THREE.PerspectiveCamera()))
+      return () => null
+    },
+  }),
+}))
+
 vi.mock('../app/scene/GroundPlane.vue', () => ({
   default: defineComponent({
     emits: ['ready'],
@@ -52,6 +62,58 @@ vi.mock('../app/scene/GroundPlane.vue', () => ({
       onMounted(() => emit('ready', {}))
       return () => null
     },
+  }),
+}))
+
+vi.mock('../app/scene/SectionGroupRoots.vue', () => ({
+  default: defineComponent({
+    emits: ['ready'],
+    setup(_, { emit }) {
+      onMounted(() => emit('ready', []))
+      return () => null
+    },
+  }),
+}))
+
+vi.mock('../app/scene/ServicesStageOwner.vue', () => ({
+  default: defineComponent({
+    emits: ['ready'],
+    setup(_, { emit }) {
+      onMounted(() => emit('ready', new THREE.Group()))
+      return () => null
+    },
+  }),
+}))
+
+vi.mock('../app/scene/EnvSphereOwner.vue', () => ({
+  default: defineComponent({
+    emits: ['ready'],
+    setup(_, { emit }) {
+      onMounted(() =>
+        emit(
+          'ready',
+          Object.assign(new THREE.Group(), { skyMaterial: new THREE.MeshBasicMaterial() }),
+        ),
+      )
+      return () => null
+    },
+  }),
+}))
+
+vi.mock('../app/scene/EnvSky.vue', () => ({
+  default: defineComponent({
+    emits: ['ready'],
+    setup(_, { emit }) {
+      onMounted(() => emit('ready'))
+      return () => null
+    },
+  }),
+}))
+
+vi.mock('../app/scene/WorksStageOwner.vue', () => ({
+  default: defineComponent({
+    props: { stage: Object, installation: Object },
+    render: () => null,
   }),
 }))
 
@@ -96,6 +158,16 @@ describe('SceneHost async lifecycle', () => {
     await flushPromises()
 
     expect(mocks.loopStop).toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
+  it('publishes the lazy Works attachment boundary with the ready host', async () => {
+    const wrapper = mount(SceneHost, { attachTo: document.body })
+    await flushPromises()
+
+    const host = await sceneHost.ready
+    expect(host.mountWorksPlaneStage).toBeTypeOf('function')
+    expect(host.unmountWorksPlaneStage).toBeTypeOf('function')
     wrapper.unmount()
   })
 

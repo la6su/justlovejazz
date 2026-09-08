@@ -415,7 +415,16 @@ async function boot(): Promise<BootResult> {
         mode: host.mode,
         lights: host.lights,
         ground: host.ground,
+        sectionRoots: host.sectionRoots,
+        servicesStage: host.servicesStage,
+        envSphere: host.envSphere,
         replaceRenderer: (renderer) => sceneHost.replaceRenderer(renderer),
+        mountWorksPlaneStage: (stage) => host.mountWorksPlaneStage(stage),
+        unmountWorksPlaneStage: (stage) => host.unmountWorksPlaneStage(stage),
+        mountWorksInstallation: (stage, installation) =>
+          host.mountWorksInstallation(stage, installation),
+        unmountWorksInstallation: (stage, installation) =>
+          host.unmountWorksInstallation(stage, installation),
       },
       getCurrentPage,
     )

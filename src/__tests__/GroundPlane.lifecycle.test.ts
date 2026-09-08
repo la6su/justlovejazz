@@ -4,10 +4,13 @@ import { GroundPlane, type GroundConfig } from '../Experience/Scene/GroundPlane'
 
 const config: GroundConfig = { color: new THREE.Color(0x123456), opacity: 0.5 }
 
+function createGroundNode(): GroundPlane['object'] {
+  return new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshStandardMaterial())
+}
+
 describe('GroundPlane lifecycle', () => {
   it('skips unchanged material writes while preserving changed transforms and themes', () => {
-    const scene = new THREE.Scene()
-    const ground = new GroundPlane(scene)
+    const ground = new GroundPlane(createGroundNode())
     const colorCopy = vi.spyOn(ground.object.material.color, 'copy')
     const lerpColors = vi.spyOn(THREE.Color.prototype, 'lerpColors')
     const next = { color: new THREE.Color(0xabcdef), opacity: 0.9 }
@@ -45,8 +48,8 @@ describe('GroundPlane lifecycle', () => {
   })
 
   it('ignores late theme, transform and visibility calls after teardown', () => {
-    const scene = new THREE.Scene()
-    const ground = new GroundPlane(scene)
+    const node = createGroundNode()
+    const ground = new GroundPlane(node)
     ground.setSectionVisible(true)
     const opacity = ground.object.material.opacity
 
@@ -59,14 +62,14 @@ describe('GroundPlane lifecycle', () => {
 
     expect(ground.object.material.opacity).toBe(opacity)
     expect(ground.object.visible).toBe(true)
-    expect(ground.object.parent).toBeNull()
+    expect(ground.object).toBe(node)
   })
 
   it('leaves a declaratively-owned node attached for the Vue host to dispose', () => {
     const scene = new THREE.Scene()
     const node = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshStandardMaterial())
     scene.add(node)
-    const ground = new GroundPlane(scene, node)
+    const ground = new GroundPlane(node)
 
     ground.dispose()
 

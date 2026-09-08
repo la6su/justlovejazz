@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as THREE from 'three'
 import { CinematicLights } from '../Experience/World/Lights'
+import type { CinematicLightsNodes } from '../Experience/World/Lights'
 import { getWorldConfigForPage } from '../core/WorldConfig'
 
 type LightInternals = {
@@ -15,12 +16,23 @@ function internals(owner: CinematicLights): LightInternals {
   return owner as unknown as LightInternals
 }
 
+function createNodes(): CinematicLightsNodes {
+  return {
+    group: new THREE.Group(),
+    key: new THREE.DirectionalLight(),
+    fill: new THREE.DirectionalLight(),
+    rim: new THREE.DirectionalLight(),
+    volumetric: new THREE.PointLight(),
+    hemisphere: new THREE.HemisphereLight(),
+  }
+}
+
 describe('CinematicLights reduced-motion transitions', () => {
   afterEach(() => vi.unstubAllGlobals())
 
   it('snaps section targets immediately when reduced motion is enabled', () => {
     vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: true }))
-    const lights = new CinematicLights(new THREE.Scene())
+    const lights = new CinematicLights(createNodes())
     const config = getWorldConfigForPage('home').find((entry) => entry.id === 'sec_works')!
     const state = internals(lights)
 
@@ -36,7 +48,7 @@ describe('CinematicLights reduced-motion transitions', () => {
   it('settles an active interpolation when reduced motion changes at runtime', () => {
     const media = { matches: false }
     vi.stubGlobal('matchMedia', vi.fn().mockReturnValue(media))
-    const lights = new CinematicLights(new THREE.Scene())
+    const lights = new CinematicLights(createNodes())
     const config = getWorldConfigForPage('home').find((entry) => entry.id === 'sec_works')!
     const state = internals(lights)
 
@@ -53,7 +65,7 @@ describe('CinematicLights reduced-motion transitions', () => {
 
   it('preserves authored interpolation when reduced motion is disabled', () => {
     vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))
-    const lights = new CinematicLights(new THREE.Scene())
+    const lights = new CinematicLights(createNodes())
     const config = getWorldConfigForPage('home').find((entry) => entry.id === 'sec_works')!
     const state = internals(lights)
     const initial = state.keyLight.intensity
@@ -69,7 +81,7 @@ describe('CinematicLights reduced-motion transitions', () => {
   it('stops settled transition writes without stopping the volumetric orbit', () => {
     vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))
     vi.stubGlobal('performance', { now: vi.fn().mockReturnValueOnce(0).mockReturnValueOnce(1000) })
-    const lights = new CinematicLights(new THREE.Scene())
+    const lights = new CinematicLights(createNodes())
     const config = getWorldConfigForPage('home').find((entry) => entry.id === 'sec_works')!
     const state = internals(lights)
     const colorLerp = vi.spyOn(state.keyLight.color, 'lerp')
@@ -87,8 +99,8 @@ describe('CinematicLights reduced-motion transitions', () => {
 
   it('ignores late section, preference and frame calls after teardown', () => {
     vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))
-    const scene = new THREE.Scene()
-    const lights = new CinematicLights(scene)
+    const nodes = createNodes()
+    const lights = new CinematicLights(nodes)
     const config = getWorldConfigForPage('home').find((entry) => entry.id === 'sec_contact')!
 
     lights.dispose()
@@ -97,25 +109,19 @@ describe('CinematicLights reduced-motion transitions', () => {
     lights.setReducedMotion(true)
     lights.update(1 / 60)
 
-    expect(scene.getObjectByName('cinematic-lights')).toBeUndefined()
+    expect(nodes.group.children).toHaveLength(0)
   })
 
   it('leaves declaratively-owned light nodes attached for the Vue host to dispose', () => {
     const scene = new THREE.Scene()
     const group = new THREE.Group()
     group.name = 'cinematic-lights'
-    const nodes = {
-      group,
-      key: new THREE.DirectionalLight(),
-      fill: new THREE.DirectionalLight(),
-      rim: new THREE.DirectionalLight(),
-      volumetric: new THREE.PointLight(),
-      hemisphere: new THREE.HemisphereLight(),
-    }
+    const nodes = createNodes()
+    nodes.group = group
     group.add(nodes.key, nodes.fill, nodes.rim, nodes.volumetric, nodes.hemisphere)
     scene.add(group)
 
-    const lights = new CinematicLights(scene, nodes)
+    const lights = new CinematicLights(nodes)
     lights.dispose()
 
     expect(group.parent).toBe(scene)
