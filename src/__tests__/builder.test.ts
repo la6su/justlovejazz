@@ -204,10 +204,10 @@ describe('Page Builder document', () => {
     const result = validateBuilderDocument(document)
     expect(result.ok).toBe(true)
     const html = renderBuilderDocument(document)
-    expect(html).toContain('<li>Ebb Vibes</li>')
-    expect(html).toContain('<li>Mono Sunday</li>')
-    expect(html).toContain('<li>Until the Night</li>')
-    expect(html).not.toContain('<li>Undercurrent</li>')
+    expect(html).toContain('<li>Porsche 911 Spider</li>')
+    expect(html).toContain('<li>Alise</li>')
+    expect(html).toContain('<li>19 Lab</li>')
+    expect(html).not.toContain('<li>Pro193</li>')
   })
 
   it('selects Russian authored copy while keeping English as the fallback', () => {

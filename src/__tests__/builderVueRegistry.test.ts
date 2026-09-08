@@ -67,8 +67,8 @@ const parityDocument = (): BuilderDocument =>
           el('link-1', 'link', { style: 'muted', href: '/works', label: 'Link <&> link-1' }),
           el('icon-1', 'icon', { name: 'arrow-up-right', ratio: '0.5' }),
           el('image-1', 'image', {
-            src: '/assets/projects/velvet-echo/cover.webp',
-            alt: 'Velvet Echo cover',
+            src: '/assets/projects/ebb-vibes/cover.webp',
+            alt: 'Project cover placeholder',
             loading: 'eager',
           }),
           el('video-1', 'video', {

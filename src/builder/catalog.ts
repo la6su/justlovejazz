@@ -514,8 +514,8 @@ export const BUILDER_CATALOG: Record<BuilderElementType, BuilderElementDefinitio
     ],
     create: (id) =>
       makeNode(id, 'image', {
-        src: '/assets/projects/velvet-echo/cover.webp',
-        alt: 'Velvet Echo project cover',
+        src: '/assets/projects/ebb-vibes/cover.webp',
+        alt: 'Project cover placeholder',
         loading: 'lazy',
       }),
   },

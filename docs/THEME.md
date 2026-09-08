@@ -69,11 +69,11 @@ animation loop remain responsible for all rooms. DOM text and actions remain
 available independently of the exhibit geometry.
 
 On a case route the installation also receives the selected project index. Its
-assembly changes mode for the project and chapter: Ebb Vibes keeps open rings,
-Mono Sunday compresses into a quiet instrument, Nocturne Blue widens the
-signal field, and archive projects use the remaining authored variants. This
-is a scene contract, not a decorative randomizer; each mode is deterministic
-and reduced motion snaps to the same target.
+assembly changes mode for the project and chapter: Porsche 911 Spider uses open
+rings, Alise compresses into a quiet form, 19 Lab widens the product field, and
+Pro193 uses the remaining authored variant. This is a scene contract, not a
+decorative randomizer; each mode is deterministic and reduced motion snaps to
+the same target.
 
 Manifesto is the system's briefing room. Each principle pairs a proposition
 with a working protocol and an observable consequence; the ink stage remains a
