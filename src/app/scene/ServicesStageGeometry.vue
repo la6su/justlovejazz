@@ -19,7 +19,11 @@ onMounted(() => {
     parts.push(part)
     group.add(part)
   }
-  const ringConfigs = [[1.5, 0.3, 0], [2.2, -0.5, 0.4], [2.8, 0.8, -0.3]] as const
+  const ringConfigs = [
+    [1.5, 0.3, 0],
+    [2.2, -0.5, 0.4],
+    [2.8, 0.8, -0.3],
+  ] as const
   ringConfigs.forEach(([radius, rotX, rotZ], index) => {
     const ring = new THREE.Mesh(ringGeometry, stage.orbitMaterials[index]!)
     ring.scale.setScalar(radius)
