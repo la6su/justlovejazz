@@ -6,20 +6,31 @@ checklists are available in Git before this documentation consolidation.
 
 ## Priority order
 
+- [ ] Generalize the Showreel shader theater transition for Works case media.
+      The shared DOM FullscreenOverlay now owns case presentation and Escape;
+      the GPU shader transition remains ShowreelTheater-specific until its
+      still-image media contract and metadata handoff are designed.
+
 - [ ] Validate ownership teardown: host-first/runtime-first unmount, stale
       primitive replacement, exactly-once geometries/materials/instance cleanup.
+      Works installation controller replacement and Vue-first/runtime-first
+      child teardown are covered. Contact and Manifesto now release their
+      shared plane buffer at final-owner teardown. CasePlane now follows the
+      same contract; full host teardown and remaining owners still need evidence.
       User-reported Contact instability remains unverified visually.
 - [x] Consolidate deterministic checks: reuse existing Bun and CI commands;
       targeted checks during edits and one full release gate. On 2026-09-08 the
       local gate passed format, lint (0 errors), TypeScript, Vue TypeScript,
       production build, budgets, 705 unit tests and serial Playwright (23
       passed, 1 expected skip). No new dependency or recurring model polling.
-- [ ] Complete Services declarative geometry as a separate optional slice.
-      ServicesStageGeometry.vue currently creates meshes in onMounted; its Vue
-      lifecycle wrapper is not fully declarative composition.
+- [x] Complete Services declarative geometry as a separate optional slice.
+      ServicesStageGeometry.vue now declares meshes and geometries in the Tres
+      template; onMounted only adopts refs and applies runtime transforms.
 - [ ] Audit retained owners with concrete ownership evidence. TSL, loading and
       animation alone do not rule out declarative leaves. Keep the existing
       renderer/recovery/scheduler unless a measured problem justifies replacement.
+      ServicesStage's per-frame offset is now reused instead of allocated;
+      remaining owners still need the same allocation audit.
 - [ ] Strengthen evidence scripts: narrow overly broad GPU error exclusions;
       identify skipped cases, record revision/backend, measure frame deltas during
       an idle interval and distinguish runtime destroy from Vue root unmount.

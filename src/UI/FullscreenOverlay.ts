@@ -80,6 +80,9 @@ export class FullscreenOverlay {
     this.container.setAttribute('uk-modal', 'bg-close: true; esc-close: true; stack: false')
     this.container.setAttribute('data-no-magnetic', '')
     this.container.className = 'jlz-fs-overlay uk-modal uk-modal-full uk-light'
+    this.container.setAttribute('role', 'dialog')
+    this.container.setAttribute('aria-modal', 'true')
+    this.container.setAttribute('aria-label', 'Fullscreen project viewer')
 
     this.container.innerHTML = `
       <div class="uk-modal-dialog jlz-fs-dialog">
@@ -230,6 +233,8 @@ export class FullscreenOverlay {
     // on show and removes it on hide; isOpen reads it directly. No custom
     // enter/opening flags needed.
     UIkit.util.on(this.container, 'show', () => {
+      eventBus.emit('jlz:close-nav')
+      eventBus.emit('jlz:fullscreen-change', { open: true })
       // Store the element that had focus before the overlay opened so we can
       // restore it on close (B-2 a11y fix).
       if (document.activeElement instanceof HTMLElement) {
@@ -287,6 +292,14 @@ export class FullscreenOverlay {
         e.preventDefault()
         e.stopImmediatePropagation()
         togglePlay()
+      } else if (e.key === 'Escape') {
+        // Own Escape while the fullscreen surface is active. UIkit may also
+        // receive the key through its modal adapter, but stopping propagation
+        // here prevents CinematicNav and menu shortcuts behind the overlay
+        // from consuming the same key and opening/closing over the surface.
+        e.preventDefault()
+        e.stopImmediatePropagation()
+        this.close()
       } else if (e.key === 'ArrowLeft') {
         e.preventDefault()
         e.stopImmediatePropagation()
@@ -321,6 +334,7 @@ export class FullscreenOverlay {
   private handleHide(): void {
     if (this._hideHandled) return
     this._hideHandled = true
+    eventBus.emit('jlz:fullscreen-change', { open: false })
     if (this._enterFallback) {
       cancelAnimationFrame(this._enterFallback)
       this._enterFallback = null
@@ -504,10 +518,14 @@ export class FullscreenOverlay {
     this.catEl.textContent = opts.category ?? ''
     this.descEl.textContent = opts.description ?? ''
     this.counterEl.textContent = opts.counter ?? ''
-    this.tagsEl.innerHTML = (opts.tags ?? [])
-      .filter(Boolean)
-      .map((t) => `<span class="jlz-fs-tag uk-text-meta uk-text-uppercase">${t}</span>`)
-      .join('')
+    this.tagsEl.replaceChildren(
+      ...(opts.tags ?? []).filter(Boolean).map((tag) => {
+        const element = document.createElement('span')
+        element.className = 'jlz-fs-tag uk-text-meta uk-text-uppercase'
+        element.textContent = tag
+        return element
+      }),
+    )
 
     // Nav buttons visibility
     this.prevBtn.style.display = opts.hasPrev ? '' : 'none'

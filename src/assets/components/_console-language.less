@@ -993,6 +993,14 @@ body[data-cinematic-sheet] .jlz-console-bar {
   .jlz-tui-frame(@len: 1.1rem);
 }
 
+/* Fullscreen media is an exclusive interaction layer. Fade the persistent
+   shell instead of letting its fixed controls compete with the dialog. */
+.jlz-cinematic-shell.is-fullscreen-open {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms ease;
+}
+
 [data-contact-footer] {
   .jlz-tui-frame(@len: 1.1rem);
 }

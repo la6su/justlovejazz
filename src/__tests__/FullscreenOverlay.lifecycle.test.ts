@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { FullscreenOverlay, type OverlayOptions } from '../UI/FullscreenOverlay'
 import { BlurFade } from '../Experience/BlurFade'
+import { eventBus } from '../core/EventBus'
 
 type OverlayInternals = {
   container: HTMLDivElement
@@ -30,6 +31,53 @@ describe('FullscreenOverlay close ownership', () => {
     expect(first).toHaveBeenCalledTimes(1)
     expect(second).toHaveBeenCalledTimes(1)
     expect('onClose' in overlay).toBe(false)
+  })
+
+  it('owns Escape so navigation behind fullscreen never receives it', () => {
+    const overlay = new FullscreenOverlay() as unknown as OverlayInternals
+    const behind = vi.fn()
+    overlay.container.dispatchEvent(new Event('show'))
+    document.addEventListener('keydown', behind)
+
+    try {
+      const event = new KeyboardEvent('keydown', { key: 'Escape', cancelable: true })
+      document.dispatchEvent(event)
+      expect(event.defaultPrevented).toBe(true)
+      expect(behind).not.toHaveBeenCalled()
+    } finally {
+      document.removeEventListener('keydown', behind)
+      overlay.dispose()
+    }
+  })
+
+  it('closes the cinematic menu and publishes exclusive fullscreen state', () => {
+    const overlay = new FullscreenOverlay() as unknown as OverlayInternals
+    const closeNav = vi.fn()
+    const states: boolean[] = []
+    const unsubscribeClose = eventBus.on('jlz:close-nav', closeNav)
+    const unsubscribeState = eventBus.on('jlz:fullscreen-change', ({ open }) => states.push(open))
+
+    try {
+      overlay.container.dispatchEvent(new Event('show'))
+      overlay.container.dispatchEvent(new Event('hide'))
+      expect(closeNav).toHaveBeenCalledOnce()
+      expect(states).toEqual([true, false])
+    } finally {
+      unsubscribeClose()
+      unsubscribeState()
+      overlay.dispose()
+    }
+  })
+
+  it('renders project tags as text nodes in the shared fullscreen shell', () => {
+    const overlay = new FullscreenOverlay() as unknown as OverlayInternals & { tagsEl: HTMLElement }
+    try {
+      overlay._applyOptions({ tags: ['CG', '<img src=x onerror=alert(1)>'] })
+      expect(overlay.tagsEl.querySelector('img')).toBeNull()
+      expect(overlay.tagsEl.textContent).toContain('<img src=x onerror=alert(1)>')
+    } finally {
+      overlay.dispose()
+    }
   })
 
   it('settles the title synchronously without BlurFade when reduced motion is enabled', () => {

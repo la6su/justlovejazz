@@ -18,8 +18,23 @@ import { Fn, uv, uniform, vec2, sin, smoothstep, length, float } from 'three/tsl
 import { input } from '../Input'
 import { prefersReducedMotion } from '../../core/motionPolicy'
 
-// Shared geometry — one stage instance exists per manifesto visit (GPU buffer).
-const sharedGeometry = new THREE.PlaneGeometry(1.9, 1.05)
+// One buffer can serve concurrent stage instances, but its lifetime must end
+// with the final route owner rather than survive root teardown indefinitely.
+let sharedGeometry: THREE.PlaneGeometry | null = null
+let sharedGeometryUsers = 0
+
+function acquireGeometry(): THREE.PlaneGeometry {
+  sharedGeometry ??= new THREE.PlaneGeometry(1.9, 1.05)
+  sharedGeometryUsers += 1
+  return sharedGeometry
+}
+
+function releaseGeometry(): void {
+  sharedGeometryUsers -= 1
+  if (sharedGeometryUsers !== 0) return
+  sharedGeometry?.dispose()
+  sharedGeometry = null
+}
 
 /** Peak alpha of the wash — kept low so the ink reads as paper, not glow. */
 const PEAK_OPACITY = 0.14
@@ -99,7 +114,7 @@ export class ManifestoInkStage extends THREE.Group {
     })()
 
     this.material = mat
-    this.inkMesh = new THREE.Mesh(sharedGeometry, mat)
+    this.inkMesh = new THREE.Mesh(acquireGeometry(), mat)
     this.inkMesh.name = 'manifesto-ink'
     this.inkMesh.frustumCulled = false
     this.inkMesh.renderOrder = 1
@@ -205,6 +220,7 @@ export class ManifestoInkStage extends THREE.Group {
     this.disposed = true
     this.active = false
     this.material.dispose()
+    releaseGeometry()
     this.removeFromParent()
   }
 }

@@ -18,8 +18,23 @@ import { Fn, uv, uniform, vec2, sin, smoothstep, length, float } from 'three/tsl
 import { input } from '../Input'
 import { prefersReducedMotion } from '../../core/motionPolicy'
 
-// Shared geometry — one stage instance exists per contact visit (GPU buffer).
-const sharedGeometry = new THREE.PlaneGeometry(1.7, 0.95)
+// One buffer can serve concurrent stage instances, but its lifetime must end
+// with the final route owner rather than survive root teardown indefinitely.
+let sharedGeometry: THREE.PlaneGeometry | null = null
+let sharedGeometryUsers = 0
+
+function acquireGeometry(): THREE.PlaneGeometry {
+  sharedGeometry ??= new THREE.PlaneGeometry(1.7, 0.95)
+  sharedGeometryUsers += 1
+  return sharedGeometry
+}
+
+function releaseGeometry(): void {
+  sharedGeometryUsers -= 1
+  if (sharedGeometryUsers !== 0) return
+  sharedGeometry?.dispose()
+  sharedGeometry = null
+}
 
 /** Peak alpha of the pool — kept low so the halo reads as ink, not glow. */
 const PEAK_OPACITY = 0.16
@@ -96,7 +111,7 @@ export class ContactHaloStage extends THREE.Group {
     })()
 
     this.material = mat
-    this.halo = new THREE.Mesh(sharedGeometry, mat)
+    this.halo = new THREE.Mesh(acquireGeometry(), mat)
     this.halo.name = 'contact-halo'
     this.halo.frustumCulled = false
     this.halo.renderOrder = 1
@@ -201,6 +216,7 @@ export class ContactHaloStage extends THREE.Group {
     this.disposed = true
     this.active = false
     this.material.dispose()
+    releaseGeometry()
     this.removeFromParent()
   }
 }

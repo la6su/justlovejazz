@@ -44,6 +44,8 @@ export interface AppEvents {
   'jlz:page-section-change': { index: number; count: number }
   /** Fired by FullscreenOverlay on prev/next project navigation. */
   'jlz:project-navigate': { direction: -1 | 1 }
+  /** Fullscreen media becomes the active interaction layer. */
+  'jlz:fullscreen-change': { open: boolean }
   /** Fired by the UIMenu sound button. */
   'jlz:sound-toggle': { muted: boolean }
   /** Fired by the index.html splash Enter control. */

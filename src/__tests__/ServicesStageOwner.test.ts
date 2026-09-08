@@ -3,6 +3,7 @@ import { h } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import type { Scene } from 'three'
+import * as THREE from 'three'
 import ServicesStageOwner from '../app/scene/ServicesStageOwner.vue'
 import type { ServicesStage } from '../Experience/World/ServicesStage'
 
@@ -47,6 +48,12 @@ describe('ServicesStageOwner lifecycle spike', () => {
     expect(mounted.stage?.getObjectByName('services-orbit-0')).toBeTruthy()
     expect(mounted.stage?.getObjectByName('services-orbit-1')).toBeTruthy()
     expect(mounted.stage?.getObjectByName('services-orbit-2')).toBeTruthy()
+    const camera = new THREE.PerspectiveCamera()
+    camera.aspect = 1.5
+    const offset = (mounted.stage as unknown as { offset: THREE.Vector3 }).offset
+    mounted.stage?.updateState(camera, 0, 1 / 60, false)
+    mounted.stage?.updateState(camera, 1, 1 / 60, false)
+    expect((mounted.stage as unknown as { offset: THREE.Vector3 }).offset).toBe(offset)
     const dispose = vi.spyOn(mounted.stage as ServicesStage, 'dispose')
     wrapper.unmount()
     expect(dispose).toHaveBeenCalledOnce()

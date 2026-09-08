@@ -134,17 +134,19 @@ describe('ManifestoInkStage lifecycle', () => {
     expect(stage.isAnimating).toBe(false)
   })
 
-  it('disposes exactly once and leaves the shared geometry alive', () => {
-    const stage = new ManifestoInkStage()
-    const mesh = stage.getObjectByName('manifesto-ink') as THREE.Mesh
-    const material = mesh.material as THREE.Material
-    const materialDispose = vi.spyOn(material, 'dispose')
+  it('releases shared geometry with the final stage owner', () => {
+    const first = new ManifestoInkStage()
+    const second = new ManifestoInkStage()
+    const mesh = first.getObjectByName('manifesto-ink') as THREE.Mesh
+    const materialDispose = vi.spyOn(mesh.material as THREE.Material, 'dispose')
     const geometryDispose = vi.spyOn(mesh.geometry, 'dispose')
 
-    stage.dispose()
-    stage.dispose()
-
+    first.dispose()
+    first.dispose()
     expect(materialDispose).toHaveBeenCalledTimes(1)
     expect(geometryDispose).not.toHaveBeenCalled()
+
+    second.dispose()
+    expect(geometryDispose).toHaveBeenCalledTimes(1)
   })
 })

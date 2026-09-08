@@ -22,6 +22,7 @@ export class UIMenu {
   private _langUnsub: (() => void) | null = null
   private _themeChangeUnsub: (() => void) | null = null
   private _soundToggleUnsub: (() => void) | null = null
+  private _fullscreenChangeUnsub: (() => void) | null = null
   private _soundMuted = getSoundMuted()
   private _menuBtn: HTMLButtonElement | null = null
   private _contactBtn: HTMLButtonElement | null = null
@@ -124,6 +125,11 @@ export class UIMenu {
       setSoundMutedPreference(this._soundMuted)
       this._syncSoundButton()
     })
+    this._fullscreenChangeUnsub = eventBus.on('jlz:fullscreen-change', ({ open }) => {
+      this.navEl.classList.toggle('is-fullscreen-open', open)
+      this.navEl.setAttribute('aria-hidden', String(open))
+      ;(this.navEl as HTMLElement & { inert: boolean }).inert = open
+    })
 
     // Initialize button states
     this.updateLangLabel()
@@ -181,7 +187,12 @@ export class UIMenu {
     this._langUnsub?.()
     this._themeChangeUnsub?.()
     this._soundToggleUnsub?.()
-    this._langUnsub = this._themeChangeUnsub = this._soundToggleUnsub = null
+    this._fullscreenChangeUnsub?.()
+    this._langUnsub =
+      this._themeChangeUnsub =
+      this._soundToggleUnsub =
+      this._fullscreenChangeUnsub =
+        null
     this._navigate = null
     this.navEl.remove()
   }

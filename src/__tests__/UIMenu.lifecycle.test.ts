@@ -43,4 +43,19 @@ describe('UIMenu UIkit ownership', () => {
     expect(update).toHaveBeenLastCalledWith(soundIcon)
     menu.dispose()
   })
+
+  it('makes the persistent navigation inert while fullscreen owns interaction', () => {
+    const menu = new UIMenu() as unknown as MenuInternals
+
+    eventBus.emit('jlz:fullscreen-change', { open: true })
+    expect(menu.navEl.classList.contains('is-fullscreen-open')).toBe(true)
+    expect(menu.navEl.getAttribute('aria-hidden')).toBe('true')
+    expect((menu.navEl as HTMLElement & { inert: boolean }).inert).toBe(true)
+
+    eventBus.emit('jlz:fullscreen-change', { open: false })
+    expect(menu.navEl.classList.contains('is-fullscreen-open')).toBe(false)
+    expect(menu.navEl.getAttribute('aria-hidden')).toBe('false')
+    expect((menu.navEl as HTMLElement & { inert: boolean }).inert).toBe(false)
+    menu.dispose()
+  })
 })

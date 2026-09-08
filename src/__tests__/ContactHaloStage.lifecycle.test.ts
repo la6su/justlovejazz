@@ -136,17 +136,19 @@ describe('ContactHaloStage lifecycle', () => {
     expect(stage.isAnimating).toBe(false)
   })
 
-  it('disposes exactly once and leaves the shared geometry alive', () => {
-    const stage = new ContactHaloStage()
-    const mesh = stage.getObjectByName('contact-halo') as THREE.Mesh
-    const material = mesh.material as THREE.Material
-    const materialDispose = vi.spyOn(material, 'dispose')
+  it('releases shared geometry with the final stage owner', () => {
+    const first = new ContactHaloStage()
+    const second = new ContactHaloStage()
+    const mesh = first.getObjectByName('contact-halo') as THREE.Mesh
+    const materialDispose = vi.spyOn(mesh.material as THREE.Material, 'dispose')
     const geometryDispose = vi.spyOn(mesh.geometry, 'dispose')
 
-    stage.dispose()
-    stage.dispose()
-
+    first.dispose()
+    first.dispose()
     expect(materialDispose).toHaveBeenCalledTimes(1)
     expect(geometryDispose).not.toHaveBeenCalled()
+
+    second.dispose()
+    expect(geometryDispose).toHaveBeenCalledTimes(1)
   })
 })
