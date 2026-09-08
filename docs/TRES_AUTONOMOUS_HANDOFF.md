@@ -1,7 +1,7 @@
 # Vue/Tres implementation handoff
 
-Status: Works iterations 1–3 implemented; Services geometry iteration 1 and
-EnvSphere attachment iteration 1 implemented; physical backend admission
+Status: Works iterations 1–3, Services geometry, EnvSphere attachment, and
+Contact/Manifesto lazy Tres attachment implemented; physical backend admission
 remains pending, audited 2026-09-08.
 This is the execution queue for the remaining scene-composition transition.
 It supersedes the static-only admission restriction in
@@ -36,6 +36,9 @@ its responsibilities, not a prerequisite name-change exercise.
   declares its seven parts and three orbital rings; EnvSphereOwner remains an
   explicit retained owner whose attachment is now declarative through
   `primitive`; its pavilion geometry/material construction remains imperative.
+- ContactHaloStage and ManifestoInkStage retain their TSL graphs and disposal
+  owners, while async `LazyStage` attachment now waits for the Tres primitive
+  mount before configuration.
 - WorksPlaneStage constructs WorksInstallation inside init after textures
   resolve; both modules currently have static imports. Resource-lazy creation
   is present; module-lazy loading is not established for these two modules.

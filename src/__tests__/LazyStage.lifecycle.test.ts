@@ -70,6 +70,26 @@ afterEach(() => {
 })
 
 describe('ensureLazyStage (synchronous creation)', () => {
+  it('waits for an async attachment before configuring the stage', async () => {
+    const owner = makeOwner<FakeStage>()
+    let resolveAttach!: () => void
+    const contract = makeContract(owner, {
+      attach: vi.fn(
+        () =>
+          new Promise<void>((resolve) => {
+            resolveAttach = resolve
+          }),
+      ),
+    })
+
+    const pending = ensureLazyStage(contract)
+    await Promise.resolve()
+    expect(contract.configure).not.toHaveBeenCalled()
+    resolveAttach()
+    await pending
+    expect(contract.configure).toHaveBeenCalledOnce()
+  })
+
   it('attaches before the first await and configures after init', async () => {
     const owner = makeOwner<FakeStage>()
     const contract = makeContract(owner)
