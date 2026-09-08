@@ -99,6 +99,8 @@ export interface ExperienceHost {
   unmountWorksInstallation(stage: WorksPlaneStage, installation: WorksInstallation): Promise<void>
   mountContactHaloStage(stage: ContactHaloStage): Promise<void>
   unmountContactHaloStage(stage: ContactHaloStage): Promise<void>
+  mountManifestoInkStage(stage: ManifestoInkStage): Promise<void>
+  unmountManifestoInkStage(stage: ManifestoInkStage): Promise<void>
 }
 
 interface ReadinessGate {
@@ -807,9 +809,7 @@ export class Experience {
         import('./World/ManifestoInkStage').then(({ ManifestoInkStage }) =>
           isCurrent() ? new ManifestoInkStage() : null,
         ),
-      attach: (stage) => {
-        this.scene.add(stage)
-      },
+      attach: (stage) => this._host.mountManifestoInkStage(stage),
       configure: (stage) => {
         // The effective-polarity cache is refreshed on every theme event
         // regardless of route, so a lazy stage cannot miss the current ink.
@@ -818,7 +818,7 @@ export class Experience {
         stage.setActive(this.currentPage() === 'manifesto')
       },
       release: (stage) => {
-        stage.removeFromParent()
+        void this._host.unmountManifestoInkStage(stage)
         stage.dispose()
       },
     }

@@ -42,6 +42,8 @@ function fakeReady(overrides?: Partial<SceneHostReady>): SceneHostReady {
     unmountWorksInstallation: async () => undefined,
     mountContactHaloStage: async () => undefined,
     unmountContactHaloStage: async () => undefined,
+    mountManifestoInkStage: async () => undefined,
+    unmountManifestoInkStage: async () => undefined,
     ...overrides,
   }
 }

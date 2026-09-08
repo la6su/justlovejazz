@@ -49,6 +49,7 @@ import type { EnvSphere } from '../Experience/World/EnvSphere'
 import type { WorksPlaneStage } from '../Experience/World/WorksPlaneStage'
 import type { WorksInstallation } from '../Experience/World/WorksInstallation'
 import type { ContactHaloStage } from '../Experience/World/ContactHaloStage'
+import type { ManifestoInkStage } from '../Experience/World/ManifestoInkStage'
 
 const noScene = new URLSearchParams(window.location.search).has('no-scene')
 // Dev-only physical recovery seam. It preserves the shipped single-renderer
@@ -115,6 +116,7 @@ const declarativeEnvSphere = shallowRef<EnvSphere | null>(null)
 const declarativeWorksStage = shallowRef<WorksPlaneStage | null>(null)
 const declarativeWorksInstallation = shallowRef<WorksInstallation | null>(null)
 const declarativeContactHalo = shallowRef<ContactHaloStage | null>(null)
+const declarativeManifestoInk = shallowRef<ManifestoInkStage | null>(null)
 let resolveDeclarativeEnvSphere!: (owner: EnvSphere) => void
 const declarativeEnvSphereReady = new Promise<EnvSphere>((resolve) => {
   resolveDeclarativeEnvSphere = resolve
@@ -166,6 +168,18 @@ async function mountContactHaloStage(stage: ContactHaloStage): Promise<void> {
 async function unmountContactHaloStage(stage: ContactHaloStage): Promise<void> {
   if (declarativeContactHalo.value !== stage) return
   declarativeContactHalo.value = null
+  await nextTick()
+}
+
+async function mountManifestoInkStage(stage: ManifestoInkStage): Promise<void> {
+  if (disposed) return
+  declarativeManifestoInk.value = markRaw(stage)
+  await nextTick()
+}
+
+async function unmountManifestoInkStage(stage: ManifestoInkStage): Promise<void> {
+  if (declarativeManifestoInk.value !== stage) return
+  declarativeManifestoInk.value = null
   await nextTick()
 }
 
@@ -286,6 +300,8 @@ async function onReady(context: TresContext): Promise<void> {
     unmountWorksInstallation,
     mountContactHaloStage,
     unmountContactHaloStage,
+    mountManifestoInkStage,
+    unmountManifestoInkStage,
   })
 }
 
@@ -337,6 +353,7 @@ onBeforeUnmount(() => {
         @ready="onDeclarativeEnvSkyReady"
       />
       <primitive v-if="declarativeContactHalo" :object="declarativeContactHalo" :dispose="null" />
+      <primitive v-if="declarativeManifestoInk" :object="declarativeManifestoInk" :dispose="null" />
       <WorksStageOwner
         :stage="declarativeWorksStage"
         :installation="declarativeWorksInstallation"
