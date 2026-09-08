@@ -36,7 +36,7 @@ export interface AppEvents {
   'jlz:goto-section-by-hash': { hash: string }
   /** Fired by core/i18n after the active language is switched + persisted. */
   'jlz:lang-change': { lang: string }
-  /** Fired by the nav template on a menu sub-link click — a strict in-app navigation request (hash folded into path). */
+  /** Fired by a UI control or test seam to request strict in-app navigation. */
   'jlz:navigate': { path: string }
   /** Fired by a semantic project control on a Works or case-study page. */
   'jlz:open-project': { idx: number }

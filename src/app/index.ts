@@ -8,8 +8,8 @@
 // The navigation surface is a 1:1 port of the legacy router's contracts:
 // strict in-app navigation (unknown link = no-op), lenient direct entry
 // (unknown path → home, URL untouched), the `jlz:navigate` event, the
-// anchor click capture handler (incl. bare-hash and `data-nav-href`
-// skips), the `jlz:lang-change` re-apply, the section-hash dispatch after
+// anchor click capture handler (including bare hashes), the `jlz:lang-change`
+// re-apply, the section-hash dispatch after
 // the 3D navigation owner is ready, and the route announcer (owned by
 // `useJlzPage`). `popstate` is handled by `createWebHistory` itself; the
 // native `Experience` is never touched by navigation.
@@ -191,7 +191,7 @@ export async function mountVueApp(): Promise<void> {
     window.scrollTo({ top: 0, behavior: 'auto' })
   }
 
-  // jlz:navigate — navigation REQUEST from menu subsection clicks (strict).
+  // jlz:navigate — strict in-app navigation REQUEST from UI controls and tests.
   // Registered once at mount (app-lifetime listener, never removed — matches
   // the legacy window listener that lived until page unload).
   eventBus.on('jlz:navigate', ({ path }) => {
@@ -210,9 +210,6 @@ export async function mountVueApp(): Promise<void> {
     if (!anchorEl) return
     const href = anchorEl.getAttribute('href')
     if (!href) return
-    // Skip data-nav-href anchors — the nav sub-link listener handles them
-    // and dispatches jlz:navigate with the hash preserved.
-    if (anchorEl.dataset.navHref !== undefined) return
     // A bare hash is a UIkit toggle / local control, not a route.
     if (href.startsWith('#')) {
       event.preventDefault()

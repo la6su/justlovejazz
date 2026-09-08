@@ -1,6 +1,6 @@
 # Vue/Tres transition status
 
-Source audit: 2026-09-08, baseline ff9a12c5 plus pending flat-menu edits.
+Source audit: 2026-09-08, baseline ff9a12c5 plus the admitted flat-menu slice.
 This is an ownership/evidence summary. [NEXT.md](../NEXT.md) is the task queue.
 The foundational Phase 5–10 migration is recorded in
 [the archive](archive/MIGRATION_VUE_TRES.md); remaining composition work is partial.
@@ -28,15 +28,14 @@ and one loop remain invariants.
 
 ## Evidence and its limits
 
-- Prior full unit run before menu: 708 tests; after pending menu changes:
-  705 tests and TypeScript/Vue checks passed in the recorded session.
-- Build and bundle budgets passed before the menu changes. Prerender printed
-  sandbox WebSocket EPERM messages; build completed. Vite also warned about
-  the large Three chunk. Neither warning is evidence of browser parity.
-- Serial browser result before menu: 23 passed, 1 skipped. Do not claim
-  context-loss recovery passed without identifying whether that case skipped.
-  Playwright uses its configured build/server; JLZ_DEV_BASE is not proof of
-  which server the serial suite exercised.
+- Full unit suite after the menu slice: 114 files / 705 tests. TypeScript and
+  Vue checks passed in the recorded session.
+- Build and bundle budget checks passed after the menu slice. Prerender printed
+  sandbox WebSocket EPERM messages; build completed. Vite also warned about the
+  large Three chunk. Neither warning is evidence of browser parity.
+- The serial browser suite passed after the menu slice with 24 scenarios in one
+  worker. Context-loss recovery still requires its result to be identified
+  separately; Playwright uses its configured build/server.
 - [WebGLBackend soak report](evidence/phase10-route-cycle-soak/2026-09-08T03-56-50-396Z-report.json):
   20 steady visits across six routes (not 20 complete six-route rounds),
   resource caps stable, no fatal errors according to its filter. Renderer

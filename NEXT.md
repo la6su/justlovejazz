@@ -6,10 +6,6 @@ checklists are available in Git before this documentation consolidation.
 
 ## Priority order
 
-- [ ] Finish flat main navigation: preserve the existing edits; verify actual
-      SPA clicks, current-page close, modified clicks, native Blog navigation,
-      keyboard/mobile behavior and persistent canvas. Remove unused submenu data,
-      styles and selectors only after checking consumers.
 - [ ] Harden lazy-stage cancellation: LazyStage currently calls load after
       awaited attach without a fresh request/identity guard. Reproduce disposal
       during attachment and prevent loading a retired owner. Cover synchronous

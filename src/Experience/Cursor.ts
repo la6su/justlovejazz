@@ -234,12 +234,12 @@ export class Cursor {
       }
       const interactive = target.closest(INTERACTIVE_SEL) as HTMLElement | null
       if (interactive) {
-        // For large menu items (nav toggle + sub-links), DON'T snap to center —
+        // For large menu items, DON'T snap to center —
         // the labels are large (clamp 1.25-1.75rem), snapping to center looks weird.
         // Instead, follow mouse + expand + fill (no stuckX/Y override).
         // Menu overlay = [data-section="menu"] (home) / [data-page-section="page-menu"] (content).
         const isLargeMenu = interactive.closest(
-          '.jlz-menu-nav__toggle, .jlz-menu-nav__sub-link, [data-section="menu"], [data-page-section="page-menu"]',
+          '.jlz-menu-nav__toggle, [data-section="menu"], [data-page-section="page-menu"]',
         )
         if (isLargeMenu) {
           this.stuckX = this.targetX
