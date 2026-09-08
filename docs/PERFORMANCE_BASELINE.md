@@ -1,5 +1,10 @@
 # Performance baseline
 
+Measurements below apply only to their recorded revision and environment.
+Current budgets/check commands live in [DEVELOPMENT](DEVELOPMENT.md); current
+migration evidence limitations are in [transition status](TRES_FULL_TRANSITION.md).
+Read the relevant dated section, not this entire record on every task.
+
 This document freezes the pre-migration evidence and records comparable
 measurements for every Vue/TresJS milestone. It separates reproducible delivery
 budgets from hardware-dependent runtime measurements. Run

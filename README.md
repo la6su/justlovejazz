@@ -8,7 +8,8 @@ single Three.js `WebGPURenderer`.
 The renderer uses `WebGPUBackend` when hardware WebGPU is usable and the same
 `WebGPURenderer` class with `WebGLBackend`/`forceWebGL` when it is not. Rendering
 is demand-driven through one `RenderScheduler`; semantic Vue route content
-remains above an `aria-hidden` canvas. The Vue/TresJS migration is complete;
+remains above an `aria-hidden` canvas. The foundational Vue/TresJS migration is complete;
+remaining scene composition is tracked in [the current status](docs/TRES_FULL_TRANSITION.md);
 the archived record is
 [docs/archive/MIGRATION_VUE_TRES.md](docs/archive/MIGRATION_VUE_TRES.md), while active
 architecture decisions live in [ADRs](docs/adr/README.md).
@@ -43,8 +44,9 @@ The full quality gate is documented in
 | `/blog` and `/blog/[slug]` | Standalone prerendered blog pages |
 
 Each SPA route uses the same six-face navigation model: four visible main
-sections plus secret Lab and Menu sections. The menu supports deep links such
-as `/services#section-services-02`.
+sections plus auxiliary Lab and Menu slots. Routes support section deep links,
+for example `/services#section-services-creativeDirection`. The pending flat-menu
+change exposes top-level routes without removing section URLs.
 
 ## Runtime at a glance
 

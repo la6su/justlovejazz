@@ -1,96 +1,33 @@
-# Агентный контур разработки
+# Agent workflow
 
-Этот документ описывает рабочий протокол локальных агентов проекта. Он не
-содержит IP-адресов, ключей, токенов или других секретов. Настройки homelab и
-доступы хранятся отдельно в приватном окружении.
+Read AGENTS.md, NEXT.md and AGENT_HANDOFF.md first. Load only the task's relevant
+skill and source. Architecture, evidence and release commands are linked from
+[the documentation map](../README.md).
 
-## Роли
+## User-friendly execution
 
-- **Queen (Codex)** — владелец архитектуры и контекста: выбирает bounded slice,
-  проверяет diff, запускает quality gates, принимает или отклоняет результат.
-- **DSH/Qwen3.8 worker** — сильный worker на RTX5090: аудит, поиск причин,
-  небольшие рефакторинги и проверка гипотез. По умолчанию read-only.
-- **Локальный Qwen3.5 worker** — быстрые независимые задачи на 4060 Ti:
-  классификация, grep-аудит, подготовка сводок и параллельные низкорисковые
-  проверки. Не использовать его как основной архитектурный reviewer.
+- One outcome at a time; keep a working application after every slice.
+- Handle authorized edits, checks and scoped Git delivery without repeatedly
+  asking the user to copy commands. Use supported sandbox approvals when needed.
+- Report what changed, verification and the next step briefly.
+- Preserve unrelated dirty files. Never mistake sandbox read-only errors for
+  stale lock files. Never delete git locks blindly.
 
-## Формат bounded task
+## Context and usage
 
-Каждая задача worker должна содержать:
+- Use targeted rg searches; do not reload migration archives every turn.
+- Keep tasks in NEXT.md and only the current checkpoint in AGENT_HANDOFF.md.
+- Run deterministic scripts for formatting, tests, budgets and browser checks.
+  Read failure summaries first; retain detailed logs as artifacts.
+- Full release gate once per delivery, focused checks while editing.
+- No recurring model polling of unchanged CI or speculative parallel agents.
+- Model choice is explicit and environment-dependent. A lighter model and a
+  smaller context reduce consumption but cannot guarantee avoiding account limits.
+- If delegation is requested, give a bounded task and a short checkpoint,
+  not the complete conversation; isolate concurrent writes.
 
-1. точный список файлов или каталогов;
-2. один проверяемый вопрос или один coherent outcome;
-3. режим `read-only` либо явно разрешённые файлы для изменения;
-4. формат ответа (например, до 5 bullets с severity);
-5. ограничение контекста и времени.
+## Infrastructure boundary
 
-Хороший запрос: «Проверь эти четыре файла, найди ownership-риск, верни до
-четырёх пунктов, ничего не меняй». Широкий запрос на весь репозиторий делится
-на несколько последовательных аудитов.
-
-## Экономия контекста
-
-- Сначала передавать worker краткий task brief, а не историю чата.
-- Повторяющиеся факты держать в `AGENTS.md`, `docs/ARCHITECTURE.md` и этом
-  runbook, а не копировать в каждый prompt.
-- После завершённого среза начинать новый bounded task с commit SHA и diff
-  summary.
-- Не отправлять worker `node_modules`, `dist`, generated evidence и секреты.
-- Для DSH использовать короткий timeout и явный формат ответа; крупные аудиты
-  разбивать по ownership boundary.
-
-## Контур проверки
-
-1. Queen формулирует slice и критерий готовности.
-2. DSH делает read-only audit или выполняет узкую задачу.
-3. Queen проверяет изменения и запускает `type-check`, unit/build и нужный
-   serial gate.
-4. Только после evidence обновляются `NEXT.md` и документация.
-5. Один coherent outcome — один conventional commit.
-
-Worker не получает автоматически право публиковать, менять секреты,
-перестраивать инфраструктуру или расширять scope задачи.
-
-## Рабочий запуск DSH на pct104
-
-DSH запускается от отдельного пользователя `dsh`; это отделяет его сессии,
-кэш и credentials от root и от интерактивной shell-сессии Queen. Основной
-headless worker вызывается wrapper-ом:
-
-```bash
-sudo -u dsh -H /home/dsh/.local/bin/dsh-headless-worker \
-  "Проверь только src/Experience/Experience.ts и верни до 5 findings"
-```
-
-Wrapper сам выставляет `HOME=/home/dsh`, загружает `/home/dsh/.dsh/.env`,
-переходит в `/home/dsh/workspace/justlovejazz` и ограничивает выполнение
-таймаутом (по умолчанию 900 секунд). Секреты не передаются в prompt и не
-выводятся в лог.
-
-Для интерактивного Web-профиля используется отдельная tmux-сессия `dsh-web`.
-На рабочей машине Web UI открывается через локальный SSH-туннель:
-
-```bash
-ssh -N -L 3080:127.0.0.1:3080 dsh@<pct104-host>
-```
-
-После этого открывается `http://127.0.0.1:3080/`. Headless-задачи и Web UI
-разделены: зависшая браузерная сессия не должна блокировать bounded audit.
-
-## Dev-сервер проекта
-
-Рабочий Vite-сервер на pct104 также принадлежит пользователю `dsh`; root не
-запускает `bun dev` и не создаёт отдельный checkout или кэш. Канонический
-workspace — `/home/dsh/workspace/justlovejazz`, сервер обслуживается в tmux
-сессии `jlz-vite` на порту `5173`:
-
-```bash
-sudo -u dsh -H tmux attach -t jlz-vite
-sudo -u dsh -H tmux new-session -d -s jlz-vite \
-  'cd /home/dsh/workspace/justlovejazz && npm run dev -- --host 0.0.0.0'
-```
-
-Синхронизация исходников выполняется из опубликованного commit SHA; generated
-`prerender/` артефакты должны присутствовать в workspace до запуска Vite.
-Архивный root checkout, если он нужен для восстановления, не является рабочим
-источником и не должен обслуживать `project.6la.ru`.
+Homelab topology and wrapper paths are environment-specific, not repository
+requirements. The old DSH/pct104 examples remain in Git history; do not execute
+them as verified current setup. Credentials and machine runbooks stay private.
