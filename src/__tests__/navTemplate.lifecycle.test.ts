@@ -22,13 +22,17 @@ describe('flat menu lifecycle', () => {
     dispose()
   })
 
-  it('safely disposes a detached route root', () => {
+  it('removes preview listeners when the route root is disposed', () => {
     const root = document.createElement('main')
-    root.innerHTML =
-      '<ul class="jlz-menu-nav"><li><a class="jlz-menu-nav__toggle">Studio</a></li></ul>'
+    root.innerHTML = `
+      <div class="jlz-menu-preview"><span class="jlz-menu-preview__number"></span><span class="jlz-menu-preview__label"></span></div>
+      <ul class="jlz-menu-nav"><li><a class="jlz-menu-nav__toggle"><span class="jlz-menu-nav__num">01</span><span class="jlz-menu-nav__label">Studio</span></a></li></ul>`
+    document.body.append(root)
     const dispose = initMenuLifecycle(root)
-    root.remove()
+    const link = root.querySelector<HTMLAnchorElement>('.jlz-menu-nav__toggle')!
     dispose()
-    expect(root.querySelector('.jlz-menu-nav__toggle')).toBeTruthy()
+    link.dispatchEvent(new FocusEvent('focus'))
+    expect(root.querySelector('.jlz-menu-preview__number')?.textContent).toBe('')
+    expect(root.querySelector('.jlz-menu-preview__label')?.textContent).toBe('')
   })
 })

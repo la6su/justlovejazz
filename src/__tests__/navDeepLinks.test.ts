@@ -26,7 +26,36 @@ vi.mock('../core/motionPolicy', () => ({
 
 import AppShell from '../app/AppShell.vue'
 import { jlzRouteRecords } from '../app/routes'
-import { NAV_SECTION_LINKS } from '../app/navItems'
+
+// Published section URLs are a route contract, not menu data. Keeping this
+// fixture beside the route test prevents production navigation from carrying
+// fields that only exist to prove deep links.
+const NAV_SECTION_LINKS = [
+  '/#section-intro',
+  '/#section-about',
+  '/#section-works',
+  '/#section-contact',
+  '/services#section-services-creativeDirection',
+  '/services#section-services-interactiveDev',
+  '/services#section-services-motionRealtime',
+  '/services#section-services-aiSystems',
+  '/works#section-works-01',
+  '/works#section-works-02',
+  '/works#section-works-03',
+  '/works#section-works-04',
+  '/manifesto#section-manifesto-purpose',
+  '/manifesto#section-manifesto-clarity',
+  '/manifesto#section-manifesto-emotion',
+  '/manifesto#section-manifesto-simplicity',
+  '/lab#section-lab-01',
+  '/lab#section-lab-02',
+  '/lab#section-lab-03',
+  '/lab#section-lab-04',
+  '/contact#section-contact-01',
+  '/contact#section-contact-02',
+  '/contact#section-contact-03',
+  '/contact#section-contact-04',
+] as const
 
 // path → hash targets collected from stable published section URLs.
 const hashTargets = new Map<string, string[]>()

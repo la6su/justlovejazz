@@ -455,7 +455,7 @@ test.describe('JustLoveJazz — accessibility & DOM UI', () => {
       await expect(page.locator('#section-menu')).toBeVisible()
       const menuToggle = page.locator('#section-menu .jlz-menu-nav__toggle').first()
       await expect(menuToggle).toHaveAttribute('href', '/')
-      await expect(page.locator('#section-menu .jlz-menu-nav__subs')).toHaveCount(0)
+      await expect(page.locator('#section-menu .jlz-menu-nav__direct-link')).toHaveCount(7)
     } finally {
       await context.close()
     }
