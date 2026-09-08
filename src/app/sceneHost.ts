@@ -26,6 +26,7 @@ import type { EnvSphere } from '../Experience/World/EnvSphere'
 import type { WorksPlaneStage } from '../Experience/World/WorksPlaneStage'
 import type { WorksInstallation } from '../Experience/World/WorksInstallation'
 import type { ContactHaloStage } from '../Experience/World/ContactHaloStage'
+import type { ManifestoInkStage } from '../Experience/World/ManifestoInkStage'
 
 /** The readiness state published once the persistent Tres root is live. */
 export interface SceneHostReady {
@@ -57,6 +58,8 @@ export interface SceneHostReady {
   unmountWorksInstallation(stage: WorksPlaneStage, installation: WorksInstallation): Promise<void>
   mountContactHaloStage(stage: ContactHaloStage): Promise<void>
   unmountContactHaloStage(stage: ContactHaloStage): Promise<void>
+  mountManifestoInkStage(stage: ManifestoInkStage): Promise<void>
+  unmountManifestoInkStage(stage: ManifestoInkStage): Promise<void>
 }
 
 interface SceneHostState {

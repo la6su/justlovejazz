@@ -32,9 +32,15 @@ export class ServicesStage extends THREE.Group {
   private parts: THREE.Mesh[] = []
   private rings: THREE.Mesh[] = []
 
-  get metalMaterial(): MeshStandardNodeMaterial { return this.metal }
-  get signalMaterial(): MeshBasicNodeMaterial { return this.signal }
-  get orbitMaterials(): readonly MeshBasicNodeMaterial[] { return this.ringMaterials }
+  get metalMaterial(): MeshStandardNodeMaterial {
+    return this.metal
+  }
+  get signalMaterial(): MeshBasicNodeMaterial {
+    return this.signal
+  }
+  get orbitMaterials(): readonly MeshBasicNodeMaterial[] {
+    return this.ringMaterials
+  }
 
   adopt(nodes: { parts: THREE.Mesh[]; rings: THREE.Mesh[] }): void {
     this.parts = nodes.parts

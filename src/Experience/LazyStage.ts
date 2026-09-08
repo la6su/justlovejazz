@@ -130,11 +130,12 @@ export function ensureLazyStage<T extends Object3D>(contract: LazyStageContract<
   if (!stage) return Promise.resolve()
   owner.setStage(stage)
   const attached = contract.attach(stage)
-  const settled = (attached instanceof Promise
-    ? attached.then(() => (contract.load ? contract.load(stage) : undefined))
-    : contract.load
-      ? Promise.resolve(contract.load(stage))
-      : Promise.resolve()
+  const settled = (
+    attached instanceof Promise
+      ? attached.then(() => (contract.load ? contract.load(stage) : undefined))
+      : contract.load
+        ? Promise.resolve(contract.load(stage))
+        : Promise.resolve()
   ).then(
     () => {
       try {

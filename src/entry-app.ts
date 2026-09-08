@@ -425,6 +425,8 @@ async function boot(): Promise<BootResult> {
           host.mountWorksInstallation(stage, installation),
         mountContactHaloStage: (stage) => host.mountContactHaloStage(stage),
         unmountContactHaloStage: (stage) => host.unmountContactHaloStage(stage),
+        mountManifestoInkStage: (stage) => host.mountManifestoInkStage(stage),
+        unmountManifestoInkStage: (stage) => host.unmountManifestoInkStage(stage),
         unmountWorksInstallation: (stage, installation) =>
           host.unmountWorksInstallation(stage, installation),
       },
