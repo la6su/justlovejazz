@@ -115,6 +115,22 @@ Tres would otherwise recursively dispose borrowed materials. Local lifecycle,
 unit, build and browser gates pass; physical Works backend evidence remains
 pending before this slice is release-admitted.
 
+The post-merge lifecycle gate passed on 2026-09-08 against the current
+Manifesto/Contact Tres attachment path. The 20-cycle route soak used the
+automatic `WebGLBackend` and recorded one canvas, stable scene and renderer
+resource counters, stable frame deltas for `/contact`, `/manifesto` and `/lab`,
+no fatal errors, and a clean root teardown. Settled routes returned to the
+zero-demand loop state; backend program counters were unavailable in this
+headless environment and were explicitly excluded from the gate. Report:
+`docs/evidence/phase10-route-cycle-soak/2026-09-08T03-56-50-396Z-report.json`.
+
+The serial browser gate passed on the same build: 23 tests passed, one known
+skip, one worker. It covered persistent single-canvas behavior, DPR, route
+navigation, Works controls, WebGL context-loss recovery and reduced motion.
+Build and budget checks passed; Vite emitted only the existing large Three
+vendor chunk warning. Physical hardware WebGPU verification for Contact and
+Manifesto remains separate from this headless WebGLBackend soak.
+
 The restored orbital-ring composition passed physical WebGLBackend and
 hardware WebGPUBackend gates on 2026-09-07, including reduced motion and idle
 settlement. Evidence:
