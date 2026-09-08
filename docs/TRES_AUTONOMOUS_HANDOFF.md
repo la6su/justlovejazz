@@ -203,6 +203,23 @@ Create one bounded task per owner; do not promise all are static or trivial.
 | 5     | SplashCube, ParticleBurst, DrawTrail, JunniParticles    | Explicit node inputs and component lifetime                          | CPU deformation/instances, pointer activity, zero-demand settling    |
 | 6     | SectionGroups, SceneCoordinator, Experience             | Remove replaced construction and lifecycle paths                     | Canonical slots, route config, coordinator references, root teardown |
 
+### Retained-owner audit — 2026-09-08
+
+- `ContactCyprusStage` remains imperative: its Draco/GLTF load, material
+  replacement, camera-local normalization and prewarm form one asset owner.
+- `CasePlane` and `BakuCarousel` remain imperative: per-instance TSL uniforms,
+  shared geometry, texture retain/release, pointer drag and momentum are one
+  coupled controller boundary.
+- `SplashCube` remains imperative: WebGPU physical transmission graph, opener
+  state and explicit cube/root disposal cannot be split without a second
+  material owner.
+- `ParticleBurst`, `DrawTrail` and `JunniParticles` remain imperative: their
+  instancing or CPU deformation is advanced by the existing scheduler and each
+  owns mutable buffers/materials that require deterministic teardown.
+- Manual WebGPU route checks for `/contact` and `/manifesto` passed after the
+  async Tres attachment slice. Forced-WebGL and automated route-soak evidence
+  remain separate release gates.
+
 For each owner, append actual files, before/after owner matrix, tests, commit
 and backend evidence to TRES_FULL_TRANSITION.md. Renderer, post pipeline and
 Sizes remain separate decision items: retain while they own required recovery,

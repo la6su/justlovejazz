@@ -106,6 +106,11 @@ by the user; it does not block these tasks and is not a passed gate.
 - [x] **Move EnvSphere attachment into Tres** — `EnvSphereOwner` now mounts the
       existing ambient owner through a Tres primitive while preserving its
       palette animation and explicit material/geometry disposal boundary.
+- [x] **Audit retained animated owners** — `ContactCyprusStage`, `CasePlane`,
+      `BakuCarousel`, `SplashCube`, `ParticleBurst`, `DrawTrail` and
+      `JunniParticles` retain imperative ownership because their loaders,
+      TSL/CPU animation, input state or mutable GPU buffers are coupled to one
+      deterministic disposal boundary. No safe static Tres leaf was identified.
 - [ ] Connect case chapters to meaningful material changes: initial condition,
       interaction mechanism, inspectable result and reflection. Define each
       transition's reduced-motion settled state before adding animation.
