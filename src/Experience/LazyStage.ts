@@ -106,6 +106,9 @@ export function ensureLazyStage<T extends Object3D>(contract: LazyStageContract<
         createdStage = stage
         owner.setStage(stage)
         await contract.attach(stage)
+        // An awaited Tres mount can complete after route leave or root
+        // teardown. Do not start asset/GPU work for a retired owner.
+        if (request !== owner.getRequest() || owner.getStage() !== stage) return stage
         if (contract.load) await contract.load(stage)
         return stage
       })

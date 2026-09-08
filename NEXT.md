@@ -6,10 +6,6 @@ checklists are available in Git before this documentation consolidation.
 
 ## Priority order
 
-- [ ] Harden lazy-stage cancellation: LazyStage currently calls load after
-      awaited attach without a fresh request/identity guard. Reproduce disposal
-      during attachment and prevent loading a retired owner. Cover synchronous
-      create/attach failures and async rejection without weakening host types.
 - [ ] Validate ownership teardown: host-first/runtime-first unmount, stale
       primitive replacement, exactly-once geometries/materials/instance cleanup.
       User-reported Contact instability remains unverified visually.

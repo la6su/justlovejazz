@@ -185,6 +185,31 @@ describe('ensureLazyStage (asynchronous creation)', () => {
     }
   })
 
+  it('does not load a stage disposed while an async attach is pending', async () => {
+    const owner = makeOwner<FakeStage>()
+    let finishAttach!: () => void
+    const load = vi.fn(async () => undefined)
+    const contract = makeContract(owner, {
+      create: () => Promise.resolve(makeStage()),
+      attach: () =>
+        new Promise<void>((resolve) => {
+          finishAttach = resolve
+        }),
+      load,
+    })
+
+    const pending = ensureLazyStage(contract)
+    await Promise.resolve()
+    disposeLazyStage(contract)
+    finishAttach()
+    await pending
+
+    expect(load).not.toHaveBeenCalled()
+    expect(contract.configure).not.toHaveBeenCalled()
+    expect(owner.getStage()).toBeNull()
+    expect(contract.release).toHaveBeenCalledTimes(2)
+  })
+
   it('does not configure a stale load result after a dispose cycle', async () => {
     const owner = makeOwner<FakeStage>()
     const loads: Array<(value: void) => void> = []

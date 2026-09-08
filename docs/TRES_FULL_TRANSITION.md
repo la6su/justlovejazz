@@ -30,6 +30,8 @@ and one loop remain invariants.
 
 - Full unit suite after the menu slice: 114 files / 705 tests. TypeScript and
   Vue checks passed in the recorded session.
+- LazyStage now checks request and identity after an awaited attachment, before
+  starting `load()`. Its focused lifecycle regression and both type checks pass.
 - Build and bundle budget checks passed after the menu slice. Prerender printed
   sandbox WebSocket EPERM messages; build completed. Vite also warned about the
   large Three chunk. Neither warning is evidence of browser parity.

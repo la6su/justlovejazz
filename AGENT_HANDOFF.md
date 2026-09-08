@@ -14,8 +14,9 @@ The flat-menu slice is complete. Its files were:
 - tests/e2e.spec.ts
 
 Previous checks: 705 unit tests, both type checks and the serial browser gate
-passed. Continue with the first task in NEXT.md; it defines remaining behavior
-and acceptance.
+passed. LazyStage now guards route disposal during awaited attachment before
+starting `load()`. Continue with the first task in NEXT.md; it defines
+remaining behavior and acceptance.
 
 Documentation consolidation corrects the Services declarative claim and
 separates historical evidence from current guarantees.
