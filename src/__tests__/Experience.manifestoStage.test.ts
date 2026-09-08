@@ -50,6 +50,11 @@ function makeDestroyableExperience(scene: THREE.Scene): Experience {
     sizes: { destroy: vi.fn() },
     sfx: { dispose: vi.fn() },
     scene,
+    _host: {
+      unmountManifestoInkStage: vi.fn(async (stage: THREE.Object3D) => {
+        stage.removeFromParent()
+      }),
+    },
   }) as Experience
 }
 
