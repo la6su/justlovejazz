@@ -286,10 +286,9 @@ export class Experience {
   // scheduler starts the loop on invalidation and stops it after the settled
   // frame (zero settled draws). Hidden-tab pause/resume is owned here too.
   private _scheduler!: RenderScheduler
-  // Last per-frame activity snapshot — read by the settle decision AFTER the
-  // frame, so a same-frame raise (section change, breath fire, …) is honored.
-  private _lastActivity: RenderActivity = { ...NO_ACTIVITY }
-  /** Reused per-frame activity snapshot; predicates consume it synchronously. */
+  /** Reused per-frame activity snapshot; predicates consume it synchronously.
+   *  The settle decision reads it after the frame, so a same-frame raise
+   *  (section change, breath fire, …) is honored. */
   private _activitySnapshot: RenderActivity = { ...NO_ACTIVITY }
   // Render-budget FPS tracker — rolling window of frame times. If FPS < 30
   // sustained over LOW_FPS_WINDOW consecutive frames, _lowFps flips true.
@@ -731,7 +730,7 @@ export class Experience {
         stage.setTheme(this._contactIsLight)
       },
       release: (stage) => {
-        stage.removeFromParent()
+        // ContactTypographyStage.dispose() detaches itself from the scene.
         stage.dispose()
       },
     }
@@ -874,8 +873,8 @@ export class Experience {
         stage.prewarm()
       },
       release: (stage) => {
+        // ContactCyprusStage.dispose() detaches itself from the scene.
         stage.dispose()
-        stage.removeFromParent()
       },
       onDispose: () => {
         this._contactCyprusActive = false
@@ -1248,7 +1247,7 @@ export class Experience {
             demand: {
               needsRender: this._needsRender,
               cursorSettled: this.cursor?.isSettled ?? null,
-              activity: { ...this._lastActivity },
+              activity: { ...this._activitySnapshot },
             },
             timing: this._frameTiming?.snapshot() ?? null,
           }
@@ -1353,7 +1352,9 @@ export class Experience {
   private _isLoopSettled(): boolean {
     return (
       this._updateFailed ||
-      (!this._needsRender && demandSettles(this._lastActivity) && this.cursor?.isSettled !== false)
+      (!this._needsRender &&
+        demandSettles(this._activitySnapshot) &&
+        this.cursor?.isSettled !== false)
     )
   }
 
@@ -1387,9 +1388,10 @@ export class Experience {
   private _onBreathFire(): void {
     this._breathTimer = null
     // Keep the ambient rhythm going while the scene stays idle.
-    this._scheduleBreath(this._lastActivity)
+    this._scheduleBreath(this._activitySnapshot)
     // Activity may have resumed since the last frame — then no breath frame.
-    if (document.hidden || !idleForAmbientBreath(this._lastActivity, this._reducedMotion)) return
+    if (document.hidden || !idleForAmbientBreath(this._activitySnapshot, this._reducedMotion))
+      return
     this._needsRender = true
     this._scheduler.invalidate('breath')
   }
@@ -1512,9 +1514,6 @@ export class Experience {
     if (anyActivity(activity)) {
       this._needsRender = true
     }
-    // Post-frame settle decision reads this snapshot (set BEFORE the section
-    // change / context switch below may raise demand in the same frame).
-    this._lastActivity = activity
 
     // ── A4: Ambient breathing (IMPROVEMENT_PLAN) ──
     // When fully idle (no particles/nav/carousel/…), one refresh frame every
