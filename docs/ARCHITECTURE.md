@@ -482,9 +482,10 @@ of re-declaring the slot ids, face rotations and story ranges.
 camera arrival smoothing; authored phase overrides stay in each `PhaseConfig`.
 
 `CinematicNav` owns four story frames plus the Contact and Menu sheets. It
-accepts router/hash/input commands and remains the native story source;
-`StoryController` translates its typed snapshots for subscribers. Vue Router
-never scrolls the story DOM independently of that controller.
+accepts router/hash/input commands and remains the native story source; its
+snapshots flow through the pure story contract in `src/core/storyState.ts` to
+subscribers such as `BakuCarousel` and `SectionGroups`. Vue Router never
+scrolls the story DOM independently of that contract.
 Each generated navigation button has a named handler retained by the
 `CinematicNav` owner; `dispose()` removes those handlers before releasing the
 button collection, so retained or detached button DOM cannot call a disposed
@@ -695,9 +696,9 @@ nor UIkit owns a competing focus trap.
   runtime;
 - one renderer factory owns creation, initialization, backend inspection,
   the automatic software-adapter policy and device-loss recovery;
-- one framework-neutral render scheduler owns invalidation and bounded
-  activity tokens; its one bounded `setAnimationLoop` driver is active only
-  while dirty or active and stops at settled idle;
+- one framework-neutral render scheduler owns typed invalidation and the
+  activity-reason demand snapshot; its one bounded `setAnimationLoop` driver
+  is active only while dirty or active and stops at settled idle;
 - `RenderPipeline` runs the TSL post graph on `WebGPUBackend`; on
   `WebGLBackend` the node-material scene renders directly (the classic
   renderer and GLSL post chain were removed in Phase 10 slice 2);
@@ -800,10 +801,11 @@ backend suites.
 ## Render scheduling
 
 The scheduler uses typed invalidation and activity reasons rather than a set of
-shared booleans. An owner acquires an activity token for a bounded animation
-and releases it on completion or disposal. Frame tasks update only while their
-owner is active. The scheduler targets one bounded
-`renderer.setAnimationLoop` adapter. It starts when work becomes dirty or
+shared booleans. An owner with a bounded animation keeps its reason set in the
+`RenderActivity` demand snapshot for the animation's lifetime and clears it on
+completion or disposal; the scheduler renders only while any reason is set.
+Frame tasks update only while their owner is active. The scheduler targets one
+bounded `renderer.setAnimationLoop` adapter. It starts when work becomes dirty or
 active and calls `setAnimationLoop(null)` after the settled frame and while the
 document is hidden. Tres's internal loop is stopped when this driver takes
 ownership. No scene owner starts its own `requestAnimationFrame` loop.
@@ -852,8 +854,8 @@ closes the corresponding scope even if an async decode is still in progress.
 ## Events and preferences
 
 The typed `EventBus.ts` is the single port surface for every `jlz:*`
-application event: all seventeen ports are declared in `AppEvents` with exact
-payload types, `on()` returns an unsubscribe closure, and `emit()` reaches no
+application event: every port is declared in `AppEvents` with exact payload
+types, `on()` returns an unsubscribe closure, and `emit()` reaches no
 window listeners (the raw window bridge was removed in Phase 10 slice 3
 2026-08-22). Non-module producers — the inline splash script and out-of-app
 scripts — reach the bus through the `window.__jlzEmit` facade. Locale, theme
