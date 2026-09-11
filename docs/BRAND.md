@@ -45,11 +45,11 @@ keeping text and primary actions semantic in the DOM.
 
 Runtime colour, typography and spacing values belong to
 `src/assets/_import.less` and `src/assets/main.less`; those source files remain
-the current implementation truth for tokens and font stacks. During the
-Vue/TresJS migration these values move behind one typed token contract; Vue
-components, UIkit Less and Three.js materials consume that contract rather
+the current implementation truth for tokens and font stacks. These values are
+consumed through one typed token contract (`src/core/brandTokens.ts`); Vue
+components, UIkit Less and Three.js materials use that contract rather
 than copying colour, spacing or breakpoint values into component-local code.
-The migration must not change the brand merely because ownership changes.
+Ownership changes must not change the brand.
 The app's normal visual theme is dark across every section. Inverse remains an
 explicit accessibility preference, not a section-by-section art direction.
 Console glass must derive its contrast from shared runtime tokens in both

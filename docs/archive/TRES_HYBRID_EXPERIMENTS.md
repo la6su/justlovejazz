@@ -5,7 +5,9 @@ dated revisions, not current instructions. Use [NEXT](../NEXT.md) for work and
 [transition status](TRES_FULL_TRANSITION.md) for current ownership/evidence.
 
 Status: limited hybrid path. Audited and first production slice admitted
-2026-09-07. Implementation proceeds one bounded outcome at a time.
+2026-09-07. Implementation proceeded one bounded outcome at a time until the
+transition was declared complete; the path is stopped with its
+continue-conditions recorded below.
 
 ## Iteration 1 result — 2026-09-07
 

@@ -73,17 +73,21 @@ Use it to verify routes, headings, language, accessibility and prerendered
 content when WebGPU/WebGL is unavailable. It is not evidence for renderer,
 backend, GPU-resource or frame-time claims.
 
+`?force-webgl-backend=1` (dev only) forces the WebGLBackend path on a
+WebGPU-capable browser. The serial device-loss recovery probe and every
+visual-parity WebGL evidence URL use it; treat its output as WebGLBackend
+evidence only, never as physical WebGPU parity.
+
 The splash and non-module test producers use the typed `window.__jlzEmit`
 facade for application events. Treat it as a verification seam, not a second
 application event API. Browser evidence must pass the splash Enter control
 before capturing a normal scene route.
 
-## Migration verification
+## Verification matrix
 
 The completed migration record is archived at
-[`archive/MIGRATION_VUE_TRES.md`](archive/MIGRATION_VUE_TRES.md). Current
-renderer-affecting
-matrix is:
+[`archive/MIGRATION_VUE_TRES.md`](archive/MIGRATION_VUE_TRES.md); the matrix
+below is the standing checklist for renderer-affecting changes.
 
 Run `bun run type-check:vue` whenever a Vue SFC changes. It complements the
 existing TypeScript check; it does not replace the release gate.
@@ -171,7 +175,8 @@ time; backend timestamp evidence remains a separate hardware-gated measurement.
 The DevPanel's auxiliary FPS/p50/p95 display follows the same bounded-allocation
 principle: frame gaps are held in a fixed ring and sorted in reusable typed
 array scratch; an idle gap resets the displayed percentiles.
-intentionally does not invent driver-level WebGPU memory metrics. The soak
+The runtime resource snapshot intentionally does not invent driver-level
+WebGPU memory metrics. The soak
 tool records one snapshot after each route cycle (warm-up + steady) plus a
 root-destroy snapshot, writes a machine-readable report to
 `docs/evidence/phase10-route-cycle-soak/`, and records the actual backend
@@ -192,11 +197,11 @@ These budgets protect startup and interaction throughout migration:
 | Active-burst frame time on tested desktop | p95 ≤ 16.7 ms                                                                                          |
 | Active-burst frame time on tested mobile  | p95 ≤ 33.3 ms                                                                                          |
 
-Vue runtime, TresJS integration, hydrated route chunks and UIkit have separate
-reports and limits during Phase 1. Do not hide dependency regressions inside
-the Three.js budget or raise an existing budget to make a framework fit.
-Those measured limits become numeric blocking gates before Vue or Tres takes
-production ownership in Phases 5 and 7.
+Vue runtime, TresJS integration, hydrated route chunks and UIkit keep separate
+reports and limits in the budget check. Do not hide dependency regressions
+inside the Three.js budget or raise an existing budget to make a framework
+fit; the Vue/Tres production cutover completed on 2026-08-22 (ADR 0010) with
+these limits enforced.
 
 Changes to entry points, imports, dependencies, renderer ownership or render
 startup require production-build inspection. Persistent visual layers share

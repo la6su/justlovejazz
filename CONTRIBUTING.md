@@ -28,29 +28,23 @@ Run focused checks while iterating and the gate in
 [Conventional Commit](https://www.conventionalcommits.org/) and describe the
 result and verification in the PR.
 
-## Migration changes
+## Change discipline
 
-Use a scoped branch from current `main`; inspect remote state before starting. A pull
-request or commit should complete one migration phase, experiment or bounded
-owner slice. Do not replace the router, renderer and scene owners in the same
-change. Keep the current path available until the replacement passes its named
-gate, then remove the legacy owner in a separate reviewable change.
+Use a scoped branch from current `main`; inspect remote state before starting.
+A pull request or commit completes one bounded outcome and keeps the
+application runnable. Do not replace the router, renderer and scene owners in
+the same change; keep the current path available until the replacement passes
+its named gate, then remove the replaced owner in a separate reviewable
+change.
 
 Parallel agents use separate worktrees and branches. They return focused
 commits for review and never edit the integration working tree concurrently.
 
-A migration change documents and verifies the relevant parts of this matrix:
-
-- automatic WebGPU and forced WebGLBackend;
-- direct entry, in-app navigation, hash and popstate;
-- normal and reduced motion;
-- desktop, narrow layout and real-device DPR when the renderer is affected;
-- semantic DOM, focus, route announcements and UIkit wrapper lifecycle;
-- listener, timer, async-load and GPU-resource disposal;
-- startup, bundle, frame-time and idle-render differences.
-
-Do not add commands before the matching script exists. Vue SFC tooling is
-installed: run `bun run type-check:vue` alongside the checks in DEVELOPMENT.md.
+Verify the relevant rows of the [verification
+matrix](docs/DEVELOPMENT.md): renderer/backend, navigation, preferences,
+input, viewport, lifecycle, runtime and delivery. Do not add commands before
+the matching script exists. Vue SFC tooling is installed: run `bun run
+type-check:vue` alongside the checks in DEVELOPMENT.md.
 
 ## Report an issue
 

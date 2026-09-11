@@ -24,7 +24,7 @@ src/builder/                   production-safe shared core
   catalog.ts                   supported elements, fields and CSS dependencies
   render.ts                    escaped semantic UIkit markup
   compiler.ts                  theme and component-manifest generators
-  generated/page.json          saved source document
+  generated/documents.json     versioned multi-document collection
 
 src/assets/builder/
   theme.generated.less         validated theme-token overrides
@@ -103,16 +103,19 @@ application itself is excluded rather than tree-shaken after bundling.
 
 ## Next product boundary
 
-The saved v2 document is a single source page and the Style workspace currently
-covers the first high-value UIkit groups. Full UIkit component coverage,
-publishing as a public route, managing multiple route documents, drag-and-drop
-nesting and media selection are separate outcomes. The first dynamic source
-slice is now in: only the trusted project manifest can feed a list, with no
-network or user code. The Vue element registry is now the public runtime
-renderer and remains separate from `admin/`, router metadata and i18n state.
+The builder stores a versioned collection of documents in
+`generated/documents.json` (one slug-addressed document each) and publishes
+approved static routes at `/p/<slug>` with their `/p/<slug>/ru` variants
+through `renderBuilderPageDocument()` at build time. The Style workspace
+currently covers the first high-value UIkit groups; full UIkit component
+coverage, drag-and-drop nesting and media selection remain separate outcomes.
+The dynamic source slice is in: only the trusted project manifest can feed a
+list, with no network or user code. The Vue element registry is the public
+runtime renderer and remains separate from `admin/`, router metadata and i18n
+state.
 
-Static publishing is a separate owner: `renderBuilderPageDocument()` wraps the
-validated registry output for approved `/p/<slug>` artifacts. The string
+This publishing path is build-time only: `renderBuilderPageDocument()` wraps
+the validated registry output for approved `/p/<slug>` artifacts. The string
 `renderBuilderDocument()` renderer remains only as a framework-neutral
 test/reference adapter; it is not a public route fallback and must not return
 to the runtime graph.

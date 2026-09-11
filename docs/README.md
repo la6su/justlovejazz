@@ -19,7 +19,7 @@ Choose the question you need answered. Reading every document is unnecessary.
 ## Historical references
 
 [Foundational migration](archive/MIGRATION_VUE_TRES.md),
-[h[hybrid experiments](archive/TRES_HYBRID_EXPERIMENTS.md) and the
+[hybrid experiments](archive/TRES_HYBRID_EXPERIMENTS.md) and the
 [post-migration audit](archive/TRES_POST_MIGRATION_AUDIT.md) describe their
 dated state. They are not active task queues or instructions to repeat
 completed work.

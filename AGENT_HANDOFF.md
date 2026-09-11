@@ -1,17 +1,19 @@
 # Resume checkpoint
 
-Baseline: `d6e5665`, 2026-09-11. Recheck git status; this is a working-tree
-checkpoint, not release evidence. Read AGENTS.md and [NEXT.md](NEXT.md).
+Baseline: the docs-closure PR head on `feature/docs-transition-closure`,
+2026-09-11. Recheck git status; this is a working-tree checkpoint, not
+release evidence. Read AGENTS.md and [NEXT.md](NEXT.md).
 
 ## In progress
 
-Nothing. The teardown-evidence slice is complete: the runtime-destroy
-ownership boundary is pinned by Experience.destroyOwnership.test.ts, the dead
-SceneCoordinator → ServicesStage terminal dispose is removed with the
-ownership docs aligned to ServicesStageOwner.vue, the fresh-clone dev flow no
-longer 500s without the prerender artifact, and Contact was re-verified in
-the browser on the WebGLBackend path. NEXT.md teardown and allocation-audit
-items are closed with dated evidence.
+Nothing. The documentation closure pass landed: the Tres transition record is
+re-issued as a frozen completion record with the Services ownership row
+corrected and dead links fixed, ARCHITECTURE.md contracts match the code,
+DEVELOPMENT.md prose is repaired and documents the ?force-webgl-backend=1
+seam, PAGE_BUILDER.md describes the shipped multi-document model, and
+migration-era process framing is retired from CONTRIBUTING/AGENTS/BRAND. A
+full documentation audit found no remaining blocker for the completed
+Vue/Tres transition.
 
 ## Next task
 

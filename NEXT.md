@@ -50,6 +50,18 @@ checklists are available in Git before this documentation consolidation.
       the per-field _*Unsub bookkeeping is correct but triplicated. On
       2026-09-11 the ponytail sweep converted all three to the single
       `private readonly _unsubs` array (push on subscribe, drain in dispose).
+- [x] Close the documentation residue of the transition. On 2026-09-11 the
+      Tres transition record was re-issued as a frozen completion record
+      (Services ownership row corrected to the shipped declarative template
+      geometry, dangling baseline hash and dead soak link fixed, archive
+      tense aligned); ARCHITECTURE.md contracts were realigned with the code
+      (storyState contract, RenderActivity reasons, count-free event-port
+      prose); DEVELOPMENT.md dangling sentences were repaired and the dev-only
+      ?force-webgl-backend=1 seam documented; PAGE_BUILDER.md now describes
+      the shipped multi-document collection with build-time /p/<slug>
+      publishing; migration-era process framing was retired from
+      CONTRIBUTING/AGENTS/BRAND and the docs/README.md archive link repaired.
+      A full-doc audit found no remaining transition blocker.
 - [ ] Strengthen evidence scripts: narrow overly broad GPU error exclusions;
       identify skipped cases, record revision/backend, measure frame deltas during
       an idle interval and distinguish runtime destroy from Vue root unmount.

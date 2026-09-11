@@ -103,10 +103,10 @@ local gate is the release check, not a prerequisite for every documentation
 edit. Publishing uses a scoped non-default branch and a pull request; commit
 messages follow Conventional Commits.
 
-Keep active work in `NEXT.md`. Migration changes implement one phase or bounded
-owner slice at a time, keep the application runnable and update the migration
-traceability/removal ledgers in the same change. After completing an outcome,
-remove it from `NEXT.md`, capture discovered follow-up work and reorder the
-remainder when evidence changes priority. Durable released behavior belongs in
-source, tests, ADRs and the changelog; session-by-session narration is
-unnecessary.
+Keep active work in `NEXT.md`. Changes implement one bounded outcome at a
+time and keep the application runnable. The migration traceability/removal
+ledgers are completed and archived under `docs/archive/`; do not update them.
+After completing an outcome, remove it from `NEXT.md`, capture discovered
+follow-up work and reorder the remainder when evidence changes priority.
+Durable released behavior belongs in source, tests, ADRs and the changelog;
+session-by-session narration is unnecessary.
