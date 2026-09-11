@@ -458,14 +458,9 @@ export class ExperienceUI {
       tags?: string[]
       textureUrl?: string
       detailTextureUrl?: string
-      videoSrc?: string
       year?: string
     }
     const opts = {
-      // Case studies are still-image overlays. The only video source belongs
-      // to UIManager's explicit showreel action; keeping this image-only
-      // avoids every project silently loading the placeholder showreel.
-      mode: 'image' as const,
       poster: p.textureUrl,
       title: p.title,
       category: `${p.year ?? ''} · ${p.category ?? ''}`,
