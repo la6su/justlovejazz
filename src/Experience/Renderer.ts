@@ -23,11 +23,6 @@ export type RenderSurface = WebGPURenderer
 
 const NEUTRAL_GRADE: [number, number, number] = [1, 1, 1]
 
-function tupleIs(a: [number, number, number], b?: [number, number, number]): boolean {
-  const src = b ?? NEUTRAL_GRADE
-  return Object.is(a[0], src[0]) && Object.is(a[1], src[1]) && Object.is(a[2], src[2])
-}
-
 function copyTuple(
   target: [number, number, number] | undefined,
   from?: [number, number, number],
@@ -80,19 +75,6 @@ export class Renderer {
     gradeShadows: [1, 1, 1],
     gradeHighlights: [1, 1, 1],
   }
-  private _postSource = {
-    bloom: Number.NaN,
-    vignette: Number.NaN,
-    grain: Number.NaN,
-    chromatic: Number.NaN,
-    bloomRadius: Number.NaN,
-    bloomThreshold: Number.NaN,
-    refract: Number.NaN,
-    border: Number.NaN,
-    gradeShadows: [Number.NaN, Number.NaN, Number.NaN] as [number, number, number],
-    gradeHighlights: [Number.NaN, Number.NaN, Number.NaN] as [number, number, number],
-  }
-  private _postParamsDirty = true
 
   // Phase 6 device-loss recovery state (bounded — see rendererBackend.ts).
   private _deviceLostAttempts = 0
@@ -124,12 +106,7 @@ export class Renderer {
   }
 
   private buildPipelineConfig(): RenderPipelineConfig {
-    return {
-      bloomThreshold: this.capabilities.postProcessing ? 0.5 : 1.0,
-      bloomEnabled: this.capabilities.postProcessing,
-      vignetteEnabled: true,
-      grainEnabled: this.capabilities.tier !== 'low',
-    }
+    return { bloomEnabled: this.capabilities.postProcessing }
   }
 
   private showUnsupportedMessage(): void {
@@ -178,13 +155,7 @@ export class Renderer {
 
     // Pipeline — the single WebGPURenderer instance (Phase 6 production
     // default; the classic WebGLRenderer path was removed in Phase 10).
-    this.pipeline = RenderPipeline.create(
-      this.instance,
-      this.sizes.width,
-      this.sizes.height,
-      this._pipelineConfig,
-    )
-    this._postParamsDirty = true
+    this.pipeline = RenderPipeline.create(this.instance, this._pipelineConfig)
 
     // Transmission is disabled on ALL paths (see SplashCube.ts comment).
     // setTransmissionEnabled() is now a no-op, kept for API compat.
@@ -367,13 +338,7 @@ export class Renderer {
       this.instance.setSize(this.sizes.width, this.sizes.height)
       this.postManager.refreshQualityTier()
       this._pipelineConfig = this.buildPipelineConfig()
-      this.pipeline = RenderPipeline.create(
-        this.instance,
-        this.sizes.width,
-        this.sizes.height,
-        this._pipelineConfig,
-      )
-      this._postParamsDirty = true
+      this.pipeline = RenderPipeline.create(this.instance, this._pipelineConfig)
       this.attachDeviceLossRecovery(this.instance)
       // Re-attach the animation loop (or the hidden-tab null) on the new instance.
       if (this._loopCallback) {
@@ -430,22 +395,11 @@ export class Renderer {
     if (this.capabilities.isRealWebGPU) {
       this.postManager.update(dt)
       const params = this.postManager.postParams
-
-      // Apply to pipeline (typed, no `any`)
-      const source = this._postSource
-      const changed =
-        this._postParamsDirty ||
-        !Object.is(source.bloom, params.bloom) ||
-        !Object.is(source.vignette, params.vignette) ||
-        !Object.is(source.grain, params.grain) ||
-        !Object.is(source.chromatic, params.chromatic) ||
-        !Object.is(source.bloomRadius, params.bloomRadius) ||
-        !Object.is(source.bloomThreshold, params.bloomThreshold) ||
-        !Object.is(source.refract, params.refract) ||
-        !Object.is(source.border, params.border) ||
-        !tupleIs(source.gradeShadows, params.gradeShadows) ||
-        !tupleIs(source.gradeHighlights, params.gradeHighlights)
-      if (this.pipeline && changed) {
+      if (this.pipeline) {
+        // RenderPipeline.updateParams is the single change-detection owner:
+        // it diffs against its own snapshot, and a recreated pipeline
+        // force-pushes on its first render. This side only maps the
+        // capability-driven intensity scaling.
         const pp = this._postParams
         pp.bloom = this.capabilities.scaleIntensity(params.bloom)
         pp.vignette = this.capabilities.scaleIntensity(params.vignette)
@@ -461,17 +415,6 @@ export class Renderer {
         copyTuple(pp.gradeShadows, params.gradeShadows)
         copyTuple(pp.gradeHighlights, params.gradeHighlights)
         this.pipeline.updateParams(pp)
-        source.bloom = params.bloom
-        source.vignette = params.vignette
-        source.grain = params.grain
-        source.chromatic = params.chromatic ?? Number.NaN
-        source.bloomRadius = params.bloomRadius ?? Number.NaN
-        source.bloomThreshold = params.bloomThreshold ?? Number.NaN
-        source.refract = params.refract ?? Number.NaN
-        source.border = params.border ?? Number.NaN
-        copyTuple(source.gradeShadows, params.gradeShadows)
-        copyTuple(source.gradeHighlights, params.gradeHighlights)
-        this._postParamsDirty = false
       }
     }
 

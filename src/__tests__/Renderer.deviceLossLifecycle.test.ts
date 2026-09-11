@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as THREE from 'three'
 import { eventBus } from '../core/EventBus'
+import type { PostParams } from '../core/RenderPipeline'
 
 const mocks = vi.hoisted(() => ({
   create: vi.fn(),
@@ -315,7 +316,7 @@ describe('Renderer device-loss lifecycle', () => {
     expect(render).toHaveBeenCalledOnce()
   })
 
-  it('caches settled real-WebGPU post parameter scaling until values change', () => {
+  it('maps the settled WebGPU post params through capability scaling every frame', () => {
     const postUpdate = vi.fn()
     const updateParams = vi.fn()
     const render = vi.fn()
@@ -351,36 +352,38 @@ describe('Renderer device-loss lifecycle', () => {
         gradeShadows: [1, 1, 1] as [number, number, number],
         gradeHighlights: [1, 1, 1] as [number, number, number],
       },
-      _postSource: {
-        bloom: Number.NaN,
-        vignette: Number.NaN,
-        grain: Number.NaN,
-        chromatic: Number.NaN,
-        bloomRadius: Number.NaN,
-        bloomThreshold: Number.NaN,
-        refract: Number.NaN,
-        border: Number.NaN,
-        gradeShadows: [Number.NaN, Number.NaN, Number.NaN] as [number, number, number],
-        gradeHighlights: [Number.NaN, Number.NaN, Number.NaN] as [number, number, number],
-      },
-      _postParamsDirty: true,
     }) as unknown as Renderer
 
+    // The Renderer hands the scaled params to the pipeline on every WebGPU
+    // frame; dedup of identical values is RenderPipeline.updateParams' own
+    // snapshot diff (pinned in RenderPipeline.lifecycle.test).
     renderer.update(new THREE.Scene(), new THREE.PerspectiveCamera(), 1 / 60)
+    const pp = (renderer as unknown as { _postParams: PostParams })._postParams
+    expect(updateParams).toHaveBeenCalledOnce()
+    expect(pp).toMatchObject({
+      bloom: 0.4,
+      vignette: 0.5,
+      grain: 0.25,
+      chromatic: 0,
+      bloomRadius: 0.6,
+      bloomThreshold: 0.5,
+      refract: 0.1,
+      border: 0.2,
+      gradeShadows: [0.9, 1, 1.1],
+      gradeHighlights: [1, 0.95, 1.05],
+    })
+
     renderer.update(new THREE.Scene(), new THREE.PerspectiveCamera(), 1 / 60)
     expect(postUpdate).toHaveBeenCalledTimes(2)
-    expect(updateParams).toHaveBeenCalledOnce()
-    expect(
-      (renderer as unknown as { capabilities: { scaleIntensity: ReturnType<typeof vi.fn> } })
-        .capabilities.scaleIntensity,
-    ).toHaveBeenCalledTimes(4)
-
-    params.bloom = 0.8
-    renderer.update(new THREE.Scene(), new THREE.PerspectiveCamera(), 1 / 60)
     expect(updateParams).toHaveBeenCalledTimes(2)
     expect(
       (renderer as unknown as { capabilities: { scaleIntensity: ReturnType<typeof vi.fn> } })
         .capabilities.scaleIntensity,
     ).toHaveBeenCalledTimes(8)
+
+    params.bloom = 0.8
+    renderer.update(new THREE.Scene(), new THREE.PerspectiveCamera(), 1 / 60)
+    expect(updateParams).toHaveBeenCalledTimes(3)
+    expect(pp.bloom).toBe(0.8)
   })
 })
