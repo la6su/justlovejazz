@@ -5,13 +5,8 @@ import { eventBus } from '../core/EventBus'
 
 type OverlayInternals = {
   container: HTMLDivElement
-  video: HTMLVideoElement
   titleEl: HTMLElement
   _applyOptions: (options: OverlayOptions) => void
-  _tryAutoplay: () => void
-  revealVideoAfterFirstFrame: () => void
-  _videoRevealFrame: number | null
-  _autoplayTimer: ReturnType<typeof setTimeout> | null
   dispose: () => void
 }
 
@@ -167,27 +162,6 @@ describe('FullscreenOverlay close ownership', () => {
     }
   })
 
-  it('cancels the video poster fallback frames during disposal', () => {
-    const callbacks: FrameRequestCallback[] = []
-    const raf = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
-      callbacks.push(callback)
-      return callbacks.length
-    })
-    const cancel = vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => undefined)
-    const overlay = new FullscreenOverlay() as unknown as OverlayInternals
-
-    try {
-      overlay.revealVideoAfterFirstFrame()
-      expect(callbacks).toHaveLength(1)
-      overlay.dispose()
-      expect(overlay._videoRevealFrame).toBeNull()
-      expect(cancel).toHaveBeenCalledWith(1)
-    } finally {
-      raf.mockRestore()
-      cancel.mockRestore()
-    }
-  })
-
   it('settles an open modal before disposal', () => {
     const onClose = vi.fn()
     const overlay = new FullscreenOverlay() as unknown as OverlayInternals
@@ -204,72 +178,6 @@ describe('FullscreenOverlay close ownership', () => {
       expect(document.body.classList.contains('uk-modal-page')).toBe(false)
     } finally {
       overlay.dispose()
-    }
-  })
-
-  it('coalesces duplicate autoplay timers before disposal', () => {
-    vi.useFakeTimers()
-    const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout')
-    const overlay = new FullscreenOverlay() as unknown as OverlayInternals
-
-    try {
-      overlay.container.classList.add('is-video-mode')
-      const source = overlay.video.querySelector('source')!
-      source.src = '/assets/video/showreel.mp4'
-      overlay._tryAutoplay()
-      const firstTimer = overlay._autoplayTimer
-      overlay._tryAutoplay()
-      const secondTimer = overlay._autoplayTimer
-
-      expect(firstTimer).not.toBeNull()
-      expect(secondTimer).not.toBeNull()
-      expect(secondTimer).not.toBe(firstTimer)
-      expect(clearTimeoutSpy).toHaveBeenCalledWith(firstTimer)
-      overlay.dispose()
-      expect(overlay._autoplayTimer).toBeNull()
-      expect(clearTimeoutSpy).toHaveBeenCalledWith(secondTimer)
-    } finally {
-      clearTimeoutSpy.mockRestore()
-      vi.useRealTimers()
-    }
-  })
-
-  it('cancels autoplay when media options are replaced', () => {
-    vi.useFakeTimers()
-    const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout')
-    const overlay = new FullscreenOverlay() as unknown as OverlayInternals
-
-    try {
-      overlay.container.classList.add('is-video-mode')
-      const source = overlay.video.querySelector('source')!
-      source.src = '/assets/video/showreel.mp4'
-      overlay._tryAutoplay()
-      const pendingTimer = overlay._autoplayTimer
-
-      overlay._applyOptions({ mode: 'image', poster: '/assets/images/project.webp' })
-
-      expect(pendingTimer).not.toBeNull()
-      expect(overlay._autoplayTimer).toBeNull()
-      expect(clearTimeoutSpy).toHaveBeenCalledWith(pendingTimer)
-      vi.runAllTimers()
-      expect(overlay.video.paused).toBe(true)
-    } finally {
-      overlay.dispose()
-      clearTimeoutSpy.mockRestore()
-      vi.useRealTimers()
-    }
-  })
-
-  it('does not reload a source-less video during image preloads', () => {
-    const load = vi.spyOn(HTMLMediaElement.prototype, 'load').mockImplementation(() => {})
-    const overlay = new FullscreenOverlay() as unknown as OverlayInternals
-
-    try {
-      overlay._applyOptions({ mode: 'image', poster: '/assets/images/project.webp' })
-      expect(load).not.toHaveBeenCalled()
-    } finally {
-      overlay.dispose()
-      load.mockRestore()
     }
   })
 

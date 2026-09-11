@@ -29,11 +29,8 @@ function tupleIs(a: [number, number, number], b: [number, number, number]): bool
 // ─── Configuration ───────────────────────────────────────────────
 
 export interface RenderPipelineConfig {
-  bloomThreshold?: number
   /** WebGPU path: the TSL graph always runs — kept for the config contract. */
   bloomEnabled?: boolean
-  vignetteEnabled?: boolean
-  grainEnabled?: boolean
 }
 
 export interface PostParams {
@@ -125,20 +122,14 @@ export class RenderPipeline {
 
   /** Factory: create pipeline for the unified WebGPURenderer.
    *  The WebGPU TSL graph derives its per-frame parameters from `updateParams`
-   *  (PostProcessingManager); the `config` argument is retained as the
-   *  capability-tier contract produced by `Renderer.buildPipelineConfig()` —
-   *  the classic per-pass fields it once drove were removed with the classic
-   *  path. */
-  public static create(
-    renderer: WebGPURenderer,
-    _width: number,
-    _height: number,
-    _config?: RenderPipelineConfig,
-  ): RenderPipeline {
+   *  (PostProcessingManager); the `config` argument is the capability-tier
+   *  contract produced by `Renderer.buildPipelineConfig()` — the classic
+   *  per-pass fields it once drove were removed with the classic path. */
+  public static create(renderer: WebGPURenderer, config?: RenderPipelineConfig): RenderPipeline {
     const pipeline = new RenderPipeline()
 
     pipeline._renderer = renderer
-    pipeline._postProcessingEnabled = _config?.bloomEnabled !== false
+    pipeline._postProcessingEnabled = config?.bloomEnabled !== false
 
     // WebGPU TSL pipeline is built lazily on first render() — it needs the
     // live scene + camera references to bind into the PassNode.

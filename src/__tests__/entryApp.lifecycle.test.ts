@@ -1,10 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import {
-  createReadyEventTimer,
-  createSplashRevealTimer,
-  createStartGate,
-  createStyleOwner,
-} from '../entry-app'
+import { createReadyEventTimer, createSplashRevealTimer, createStyleOwner } from '../entry-app'
 
 describe('entry-app splash reveal lifecycle', () => {
   afterEach(() => {
@@ -78,22 +73,5 @@ describe('entry-app splash reveal lifecycle', () => {
 
     owner.clear()
     expect(document.head.querySelectorAll('style')).toHaveLength(0)
-  })
-
-  it('coalesces concurrent starts and permits retry after rejection', async () => {
-    const start = vi
-      .fn()
-      .mockRejectedValueOnce(new Error('bootstrap failed'))
-      .mockResolvedValue(undefined)
-    const gate = createStartGate(start)
-
-    const first = gate.run()
-    expect(gate.run()).toBe(first)
-    await expect(first).rejects.toThrow('bootstrap failed')
-
-    const second = gate.run()
-    expect(gate.run()).toBe(second)
-    await second
-    expect(start).toHaveBeenCalledTimes(2)
   })
 })

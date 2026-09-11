@@ -1,27 +1,12 @@
 import { describe, it, expect } from 'vitest'
 import {
-  BOOTSTRAP_STATES,
-  INITIALIZING_STATES,
   INITIAL_BOOTSTRAP_STATE,
   canTransition,
   tryTransition,
-  isInitializing,
   type BootstrapState,
 } from '../core/bootstrapStates'
 
 describe('bootstrap state machine', () => {
-  it('declares exactly the seven documented states', () => {
-    expect(BOOTSTRAP_STATES).toEqual([
-      'shell-painted',
-      'app-loading',
-      'renderer-initializing',
-      'scene-prewarming',
-      'ready',
-      'entered',
-      'failed',
-    ])
-  })
-
   it('the happy path advances one documented step at a time', () => {
     const happyPath: BootstrapState[] = [
       'shell-painted',
@@ -45,7 +30,12 @@ describe('bootstrap state machine', () => {
   })
 
   it('every initialization state may fall to failed', () => {
-    for (const state of INITIALIZING_STATES) {
+    for (const state of [
+      'shell-painted',
+      'app-loading',
+      'renderer-initializing',
+      'scene-prewarming',
+    ] as const) {
       expect(canTransition(state, 'failed')).toBe(true)
     }
   })
@@ -69,19 +59,17 @@ describe('bootstrap state machine', () => {
     expect(canTransition('entered', 'ready')).toBe(false)
     expect(canTransition('entered', 'app-loading')).toBe(false)
     expect(canTransition('ready', 'ready')).toBe(false)
-    for (const state of BOOTSTRAP_STATES) {
+    for (const state of [
+      'shell-painted',
+      'app-loading',
+      'renderer-initializing',
+      'scene-prewarming',
+      'ready',
+      'entered',
+      'failed',
+    ] as const) {
       expect(tryTransition(state, state)).toBeNull()
     }
-  })
-
-  it('isInitializing is true only for the pre-ready states', () => {
-    expect(isInitializing('shell-painted')).toBe(true)
-    expect(isInitializing('app-loading')).toBe(true)
-    expect(isInitializing('renderer-initializing')).toBe(true)
-    expect(isInitializing('scene-prewarming')).toBe(true)
-    expect(isInitializing('ready')).toBe(false)
-    expect(isInitializing('entered')).toBe(false)
-    expect(isInitializing('failed')).toBe(false)
   })
 
   it('the entry state is the painted shell', () => {

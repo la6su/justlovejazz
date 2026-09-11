@@ -102,7 +102,7 @@ existing TypeScript check; it does not replace the release gate.
 ### Renderer gate
 
 The live renderer gate (`bun scripts/phase7-live-gate.ts` against the dev
-server) exercises the production World — the representative feature set:
+server) exercises the production scene — the representative feature set:
 fog, TSL materials, CanvasTexture, instancing, environment/SplashCube, Works
 texture plane, GLTF/DRACO, the complete TSL post graph, DPR/resize, reduced
 motion and lazy teardown — and asserts the readiness handshake, settled idle

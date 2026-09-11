@@ -10,7 +10,6 @@ export { type Project }
 export const PROJECTS: Project[] = [
   {
     id: 'porsche-911-spider',
-    page: 'works',
     title: 'Porsche 911 Spider',
     description: 'A motion-led CG study of light, silhouette and a car in motion.',
     textureUrl: '/assets/projects/ebb-vibes/cover-studio-v2.jpg',
@@ -24,7 +23,6 @@ export const PROJECTS: Project[] = [
   },
   {
     id: 'alise',
-    page: 'works',
     title: 'Alise',
     description: 'A CG image system where light, texture and movement form one character.',
     textureUrl: '/assets/projects/mono-sunday/cover-studio-v2.jpg',
@@ -38,7 +36,6 @@ export const PROJECTS: Project[] = [
   },
   {
     id: '19-lab',
-    page: 'works',
     title: '19 Lab',
     description: 'A product-led web presentation for cosmetics, built around care and detail.',
     textureUrl: '/assets/projects/till-at-night/cover-studio-v2.jpg',
@@ -52,7 +49,6 @@ export const PROJECTS: Project[] = [
   },
   {
     id: 'pro193',
-    page: 'works',
     title: 'Pro193',
     description: 'An online store for tall men, centred on fit, clothing and a clear choice.',
     textureUrl: '/assets/projects/nocturne-blue/cover-studio-v2.jpg',

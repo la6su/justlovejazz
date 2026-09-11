@@ -14,9 +14,9 @@
 //
 // and resolves the `sceneHost` bridge after renderer init + actual-backend
 // inspection (software-adapter re-creation through the pure
-// `planUnifiedBackend` policy). The existing World enters Tres through the
-// explicit `primitive` adapter (`:dispose="null"` — Experience stays the
-// single disposal owner). RenderMode is `on-demand`: Tres's internal loop is
+// `planUnifiedBackend` policy). Scene owners enter Tres through explicit
+// `primitive` adapters (`:dispose="null"` — Experience stays the single
+// disposal owner). RenderMode is `on-demand`: Tres's internal loop is
 // stopped immediately after ready and the `RenderScheduler` (ADR 0004) is the
 // single loop driver. On-demand also avoids manual mode's delayed advance().
 //

@@ -144,7 +144,7 @@ function updateLoaderProgress(pct: number): void {
 
 let _bootstrapState: BootstrapState = INITIAL_BOOTSTRAP_STATE
 let _readyWatchdog: ReturnType<typeof setTimeout> | null = null
-let _bootstrapAbort = new AbortController()
+const _bootstrapAbort = new AbortController()
 let _bootstrapUnsubs: Array<() => void> = []
 
 export function createStyleOwner(): {
@@ -180,8 +180,10 @@ function clearHostProbe(): void {
 function resetBootstrapBindings(): void {
   _bootstrapUnsubs.forEach((unsubscribe) => unsubscribe())
   _bootstrapUnsubs = []
+  // The bootstrap runs exactly once per page (the only retry is a full page
+  // reload), so aborting the controller needs no re-arm — a fresh module
+  // graph comes with a fresh controller.
   _bootstrapAbort.abort()
-  _bootstrapAbort = new AbortController()
   clearReadyWatchdog()
   clearReadyEventTimer()
   clearSplashRevealTimer()
@@ -204,9 +206,7 @@ export function createReadyEventTimer(onReady: () => void): {
   clear: () => void
 } {
   let timer: ReturnType<typeof setTimeout> | null = null
-  let generation = 0
   const clear = (): void => {
-    generation += 1
     if (timer !== null) {
       clearTimeout(timer)
       timer = null
@@ -215,10 +215,8 @@ export function createReadyEventTimer(onReady: () => void): {
   return {
     schedule: (delayMs) => {
       clear()
-      const token = generation
       timer = setTimeout(() => {
         timer = null
-        if (token !== generation) return
         onReady()
       }, delayMs)
     },
@@ -255,33 +253,6 @@ export function createSplashRevealTimer(onReveal: () => void): {
       }, delayMs)
     },
     clear,
-  }
-}
-
-/**
- * Coalesce concurrent starts while allowing a rejected attempt to be retried.
- * Keeping this small and generic makes the bootstrap ownership contract
- * testable without importing the DOM-heavy entrypoint in a browser harness.
- */
-export function createStartGate<T>(start: () => Promise<T>): {
-  run: () => Promise<T>
-  reset: () => void
-} {
-  let pending: Promise<T> | null = null
-  return {
-    run: () => {
-      if (pending) return pending
-      pending = Promise.resolve()
-        .then(start)
-        .catch((error) => {
-          pending = null
-          throw error
-        })
-      return pending
-    },
-    reset: () => {
-      pending = null
-    },
   }
 }
 
@@ -393,7 +364,7 @@ async function boot(): Promise<BootResult> {
     // custom renderer factory and the camera. `sceneHost.ready` settles only
     // AFTER renderer init + actual-backend inspection + the software-adapter
     // policy decision + the Tres context mount. Experience adopts those
-    // instances and awaits the initial World's first successful render
+    // instances and awaits the scene's first successful render
     // (Experience.init → firstRender), so `jlz:webgl-ready` below can only
     // fire after that — the renderer factory return alone never satisfies
     // readiness. The `?no-scene` DOM-only rollback above returns earlier and
@@ -625,10 +596,11 @@ async function startAppOnce(): Promise<void> {
   }
 }
 
-const startGate = createStartGate(startAppOnce)
-
+// The shell entry calls startApp() exactly once; boot() itself is idempotent
+// through the bootstrap state machine, and the only retry is a full page
+// reload handled by the shell's fallback.
 export function startApp(): Promise<void> {
-  return startGate.run()
+  return startAppOnce()
 }
 
 /**

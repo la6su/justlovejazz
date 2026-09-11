@@ -6,7 +6,7 @@
 // with their lifecycle. The Phase 5 swap to typed Vue state only changes this
 // module's source — consumers stay unchanged.
 //
-// All scene/UI consumers (World, Experience, Camera, Lights, SplashCube,
+// All scene/UI consumers (Experience, Camera, Lights, SplashCube,
 // ContactCyprusStage, CinematicNav, RouteTransition, entry-app) go through
 // `prefersReducedMotion()`; none infer the preference from DOM datasets.
 // The `documentElement.dataset.reducedMotion` hook written by

@@ -12,7 +12,6 @@
 // so the root teardown returns every owned resource to baseline.
 
 import { CinematicNav } from '../UI/CinematicNav'
-import { StoryController, storySideForSlot } from '../core/storyController'
 import { UIMenu } from '../UI/UIMenu'
 import { FullscreenOverlay } from '../UI/FullscreenOverlay'
 import { adoptResource } from '../core/overlayOwnership'
@@ -31,8 +30,6 @@ import { PROJECTS } from '../Data/Projects'
 
 /** The single Works story frame — the six-slot contract, not a literal. */
 const WORKS_SLOT_INDEX = worldSlotIndex('works')!
-const CONTACT_SLOT_INDEX = worldSlotIndex('lab')!
-const MENU_SLOT_INDEX = worldSlotIndex('menu')!
 
 /**
  * The narrow port ExperienceUI reaches the scene through. Every accessor is
@@ -70,8 +67,6 @@ export interface ExperienceUIHost {
 export class ExperienceUI {
   /** Vertical native story track plus top/bottom sheets. */
   storyNav: CinematicNav | null = null
-  /** Typed story owner; native CinematicNav remains the source/timing owner. */
-  storyController: StoryController | null = null
   /** The compact console menu. */
   uiMenu: UIMenu | null = null
   /** Works portfolio (public for DevPanel access). */
@@ -104,17 +99,11 @@ export class ExperienceUI {
     // The section count is the worldSlots contract (single source of the
     // six-slot model), not a literal.
     this.storyNav = new CinematicNav(WORLD_SLOT_COUNT, this.host.page)
-    this.storyController = new StoryController(this.storyNav, (sectionIndex) =>
-      storySideForSlot(sectionIndex, CONTACT_SLOT_INDEX, MENU_SLOT_INDEX),
-    )
-    this.publishStoryState()
     // Phase 7: native scroll is a typed loop wake source.
     this.storyNav.onActivity = () => {
-      this.publishStoryState()
       this.host.raise('nav')
     }
     this.storyNav.onSectionChange((idx) => {
-      this.publishStoryState()
       this.uiMenu?.setActive(idx)
       // Initial hashes are replayed only after the ready splash event. Keep
       // the Works owner explicit at that boundary so a hash-driven arrival
@@ -353,13 +342,6 @@ export class ExperienceUI {
     })
   }
 
-  private publishStoryState(): void {
-    const nav = this.storyNav
-    const controller = this.storyController
-    if (!nav || !controller) return
-    controller.sync()
-  }
-
   /** Start the authored cube reaction and its one-shot portal-frame echo. */
   triggerSplashOpener(): void {
     const coordinator = this.host.coordinator()
@@ -476,14 +458,9 @@ export class ExperienceUI {
       tags?: string[]
       textureUrl?: string
       detailTextureUrl?: string
-      videoSrc?: string
       year?: string
     }
     const opts = {
-      // Case studies are still-image overlays. The only video source belongs
-      // to UIManager's explicit showreel action; keeping this image-only
-      // avoids every project silently loading the placeholder showreel.
-      mode: 'image' as const,
       poster: p.textureUrl,
       title: p.title,
       category: `${p.year ?? ''} · ${p.category ?? ''}`,
@@ -534,7 +511,5 @@ export class ExperienceUI {
     this.uiMenu = null
     this.storyNav?.dispose()
     this.storyNav = null
-    this.storyController?.dispose()
-    this.storyController = null
   }
 }

@@ -188,17 +188,17 @@ describe('WorksPlaneStage async lifecycle', () => {
     stage.dispose()
   })
 
-  it('updates the frame snapshot from the live policy and unsubscribes on dispose', () => {
+  it('applies the live reduced-motion policy to the frame snapshot', () => {
     const stage = new WorksPlaneStage()
     const internals = stage as unknown as { _reducedMotion: boolean }
 
     expect(internals._reducedMotion).toBe(false)
-    motion.listener?.(true)
+    // Reduced-motion sync is owned by the Experience fan-out (one mechanism
+    // for every scene owner) — no self-subscription to observeReducedMotion.
+    stage.setReducedMotion(true)
     expect(internals._reducedMotion).toBe(true)
 
     stage.dispose()
-    expect(motion.listener).toBeNull()
-    expect(motion.unsubscribe).toHaveBeenCalledTimes(1)
   })
 
   it('settles active reveals and layout on a live reduced-motion change', async () => {
@@ -209,7 +209,7 @@ describe('WorksPlaneStage async lifecycle', () => {
     stage.setActive(true, 0)
     stage.update(0.03)
 
-    motion.listener?.(true)
+    stage.setReducedMotion(true)
 
     const reveal = (stage as unknown as { _reveal: Map<THREE.Object3D, number> })._reveal
     expect([...reveal.values()].filter((value) => value > 0)).toHaveLength(1)

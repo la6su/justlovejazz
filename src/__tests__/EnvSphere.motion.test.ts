@@ -7,7 +7,7 @@ describe('EnvSphere reduced-motion transitions', () => {
 
   it('can delegate the static sky geometry while retaining its palette material', () => {
     vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: true }))
-    const sphere = new EnvSphere(false)
+    const sphere = new EnvSphere()
     const dispose = vi.spyOn(sphere.skyMaterial, 'dispose')
     const initialSkyColor = sphere.skyMaterial.color.getHex()
 
@@ -22,7 +22,7 @@ describe('EnvSphere reduced-motion transitions', () => {
   it('snaps the palette instead of leaving an intermediate color', () => {
     vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: true }))
     const sphere = new EnvSphere()
-    const back = (sphere.children[1] as THREE.Mesh | undefined)?.material as THREE.MeshBasicMaterial
+    const back = (sphere.children[0] as THREE.Mesh | undefined)?.material as THREE.MeshBasicMaterial
 
     sphere.changeSection(3, false)
 
@@ -36,7 +36,7 @@ describe('EnvSphere reduced-motion transitions', () => {
   it('keeps the authored color interpolation when motion is enabled', () => {
     vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))
     const sphere = new EnvSphere()
-    const back = (sphere.children[1] as THREE.Mesh | undefined)?.material as THREE.MeshBasicMaterial
+    const back = (sphere.children[0] as THREE.Mesh | undefined)?.material as THREE.MeshBasicMaterial
     const initial = back.color.getHex()
 
     sphere.changeSection(3, false)
@@ -61,7 +61,7 @@ describe('EnvSphere reduced-motion transitions', () => {
     media.matches = false
     sphere.changeSection(3, false)
 
-    const back = (sphere.children[1] as THREE.Mesh | undefined)?.material as THREE.MeshBasicMaterial
+    const back = (sphere.children[0] as THREE.Mesh | undefined)?.material as THREE.MeshBasicMaterial
     expect(back.color.getHex()).toBe(0x0b1018)
     expect(matchMedia).toHaveBeenCalledTimes(1)
     sphere.dispose()
@@ -70,7 +70,7 @@ describe('EnvSphere reduced-motion transitions', () => {
   it('settles an active crossfade synchronously when motion is reduced', () => {
     vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))
     const sphere = new EnvSphere()
-    const back = (sphere.children[1] as THREE.Mesh | undefined)?.material as THREE.MeshBasicMaterial
+    const back = (sphere.children[0] as THREE.Mesh | undefined)?.material as THREE.MeshBasicMaterial
 
     sphere.changeSection(3, false)
     sphere.update(0.1)

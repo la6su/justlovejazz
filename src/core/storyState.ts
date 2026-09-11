@@ -7,7 +7,8 @@
 //     the discrete main-section chapter state (the four main sections,
 //     slots 1..4) plus the side sheets (Contact footer = slot 0, Menu =
 //     slot 5);
-//   - the 3D world (`World.updateTransform`) reads progress *per frame* and
+//   - the scene (`SceneCoordinator.updateTransform`) reads progress *per
+//     frame* and
 //     applies the midpoint arrival rule (`storyProgress.sectionIndexAt`)
 //     over the six slots.
 //

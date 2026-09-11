@@ -15,8 +15,8 @@
 // unit-locked instead of living only in a comment.
 //
 // Pure by design: no DOM, Three or globals — unit-testable without a browser.
-// `World.updateTransform` consumes it at the exact point where it inlined the
-// clamp + round before; the read timing is unchanged.
+// `SceneCoordinator.updateTransform` consumes it at the exact point where it
+// inlined the clamp + round before; the read timing is unchanged.
 
 /** Clamp a scroll progress value to [0, 1]; non-finite input settles to 0. */
 export function clampStoryProgress(value: number): number {

@@ -12,7 +12,7 @@ describe('Section lifecycle', () => {
     section.dispose()
     section.dispose()
     section.switchState(SectionState.VIEWING)
-    section.forceState(SectionState.PASSED, true)
+    section.forceState(SectionState.PASSED)
 
     const bus = StateBus.getInstance()
     expect(section.state).toBe(SectionState.READY)

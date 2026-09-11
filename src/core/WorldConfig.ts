@@ -92,7 +92,6 @@ export interface PhaseConfig {
   fog: FogTransform
   post: PostTransform
   ui: { showGallery: boolean }
-  background: number
   ground: { color: THREE.Color; opacity: number }
   sectionLights?: SectionLightDef[]
   /** Per-section 3D scene control (background pattern, objects, transition). */
@@ -308,7 +307,6 @@ function toPhaseConfig(r: RawScene): PhaseConfig {
       gradeHighlights: r.postGradeHighlights!,
     },
     ui: { showGallery: r.showGallery! },
-    background: r.bgColor!,
     ground: {
       color: _toColor(r.groundColor!),
       opacity: r.groundOpacity!,
