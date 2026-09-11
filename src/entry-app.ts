@@ -364,7 +364,7 @@ async function boot(): Promise<BootResult> {
     // custom renderer factory and the camera. `sceneHost.ready` settles only
     // AFTER renderer init + actual-backend inspection + the software-adapter
     // policy decision + the Tres context mount. Experience adopts those
-    // instances and awaits the initial World's first successful render
+    // instances and awaits the scene's first successful render
     // (Experience.init → firstRender), so `jlz:webgl-ready` below can only
     // fire after that — the renderer factory return alone never satisfies
     // readiness. The `?no-scene` DOM-only rollback above returns earlier and

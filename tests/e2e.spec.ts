@@ -532,7 +532,7 @@ test.describe('JustLoveJazz — Phase 7 persistent scene host', () => {
     await page.goto('/')
 
     // Readiness: Enter becomes available only after renderer init + backend
-    // inspection + Tres context mount + the initial World's first render.
+    // inspection + Tres context mount + the scene's first render.
     const enter = page.locator('#jlz-splash-enter')
     await expect(enter).toHaveClass(/is-ready/, { timeout: 120000 })
 
