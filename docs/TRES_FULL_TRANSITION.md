@@ -48,13 +48,26 @@ and one loop remain invariants.
 - User reported physical Contact/Manifesto checks successful. This is manual
   smoke evidence, not an automated report. Earlier Contact visual complaint was
   not independently reproduced.
+- The runtime-destroy ownership boundary is unit-pinned
+  (Experience.destroyOwnership.test.ts, 2026-09-11): Experience-owned owners
+  release exactly once, Vue-owned EnvSphere/ServicesStage survive until the
+  host's Vue unmount, the PMREM environment releases with its reference
+  cleared, repeated destroy is idempotent and Renderer.dispose stays
+  exactly-once across teardown orders. The provably dead SceneCoordinator →
+  ServicesStage terminal dispose was removed the same day, with the ownership
+  docs aligned to the single terminal owner (ServicesStageOwner.vue).
+- Contact was re-verified in a browser on the WebGLBackend path (2026-09-11,
+  dev server: deep-link /contact then splash Enter). Cyprus, the typography
+  glyph and the four story cards rendered with a clean console. Sandbox
+  evidence, not physical WebGPU parity.
 - Physical WebGL device-loss restoration remains deferred. Earlier dated
   reports in evidence/ describe their own revisions only.
 
 ## Next verification
 
-Finish navigation and cancellation tasks from NEXT.md. Test real primitive
-replacement and host/runtime teardown order. Use the release commands in
-DEVELOPMENT.md after relevant code changes. Record exact SHA, backend,
-viewport, motion policy, failures/skips and report paths. Add no PASS solely
-from class names, source searches or unit tests for visual behavior.
+NEXT.md item 1 is next: generalize the Showreel shader theater transition for
+Works case media — design the still-image media contract and the metadata
+handoff before touching code. Use the release commands in DEVELOPMENT.md
+after relevant code changes. Record exact SHA, backend, viewport, motion
+policy, failures/skips and report paths. Add no PASS solely from class names,
+source searches or unit tests for visual behavior.

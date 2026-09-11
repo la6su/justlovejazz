@@ -786,7 +786,9 @@ export class SceneCoordinator {
   // ordering + the Works particle texture) are owned + disposed by the
   // Experience-owned SectionGroups owner.
   // Phase 8 slices 3–9: every scene owner's GPU resources are disposed by
-  // Experience (it owns the owners).
+  // Experience (it owns the owners). ServicesStage is the exception: its
+  // terminal disposal belongs to ServicesStageOwner.vue on persistent-host
+  // unmount, so dispose() must not reach it through the owners bag.
 
   public dispose(): void {
     this._invalidateTransformCache()
@@ -794,7 +796,6 @@ export class SceneCoordinator {
     // Inline WorldAtmosphere.dispose — null out fog only (EnvSphere owns
     // background).
     this.sceneRef.fog = null
-    this.owners.servicesStage?.()?.dispose()
   }
 
   /** Set camera reference for DrawTrail (unproject to world).

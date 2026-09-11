@@ -1,43 +1,27 @@
 # Resume checkpoint
 
-Baseline: `ff9a12c5`, 2026-09-08. Recheck git status; this is a working-tree
+Baseline: `d6e5665`, 2026-09-11. Recheck git status; this is a working-tree
 checkpoint, not release evidence. Read AGENTS.md and [NEXT.md](NEXT.md).
 
 ## In progress
 
-The Works installation ownership slice is implemented in the working tree.
-`WorksInstallation.vue` transfers mounted nodes when its controller prop changes
-and releases them before geometry disposal. The controller's identity-checked
-`release` prevents a stale release from detaching a newer adoption.
+Nothing. The teardown-evidence slice is complete: the runtime-destroy
+ownership boundary is pinned by Experience.destroyOwnership.test.ts, the dead
+SceneCoordinator → ServicesStage terminal dispose is removed with the
+ownership docs aligned to ServicesStageOwner.vue, the fresh-clone dev flow no
+longer 500s without the prerender artifact, and Contact was re-verified in
+the browser on the WebGLBackend path. NEXT.md teardown and allocation-audit
+items are closed with dated evidence.
 
-ContactHaloStage and ManifestoInkStage now reference-count their shared plane
-geometry. It remains shared while two stages coexist and is disposed by the
-last stage, so a root teardown no longer retains either GPU buffer.
+## Next task
 
-CasePlane uses the same final-owner release for the shared cloth geometry used
-by Works cards.
-
-ServicesStageGeometry now declares its seven parts and three rings in the Tres
-template. Its mount hook only adopts the refs and applies camera-independent
-initial transforms; material/state ownership remains in ServicesStage.
-
-ServicesStage.updateState now reuses a preallocated offset vector instead of
-allocating one on every rendered frame. Its lifecycle test covers reuse across
-state updates.
-
-Regression coverage exercises controller/material replacement without geometry
-recreation, Vue-first/runtime-first child teardown, exactly-once geometry,
-instance and material disposal, and stale release after a new adoption.
-TypeScript, Vue TypeScript, 706 unit tests, production build and budgets passed.
-The additional stale-release assertion also passed its focused rerun.
-Serial Playwright passed 23 tests with one skipped device-loss case.
-These tests use real Three/Tres objects with a mocked GPU renderer; they are
-not physical WebGPU/WebGL evidence.
-
-Continue the first task in NEXT.md: full host teardown, remaining primitive
-owners and the unverified Contact visual report. Services geometry remains an
-optional separate slice. Runtime ownership and evidence limits are in
-[the transition status](docs/TRES_FULL_TRANSITION.md).
+NEXT.md item 1: generalize the Showreel shader theater transition for Works
+case media. The shared DOM FullscreenOverlay owns case presentation and
+Escape; the GPU shader transition remains ShowreelTheater-specific until its
+still-image media contract and metadata handoff are designed. Start by
+reading src/Experience/World/ShowreelTheater.ts, src/UI/FullscreenOverlay.ts
+and src/UI/ShowreelConsole.ts; design the media contract before touching
+code. One reviewable outcome, then the full release gate.
 
 ## Resume protocol
 

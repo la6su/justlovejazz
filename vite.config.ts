@@ -251,7 +251,12 @@ export default defineConfig(() => ({
       transformIndexHtml(html, ctx) {
         // Only inject into index.html (not blog).
         if (!ctx.path.endsWith('index.html')) return html
-        const prerender = readFileSync(resolve(__dirname, 'prerender', 'home.html'), 'utf8')
+        // The prerendered shell is a build artifact: a fresh clone running the
+        // documented `bun run dev` flow has no prerender/ yet. Serve the bare
+        // template instead of failing every dev request — the Vue client
+        // replaces the shell content on mount either way.
+        const prerenderPath = resolve(__dirname, 'prerender', 'home.html')
+        const prerender = existsSync(prerenderPath) ? readFileSync(prerenderPath, 'utf8') : ''
         return html.replace('<div id="app"></div>', `<div id="app">${prerender}</div>`)
       },
     },

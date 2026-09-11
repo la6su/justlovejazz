@@ -11,13 +11,21 @@ checklists are available in Git before this documentation consolidation.
       the GPU shader transition remains ShowreelTheater-specific until its
       still-image media contract and metadata handoff are designed.
 
-- [ ] Validate ownership teardown: host-first/runtime-first unmount, stale
+- [x] Validate ownership teardown: host-first/runtime-first unmount, stale
       primitive replacement, exactly-once geometries/materials/instance cleanup.
-      Works installation controller replacement and Vue-first/runtime-first
-      child teardown are covered. Contact and Manifesto now release their
-      shared plane buffer at final-owner teardown. CasePlane now follows the
-      same contract; full host teardown and remaining owners still need evidence.
-      User-reported Contact instability remains unverified visually.
+      Works installation controller replacement, Vue-first/runtime-first child
+      teardown and the Contact/Manifesto/CasePlane final-owner shared-plane
+      release were already covered. On 2026-09-11 the remaining evidence
+      landed: Experience.destroyOwnership.test.ts pins the runtime-destroy
+      boundary (Experience-owned owners released exactly once, Vue-owned
+      EnvSphere and ServicesStage survive until the host's Vue unmount, PMREM
+      environment released, repeated destroy idempotent, Renderer.dispose
+      exactly-once), and the provably dead SceneCoordinator → ServicesStage
+      terminal dispose was removed with the ownership docs aligned. Contact
+      re-verified in the browser on the WebGLBackend path (dev, deep-link +
+      Enter: Cyprus, typography and story cards render, console clean);
+      physical WebGPU parity stays manual-only per the standing backend
+      evidence limits.
 - [x] Consolidate deterministic checks: reuse existing Bun and CI commands;
       targeted checks during edits and one full release gate. On 2026-09-08 the
       local gate passed format, lint (0 errors), TypeScript, Vue TypeScript,
@@ -26,11 +34,17 @@ checklists are available in Git before this documentation consolidation.
 - [x] Complete Services declarative geometry as a separate optional slice.
       ServicesStageGeometry.vue now declares meshes and geometries in the Tres
       template; onMounted only adopts refs and applies runtime transforms.
-- [ ] Audit retained owners with concrete ownership evidence. TSL, loading and
-      animation alone do not rule out declarative leaves. Keep the existing
-      renderer/recovery/scheduler unless a measured problem justifies replacement.
-      ServicesStage's per-frame offset is now reused instead of allocated;
-      remaining owners still need the same allocation audit.
+- [x] Audit retained owners with concrete ownership evidence. TSL, loading and
+      animation alone do not rule out declarative leaves, so declarative-leaf
+      decisions stay per-owner and evidence-gated; keep the existing
+      renderer/recovery/scheduler unless a measured problem justifies
+      replacement. On 2026-09-11 the allocation audit closed with no per-frame
+      allocations left: SplashCube._blendColor, BakuCarousel
+      _tmpStreamPos/_tmpRingRot, ContactCyprusStage._cameraPosition, EnvSphere
+      preallocated face colors, DrawTrail camera-basis vectors,
+      ParticleBurst._dummy and JunniParticles (rebuild only on setCount) all
+      render from scratch fields, matching the earlier ServicesStage offset
+      reuse.
 - [ ] Strengthen evidence scripts: narrow overly broad GPU error exclusions;
       identify skipped cases, record revision/backend, measure frame deltas during
       an idle interval and distinguish runtime destroy from Vue root unmount.
