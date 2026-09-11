@@ -30,29 +30,6 @@ export type BootstrapState =
   | 'entered'
   | 'failed'
 
-/** The states that are still part of the initialization sequence. */
-export type InitializingState =
-  'shell-painted' | 'app-loading' | 'renderer-initializing' | 'scene-prewarming'
-
-/** Every state, for exhaustive switches and UI mappings. */
-export const BOOTSTRAP_STATES: readonly BootstrapState[] = [
-  'shell-painted',
-  'app-loading',
-  'renderer-initializing',
-  'scene-prewarming',
-  'ready',
-  'entered',
-  'failed',
-] as const
-
-/** The initialization states that may fall to `failed`. */
-export const INITIALIZING_STATES: readonly InitializingState[] = [
-  'shell-painted',
-  'app-loading',
-  'renderer-initializing',
-  'scene-prewarming',
-] as const
-
 /**
  * The complete transition table. A state that is absent here has no outgoing
  * transitions (the machine is total: every reachable state is listed).
@@ -88,11 +65,6 @@ export function canTransition(state: BootstrapState, next: BootstrapState): bool
  */
 export function tryTransition(state: BootstrapState, next: BootstrapState): BootstrapState | null {
   return canTransition(state, next) ? next : null
-}
-
-/** True while the bootstrap is still initializing (pre-`ready`). */
-export function isInitializing(state: BootstrapState): boolean {
-  return (INITIALIZING_STATES as readonly BootstrapState[]).includes(state)
 }
 
 /** The entry state: the shell is painted, nothing else is running yet. */
