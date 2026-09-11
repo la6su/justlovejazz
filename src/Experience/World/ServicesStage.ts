@@ -2,7 +2,9 @@ import * as THREE from 'three'
 import { MeshStandardNodeMaterial, MeshBasicNodeMaterial } from 'three/webgpu'
 
 /** Four finite assembly states: direction, architecture, choreography, workflow.
- * SceneCoordinator owns attachment, demand updates and terminal disposal.
+ * SceneCoordinator owns attachment and demand updates. Terminal disposal
+ * belongs to ServicesStageOwner.vue on persistent-host unmount; a runtime
+ * destroy only drops the Experience reference without disposing.
  */
 export class ServicesStage extends THREE.Group {
   private disposed = false
