@@ -1,25 +1,27 @@
-# Vue/Tres transition status
+# Vue/Tres transition — completion record
 
-Source audit: 2026-09-08, baseline ff9a12c5 plus the admitted flat-menu slice.
-This is an ownership/evidence summary. [NEXT.md](../NEXT.md) is the task queue.
-The foundational Phase 5–10 migration is recorded in
-[the archive](archive/MIGRATION_VUE_TRES.md); remaining composition work is partial.
+Source audit: 2026-09-08; per-owner and teardown evidence closed 2026-09-11.
+This is a frozen ownership/evidence summary, not an active status page: the
+transition is complete and the hybrid experiment path is stopped with its
+continue-conditions recorded in the archive. [NEXT.md](../NEXT.md) is the task
+queue. The foundational Phase 5–10 migration is recorded in
+[the archive](archive/MIGRATION_VUE_TRES.md).
 
 ## Ownership
 
-| Area                                                 | Actual boundary                                                                                 |
-| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| SceneHost                                            | Persistent TresCanvas, scene, physical camera and initial renderer surface                      |
-| Renderer / unifiedRenderer                           | Renderer lifecycle, recovery and post rendering / construction and init helpers                 |
-| RenderScheduler                                      | Sole application render-loop driver; Tres internal loop stopped                                 |
-| Camera, lights, ground, section roots                | Declarative nodes adopted by imperative controllers                                             |
-| WorksInstallation                                    | Tres assembly/geometry; controller owns shared NodeMaterials and authored state                 |
-| WorksPlaneStage                                      | Lazy primitive attachment; cards, textures and controller remain imperative                     |
-| Services                                             | Primitive attachment; geometry lifetime in Vue, meshes still created imperatively in onMounted  |
-| EnvSphere / EnvSky                                   | Primitive pavilion owner; sky leaf declared separately and borrows palette material             |
-| ContactHalo / ManifestoInk                           | Async host primitive attachment; TSL construction and disposal remain in classes                |
-| ContactCyprus, CasePlane, BakuCarousel               | Existing asset/input/material owners retained pending per-owner decisions                       |
-| SplashCube, ParticleBurst, DrawTrail, JunniParticles | Existing deformation/instance owners retained; not proof that declarative leaves are impossible |
+| Area                                                 | Actual boundary                                                                                                                                        |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| SceneHost                                            | Persistent TresCanvas, scene, physical camera and initial renderer surface                                                                             |
+| Renderer / unifiedRenderer                           | Renderer lifecycle, recovery and post rendering / construction and init helpers                                                                        |
+| RenderScheduler                                      | Sole application render-loop driver; Tres internal loop stopped                                                                                        |
+| Camera, lights, ground, section roots                | Declarative nodes adopted by imperative controllers                                                                                                    |
+| WorksInstallation                                    | Tres assembly/geometry; controller owns shared NodeMaterials and authored state                                                                        |
+| WorksPlaneStage                                      | Lazy primitive attachment; cards, textures and controller remain imperative                                                                            |
+| Services                                             | Primitive attachment; geometry is declared in the Tres template (ServicesStageGeometry.vue); onMounted only adopts refs and applies runtime transforms |
+| EnvSphere / EnvSky                                   | Primitive pavilion owner; sky leaf declared separately and borrows palette material                                                                    |
+| ContactHalo / ManifestoInk                           | Async host primitive attachment; TSL construction and disposal remain in classes                                                                       |
+| ContactCyprus, CasePlane, BakuCarousel               | Existing asset/input/material owners retained; the per-owner audit closed 2026-09-11 (NEXT.md)                                                         |
+| SplashCube, ParticleBurst, DrawTrail, JunniParticles | Existing deformation/instance owners retained; not proof that declarative leaves are impossible                                                        |
 
 Do not infer that all geometry is declarative because it resides in a .vue file.
 Do not dispose borrowed materials from both Vue and their controller.
@@ -38,8 +40,8 @@ and one loop remain invariants.
 - The serial browser suite passed after the menu slice with 24 scenarios in one
   worker. Context-loss recovery still requires its result to be identified
   separately; Playwright uses its configured build/server.
-- [WebGLBackend soak report](evidence/phase10-route-cycle-soak/2026-09-08T03-56-50-396Z-report.json):
-  20 steady visits across six routes (not 20 complete six-route rounds),
+- [WebGLBackend soak report](evidence/phase10-route-cycle-soak/2026-09-07T21-34-23-617Z-report.json):
+  20 steady route cycles across six routes (not 20 complete six-route rounds),
   resource caps stable, no fatal errors according to its filter. Renderer
   programs unavailable; heap readings constant and not reliable leak evidence.
 - The soak destroy summary retains a canvas. It verifies its implemented
