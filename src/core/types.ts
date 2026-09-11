@@ -30,7 +30,6 @@ export interface WorldState {
 
 export interface Project {
   id: string
-  page?: 'home' | 'works' | 'trinity'
   title: string
   description: string
   textureUrl: string
@@ -41,7 +40,5 @@ export interface Project {
   year?: string
   category?: string
   tags?: string[]
-  /** Optional case-study film. Omit until the final project video is ready. */
-  videoSrc?: string
   slug?: string
 }

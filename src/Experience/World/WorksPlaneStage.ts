@@ -9,7 +9,7 @@ import * as THREE from 'three'
 import { PROJECTS } from '../../Data/Projects'
 import { CasePlane, CLOTH_PARAMS } from './CasePlane'
 import { loadCaseTexture, releaseCaseTexture } from './caseTexture'
-import { observeReducedMotion, prefersReducedMotion } from '../../core/motionPolicy'
+import { prefersReducedMotion } from '../../core/motionPolicy'
 
 import { WORKS_ROOMS, getWorksCaseProject } from '../../core/worksExperience'
 import { eventBus } from '../../core/EventBus'
@@ -43,7 +43,6 @@ export class WorksPlaneStage extends THREE.Group {
   private _initialized = false
   private _disposed = false
   private _reducedMotion = prefersReducedMotion()
-  private _reducedMotionUnsub: (() => void) | null = null
   private _stackedLayout = window.innerWidth < 960
   private _viewportAspect = window.innerWidth / window.innerHeight
   private _reveal = new Map<CasePlane, number>()
@@ -74,9 +73,6 @@ export class WorksPlaneStage extends THREE.Group {
     this.themeUnsub = eventBus.on('jlz:theme-applied', ({ isLight }) => {
       this.inverse = isLight
       this.installation?.setInverse(isLight)
-    })
-    this._reducedMotionUnsub = observeReducedMotion((reduced) => {
-      this.setReducedMotion(reduced)
     })
   }
 
@@ -367,8 +363,6 @@ export class WorksPlaneStage extends THREE.Group {
   dispose(): void {
     if (this._disposed) return
     this._disposed = true
-    this._reducedMotionUnsub?.()
-    this._reducedMotionUnsub = null
     this._active = false
     this._camera = null
     this.cards.forEach((card) => {

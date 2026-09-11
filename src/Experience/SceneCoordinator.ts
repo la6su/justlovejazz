@@ -181,9 +181,6 @@ export class SceneCoordinator {
       const section = new Section(config, index)
       if (index === 1) {
         // Intro = index 1 (canonical Lab/Contact finale = 0)
-        section.visible = true
-        section.scale.setScalar(1.0)
-        section.rotation.y = 0
         bus.set(`section:${config.id}:state`, 1)
         section.forceState(SectionState.VIEWING)
       } else {
@@ -918,7 +915,6 @@ export class SceneCoordinator {
         gradeHighlights: [1, 1, 1],
       },
       ui: { showGallery: false },
-      background: 0x050507,
       ground: { color: new THREE.Color(0x000000), opacity: 0 },
       camFovOffset: 0.3,
       camFovDuration: 0.8,

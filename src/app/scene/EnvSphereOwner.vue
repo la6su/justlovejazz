@@ -6,7 +6,7 @@ const emit = defineEmits<{ ready: [owner: EnvSphere] }>()
 const owner = shallowRef<EnvSphere | null>(null)
 
 onMounted(() => {
-  const sphere = markRaw(new EnvSphere(false))
+  const sphere = markRaw(new EnvSphere())
   owner.value = sphere
   emit('ready', sphere)
 })

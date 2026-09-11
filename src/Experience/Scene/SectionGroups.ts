@@ -18,15 +18,10 @@
 // reference + init live on Experience.
 
 import * as THREE from 'three'
-// Phase 8 slice 10: the `SectionSceneFactory` (index→creator + geometry
-// hiding) is inlined here — the SectionGroups owner is its only production
-// consumer, so the standalone factory file leaves production.
-import { createSection0 } from '../../sections/lab/scene'
-import { createSection1 } from '../../sections/intro/scene'
-import { createSection2 } from '../../sections/about/scene'
+// The Works back face is the only imperatively-created section group (its
+// creator owns the live BakuCarousel + JunniParticles); every other slot
+// adopts its declarative root from SectionGroupRoots.vue.
 import { createSection3 } from '../../sections/works/scene'
-import { createSection4 } from '../../sections/contact/scene'
-import { createSection5 } from '../../sections/menu/scene'
 import { disposeMaterialDeep } from '../../Utils/dispose'
 import type { PageId } from '../../sections/_shared/constants'
 import type { StorySide } from '../../core/storyState'
@@ -57,23 +52,10 @@ export function disposeSceneObjectResources(
 // Index → creator function. 6 sections (1:1 cube faces).
 type SectionCreator = (page: () => PageId, storySide: () => StorySide) => THREE.Group
 
-const SECTION_CREATORS: ReadonlyArray<SectionCreator> = [
-  createSection0, // 0: canonical Lab scene behind the public Contact finale
-  createSection1, // 1: Intro (front face)
-  createSection2, // 2: About (right face)
-  createSection3, // 3: Works (back face — BakuCarousel)
-  createSection4, // 4: Contact (bottom face)
-  createSection5, // 5: Menu sheet — positive Y tilt
-]
-
-/** Create the section group for a canonical slot (falls back to slot 0). */
-function createSectionGroupByIndex(
-  i: number,
-  page: () => PageId,
-  storySide: () => StorySide,
-): THREE.Group {
-  const fn = SECTION_CREATORS[i] ?? SECTION_CREATORS[0]
-  return (fn ?? SECTION_CREATORS[0]!)(page, storySide)
+/** Create the imperatively-owned Works section group (back face, slot 3). */
+function createWorksSectionGroup(page: () => PageId, storySide: () => StorySide): THREE.Group {
+  const fn: SectionCreator = createSection3
+  return fn(page, storySide)
 }
 
 /**
@@ -105,7 +87,7 @@ export class SectionGroups {
   ) {
     for (let i = 0; i < count; i++) {
       const adoptedIndex = i === 0 ? 0 : i === 1 ? 1 : i === 2 ? 2 : i === 4 ? 3 : i === 5 ? 4 : -1
-      const group = sectionRoots?.[adoptedIndex] ?? createSectionGroupByIndex(i, page, storySide)
+      const group = sectionRoots?.[adoptedIndex] ?? createWorksSectionGroup(page, storySide)
       if (adoptedIndex >= 0) this.adopted.add(group)
       // Hide non-particle geometry until bespoke visuals are ready (T-070..T-074).
       // Particles remain for atmospheric depth. Remove this call section by section

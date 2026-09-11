@@ -144,7 +144,7 @@ function updateLoaderProgress(pct: number): void {
 
 let _bootstrapState: BootstrapState = INITIAL_BOOTSTRAP_STATE
 let _readyWatchdog: ReturnType<typeof setTimeout> | null = null
-let _bootstrapAbort = new AbortController()
+const _bootstrapAbort = new AbortController()
 let _bootstrapUnsubs: Array<() => void> = []
 
 export function createStyleOwner(): {

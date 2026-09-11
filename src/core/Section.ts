@@ -29,9 +29,6 @@ export class Section {
   private _disposed = false
   public phaseConfig: PhaseConfig
   public readonly name: string
-  public visible = false
-  public readonly scale = new THREE.Vector3(1, 1, 1)
-  public readonly rotation = { y: 0 }
 
   // Transform holders read from PhaseConfig at construction
   public cameraTransform: CameraTransform
@@ -54,7 +51,6 @@ export class Section {
     this.name = `section-${config.id}`
     this.phaseConfig = config
     this.stateChannel = `section:${config.id}:state`
-    this.visible = false
 
     // Extract transforms from PhaseConfig
     this.cameraTransform = {
@@ -97,7 +93,6 @@ export class Section {
       else resolved = SectionState.PASSED
       if (resolved !== this._state) {
         this._state = resolved
-        this.applyState(false)
       }
     }
     bus.on(`done:${this.stateChannel}`, this._stateDoneHandler)
@@ -114,38 +109,14 @@ export class Section {
     if (reduced) {
       bus.set(this.stateChannel, targetValue)
       this._state = target
-      this.applyState(true)
     }
   }
 
-  private applyState(reduced: boolean = false): void {
-    switch (this._state) {
-      case SectionState.READY:
-        this.visible = false
-        this.setTransforms(0.9, -0.15, reduced)
-        break
-      case SectionState.VIEWING:
-        this.visible = true
-        this.setTransforms(1.0, 0, reduced)
-        break
-      case SectionState.PASSED:
-        this.visible = false
-        this.setTransforms(1.15, 0.1, reduced)
-        break
-    }
-  }
-
-  private setTransforms(scale: number, ry: number, reduced: boolean = false): void {
-    this.scale.setScalar(scale)
-    this.rotation.y = reduced ? 0 : ry
-  }
-
-  public forceState(state: SectionState, reduced: boolean = false): void {
+  public forceState(state: SectionState): void {
     if (this._disposed) return
     const bus = StateBus.getInstance()
     bus.set(this.stateChannel, STATE_VALUE[state])
     this._state = state
-    this.applyState(reduced)
   }
 
   public dispose(): void {

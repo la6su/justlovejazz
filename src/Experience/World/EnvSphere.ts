@@ -64,7 +64,7 @@ export class EnvSphere extends THREE.Group {
   private readonly _geometries: THREE.BufferGeometry[] = []
   private _dirty = true
 
-  constructor(includeSky = true) {
+  constructor() {
     super()
     this.name = 'env-pavilion'
     this.frustumCulled = false
@@ -76,17 +76,6 @@ export class EnvSphere extends THREE.Group {
     this._ceilingMaterial = this._material()
     this._floorMaterial = this._material()
     this._skyMaterial = this._material()
-
-    if (includeSky) {
-      const skyGeometry = new THREE.PlaneGeometry(140, 96)
-      this._geometries.push(skyGeometry)
-      const sky = new THREE.Mesh(skyGeometry, this._skyMaterial)
-      sky.name = 'pavilion-sky'
-      sky.position.set(0, 0, -PAVILION_DEPTH - PAVILION_THICKNESS - 2)
-      sky.renderOrder = -1001
-      sky.frustumCulled = false
-      this.add(sky)
-    }
 
     this._addPlane(
       'pavilion-back',
