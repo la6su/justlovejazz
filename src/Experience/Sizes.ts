@@ -1,11 +1,26 @@
 // src/Experience/Sizes.ts
-import { clampDevicePixelRatio } from '../core/viewportPolicy'
+
+/**
+ * Renderer DPR cap: beyond 2 the fill-rate cost is not worth the visual
+ * difference at this project's viewport sizes.
+ */
+const MAX_DEVICE_PIXEL_RATIO = 2
+
+/**
+ * Normalize browser DPR input to the supported rendering range.
+ * Browsers normally report a finite value >= 1, but test environments,
+ * software adapters and transient viewport updates may expose 0/NaN.
+ */
+function clampDpr(value: unknown): number {
+  const numeric = typeof value === 'number' && Number.isFinite(value) ? value : 1
+  return Math.min(Math.max(numeric, 1), MAX_DEVICE_PIXEL_RATIO)
+}
 
 export class Sizes {
   private _destroyed = false
   width: number = window.innerWidth
   height: number = window.innerHeight
-  dpr: number = clampDevicePixelRatio(window.devicePixelRatio)
+  dpr: number = clampDpr(window.devicePixelRatio)
 
   get isMobile(): boolean {
     return this.width < 768
@@ -31,7 +46,7 @@ export class Sizes {
     if (this._destroyed) return
     this.width = window.innerWidth
     this.height = window.innerHeight
-    this.dpr = clampDevicePixelRatio(window.devicePixelRatio)
+    this.dpr = clampDpr(window.devicePixelRatio)
     // Notify Experience → World.resize()
     this._resizeCb?.()
   }

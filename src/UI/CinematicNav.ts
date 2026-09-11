@@ -49,9 +49,7 @@ export class CinematicNav {
   private _scrollFrame: number | null = null
   private _focusFrame: number | null = null
   private _restoreFocus: HTMLElement | null = null
-  private _routeChangeUnsub: (() => void) | null = null
-  private _langChangeUnsub: (() => void) | null = null
-  private _closePanelUnsub: (() => void) | null = null
+  private readonly _unsubs: Array<() => void> = []
   private _keydownHandler: ((event: KeyboardEvent) => void) | null = null
   private _scrollHandler: (() => void) | null = null
   private _sheetClickHandler: ((event: MouseEvent) => void) | null = null
@@ -115,11 +113,11 @@ export class CinematicNav {
   }
 
   private _addGlobalListeners(): void {
-    this._routeChangeUnsub = eventBus.on('jlz:route-change', () => this._bindTrack())
+    this._unsubs.push(eventBus.on('jlz:route-change', () => this._bindTrack()))
 
-    this._langChangeUnsub = eventBus.on('jlz:lang-change', () => this._refreshLabels())
+    this._unsubs.push(eventBus.on('jlz:lang-change', () => this._refreshLabels()))
 
-    this._closePanelUnsub = eventBus.on('jlz:close-nav', () => this._closeSide())
+    this._unsubs.push(eventBus.on('jlz:close-nav', () => this._closeSide()))
 
     this._keydownHandler = (event: KeyboardEvent) => {
       if (document.querySelector('.uk-modal.uk-open')) return
@@ -471,10 +469,8 @@ export class CinematicNav {
   dispose(): void {
     this._removeTrackListeners()
     this._cancelPendingFrames()
-    this._routeChangeUnsub?.()
-    this._langChangeUnsub?.()
-    this._closePanelUnsub?.()
-    this._routeChangeUnsub = this._langChangeUnsub = this._closePanelUnsub = null
+    for (const unsub of this._unsubs) unsub()
+    this._unsubs.length = 0
     if (this._keydownHandler) window.removeEventListener('keydown', this._keydownHandler)
     if (this._sheetClickHandler)
       document.removeEventListener('click', this._sheetClickHandler, true)

@@ -1,21 +1,21 @@
 /** DEV-only CPU timing ring for one rendered frame. */
 
-export type FrameTimingMetric = 'scene' | 'camera' | 'renderer' | 'total'
+type FrameTimingMetric = 'scene' | 'camera' | 'renderer' | 'total'
 
-export interface FrameTimingSample {
+interface FrameTimingSample {
   scene: number
   camera: number
   renderer: number
   total: number
 }
 
-export interface FrameTimingMetricSummary {
+interface FrameTimingMetricSummary {
   p50: number
   p95: number
   latest: number
 }
 
-export interface FrameTimingSnapshot {
+interface FrameTimingSnapshot {
   samples: number
   scene: FrameTimingMetricSummary
   camera: FrameTimingMetricSummary

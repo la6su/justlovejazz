@@ -10,7 +10,7 @@
 //
 // Pure by design — no DOM, no window — unit-testable without a browser.
 
-export interface BlogArticle {
+interface BlogArticle {
   /** URL slug (lowercase letters, digits, single hyphens). */
   slug: string
   /** `<lastmod>` content date (YYYY-MM-DD). */

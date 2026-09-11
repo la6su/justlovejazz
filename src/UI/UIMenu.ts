@@ -19,10 +19,7 @@ export class UIMenu {
   private _langBtn: HTMLButtonElement | null = null
   private _themeBtn: HTMLButtonElement | null = null
   private _soundBtn: HTMLButtonElement | null = null
-  private _langUnsub: (() => void) | null = null
-  private _themeChangeUnsub: (() => void) | null = null
-  private _soundToggleUnsub: (() => void) | null = null
-  private _fullscreenChangeUnsub: (() => void) | null = null
+  private readonly _unsubs: Array<() => void> = []
   private _soundMuted = getSoundMuted()
   private _menuBtn: HTMLButtonElement | null = null
   private _contactBtn: HTMLButtonElement | null = null
@@ -115,21 +112,25 @@ export class UIMenu {
 
     // Wire global listeners (typed eventBus ports — the raw window bridge was
     // removed in Phase 10).
-    this._langUnsub = eventBus.on('jlz:lang-change', () => this.updateLangLabel())
+    this._unsubs.push(eventBus.on('jlz:lang-change', () => this.updateLangLabel()))
 
-    this._themeChangeUnsub = eventBus.on('jlz:theme-change', () => this._syncThemeButton())
+    this._unsubs.push(eventBus.on('jlz:theme-change', () => this._syncThemeButton()))
 
     // D-6 fix: single handler for jlz:sound-toggle — does ALL the work
     // (state + localStorage + button sync). Both the click handler above
     // and external triggers (if any) route through this one path.
-    this._soundToggleUnsub = eventBus.on('jlz:sound-toggle', ({ muted }) => {
-      this._soundMuted = muted
-      setSoundMutedPreference(this._soundMuted)
-      this._syncSoundButton()
-    })
-    this._fullscreenChangeUnsub = eventBus.on('jlz:fullscreen-change', ({ open }) => {
-      this._setFullscreenOpen(open)
-    })
+    this._unsubs.push(
+      eventBus.on('jlz:sound-toggle', ({ muted }) => {
+        this._soundMuted = muted
+        setSoundMutedPreference(this._soundMuted)
+        this._syncSoundButton()
+      }),
+    )
+    this._unsubs.push(
+      eventBus.on('jlz:fullscreen-change', ({ open }) => {
+        this._setFullscreenOpen(open)
+      }),
+    )
 
     // Initialize button states
     this.updateLangLabel()
@@ -205,15 +206,8 @@ export class UIMenu {
 
   dispose(): void {
     this.navEl.removeEventListener('click', this._clickHandler)
-    this._langUnsub?.()
-    this._themeChangeUnsub?.()
-    this._soundToggleUnsub?.()
-    this._fullscreenChangeUnsub?.()
-    this._langUnsub =
-      this._themeChangeUnsub =
-      this._soundToggleUnsub =
-      this._fullscreenChangeUnsub =
-        null
+    for (const unsub of this._unsubs) unsub()
+    this._unsubs.length = 0
     this._navigate = null
     this.navEl.remove()
   }

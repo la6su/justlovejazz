@@ -80,7 +80,7 @@ const WORKS_SLOT_INDEX = worldSlotIndex('works')!
  * adds its section groups + scene owners to the Tres scene directly.
  * `replaceRenderer` syncs the Tres context after a device-loss recovery.
  */
-export interface ExperienceHost {
+interface ExperienceHost {
   scene: THREE.Scene
   camera: THREE.PerspectiveCamera
   renderer: RenderSurface

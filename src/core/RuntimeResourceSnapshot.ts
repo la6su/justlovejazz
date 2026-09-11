@@ -29,7 +29,7 @@ export interface RendererResourceInfo {
   }
 }
 
-export interface PostResourceInfo {
+interface PostResourceInfo {
   renderTargets: number
   passes: number
   webgpuPipeline: boolean

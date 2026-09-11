@@ -10,7 +10,7 @@
 
 import type { PageId } from '../sections/_shared/constants'
 
-export interface RouteEntry {
+interface RouteEntry {
   readonly path: string
   readonly page: PageId
 }

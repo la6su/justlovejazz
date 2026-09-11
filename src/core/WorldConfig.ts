@@ -32,12 +32,12 @@ export interface LightTransform {
   intensity: number
 }
 
-export interface FogTransform {
+interface FogTransform {
   color: THREE.Color
   density: number
 }
 
-export interface PostTransform {
+interface PostTransform {
   bloom: number
   vignette: number
   grain: number
@@ -52,7 +52,7 @@ export interface PostTransform {
   gradeHighlights: [number, number, number]
 }
 
-export interface SectionLightDef {
+interface SectionLightDef {
   hexColor: string
   intensity?: number
   distance?: number

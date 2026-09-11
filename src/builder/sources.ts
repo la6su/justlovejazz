@@ -4,9 +4,9 @@ import { localizedProp, type BuilderLocale } from './localization'
 export const BUILDER_SOURCE_IDS = ['projects'] as const
 
 export const BUILDER_SOURCE_FIELDS = ['title', 'description', 'year', 'category'] as const
-export type BuilderSourceField = (typeof BUILDER_SOURCE_FIELDS)[number]
+type BuilderSourceField = (typeof BUILDER_SOURCE_FIELDS)[number]
 
-export interface BuilderSourceItem {
+interface BuilderSourceItem {
   id: string
   title: string
   description: string
@@ -22,7 +22,7 @@ const PROJECT_SOURCE: readonly BuilderSourceItem[] = PROJECTS.map((project) => (
   category: project.category ?? '',
 }))
 
-export function getBuilderSourceItems(source: string | undefined): readonly BuilderSourceItem[] {
+function getBuilderSourceItems(source: string | undefined): readonly BuilderSourceItem[] {
   return source === 'projects' ? PROJECT_SOURCE : []
 }
 

@@ -18,7 +18,7 @@ export interface LabExperimentObject extends THREE.Object3D {
   resetMotion?(): void
 }
 
-export interface LabExperiment {
+interface LabExperiment {
   id: string
   page: 'lab'
   load: () => Promise<LabExperimentObject>

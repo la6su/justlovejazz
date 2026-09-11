@@ -18,14 +18,14 @@ import { input } from '../Input'
 import { prefersReducedMotion } from '../../core/motionPolicy'
 
 /** The uniform nodes an ink field may compose. */
-export interface PointerInkUniforms {
+interface PointerInkUniforms {
   time: UniformNode<'float', number>
   pointer: UniformNode<'vec2', THREE.Vector2>
   energy: UniformNode<'float', number>
 }
 
 /** Authored voice of a pointer-reactive ink stage. */
-export interface PointerInkStageConfig {
+interface PointerInkStageConfig {
   /** Group name (`<name>-stage` convention is the subclass's choice). */
   stageName: string
   meshName: string

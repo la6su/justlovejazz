@@ -1,13 +1,13 @@
 /** Client-facing case-study contract shared by routes and static publishing. */
-export type CaseStudyDisclosure = 'client' | 'self-initiated' | 'experimental' | 'ai-assisted'
+type CaseStudyDisclosure = 'client' | 'self-initiated' | 'experimental' | 'ai-assisted'
 
-export interface CaseStudyProof {
+interface CaseStudyProof {
   label: string
   value: string
   source: string
 }
 
-export interface CaseStudyMedia {
+interface CaseStudyMedia {
   src: string
   alt: string
   width: number

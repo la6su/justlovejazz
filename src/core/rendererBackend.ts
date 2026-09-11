@@ -26,7 +26,7 @@ export interface BackendFacts {
   isFallbackAdapter: boolean | null
 }
 
-export type UnifiedPlan = { recreate: false; mode: FinalMode } | { recreate: true; mode: FinalMode }
+type UnifiedPlan = { recreate: false; mode: FinalMode } | { recreate: true; mode: FinalMode }
 
 /**
  * Decide what to do after `WebGPURenderer.init()` on the unified path.
@@ -55,7 +55,7 @@ export function planUnifiedBackend(facts: BackendFacts): UnifiedPlan {
 // bounded so a flapping device cannot loop forever.
 export const MAX_DEVICE_LOST_RECOVERIES = 1
 
-export type DeviceLostAction = 'recover' | 'exhausted'
+type DeviceLostAction = 'recover' | 'exhausted'
 
 /**
  * Decide whether a device-loss event may still trigger recovery.

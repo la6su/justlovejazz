@@ -45,7 +45,7 @@ export interface CommitResult {
   error?: string
 }
 
-export interface SnapshotResult {
+interface SnapshotResult {
   ok: boolean
   /** True when a new history snapshot was actually pushed. */
   changed: boolean

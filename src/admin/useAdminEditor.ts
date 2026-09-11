@@ -53,11 +53,11 @@ import {
 } from '../builder/documents'
 import { BuilderStore } from '../builder/store'
 
-export type EditorMode = 'builder' | 'style'
-export type Viewport = 'desktop' | 'tablet' | 'mobile'
+type EditorMode = 'builder' | 'style'
+type Viewport = 'desktop' | 'tablet' | 'mobile'
 
 /** The browser-DOM effects the composable may run (injected for tests). */
-export interface AdminDomEffects {
+interface AdminDomEffects {
   updateIcons?: (root: Element) => void
   setProperty?: (element: HTMLElement, name: string, value: string) => void
   toggleClass?: (element: HTMLElement, name: string, on: boolean) => void

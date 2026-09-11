@@ -1,6 +1,6 @@
 /** Bounded DEV-only frame-gap statistics without per-refresh array churn. */
 
-export interface FrameGapPercentiles {
+interface FrameGapPercentiles {
   p50: number
   p95: number
 }

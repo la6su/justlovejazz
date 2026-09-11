@@ -19,7 +19,7 @@ const STATE_VALUE: Record<SectionState, number> = {
 export type { CameraTransform, BakuTransform }
 
 /** Light data used by Section (subset of LightTransform). */
-export interface LightData {
+interface LightData {
   ambientColor: THREE.Color
   intensity: number
 }

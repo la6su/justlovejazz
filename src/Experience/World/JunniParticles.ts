@@ -43,7 +43,7 @@ import {
   mx_hsvtorgb,
 } from 'three/tsl'
 
-export interface JunniParticlesOptions {
+interface JunniParticlesOptions {
   /** Particle count (will be halved by auto-reduce if FPS drops). */
   count?: number
   /** Field spread [x, y, z]. Particles wrap around this volume. */
