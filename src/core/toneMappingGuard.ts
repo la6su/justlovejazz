@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 
-export interface ToneMappingOwner {
+interface ToneMappingOwner {
   toneMapping: THREE.ToneMapping
 }
 

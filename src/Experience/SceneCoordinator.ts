@@ -30,7 +30,7 @@ import type { ContactHaloStage } from './World/ContactHaloStage'
 import type { ManifestoInkStage } from './World/ManifestoInkStage'
 import type { LabExperimentObject } from './Lab/manifest'
 
-export interface WorldTransformResult {
+interface WorldTransformResult {
   cameraTarget: CameraTarget
   worldState: WorldState
 }

@@ -11,7 +11,7 @@
 import * as THREE from 'three'
 
 /** High anisotropy — clamped by the GPU to its real maximum (typically 8 or 16). */
-export const CASE_ANISOTROPY = 16
+const CASE_ANISOTROPY = 16
 
 /**
  * Refcounted texture cache. Maps URL → entry. An entry stays in the map while

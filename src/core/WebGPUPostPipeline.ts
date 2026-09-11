@@ -34,7 +34,7 @@ import type { Scene, Camera } from 'three'
 import type { Node } from 'three/webgpu'
 import { withNoToneMapping } from './toneMappingGuard'
 
-export interface WebGPUPostParams {
+interface WebGPUPostParams {
   bloom: number
   bloomRadius: number
   bloomThreshold: number

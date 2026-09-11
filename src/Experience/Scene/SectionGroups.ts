@@ -27,7 +27,7 @@ import type { PageId } from '../../sections/_shared/constants'
 import type { StorySide } from '../../core/storyState'
 
 /** Canonical six-slot layout (one group per world slot / cube face). */
-export const SECTION_GROUP_COUNT = 6
+const SECTION_GROUP_COUNT = 6
 
 /** Dispose geometry/material resources below a root, excluding known owners. */
 export function disposeSceneObjectResources(

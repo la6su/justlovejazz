@@ -45,7 +45,7 @@ export interface SchedulerHost {
   isSettled(): boolean
 }
 
-export interface SchedulerOptions {
+interface SchedulerOptions {
   /**
    * Listen to `document.visibilitychange` automatically (browser default).
    * Tests drive `setHidden` manually.
@@ -53,7 +53,7 @@ export interface SchedulerOptions {
   autoVisibility?: boolean
 }
 
-export interface SchedulerDiagnostics {
+interface SchedulerDiagnostics {
   /** True while the renderer loop is installed. */
   loopActive: boolean
   /** True while the tab is hidden (advancement paused). */

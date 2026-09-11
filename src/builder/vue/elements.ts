@@ -25,7 +25,7 @@ import { localizedProp, type BuilderLocale } from '../localization'
 import type { BuilderElementType, BuilderNode } from '../schema'
 
 /** Props every registry component accepts. */
-export interface BuilderElementProps {
+interface BuilderElementProps {
   node: BuilderNode
   /** Emit the editor delegation attributes (admin preview only). */
   editable?: boolean

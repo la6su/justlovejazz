@@ -1,7 +1,7 @@
-export type RendererMode = 'webgpu' | 'webgl' | 'unsupported'
+type RendererMode = 'webgpu' | 'webgl' | 'unsupported'
 export type QualityTier = 'high' | 'medium' | 'low'
 
-export interface TierConfig {
+interface TierConfig {
   postMultiplier: number
 }
 

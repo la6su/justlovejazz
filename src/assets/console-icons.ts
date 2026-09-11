@@ -28,7 +28,7 @@ const paths: Record<string, string> = {
   search: 'M3 3h8l3 3v5l-3 3H6l-3-3ZM13 13l4 4',
 }
 
-export const CONSOLE_ICONS: Record<string, string> = Object.fromEntries(
+const CONSOLE_ICONS: Record<string, string> = Object.fromEntries(
   Object.entries(paths).map(([name, path]) => [
     name,
     `<svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter" d="${path}"/></svg>`,

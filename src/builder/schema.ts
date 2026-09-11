@@ -1,7 +1,7 @@
 import { validateBuilderTheme, type BuilderTheme } from './style'
 import { BUILDER_SOURCE_FIELDS, BUILDER_SOURCE_IDS } from './sources'
 
-export const BUILDER_DOCUMENT_VERSION = 2 as const
+const BUILDER_DOCUMENT_VERSION = 2 as const
 
 export type BuilderElementType =
   | 'section'
@@ -49,7 +49,7 @@ export interface BuilderDocument {
   nodes: BuilderNode[]
 }
 
-export interface BuilderValidationResult {
+interface BuilderValidationResult {
   ok: boolean
   errors: string[]
   document?: BuilderDocument
@@ -165,7 +165,7 @@ function validateNode(
 }
 
 /** Builder media accepts same-origin assets and HTTPS sources only. */
-export function isSafeMediaSource(value: string): boolean {
+function isSafeMediaSource(value: string): boolean {
   const src = value.trim()
   if (src.startsWith('/') && !src.startsWith('//')) return true
   try {

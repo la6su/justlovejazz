@@ -47,7 +47,7 @@ const EXIT_DURATION = 0.65
 /** Number of horizontal signal slices in the transition. */
 const SLICE_COUNT = 22
 
-export type ShowreelPhase = 'closed' | 'enter' | 'open' | 'exit'
+type ShowreelPhase = 'closed' | 'enter' | 'open' | 'exit'
 
 export interface ShowreelState {
   phase: ShowreelPhase

@@ -1,20 +1,20 @@
 import type { BuilderElementType, BuilderNode } from './schema'
 
-export type BuilderFieldType = 'text' | 'textarea' | 'select' | 'url'
+type BuilderFieldType = 'text' | 'textarea' | 'select' | 'url'
 
-export interface BuilderField {
+interface BuilderField {
   key: string
   label: string
   type: BuilderFieldType
   options?: ReadonlyArray<{ label: string; value: string }>
 }
 
-export interface BuilderFieldGroup {
+interface BuilderFieldGroup {
   label: string
   fields: readonly BuilderField[]
 }
 
-export interface BuilderElementDefinition {
+interface BuilderElementDefinition {
   type: BuilderElementType
   label: string
   description: string
@@ -25,7 +25,7 @@ export interface BuilderElementDefinition {
   create(id: string): BuilderNode
 }
 
-export interface BuilderCatalogGroup {
+interface BuilderCatalogGroup {
   label: string
   types: readonly BuilderElementType[]
 }

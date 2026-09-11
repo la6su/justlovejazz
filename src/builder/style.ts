@@ -69,7 +69,7 @@ export interface BuilderTheme {
   navbarSurface: string
 }
 
-export interface StyleFieldDefinition {
+interface StyleFieldDefinition {
   key: BuilderThemeKey
   label: string
   description: string
@@ -77,7 +77,7 @@ export interface StyleFieldDefinition {
   options?: ReadonlyArray<{ label: string; value: string }>
 }
 
-export interface StyleGroupDefinition {
+interface StyleGroupDefinition {
   id: StyleGroupId
   label: string
   category: 'general' | 'component'

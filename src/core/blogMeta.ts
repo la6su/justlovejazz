@@ -23,7 +23,7 @@ const OG_IMAGE = `${BLOG_SITE_ORIGIN}/preview.jpg`
 const TWITTER_HANDLE = '@justlovejazz'
 
 /** The structured fields of one blog page's head. */
-export interface BlogPageMeta {
+interface BlogPageMeta {
   /** `<title>` content. */
   title: string
   /** `<meta name="description">` content. */

@@ -3,7 +3,7 @@ import { resolveBuilderListItems } from './sources'
 import { localizedProp, type BuilderLocale } from './localization'
 import type { BuilderDocument, BuilderNode } from './schema'
 
-export interface BuilderRenderOptions {
+interface BuilderRenderOptions {
   editable?: boolean
   locale?: BuilderLocale
 }

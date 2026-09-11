@@ -22,7 +22,7 @@
 
 export type WorldSlotId = 'lab' | 'intro' | 'about' | 'works' | 'contact' | 'menu'
 
-export interface WorldSlotDef {
+interface WorldSlotDef {
   /** Stable 0-based slot index. Never reordered; consumers index by this. */
   readonly index: number
   /** Canonical slot ID. Slot 0 is `lab` even though it publicly shows Contact. */

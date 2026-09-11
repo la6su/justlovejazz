@@ -20,14 +20,14 @@ export const BUILDER_PAGE_SITEMAP = {
   priority: 0.5,
 }
 
-export interface SitemapSection {
+interface SitemapSection {
   /** The `<!-- ... -->` comment above the section's entries. */
   comment: string
   entries: readonly SitemapEntry[]
 }
 
 /** The app-route sections: the canonical home entry, then the SPA routes. */
-export function buildAppSitemapSections(): SitemapSection[] {
+function buildAppSitemapSections(): SitemapSection[] {
   const [home, ...spaRoutes] = ROUTE_MANIFEST
   const toEntry = (path: string, page: PageId): SitemapEntry => ({
     path,
@@ -47,7 +47,7 @@ export function buildAppSitemapSections(): SitemapSection[] {
 }
 
 /** The blog sections: the list page, then the published articles. */
-export function buildBlogSitemapSections(): SitemapSection[] {
+function buildBlogSitemapSections(): SitemapSection[] {
   return [
     {
       comment: 'Blog — list page',

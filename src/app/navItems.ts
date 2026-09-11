@@ -1,5 +1,5 @@
 // Top-level destinations rendered by NavMenu.vue.
-export interface NavItemData {
+interface NavItemData {
   num: string
   label: string
   labelKey: string

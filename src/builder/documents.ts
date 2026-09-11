@@ -21,7 +21,7 @@ export interface BuilderDocuments {
   documents: BuilderDocument[]
 }
 
-export interface BuilderDocumentsValidation {
+interface BuilderDocumentsValidation {
   ok: boolean
   errors: string[]
   documents?: BuilderDocuments
