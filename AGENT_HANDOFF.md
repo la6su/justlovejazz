@@ -17,13 +17,14 @@ Vue/Tres transition.
 
 ## Next task
 
-NEXT.md item 1: generalize the Showreel shader theater transition for Works
-case media. The shared DOM FullscreenOverlay owns case presentation and
-Escape; the GPU shader transition remains ShowreelTheater-specific until its
-still-image media contract and metadata handoff are designed. Start by
+Two queue items, in order. First the dated one: the ADR 0008 review (due
+2026-09-15) — generate a fresh import-closure bundle breakdown on current
+HEAD and append the dated review note to the ADR. Then NEXT.md item 1:
+design the Showreel→Works media contract before touching code — start by
 reading src/Experience/World/ShowreelTheater.ts, src/UI/FullscreenOverlay.ts
-and src/UI/ShowreelConsole.ts; design the media contract before touching
-code. One reviewable outcome, then the full release gate.
+and src/UI/ShowreelConsole.ts. Every open item's detailed plan (open
+questions, slices, acceptance, decision owner) lives inline in NEXT.md. One
+reviewable outcome, then the full release gate.
 
 ## Resume protocol
 
