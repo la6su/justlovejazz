@@ -45,9 +45,11 @@ checklists are available in Git before this documentation consolidation.
       ParticleBurst._dummy and JunniParticles (rebuild only on setCount) all
       render from scratch fields, matching the earlier ServicesStage offset
       reuse.
-- [ ] Adopt the unsubs[] eventBus teardown convention (ShowreelConsole is the
+- [x] Adopt the unsubs[] eventBus teardown convention (ShowreelConsole is the
       reference) in ExperienceUI, UIMenu and CinematicNav at their next touch;
-      the per-field _*Unsub bookkeeping is correct but triplicated.
+      the per-field _*Unsub bookkeeping is correct but triplicated. On
+      2026-09-11 the ponytail sweep converted all three to the single
+      `private readonly _unsubs` array (push on subscribe, drain in dispose).
 - [ ] Strengthen evidence scripts: narrow overly broad GPU error exclusions;
       identify skipped cases, record revision/backend, measure frame deltas during
       an idle interval and distinguish runtime destroy from Vue root unmount.

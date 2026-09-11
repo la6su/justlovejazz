@@ -11,10 +11,10 @@
 // added and disposes the features it created — Experience.destroy() runs it
 // so the root teardown returns every owned resource to baseline.
 
+import { adoptResource } from '../core/overlayOwnership'
 import { CinematicNav } from '../UI/CinematicNav'
 import { UIMenu } from '../UI/UIMenu'
 import { FullscreenOverlay } from '../UI/FullscreenOverlay'
-import { adoptResource } from '../core/overlayOwnership'
 import type { UIManager } from '../UI/UIManager'
 import type { SceneCoordinator } from './SceneCoordinator'
 import type { PageId } from '../sections/_shared/constants'
@@ -80,14 +80,8 @@ export class ExperienceUI {
   private _portfolioReadyRaf: number | null = null
   private _portfolioReadyResolve: (() => void) | null = null
 
-  private _openProjectUnsub: (() => void) | null = null
-  private _projectNavigateUnsub: (() => void) | null = null
-  private _routeChangeCloseOverlayUnsub: (() => void) | null = null
-  private _wobblePulseUnsub: (() => void) | null = null
-  private _worksPageSectionUnsub: (() => void) | null = null
+  private readonly _unsubs: Array<() => void> = []
   private _worksPlaneTapHandler: ((e: PointerEvent) => void) | null = null
-  private _gotoSectionByHashUnsub: (() => void) | null = null
-  private _soundToggleUnsub: (() => void) | null = null
   private _routeGeneration = 0
   private _destroyed = false
 
@@ -151,144 +145,156 @@ export class ExperienceUI {
     this.host.sfx().setMuted(getSoundMuted())
 
     // Runtime sound toggle (from UIMenu or other in-app controls)
-    this._soundToggleUnsub = eventBus.on('jlz:sound-toggle', ({ muted }) => {
-      this.host.sfx().setMuted(muted)
-    })
+    this._unsubs.push(
+      eventBus.on('jlz:sound-toggle', ({ muted }) => {
+        this.host.sfx().setMuted(muted)
+      }),
+    )
 
     // ── Semantic project control → open fullscreen overlay ──
     // Works and case-study Vue views emit this port from their native controls.
     // All opens (showreel, slider, /works) use the same unified DOM cinematic
     // reveal — no 3D plane-to-fullscreen handoff, which caused a double effect.
-    this._openProjectUnsub = eventBus.on('jlz:open-project', ({ idx }) => {
-      if (typeof idx !== 'number') return
-      const routeGeneration = this._routeGeneration
-      const page = this.host.page()
-      void this.ensurePortfolio().then(() => {
-        if (
-          !isCurrentRouteContinuation(
-            routeGeneration,
-            this._routeGeneration,
-            page,
-            this.host.page(),
+    this._unsubs.push(
+      eventBus.on('jlz:open-project', ({ idx }) => {
+        if (typeof idx !== 'number') return
+        const routeGeneration = this._routeGeneration
+        const page = this.host.page()
+        void this.ensurePortfolio().then(() => {
+          if (
+            !isCurrentRouteContinuation(
+              routeGeneration,
+              this._routeGeneration,
+              page,
+              this.host.page(),
+            )
           )
-        )
-          return
-        this.onProjectSelect(idx)
-      })
-    })
+            return
+          this.onProjectSelect(idx)
+        })
+      }),
+    )
 
-    this._projectNavigateUnsub = eventBus.on('jlz:project-navigate', ({ direction }) => {
-      if (!this.overlay?.isOpen) return
-      const carousel = this.getCarousel()
-      if (direction < 0) {
-        carousel?.prev()
-        if (!carousel) this.portfolio?.prev()
-      } else {
-        carousel?.next()
-        if (!carousel) this.portfolio?.next()
-      }
-      this.onProjectSelect(this.activeProjectIndex + direction)
-      // Project navigation changes the carousel target while the demand-driven
-      // renderer may already be settled. Wake it explicitly so the target is
-      // advanced and the overlay/scene stay visually synchronized.
-      this.host.raise('nav')
-    })
+    this._unsubs.push(
+      eventBus.on('jlz:project-navigate', ({ direction }) => {
+        if (!this.overlay?.isOpen) return
+        const carousel = this.getCarousel()
+        if (direction < 0) {
+          carousel?.prev()
+          if (!carousel) this.portfolio?.prev()
+        } else {
+          carousel?.next()
+          if (!carousel) this.portfolio?.next()
+        }
+        this.onProjectSelect(this.activeProjectIndex + direction)
+        // Project navigation changes the carousel target while the demand-driven
+        // renderer may already be settled. Wake it explicitly so the target is
+        // advanced and the overlay/scene stay visually synchronized.
+        this.host.raise('nav')
+      }),
+    )
 
     // ── Close overlay on route change ──
     // When SPA navigates (Menu subnav click, browser back, etc.),
     // close any open FullscreenOverlay. isOpen checks UIKit's native uk-open
     // class — no custom flag to get out of sync.
-    this._routeChangeCloseOverlayUnsub = eventBus.on('jlz:route-change', () => {
-      const routeGeneration = ++this._routeGeneration
-      if (this.overlay?.isOpen) {
-        this.overlay.close()
-      }
-      const newPage = this.host.page()
-      const continuationIsCurrent = () =>
-        isCurrentRouteContinuation(
-          routeGeneration,
-          this._routeGeneration,
-          newPage,
-          this.host.page(),
-        )
-      const coordinator = this.host.coordinator()
-      void (async () => {
-        // Rebuild page-specific fog/post/section ranges before route owners
-        // reconcile visibility; otherwise SPA navigation keeps boot config.
-        await coordinator.refreshRouteConfig()
-        if (!continuationIsCurrent()) return
-        coordinator.syncRouteVisuals()
-        if (newPage === 'home') {
-          void this.host.ensureCarouselInitialized()
+    this._unsubs.push(
+      eventBus.on('jlz:route-change', () => {
+        const routeGeneration = ++this._routeGeneration
+        if (this.overlay?.isOpen) {
+          this.overlay.close()
         }
-        if (newPage === 'works') {
-          void this.host.ensureWorksPlaneStageInitialized().then(() => {
-            if (!continuationIsCurrent()) return
-            this.host.coordinator().setWorksPlaneStageSection(0)
-            this.host.raise('nav')
-          })
-        } else {
-          // Works owns eight decoded 1440×810 textures. Keeping an inactive
-          // stage alive makes that GPU allocation look like a navigation leak.
-          this.host.disposeWorksPlaneStage()
-        }
-        if (newPage === 'contact') {
-          this.host.setContactCyprusStageSection(0)
-          coordinator.setContactSceneSection(0)
-          void Promise.all([
-            this.host.ensureContactTypographyStageInitialized(),
-            this.host.ensureContactCyprusStageInitialized(),
-            this.host.ensureContactHaloStageInitialized(),
-          ]).then(() => {
-            if (!continuationIsCurrent()) return
-            this.host.raise('nav')
-          })
-        } else {
-          this.host.disposeContactTypographyStage()
-          this.host.disposeContactCyprusStage()
-          this.host.disposeContactHaloStage()
-          coordinator.setContactSceneSection(0)
-        }
-        if (newPage === 'manifesto') {
-          void this.host.ensureManifestoInkStageInitialized().then(() => {
-            if (!continuationIsCurrent()) return
-            this.host.raise('nav')
-          })
-        } else {
-          this.host.disposeManifestoInkStage()
-        }
-        // Phase 8 slice 9: the Lab object's lazy creation moved to Experience
-        // (created once on the first /lab visit; never disposed per route leave —
-        // the World's `syncRouteVisuals` already hides it off-route).
-        if (newPage === 'lab') void this.host.ensureLabGamepad()
-        this.host.raise('nav')
-      })()
-    })
+        const newPage = this.host.page()
+        const continuationIsCurrent = () =>
+          isCurrentRouteContinuation(
+            routeGeneration,
+            this._routeGeneration,
+            newPage,
+            this.host.page(),
+          )
+        const coordinator = this.host.coordinator()
+        void (async () => {
+          // Rebuild page-specific fog/post/section ranges before route owners
+          // reconcile visibility; otherwise SPA navigation keeps boot config.
+          await coordinator.refreshRouteConfig()
+          if (!continuationIsCurrent()) return
+          coordinator.syncRouteVisuals()
+          if (newPage === 'home') {
+            void this.host.ensureCarouselInitialized()
+          }
+          if (newPage === 'works') {
+            void this.host.ensureWorksPlaneStageInitialized().then(() => {
+              if (!continuationIsCurrent()) return
+              this.host.coordinator().setWorksPlaneStageSection(0)
+              this.host.raise('nav')
+            })
+          } else {
+            // Works owns eight decoded 1440×810 textures. Keeping an inactive
+            // stage alive makes that GPU allocation look like a navigation leak.
+            this.host.disposeWorksPlaneStage()
+          }
+          if (newPage === 'contact') {
+            this.host.setContactCyprusStageSection(0)
+            coordinator.setContactSceneSection(0)
+            void Promise.all([
+              this.host.ensureContactTypographyStageInitialized(),
+              this.host.ensureContactCyprusStageInitialized(),
+              this.host.ensureContactHaloStageInitialized(),
+            ]).then(() => {
+              if (!continuationIsCurrent()) return
+              this.host.raise('nav')
+            })
+          } else {
+            this.host.disposeContactTypographyStage()
+            this.host.disposeContactCyprusStage()
+            this.host.disposeContactHaloStage()
+            coordinator.setContactSceneSection(0)
+          }
+          if (newPage === 'manifesto') {
+            void this.host.ensureManifestoInkStageInitialized().then(() => {
+              if (!continuationIsCurrent()) return
+              this.host.raise('nav')
+            })
+          } else {
+            this.host.disposeManifestoInkStage()
+          }
+          // Phase 8 slice 9: the Lab object's lazy creation moved to Experience
+          // (created once on the first /lab visit; never disposed per route leave —
+          // the World's `syncRouteVisuals` already hides it off-route).
+          if (newPage === 'lab') void this.host.ensureLabGamepad()
+          this.host.raise('nav')
+        })()
+      }),
+    )
 
     // Phase 5: Wobble pulse on card click (work cards + carousel)
-    this._wobblePulseUnsub = eventBus.on('jlz:wobble-pulse', () => {
-      this.host.coordinator().baku?.triggerWobblePulse()
-      // Keep rendering while the pulse animates (sin-envelope in SplashCube.update).
-      this.host.raise('dirty')
-    })
+    this._unsubs.push(
+      eventBus.on('jlz:wobble-pulse', () => {
+        this.host.coordinator().baku?.triggerWobblePulse()
+        // Keep rendering while the pulse animates (sin-envelope in SplashCube.update).
+        this.host.raise('dirty')
+      }),
+    )
 
     // Route-owned 3D layers follow the shared content-page navigation contract.
-    this._worksPageSectionUnsub = eventBus.on('jlz:page-section-change', ({ index }) => {
-      const domIndex = index ?? 0
-      const stageIndex = Math.max(0, domIndex - 1)
-      const page = this.host.page()
-      const coordinator = this.host.coordinator()
-      if (page === 'works') {
-        // DOM sections: 0=Lab overlay, 1-4=project pairs, 5=Nav overlay.
-        coordinator.setWorksPlaneStageSection(stageIndex)
-      } else if (page === 'contact') {
-        this.host.setContactCyprusStageSection(stageIndex)
-        coordinator.setContactSceneSection(stageIndex)
-      } else {
-        return
-      }
-      this.host.raise('nav')
-    })
+    this._unsubs.push(
+      eventBus.on('jlz:page-section-change', ({ index }) => {
+        const domIndex = index ?? 0
+        const stageIndex = Math.max(0, domIndex - 1)
+        const page = this.host.page()
+        const coordinator = this.host.coordinator()
+        if (page === 'works') {
+          // DOM sections: 0=Lab overlay, 1-4=project pairs, 5=Nav overlay.
+          coordinator.setWorksPlaneStageSection(stageIndex)
+        } else if (page === 'contact') {
+          this.host.setContactCyprusStageSection(stageIndex)
+          coordinator.setContactSceneSection(stageIndex)
+        } else {
+          return
+        }
+        this.host.raise('nav')
+      }),
+    )
 
     this._worksPlaneTapHandler = (e: PointerEvent) => {
       if (this.host.page() !== 'works' || this.overlay?.isOpen) return
@@ -335,11 +341,13 @@ export class ExperienceUI {
     // Dispatched by the router after renderView. CinematicNav finds
     // the target section by hash ID and activates it. Without this, menu
     // subsection clicks always land on section 1 (hash silently dropped).
-    this._gotoSectionByHashUnsub = eventBus.on('jlz:goto-section-by-hash', ({ hash }) => {
-      if (hash) {
-        this.storyNav?.goToSectionByHash(hash)
-      }
-    })
+    this._unsubs.push(
+      eventBus.on('jlz:goto-section-by-hash', ({ hash }) => {
+        if (hash) {
+          this.storyNav?.goToSectionByHash(hash)
+        }
+      }),
+    )
   }
 
   /** Start the authored cube reaction and its one-shot portal-frame echo. */
@@ -488,16 +496,8 @@ export class ExperienceUI {
     }
     this._portfolioReadyResolve?.()
     this._portfolioReadyResolve = null
-    this._soundToggleUnsub?.()
-    this._openProjectUnsub?.()
-    this._projectNavigateUnsub?.()
-    this._routeChangeCloseOverlayUnsub?.()
-    this._wobblePulseUnsub?.()
-    this._worksPageSectionUnsub?.()
-    this._gotoSectionByHashUnsub?.()
-    this._soundToggleUnsub = this._openProjectUnsub = null
-    this._projectNavigateUnsub = this._routeChangeCloseOverlayUnsub = null
-    this._wobblePulseUnsub = this._worksPageSectionUnsub = this._gotoSectionByHashUnsub = null
+    for (const unsub of this._unsubs) unsub()
+    this._unsubs.length = 0
     if (this._worksPlaneTapHandler) {
       window.removeEventListener('pointerup', this._worksPlaneTapHandler)
       this._worksPlaneTapHandler = null
