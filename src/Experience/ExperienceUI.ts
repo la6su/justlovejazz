@@ -11,7 +11,6 @@
 // added and disposes the features it created — Experience.destroy() runs it
 // so the root teardown returns every owned resource to baseline.
 
-import { adoptResource } from '../core/overlayOwnership'
 import { CinematicNav } from '../UI/CinematicNav'
 import { UIMenu } from '../UI/UIMenu'
 import { FullscreenOverlay } from '../UI/FullscreenOverlay'
@@ -415,9 +414,9 @@ export class ExperienceUI {
     // is routed through `jlz:project-navigate` so arrows and keyboard use the
     // same owner even if the overlay was created before this async portfolio.
     if (!this.overlay) {
-      const adopted = adoptResource(this.host.ui().overlay, () => new FullscreenOverlay())
-      this.overlay = adopted.value
-      this.ownsOverlay = adopted.owned
+      const shared = this.host.ui().overlay
+      this.overlay = shared ?? new FullscreenOverlay()
+      this.ownsOverlay = !shared
     }
 
     // Wire BakuCarousel card click → open fullscreen overlay.
