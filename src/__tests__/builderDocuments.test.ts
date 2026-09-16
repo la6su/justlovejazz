@@ -11,7 +11,6 @@ import {
   createBuilderDocument,
   findBuilderDocument,
   isSafeBuilderSlug,
-  migrateLegacyPageDocument,
   nextAvailableBuilderSlug,
   removeBuilderDocument,
   upsertBuilderDocument,
@@ -127,23 +126,6 @@ describe('removeBuilderDocument / findBuilderDocument', () => {
     const base = collection(DEFAULT_BUILDER_DOCUMENT, withSlug('about', 'About'))
     expect(findBuilderDocument(base, 'about')?.title).toBe('About')
     expect(findBuilderDocument(base, 'missing')).toBeUndefined()
-  })
-})
-
-describe('migrateLegacyPageDocument', () => {
-  it('wraps a valid single document in a v1 collection', () => {
-    const migrated = migrateLegacyPageDocument(DEFAULT_BUILDER_DOCUMENT)
-    expect(migrated).toEqual({
-      version: BUILDER_DOCUMENTS_VERSION,
-      documents: [expect.objectContaining({ slug: 'studio-page' })],
-    })
-    // the input document is not mutated
-    expect(DEFAULT_BUILDER_DOCUMENT.version).toBe(2)
-  })
-
-  it('returns null for an invalid document', () => {
-    expect(migrateLegacyPageDocument({ version: 2 })).toBeNull()
-    expect(migrateLegacyPageDocument(null)).toBeNull()
   })
 })
 

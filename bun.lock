@@ -27,6 +27,7 @@
         "jsdom": "^29.1.1",
         "less": "^4.8.1",
         "prettier": "^3.9.6",
+        "source-map-js": "1.2.1",
         "tweakpane": "^4.0.5",
         "typescript": "~6.0.3",
         "typescript-eslint": "^8.65.0",

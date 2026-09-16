@@ -119,38 +119,6 @@ interface RunResult {
   notes: string[]
 }
 
-function isFatalError(msg: string): boolean {
-  if (!msg) return false
-  const harmless = [
-    /picture in picture/i,
-    /service worker/i,
-    /navigator\.serviceWorker/i,
-    /Download the React DevTools/i,
-    /WebGPU/i,
-    /GPUBridge/i,
-    /WebGPURenderer/i,
-    /requestAdapter/i,
-    /requestDevice/i,
-    /GPUAdapter/i,
-    /adapter.*unavailable/i,
-    /fallback to webgl/i,
-    /swiftshader/i,
-    /llvmpipe/i,
-    /software rendering/i,
-    /Failed to load resource.*manifest/i,
-    /manifest/i,
-    /Cannot read properties of null.*getContext/i,
-    /NO_GPU_ADAPTER/i,
-    /WebGL2 is not supported/i,
-    /Neither WebGPU nor WebGL2/i,
-    /\[entry-app\] bootstrap failed/i,
-    /\[Renderer\] Failed to install WebGLNodesHandler/i,
-    /\[Experience\] DevPanel init failed/i,
-    /\[Renderer\] Failed to create the unified renderer/i,
-  ]
-  return !harmless.some((p) => p.test(msg))
-}
-
 async function run(
   browser: import('@playwright/test').Browser,
   opts: {
@@ -298,10 +266,10 @@ async function run(
       hook()
     })
     await page.waitForTimeout(2_500)
-    result.destroy.fatalErrors = errors.filter(isFatalError)
+    result.destroy.fatalErrors = errors.slice()
     result.destroy.canvasSurvives = (await page.locator('canvas.canvas').count()) >= 1
 
-    result.fatalErrors = errors.filter(isFatalError)
+    result.fatalErrors = errors.slice()
     // Settled idle (zero draws) is a hard gate for the unified WebGPURenderer
     // (auto backend) and the reduced-motion path. (The dev-forced classic
     // `?renderer=webgl` QA owner — the only run exempted from the settled-idle
@@ -326,7 +294,7 @@ async function run(
     }
   } catch (e) {
     result.notes.push(String(e))
-    result.fatalErrors = errors.filter(isFatalError)
+    result.fatalErrors = errors.slice()
     result.passed = false
   } finally {
     await page.close()

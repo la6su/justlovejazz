@@ -39,6 +39,7 @@
     "jsdom": "^29.1.1",
     "less": "^4.8.1",
     "prettier": "^3.9.6",
+    "source-map-js": "1.2.1",
     "tweakpane": "^4.0.5",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.65.0",
@@ -46,7 +47,7 @@
     "vitest": "^4.1.10",
     "vue-tsc": "3.3.10"
   },
-  "description": "Modern interactive portfolio using **Three.js TSL (Nodes)** with **WebGPU → WebGL fallback**.   Designed with **mobile-first UX** and a **procedural 3D background**.",
+  "description": "Modern interactive portfolio using **Three.js TSL (Nodes)** with **WebGPU \u2192 WebGL fallback**.   Designed with **mobile-first UX** and a **procedural 3D background**.",
   "dependencies": {
     "@tresjs/core": "5.8.3",
     "three": "0.185.1",

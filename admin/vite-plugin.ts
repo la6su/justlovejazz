@@ -28,7 +28,6 @@ import {
   BUILDER_DOCUMENTS_VERSION,
   findBuilderDocument,
   isSafeBuilderSlug,
-  migrateLegacyPageDocument,
   removeBuilderDocument,
   upsertBuilderDocument,
   validateBuilderDocuments,
@@ -70,12 +69,11 @@ function writeAtomic(path: string, content: string): void {
 export function jlzAdminPlugin(): Plugin {
   const root = resolve(import.meta.dirname, '..')
   const documentsPath = resolve(root, 'src/builder/generated/documents.json')
-  const legacyPagePath = resolve(root, 'src/builder/generated/page.json')
   const themePath = resolve(root, 'src/assets/builder/theme.generated.less')
   const componentsPath = resolve(root, 'src/assets/builder/components.generated.less')
   const mainLessPath = resolve(root, 'src/assets/main.less')
 
-  /** Read the collection; transparently migrate the legacy `page.json`. */
+  /** Read the current document collection. */
   const loadCollection = (): BuilderDocuments => {
     if (existsSync(documentsPath)) {
       const validation = validateBuilderDocuments(
@@ -84,13 +82,6 @@ export function jlzAdminPlugin(): Plugin {
       if (!validation.ok || !validation.documents)
         throw new Error(`documents.json is invalid: ${validation.errors.join('; ')}`)
       return validation.documents
-    }
-    if (existsSync(legacyPagePath)) {
-      const migrated = migrateLegacyPageDocument(
-        JSON.parse(readFileSync(legacyPagePath, 'utf8')) as unknown,
-      )
-      if (!migrated) throw new Error('page.json is invalid; refusing to migrate it')
-      return migrated
     }
     return { version: BUILDER_DOCUMENTS_VERSION, documents: [] }
   }
@@ -156,16 +147,17 @@ export function jlzAdminPlugin(): Plugin {
           let snapshots: Array<{ path: string; content: string }> = []
           try {
             const body = await readJsonBody(request)
-            // The envelope is { slug, document }; a bare document body is
-            // accepted for compatibility with the pre-slice-3 client.
-            const candidate = isRecord(body) && isRecord(body.document) ? body.document : body
-            const validation = validateBuilderDocument(candidate)
+            if (!isRecord(body) || !isRecord(body.document)) {
+              sendJson(response, 400, { ok: false, error: 'Expected { slug, document }' })
+              return
+            }
+            const validation = validateBuilderDocument(body.document)
             if (!validation.ok || !validation.document) {
               sendJson(response, 400, { ok: false, error: validation.errors.join('; ') })
               return
             }
             const document = validation.document
-            if (isRecord(body) && body.document !== undefined && body.slug !== document.slug) {
+            if (body.slug !== document.slug) {
               sendJson(response, 400, {
                 ok: false,
                 error: 'envelope slug must match the document slug',

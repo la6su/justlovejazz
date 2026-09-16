@@ -2,8 +2,7 @@
 /**
  * Phase 10 acceptance gate — steady-state route-cycle soak.
  *
- * The migration's final lifecycle evidence (docs/DEVELOPMENT.md "Resource and
- * memory gate", docs/MIGRATION_VUE_TRES.md Phase 10 acceptance): five warm-up
+ * Lifecycle evidence (docs/evidence/README.md "Measurement protocol"): five warm-up
  * route cycles, then at least twenty steady-state route cycles, with per-cycle
  * snapshots proving the counters stay within the warm-up-established caps and
  * show no listener/canvas/texture/geometry/program/memory trend; a final
@@ -94,36 +93,6 @@ const SPA_ROUTES: ReadonlyArray<{ path: string; page: string }> = [
   { path: '/lab', page: 'lab' },
   { path: '/contact', page: 'contact' },
 ]
-
-/** Same harmless list the Phase 7 live gate uses (GPU-less host + PWA). */
-const HARMLESS: RegExp[] = [
-  /picture in picture/i,
-  /service worker/i,
-  /navigator\.serviceWorker/i,
-  /Download the React DevTools/i,
-  /WebGPU/i,
-  /GPUBridge/i,
-  /WebGPURenderer/i,
-  /requestAdapter/i,
-  /requestDevice/i,
-  /GPUAdapter/i,
-  /adapter.*unavailable/i,
-  /fallback to webgl/i,
-  /swiftshader/i,
-  /llvmpipe/i,
-  /software rendering/i,
-  /Failed to load resource.*manifest/i,
-  /manifest/i,
-  /Cannot read properties of null.*getContext/i,
-  /NO_GPU_ADAPTER/i,
-  /WebGL2 is not supported/i,
-  /Neither WebGPU nor WebGL2/i,
-  /\[entry-app\] bootstrap failed/i,
-  /\[Renderer\] Failed to install WebGLNodesHandler/i,
-  /\[Experience\] DevPanel init failed/i,
-  /\[Renderer\] Failed to create the unified renderer/i,
-]
-const isFatal = (msg: string): boolean => !HARMLESS.some((p) => p.test(msg))
 
 interface SoakCounter {
   canvas: number
@@ -287,7 +256,7 @@ async function main(): Promise<void> {
         frameDeltaByRoute.set(target.path, deltas)
       }
     }
-    const fatalBefore = errors.filter(isFatal).length
+    const fatalBefore = errors.length
     const notes: string[] = []
     let ok = true
     if (counters.canvas !== 1) {
@@ -623,10 +592,7 @@ async function main(): Promise<void> {
     const postDestroyRaw = await capture()
     const heapUsed = (postDestroyRaw.heapUsed as number | null) ?? -1
     const heapPeak = Math.max(...report.steady.map((s) => s.heapUsed).filter((v) => v >= 0))
-    const destroyFatal = errors
-      .slice(destroyErrorsBefore)
-      .filter(isFatal)
-      .map((m) => m.slice(0, 300))
+    const destroyFatal = errors.slice(destroyErrorsBefore).map((m) => m.slice(0, 300))
     report.destroy = {
       canvasSurvives: canvasAfter >= 1,
       canvasCount: canvasAfter,

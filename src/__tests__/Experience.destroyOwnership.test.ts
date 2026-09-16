@@ -5,7 +5,7 @@ import { Renderer } from '../Experience/Renderer'
 
 /**
  * Pins the destroy() ownership boundary established by the Tres transition
- * (docs/TRES_FULL_TRANSITION.md): a runtime destroy disposes every
+ * (docs/ARCHITECTURE.md): a runtime destroy disposes every
  * Experience-owned owner exactly once, while Vue-owned scene owners survive
  * because the persistent host's Vue unmount owns their terminal disposal.
  *

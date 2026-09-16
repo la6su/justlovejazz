@@ -1,112 +1,38 @@
-# AGENTS — project context
+# JUSTLOVEJAZZ
 
-JUSTLOVEJAZZ is a Vite + TypeScript 3D portfolio built with Vue 3, Vue Router
-and TresJS over one Three.js `WebGPURenderer` (TSL NodeMaterials, UIkit 3,
-Bun). The renderer runs `WebGPUBackend` when hardware WebGPU is usable and
-`WebGLBackend` through the automatic software-adapter policy; the classic
-`WebGLRenderer` path was removed in Phase 10 (2026-08-22). The phased
-transition that shipped this topology and its ADRs are recorded in the
-[completed migration record](docs/archive/MIGRATION_VUE_TRES.md). Product copy is
-Russian/English; code, commits and technical documentation are English.
+Vue 3 + Vue Router + TresJS studio portfolio; Three.js TSL, UIkit Less,
+Vite and Bun. Product is EN/RU; code/docs are English. Versions and commands:
+`package.json`, `bun.lock`.
 
-## Working principle
+Positioning: distinctive business solutions through data-informed creative
+direction, automation, speed, performance and style. The name is a creativity
+metaphor, not a music theme; [BRAND](docs/BRAND.md) owns the direction.
 
-Treat current source, configuration and tests as the primary context. Follow
-the owners and patterns already present in the code, and load supporting
-documentation only when the task touches its subject. Preserve unrelated work
-in a dirty tree and keep each change to one coherent outcome.
+## Work
 
-## Engineering principles
+- Inspect Git status; preserve unrelated changes. Source/tests override prose.
+- Follow the user's task; [NEXT](NEXT.md) is the only queue. Keep only unfinished
+  work there, including a checkpoint when needed. No session logs or parallel plans.
+- Prefer the smallest complete solution and existing owners/libraries. Remove
+  obsolete paths; avoid speculative abstractions and compatibility layers.
+- Read docs by task, not as a startup bundle. Use deterministic checks and
+  concise results. Delegate only when requested; isolate concurrent writes.
+- Broader goal: autonomous 3D/image/video/sound development. Homelab details
+  belong to environment instructions; this repository is the portfolio.
 
-- Do not preserve backward compatibility. Remove obsolete paths instead of
-  adding compatibility layers, fallbacks, or migrations.
-- Choose the simplest implementation that fully meets the current
-  requirements. Avoid speculative abstractions, configuration, and
-  indirection.
-- Grow the system in layers. Start from the smallest version that works end to
-  end, and add each new capability on top of a product that already works.
-  Never trade a working product for unfinished complexity.
-- Keep components modular and concerns clearly separated.
-- Prefer established, well-maintained libraries when they reduce overall
-  complexity or improve reliability. Do not reimplement common functionality
-  without a clear reason.
-- Lean on the dependencies already in the project before writing your own
-  implementation or adding packages. Do not assume a library lacks a
-  capability without checking its documentation and types.
-- Make architectural decisions for the long term. Do not accept a stopgap that
-  only works for now and is meant to be replaced later.
+## Preserve
 
-## Project-specific design
+- One scene canvas, `WebGPURenderer` and demand-loop owner. Actual backend
+  controls capabilities; WebGL has no WebGPU post parity.
+- Vue owns semantic DOM; GPU resources have one disposal owner. Guard async
+  results against teardown. Reduced motion settles transitions synchronously.
+- Inline splash stays outside the initial Vue/Tres/Three/UIkit graph.
+- Scene state uses typed event/route/preference ports, not DOM datasets.
 
-- The renderer uses TSL NodeMaterials and `renderer.setAnimationLoop`.
-  Capability, DPR and post-processing follow the backend that was actually
-  created. Rendering stays demand-driven, and each owner releases its
-  listeners, timers, DOM and GPU resources.
-- `index.html` owns the early splash. Entry becomes available when the shared
-  bootstrap reports `jlz:webgl-ready`; failure remains an explicit state.
-- Visual QA passes the splash through its Enter control before capturing a
-  route screenshot. Capture the splash itself only when it is the subject.
-- The world retains the canonical six-slot model described in
-  [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). `EnvSphere` owns the ambient
-  background, while the ground plane belongs to the contact state.
-- Reduced-motion paths settle authored animation synchronously so render
-  demand also settles.
-- UIkit provides the component, layout and accessibility baseline. Bespoke
-  styles express the 3D shell and project-specific compositions.
-- The router owns translations and page metadata. Semantic DOM remains the
-  interaction and accessibility layer over the shared scene.
-- There is exactly one canvas, renderer and animation-loop owner. Vue owns
-  semantic DOM, TresJS owns scene composition and GPU resources retain one
-  explicit disposal owner.
-- `WebGPURenderer` is the only constructed renderer class: `WebGPUBackend`
-  when hardware WebGPU is usable, otherwise the same class is re-created with
-  `forceWebGL: true` on `WebGLBackend` (the automatic software-adapter
-  policy). Never claim unified backend parity between the two backends.
-- All `jlz:*` application events flow through the typed `eventBus`
-  (`AppEvents` map); non-module producers (the inline splash script, e2e and
-  soak scripts) use the `window.__jlzEmit` facade.
-- Route state is owned by the typed in-memory `routePage` port. Vue route roots
-  own their semantic DOM markers; scene/UI code must never infer application
-  state from a body or document dataset.
-- The splash stays outside the Vue mount and initial Vue/Tres/Three/UIkit
-  dependency graph. Scene code receives typed route and preference state; it
-  does not infer application state from DOM datasets in the target design.
+## Read when relevant
 
-## Context on demand
-
-Read AGENT_HANDOFF.md for the current working-tree checkpoint and NEXT.md for
-the only active queue. Load other documents by task, not as a startup bundle.
-Historical migration plans do not authorize repeating completed work.
-
-- [NEXT.md](NEXT.md) — open product outcomes.
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — stable boundaries and
-  non-obvious runtime contracts.
-- [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) — setup, checks and budgets.
-- [docs/BRAND.md](docs/BRAND.md) — visual and editorial direction.
-- [docs/archive/MIGRATION_VUE_TRES.md](docs/archive/MIGRATION_VUE_TRES.md) —
-  completed migration, gates, rollback points and removal ledger (historical).
-- [docs/adr/README.md](docs/adr/README.md) — accepted and proposed architecture
-  decisions.
-- [skills/justlovejazz-ui/SKILL.md](skills/justlovejazz-ui/SKILL.md) — load for
-  UI, Less, theme, accessibility or visual QA work.
-- [skills/uikit3/SKILL.md](skills/uikit3/SKILL.md) — load for UIKit 3
-  component/Less contracts, the page-builder reference (catalogue,
-  inspector, preview, generated theme) or yotheme.pro editor-pattern work.
-- [skills/justlovejazz-release/SKILL.md](skills/justlovejazz-release/SKILL.md) —
-  load when preparing a commit, push or pull request.
-
-## Delivery
-
-Inspect `git status --short`, understand the relevant owners, implement the
-smallest complete slice and verify it in proportion to its risk. The full
-local gate is the release check, not a prerequisite for every documentation
-edit. Publishing uses a scoped non-default branch and a pull request; commit
-messages follow Conventional Commits.
-
-Keep active work in `NEXT.md`. Changes implement one bounded outcome at a
-time and keep the application runnable. The migration traceability/removal
-ledgers are completed and archived under `docs/archive/`; do not update them.
-After completing an outcome, remove it from `NEXT.md`, capture discovered
-follow-up work and reorder the remainder when evidence changes priority.
-Durable released behavior belongs in source, tests, ADRs and the changelog;
-session-by-session narration is unnecessary.
+- [Architecture](docs/ARCHITECTURE.md): runtime owners and non-obvious contracts.
+- [Development](docs/DEVELOPMENT.md): checks and budgets; verify proportional to risk.
+- [UI skill](skills/justlovejazz-ui/SKILL.md): views, theme, visual QA.
+- [UIkit skill](skills/uikit3/SKILL.md): components, Less, builder.
+- [Release skill](skills/justlovejazz-release/SKILL.md): requested Git publication.

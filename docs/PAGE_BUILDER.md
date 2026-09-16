@@ -1,143 +1,54 @@
-# UIkit Page Builder
+# Page builder
 
-This document describes the current implementation and ownership. The
-versioned schema, validation and compiler remain framework-free; the
-development editor and public rendering adapters use the same Vue registry.
+`/admin/` is a dev-only Vue editor inspired by YOOtheme's catalogue, outline,
+preview, inspector and separate Style workspace. It does not ship YOOtheme
+runtime code. Public builds exclude the admin entry and save endpoints.
 
-The Page Builder is a project-owned development tool inspired by the workflow
-of visual theme builders. It does not embed or redistribute the supplied
-YOOtheme runtime. UIkit semantics and the existing JUSTLOVEJAZZ Less theme
-remain the rendering authority.
+## Sources
 
-## Boundary
+| Concern                                | Owner                                                            |
+| -------------------------------------- | ---------------------------------------------------------------- |
+| Dev shell and save API                 | `admin/main.ts`, `admin/vite-plugin.ts`                          |
+| Document validation                    | `src/builder/schema.ts`                                          |
+| Collection and publish selection       | `src/builder/documents.ts`                                       |
+| Catalogue, grouped fields and defaults | `src/builder/catalog.ts`                                         |
+| Commands and undo/redo                 | `src/builder/commands.ts`, `store.ts`                            |
+| Shared Vue element registry            | `src/builder/vue/`                                               |
+| Style controls and preview             | `src/builder/style.ts`, `style-showcase.ts`, `themeVariables.ts` |
+| Less generation                        | `src/builder/compiler.ts`                                        |
+| Authored collection                    | `src/builder/generated/documents.json`                           |
+| Static publishing                      | `src/builder/publish.ts`, `scripts/publish-builder-pages.mjs`    |
 
-```text
-admin/                         development application; never a build input
-  index.html                   separate /admin/ document
-  main.ts + admin.less         Vue editor, preview and inspector
-  vite-plugin.ts               fixed-path save and Less compilation API
+Schema/validation/commands/compiler are framework-neutral. Editor preview and
+static publishing share the Vue element registry. `render.ts` is only a
+framework-neutral reference/test renderer, not the public renderer.
 
-src/builder/                   production-safe shared core
-  schema.ts                    versioned document contract and validation
-  style.ts                     typed Style groups, fields and defaults
-  style-showcase.ts            trusted UIkit component preview catalogue
-  catalog.ts                   supported elements, fields and CSS dependencies
-  render.ts                    escaped semantic UIkit markup
-  compiler.ts                  theme and component-manifest generators
-  generated/documents.json     versioned multi-document collection
+## Authoring and publishing
 
-src/assets/builder/
-  theme.generated.less         validated theme-token overrides
-  components.generated.less    optional UIkit imports used by saved documents
-```
+Schema v2 defines typed elements and allowlisted props. Root nodes are sections;
+containers own ordered children. Text is escaped; URLs and media follow schema
+validation. EN is canonical; optional `*Ru` fields fall back to EN. Preview
+locale uses the shared app locale port, not another editor store.
 
-`admin/main.ts` is a separate dev-only Vue application entry and
-`src/builder/vue/` renders the same `src/builder/schema.ts` document used by
-the public publisher. The boundary does not create a second schema, catalogue,
-validator or compiler. Public routes and the editor preview render through the
-same typed element registry, so an element is implemented once and tested in
-both contexts.
+The bounded `projects` list source reads local project data synchronously;
+there is no arbitrary remote source or executable authored code. The desktop
+editor offers desktop/tablet/mobile preview widths and selection/history tools.
 
-`vite.config.ts` installs the save API with `apply: 'serve'`. The production
-input list does not contain `admin/index.html`, so inspector code, editing
-state and dev endpoints cannot enter `dist`. The two generated Less files are
-imported by the normal theme assembly and therefore participate in the same
-production compilation as hand-authored theme sources.
+`published: true` documents generate `/p/<slug>` and `/p/<slug>/ru` HTML with
+self-canonical URLs and shared EN/RU/x-default alternates. Static pages load
+neither the editor nor the 3D application. Per-page styles are generated during publishing.
 
-## Current document model
+## Save and style contract
 
-Version 2 supports twelve typed elements. Root nodes are sections; container
-elements own ordered children. Copy is plain text, links accept internal paths,
-anchors, mail links and HTTPS, and rendering escapes all authored values.
-The `list` element can optionally resolve the bounded `projects` source from
-the existing project manifest, with an allowlisted field (`title`,
-`description`, `year` or `category`) and a 1–12 item limit. Resolution is
-synchronous, local and deterministic; an absent source keeps authored lines.
-Authored copy has one canonical English value plus an optional `*Ru` override
-for headings, text, buttons, links, list items, image alt text and video
-accessible labels. The render contract accepts `EN`/`RU`; RU falls back to the
-English value when an override is absent. The admin preview follows the app's
-typed locale port. Approved documents publish both `/p/<slug>` (EN) and
-`/p/<slug>/ru` (RU) standalone routes; the Russian route uses localized
-metadata when supplied and otherwise falls back to English.
-Each published variant emits the same escaped EN/RU `hreflang` matrix and an
-`x-default` alternate; canonical remains self-referential for the current
-locale. The generator owns this head metadata so the static publisher and
-sitemap cannot drift into separate locale rules.
+`POST /__jlz-admin/save` uses `{ slug, document }`, validates at most 256 KiB,
+upserts the collection and writes generated theme/component Less to fixed paths.
+It compiles main Less before success and restores snapshots on failure.
+Legacy `page.json`/bare-body compatibility still exists; removal is in NEXT.
+The collection is multi-document, while the shared SPA theme outputs use the
+saved document's style. Do not describe this as per-document runtime theming.
 
-The editor provides:
-
-- element catalogue and hierarchical outline;
-- preview selection and a schema-driven inspector;
-- add, reorder, duplicate, delete, undo and redo;
-- desktop, tablet and mobile preview widths;
-- a separate Style workspace organized as `Global`, `Theme`, `Inverse` and
-  component groups, following the useful information architecture of visual
-  UIkit stylers without copying their runtime;
-- a complete or focused UIkit component showcase with Default and Inverse
-  preview tones;
-- whitelisted global, typography, spacing, inverse, button, card, section,
-  form and navbar decisions;
-- atomic Save & Compile with strict validation and Less compilation before a
-  successful response.
-- an EN/RU preview toggle wired to the shared application locale port; the
-  active locale is visible in the toolbar and updates the Vue preview without
-  creating a second editor locale store.
-
-## Save and compilation
-
-`POST /__jlz-admin/save` accepts at most 256 KB and writes only three fixed
-project paths. IDs, colors, radius values and document structure are validated
-before generation. If Less compilation fails, the previous files are restored.
-
-Style values are not free-form CSS or Less. Every editable decision is declared
-in `style.ts`, validated by type and allowlist, compiled into known Less
-variables, and rendered through a trusted showcase. The generated theme file is
-loaded last in the Less variable graph so saved decisions override UIkit
-component defaults while the project-owned hooks remain authoritative.
-
-Production CSS selection is dependency-based. Core UIkit components needed by
-the existing SPA stay in `_import.less`; optional components referenced by the
-saved builder document are emitted into `components.generated.less`. The admin
-application itself is excluded rather than tree-shaken after bundling.
-
-## Next product boundary
-
-The builder stores a versioned collection of documents in
-`generated/documents.json` (one slug-addressed document each) and publishes
-approved static routes at `/p/<slug>` with their `/p/<slug>/ru` variants
-through `renderBuilderPageDocument()` at build time. The Style workspace
-currently covers the first high-value UIkit groups; full UIkit component
-coverage, drag-and-drop nesting and media selection remain separate outcomes.
-The dynamic source slice is in: only the trusted project manifest can feed a
-list, with no network or user code. The Vue element registry is the public
-runtime renderer and remains separate from `admin/`, router metadata and i18n
-state.
-
-This publishing path is build-time only: `renderBuilderPageDocument()` wraps
-the validated registry output for approved `/p/<slug>` artifacts. The string
-`renderBuilderDocument()` renderer remains only as a framework-neutral
-test/reference adapter; it is not a public route fallback and must not return
-to the runtime graph.
-
-## Vue ownership and guardrails
-
-The Vue editor boundary is complete. The following guardrails are the current
-contract, not an open migration checklist:
-
-1. Freeze schema v2 fixtures and compiler output when changing the editor.
-2. Keep commands, validation, schema and compilation framework-neutral; Vue
-   consumes them rather than duplicating them.
-3. Keep one typed Vue element registry for editor preview and public route
-   rendering, with the static publishing wrapper separate from runtime state.
-4. Keep EN/RU locale selection in the shared typed locale port. RU values fall
-   back to EN at render time; do not introduce a second editor locale store.
-5. Keep the builder excluded from the initial public graph. Editor-only
-   devtools, inspector state and optional UIkit components must not enter
-   production chunks.
-6. Accept new editor dependencies only when native Vue/browser primitives do
-   not meet the requirement and the isolated bundle cost is measured.
-
-See [`archive/MIGRATION_VUE_TRES.md`](archive/MIGRATION_VUE_TRES.md) for
-historical phase gates and
-[`ARCHITECTURE.md`](ARCHITECTURE.md) for target dependency direction.
+Style fields are typed allowlists, not arbitrary CSS/Less. Add controls through
+`style.ts`, compiler mappings and preview variables/showcase together. The app's
+base UIkit imports remain in `_import.less`; generated imports add optional
+components. Generated theme variables load last. Cover schema/compiler parity,
+preview locales/widths, undo, Save & Compile and reload persistence when editing.

@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { basename, join } from 'node:path'
 import { gzipSync } from 'node:zlib'
+import { sharedThreeAsset } from './build-assets'
 
 const DIST_DIR = 'dist'
 const ASSETS_DIR = join(DIST_DIR, 'assets')
@@ -59,10 +60,7 @@ function formatKb(bytes: number): string {
 }
 
 const html = readFileSync(join(DIST_DIR, 'index.html'), 'utf8')
-const threeAsset = uniqueAsset(
-  /^vendor-three-(?!contact-(?:loaders|geometry)-)[\w-]+\.js$/,
-  'shared vendor-three',
-)
+const threeAsset = join(ASSETS_DIR, sharedThreeAsset(readdirSync(ASSETS_DIR)))
 const threeGzip = gzipBytes(readFileSync(threeAsset))
 const uiAsset = uniqueAsset(/^vendor-ui-[\w-]+\.js$/, 'vendor-ui')
 const uiGzip = gzipBytes(readFileSync(uiAsset))

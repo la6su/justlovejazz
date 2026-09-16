@@ -58,10 +58,10 @@ useJlzPage('home', () => rootEl.value)
             <div>
               <div class="jlz-desc uk-margin-small-top">
                 <p class="uk-text-meta uk-margin-remove" data-i18n="home.studio.desc1">
-                  Interfaces and realtime scenes that make a product legible.
+                  Distinctive digital solutions for your business.
                 </p>
                 <p class="uk-text-meta uk-margin-remove" data-i18n="home.studio.desc2">
-                  Strategy, design and WebGPU in one system.
+                  Creative direction. Automation. Performance.
                 </p>
               </div>
               <div class="uk-margin-top">
@@ -108,7 +108,7 @@ useJlzPage('home', () => rootEl.value)
             Services
           </h2>
           <p class="uk-text-lead uk-margin-small-top" data-i18n="home.about.lead">
-            From strategy to implementation.
+            Your business sets the direction.
           </p>
         </div>
         <div class="jlz-section-bottom">
@@ -119,10 +119,10 @@ useJlzPage('home', () => rootEl.value)
             <div>
               <div class="jlz-service-desc uk-flex uk-flex-column">
                 <p class="uk-text-meta uk-margin-remove" data-i18n="home.about.desc1">
-                  A brief becomes an interface people can move through.
+                  We turn business context and data into a clear solution.
                 </p>
                 <p class="uk-text-meta uk-margin-remove" data-i18n="home.about.desc2">
-                  Direction · product design · realtime build.
+                  Research, design and development in one process.
                 </p>
               </div>
               <a
@@ -216,13 +216,13 @@ useJlzPage('home', () => rootEl.value)
             <div>
               <div class="jlz-service-desc uk-flex uk-flex-column">
                 <p class="uk-text-meta uk-margin-remove" data-i18n="home.manifesto.desc1">
-                  Clarity before spectacle.
+                  Understand the business.
                 </p>
                 <p class="uk-text-meta uk-margin-remove" data-i18n="home.manifesto.desc2">
-                  Every effect must explain a state.
+                  Give every decision a purpose.
                 </p>
                 <p class="uk-text-meta uk-margin-remove" data-i18n="home.manifesto.desc3">
-                  Every page must earn attention.
+                  Make the result clear, fast and distinctive.
                 </p>
               </div>
               <a

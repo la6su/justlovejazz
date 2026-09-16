@@ -11,13 +11,9 @@ import { test, expect, type Page } from '@playwright/test'
  *           -> /src/app/index.ts       (AppShell + persistent SceneHost into #app)
  *              -> Experience bootstrap (WebGPU/WebGL fallback runtime)
  *
- * Headless Chromium cannot always initialize WebGPU, and the WebGL2 fallback
- * path may also fail in pure-software rendering environments. Therefore these
- * tests deliberately avoid asserting on canvas pixels or any UI that depends
- * on a successful Experience.init(). They focus on:
- *   - DOM structure that is rendered synchronously by the router
- *   - Accessibility attributes baked into the static HTML / templates
- *   - Absence of *fatal* (uncaught) JS errors, with known WebGPU/WebGL noise filtered out
+ * DOM-only cases use the no-scene seam; renderer cases exercise the actual
+ * backend. Console errors and uncaught page errors are failures, including
+ * GPU/bootstrap errors. Hardware-only recovery records its explicit skip.
  */
 
 const SECTION_IDS = [
@@ -30,45 +26,6 @@ const SECTION_IDS = [
 ] as const
 
 const SPA_ROUTES = ['/', '/services', '/works', '/manifesto', '/lab', '/contact'] as const
-
-/**
- * Console / pageerror strings we tolerate in headless Chromium. WebGPU adapter
- * negotiation, SwiftShader fallback warnings, and PWA manifest fetch failures
- * are all expected on a CI runner with no real GPU and no deployed origin.
- */
-const KNOWN_HARMLESS_PATTERNS: RegExp[] = [
-  /picture in picture/i,
-  /service worker/i,
-  /navigator\.serviceWorker/i,
-  /Download the React DevTools/i,
-  /WebGPU/i,
-  /GPUBridge/i,
-  /WebGPURenderer/i,
-  /requestAdapter/i,
-  /requestDevice/i,
-  /GPUAdapter/i,
-  /adapter.*unavailable/i,
-  /fallback to webgl/i,
-  /swiftshader/i,
-  /llvmpipe/i,
-  /software rendering/i,
-  /Failed to load resource.*manifest/i,
-  /manifest/i,
-  /Cannot read properties of null.*getContext/i,
-  /NO_GPU_ADAPTER/i,
-  /WebGL2 is not supported/i,
-  /Neither WebGPU nor WebGL2/i,
-  // entry-app.ts logs this prefix when Experience.init() throws — expected
-  // in headless CI where WebGPU/WebGL2 may be unavailable.
-  /\[entry-app\] bootstrap failed/i,
-  /\[Renderer\] Failed to install WebGLNodesHandler/i,
-  /\[Experience\] DevPanel init failed/i,
-]
-
-function isFatalError(msg: string): boolean {
-  if (!msg) return false
-  return !KNOWN_HARMLESS_PATTERNS.some((p) => p.test(msg))
-}
 
 function attachErrorCapture(page: Page, errors: string[]): void {
   page.on('console', (m) => {
@@ -133,8 +90,7 @@ test.describe('JustLoveJazz — page boot smoke', () => {
     const html = await response.text()
 
     expect(html).not.toMatch(/modulepreload[^>]+(?:vendor-three|vendor-ui|chunk-core-world)/)
-    expect(html).toContain('Zarazeni Inclusion')
-    expect(html).toContain('ВКЛЮЧЕНИЕ')
+    expect(html).toContain('id="jlz-splash-enter"')
   })
 
   test('every published SPA route resolves to the application shell', async ({ request }) => {
@@ -579,7 +535,7 @@ test.describe('JustLoveJazz — Phase 7 persistent scene host', () => {
     await expect(page.locator('canvas.canvas')).toHaveCount(1)
     expect(await markedAfterBoot(), 'scene root remounted on the way back home').toBe(true)
 
-    const fatal = errors.filter(isFatalError)
+    const fatal = errors
     expect(fatal, `Fatal errors:\n${fatal.join('\n')}`).toEqual([])
   })
 
@@ -716,7 +672,7 @@ test.describe('JustLoveJazz — runtime health', () => {
       .poll(() => page.evaluate(() => window.__jlzHost?.recovered === true), { timeout: 15000 })
       .toBe(true)
     expect(await page.locator('canvas.canvas').count()).toBe(1)
-    const fatal = errors.filter(isFatalError)
+    const fatal = errors
     expect(fatal, `Fatal errors:\n${fatal.join('\n')}`).toEqual([])
   })
 
@@ -730,7 +686,7 @@ test.describe('JustLoveJazz — runtime health', () => {
     // Give the async Experience bootstrap a moment to settle or fail loudly.
     await page.waitForTimeout(3000)
 
-    const fatal = errors.filter(isFatalError)
+    const fatal = errors
     expect(fatal, `Fatal errors:\n${fatal.join('\n')}`).toEqual([])
   })
 
@@ -745,7 +701,7 @@ test.describe('JustLoveJazz — runtime health', () => {
       await expect(page.locator('main#spa-content')).toBeAttached({ timeout: 20000 })
       await page.waitForTimeout(3000)
 
-      const fatal = errors.filter(isFatalError)
+      const fatal = errors
       expect(fatal, `Fatal errors (reduced motion):\n${fatal.join('\n')}`).toEqual([])
 
       // Sanity check: motionPolicy should have synced the dataset.

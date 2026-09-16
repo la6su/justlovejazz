@@ -3,7 +3,7 @@
  * Visual parity tooling for the Vue/Tres migration (Phase 2 visual gate).
  *
  * Implements the frozen protocol metric from
- * `docs/PERFORMANCE_BASELINE.md` ("Benchmark and visual protocol"): capture
+ * `docs/evidence/README.md` ("Measurement protocol"): capture
  * visual parity at identical state; outside approved masks, at most 0.5% of
  * pixels may exceed a 0.1 perceptual threshold; store the diff and masks with
  * the evidence. The perceptual threshold is computed as the L2 distance of
@@ -610,7 +610,7 @@ async function commandDiff(args: Args): Promise<void> {
     const report = {
       tool: 'scripts/visual-parity.ts diff',
       protocol:
-        'docs/PERFORMANCE_BASELINE.md "Benchmark and visual protocol": at most 0.5% of pixels may exceed a 0.1 perceptual threshold outside approved masks',
+        'docs/evidence/README.md "Measurement protocol": at most 0.5% of pixels may exceed a 0.1 perceptual threshold outside approved masks',
       metric:
         'per-pixel L2 distance of sRGB channels normalized to [0,1]; exceed when delta > threshold',
       a: aPath,

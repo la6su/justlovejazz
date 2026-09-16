@@ -6,7 +6,7 @@
 // slug and is validated independently by the v2 schema. The one-page
 // publishing restriction is lifted at this storage layer: a collection may
 // hold any number of documents. These helpers are framework-neutral and
-// shared by the dev plugin (save / delete / load / legacy migration) and the
+// shared by the dev plugin (save / delete / load) and the
 // unit tests so there is one validation decision, not one per consumer.
 
 import { DEFAULT_BUILDER_DOCUMENT } from './default-document'
@@ -110,17 +110,6 @@ export function publishedPages(collection: BuilderDocuments): BuilderDocument[] 
   return collection.documents
     .filter((document) => document.published === true)
     .sort((a, b) => a.slug.localeCompare(b.slug))
-}
-
-/**
- * Wrap a legacy single-document `page.json` value in a v1 collection.
- * Returns null when the value is not a valid v2 document (the caller keeps
- * its own error path).
- */
-export function migrateLegacyPageDocument(value: unknown): BuilderDocuments | null {
-  const validation = validateBuilderDocument(value)
-  if (!validation.ok || !validation.document) return null
-  return { version: BUILDER_DOCUMENTS_VERSION, documents: [validation.document] }
 }
 
 /** `page`, `page-2`, … — the first slug not already used. */

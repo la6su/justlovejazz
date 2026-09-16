@@ -35,6 +35,9 @@ jobs:
 
       - name: Type-check
         run: bun run type-check
+      - name: Check Vue types
+        run: bun run type-check:vue
+
       - name: Lint
         run: bun run lint
 
@@ -51,7 +54,7 @@ jobs:
         run: bunx playwright install --with-deps chromium
 
       - name: Run Playwright tests
-        run: bun run test
+        run: bun run test:serial
 
       - name: Start preview server for Lighthouse
         run: |

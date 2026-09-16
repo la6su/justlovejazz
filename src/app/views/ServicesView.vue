@@ -45,7 +45,7 @@ useJlzPage('services', () => rootEl.value)
               Creative Direction
             </h2>
             <p class="uk-text-lead uk-margin-small-top" data-i18n="services.creativeDirection.lead">
-              Find the point of view before the system takes shape.
+              Start with the business, its audience and its data.
             </p>
           </div>
           <div class="jlz-section-bottom">
@@ -64,7 +64,7 @@ useJlzPage('services', () => rootEl.value)
                     class="jlz-service-console__statement uk-text-lead uk-margin-remove"
                     data-i18n="services.creativeDirection.statement"
                   >
-                    A useful identity gives every later decision a direction.
+                    Define the goal. Direct the story, design and technology around it.
                   </p>
                   <ul class="jlz-service-spec uk-list uk-list-divider uk-margin-medium-top">
                     <li>
@@ -93,7 +93,7 @@ useJlzPage('services', () => rootEl.value)
         </div>
       </section>
 
-      <!-- 02 · Realtime build -->
+      <!-- 02 · Development -->
       <section
         class="jlz-page-section uk-section uk-section-small uk-section-large@m"
         id="section-services-interactiveDev"
@@ -110,10 +110,10 @@ useJlzPage('services', () => rootEl.value)
               class="studio-title uk-heading-large uk-margin-small-top uk-margin-remove-bottom"
               data-i18n="services.interactiveDev.title"
             >
-              Realtime build
+              Development
             </h2>
             <p class="uk-text-lead uk-margin-small-top" data-i18n="services.interactiveDev.lead">
-              The interface wakes exactly when the story moves.
+              Fast websites and interfaces built around real tasks.
             </p>
           </div>
           <div class="jlz-section-bottom">
@@ -150,7 +150,7 @@ useJlzPage('services', () => rootEl.value)
                     data-i18n="services.interactiveDev.caption"
                     uk-scrollspy="cls: uk-animation-slide-bottom-small; repeat: true"
                   >
-                    Render only when there is something to say.
+                    Responsive input. Clear journeys. Measured performance.
                   </p>
                   <p class="jlz-service-runtime__detail">
                     One scene, one demand signal, one measurable reason to move.
@@ -194,7 +194,7 @@ useJlzPage('services', () => rootEl.value)
               Motion
             </h2>
             <p class="uk-text-lead uk-margin-small-top" data-i18n="services.motionRealtime.lead">
-              Direction, not decoration.
+              Show how the product works and why it matters.
             </p>
           </div>
           <div class="jlz-section-bottom">
@@ -236,7 +236,7 @@ useJlzPage('services', () => rootEl.value)
         </div>
       </section>
 
-      <!-- 04 · AI systems -->
+      <!-- 04 · AI & automation -->
       <section
         class="jlz-page-section uk-section uk-section-small uk-section-large@m"
         id="section-services-aiSystems"
@@ -253,10 +253,10 @@ useJlzPage('services', () => rootEl.value)
               class="studio-title uk-heading-large uk-margin-small-top uk-margin-remove-bottom"
               data-i18n="services.aiSystems.title"
             >
-              AI systems
+              AI & automation
             </h2>
             <p class="uk-text-lead uk-margin-small-top" data-i18n="services.aiSystems.lead">
-              Use new tools to open options, then bring judgement back to the work.
+              Connect tools and remove repetitive work.
             </p>
           </div>
           <div class="jlz-section-bottom">
@@ -275,7 +275,8 @@ useJlzPage('services', () => rootEl.value)
                     class="jlz-service-console__statement uk-text-lead uk-margin-remove"
                     data-i18n="services.aiSystems.statement"
                   >
-                    The right workflow creates more room for the decisions that cannot be automated.
+                    Shorten the path from idea to delivery. Keep people in control of important
+                    decisions.
                   </p>
                   <p class="jlz-service-console__note">
                     Brief → prototype → measured scene → handoff.

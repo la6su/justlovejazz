@@ -71,16 +71,16 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
 
     // Home — intro (Studio)
     'home.studio.title': 'Studio',
-    'home.studio.lead': 'Remote · EU · since 2019.',
-    'home.studio.desc1': 'Interfaces and realtime scenes that make a product legible.',
-    'home.studio.desc2': 'Strategy, design and WebGPU in one system.',
+    'home.studio.lead': 'Technology with a point of view.',
+    'home.studio.desc1': 'Distinctive digital solutions for your business.',
+    'home.studio.desc2': 'Creative direction. Automation. Performance.',
     'home.studio.showreel': 'Showreel',
 
     // Home — about (Services)
     'home.about.title': 'Services',
-    'home.about.lead': 'From strategy to implementation.',
-    'home.about.desc1': 'A brief becomes an interface people can move through.',
-    'home.about.desc2': 'Direction · product design · realtime build.',
+    'home.about.lead': 'Your business sets the direction.',
+    'home.about.desc1': 'We turn business context and data into a clear solution.',
+    'home.about.desc2': 'Research, design and development in one process.',
 
     // Home — works
     'home.works.title': 'Works',
@@ -88,9 +88,9 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     // Home — contact (Manifesto face)
     'home.manifesto.title': 'Manifesto',
     'home.manifesto.lead': 'This is what guides us.',
-    'home.manifesto.desc1': 'Clarity before spectacle.',
-    'home.manifesto.desc2': 'Every effect must explain a state.',
-    'home.manifesto.desc3': 'Every page must earn attention.',
+    'home.manifesto.desc1': 'Understand the business.',
+    'home.manifesto.desc2': 'Give every decision a purpose.',
+    'home.manifesto.desc3': 'Make the result clear, fast and distinctive.',
 
     // Home — Contact
 
@@ -98,22 +98,21 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
 
     // Services page
     'services.creativeDirection.title': 'Creative Direction',
-    'services.creativeDirection.lead': 'Find the point of view before the system takes shape.',
+    'services.creativeDirection.lead': 'Start with the business, its audience and its data.',
     'services.creativeDirection.statement':
-      'A useful identity gives every later decision a direction.',
-    'services.interactiveDev.title': 'Realtime build',
-    'services.interactiveDev.lead': 'The interface wakes exactly when the story moves.',
-    'services.interactiveDev.caption': 'Render only when there is something to say.',
+      'Define the goal. Direct the story, design and technology around it.',
+    'services.interactiveDev.title': 'Development',
+    'services.interactiveDev.lead': 'Fast websites and interfaces built around real tasks.',
+    'services.interactiveDev.caption': 'Responsive input. Clear journeys. Measured performance.',
     'services.motionRealtime.title': 'Motion',
-    'services.motionRealtime.lead': 'Direction, not decoration.',
+    'services.motionRealtime.lead': 'Show how the product works and why it matters.',
     'services.motionRealtime.word1': 'Context',
     'services.motionRealtime.word2': 'Impulse',
     'services.motionRealtime.word3': 'Calm',
-    'services.aiSystems.title': 'AI systems',
-    'services.aiSystems.lead':
-      'Use new tools to open options, then bring judgement back to the work.',
+    'services.aiSystems.title': 'AI & automation',
+    'services.aiSystems.lead': 'Connect tools and remove repetitive work.',
     'services.aiSystems.statement':
-      'The right workflow creates more room for the decisions that cannot be automated.',
+      'Shorten the path from idea to delivery. Keep people in control of important decisions.',
     'services.aiSystems.action': 'Start a project',
     'services.aiSystems.note': 'A short brief is enough to begin the conversation.',
 
@@ -203,21 +202,21 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     // Navigation help labels
 
     // Meta (route-based SEO)
-    'meta.home.title': 'JUSTLOVEJAZZ — Web Design Studio | Interactive 3D Portfolio',
+    'meta.home.title': 'JUSTLOVEJAZZ — Design, Technology & Automation',
     'meta.home.description':
-      'JUSTLOVEJAZZ — interactive 3D portfolio experience. WebGPU/WebGL cinematic, Three.js TSL, UIkit 3.',
+      'Distinctive digital solutions for business. Creative direction, design and development shaped by your goals, data and performance needs.',
     'meta.services.title': 'Services — JUSTLOVEJAZZ',
     'meta.services.description':
-      'Creative direction, interactive development, motion & realtime, and AI systems. From concept to implementation.',
+      'Creative direction, websites, interactive experiences and AI automation. From understanding your business to design and implementation.',
     'meta.works.title': 'Works — JUSTLOVEJAZZ',
     'meta.works.description':
-      'Selected projects and case studies. WebGPU fluid simulations, audio-reactive 3D, generative typography, and more.',
+      'Selected projects in design, motion and development. Explore the intent, decisions and materials behind each case.',
     'meta.manifesto.title': 'Manifesto — JUSTLOVEJAZZ',
     'meta.manifesto.description':
       'Purpose, clarity, emotion, simplicity. The principles that guide our work.',
     'meta.lab.title': 'Lab — JUSTLOVEJAZZ',
     'meta.lab.description':
-      'Experiments in shaders, audio-reactive visuals, generative worlds, and GPU particles. Always in progress.',
+      'Experiments in shaders, interactive interfaces and realtime 3D. A place to test ideas for future digital experiences.',
     'meta.contact.title': 'Contact — JUSTLOVEJAZZ',
     'meta.contact.description':
       'Get in touch. Email, Telegram, GitHub. Remote · EU · open for new projects.',
@@ -258,16 +257,16 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
 
     // Home — intro (Studio)
     'home.studio.title': 'Студия',
-    'home.studio.lead': 'Удалённо · ЕС · с 2019.',
-    'home.studio.desc1': 'Интерфейсы и realtime-сцены, делающие продукт понятным.',
-    'home.studio.desc2': 'Стратегия, дизайн и WebGPU — одна система.',
+    'home.studio.lead': 'Технологии с характером.',
+    'home.studio.desc1': 'Выразительные цифровые решения для бизнеса.',
+    'home.studio.desc2': 'Режиссура. Автоматизация. Производительность.',
     'home.studio.showreel': 'Шоурил',
 
     // Home — about (Services)
     'home.about.title': 'Услуги',
-    'home.about.lead': 'От стратегии до реализации.',
-    'home.about.desc1': 'Из брифа — в интерфейс, по которому хочется двигаться.',
-    'home.about.desc2': 'Направление · дизайн · realtime-разработка.',
+    'home.about.lead': 'Ваш бизнес задаёт направление.',
+    'home.about.desc1': 'Превращаем задачи и данные бизнеса в ясное решение.',
+    'home.about.desc2': 'Исследование, дизайн и разработка в одном процессе.',
 
     // Home — works
     'home.works.title': 'Работы',
@@ -275,9 +274,9 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     // Home — contact (Manifesto face)
     'home.manifesto.title': 'Манифест',
     'home.manifesto.lead': 'То, что нами движет.',
-    'home.manifesto.desc1': 'Ясность важнее зрелищности.',
-    'home.manifesto.desc2': 'Каждый эффект объясняет состояние.',
-    'home.manifesto.desc3': 'Каждая страница заслуживает внимание.',
+    'home.manifesto.desc1': 'Понять бизнес.',
+    'home.manifesto.desc2': 'Дать каждому решению смысл.',
+    'home.manifesto.desc3': 'Сделать результат понятным, быстрым и выразительным.',
 
     // Home — Contact
 
@@ -285,21 +284,22 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
 
     // Services page
     'services.creativeDirection.title': 'Креатив',
-    'services.creativeDirection.lead': 'Найти точку зрения до того, как сложится система.',
+    'services.creativeDirection.lead': 'Начать с бизнеса, его аудитории и данных.',
     'services.creativeDirection.statement':
-      'Рабочая идентичность задаёт направление каждому следующему решению.',
-    'services.interactiveDev.title': 'Realtime',
-    'services.interactiveDev.lead': 'Интерфейс просыпается ровно тогда, когда движется история.',
-    'services.interactiveDev.caption': 'Рендерить, только когда есть что сказать.',
+      'Определить цель. Связать с ней историю, дизайн и технологии.',
+    'services.interactiveDev.title': 'Разработка',
+    'services.interactiveDev.lead': 'Быстрые сайты и интерфейсы для реальных задач.',
+    'services.interactiveDev.caption':
+      'Быстрый отклик. Понятный путь. Измеримая производительность.',
     'services.motionRealtime.title': 'Моушн',
-    'services.motionRealtime.lead': 'Направление, не декорация.',
+    'services.motionRealtime.lead': 'Показать, как работает продукт и в чём его ценность.',
     'services.motionRealtime.word1': 'Контекст',
     'services.motionRealtime.word2': 'Импульс',
     'services.motionRealtime.word3': 'Покой',
-    'services.aiSystems.title': 'AI-системы',
-    'services.aiSystems.lead': 'Открывать новые варианты и возвращать суждение человека в работу.',
+    'services.aiSystems.title': 'AI и автоматизация',
+    'services.aiSystems.lead': 'Связать инструменты и убрать повторяющуюся работу.',
     'services.aiSystems.statement':
-      'Правильный процесс освобождает место для решений, которые нельзя автоматизировать.',
+      'Сократить путь от идеи до результата. Сохранить контроль человека над важными решениями.',
     'services.aiSystems.action': 'Начать проект',
     'services.aiSystems.note': 'Для начала разговора достаточно короткого брифа.',
 
@@ -389,21 +389,21 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     // Navigation help labels
 
     // Meta (route-based SEO)
-    'meta.home.title': 'JUSTLOVEJAZZ — Студия веб-дизайна | Интерактивное 3D-портфолио',
+    'meta.home.title': 'JUSTLOVEJAZZ — Дизайн, технологии и автоматизация',
     'meta.home.description':
-      'JUSTLOVEJAZZ — интерактивное 3D-портфолио. WebGPU/WebGL кинематографичность, Three.js TSL, UIkit 3.',
+      'Выразительные цифровые решения для бизнеса. Режиссёрский подход, дизайн и разработка с опорой на ваши задачи, данные и производительность.',
     'meta.services.title': 'Услуги — JUSTLOVEJAZZ',
     'meta.services.description':
-      'Креатив, разработка, моушн, AI-системы. От концепции до реализации.',
+      'Креативная режиссура, сайты, интерактивные решения и AI-автоматизация. От понимания бизнеса до дизайна и реализации.',
     'meta.works.title': 'Работы — JUSTLOVEJAZZ',
     'meta.works.description':
-      'Избранные проекты и кейсы. WebGPU симуляции жидкостей, аудио-реактивное 3D, генеративная типографика и другое.',
+      'Избранные проекты в дизайне, моушне и разработке. Задачи, решения и материалы каждого кейса.',
     'meta.manifesto.title': 'Манифест — JUSTLOVEJAZZ',
     'meta.manifesto.description':
       'Цель, ясность, эмоция, простота. Принципы, направляющие нашу работу.',
     'meta.lab.title': 'Лаборатория — JUSTLOVEJAZZ',
     'meta.lab.description':
-      'Эксперименты с шейдерами, аудио-реактивной графикой, генеративными мирами и GPU-частицами. Всегда в процессе.',
+      'Эксперименты с шейдерами, интерактивными интерфейсами и 3D в реальном времени. Проверяем идеи для будущих цифровых решений.',
     'meta.contact.title': 'Контакты — JUSTLOVEJAZZ',
     'meta.contact.description':
       'Свяжитесь с нами. Почта, Telegram, GitHub. Удалённо · ЕС · открыты для новых проектов.',

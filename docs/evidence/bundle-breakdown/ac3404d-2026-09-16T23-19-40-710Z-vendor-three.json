@@ -1,0 +1,97 @@
+{
+  "commit": "ac3404d371011bfe533152ab2578a45dc5d5c978",
+  "generatedAt": "2026-09-16T23:19:40.710Z",
+  "dirtyFiles": [
+    "M .github/workflows/lighthouse.yml",
+    " M AGENTS.md",
+    " D AGENT_HANDOFF.md",
+    " M CLAUDE.md",
+    " D CONTRIBUTING.md",
+    " M NEXT.md",
+    " M README.md",
+    " D WORKLOG.md",
+    " M bun.lock",
+    " M docs/ARCHITECTURE.md",
+    " M docs/BRAND.md",
+    " D docs/CHANGELOG.md",
+    " M docs/DEVELOPMENT.md",
+    " M docs/PAGE_BUILDER.md",
+    " D docs/PERFORMANCE_BASELINE.md",
+    " D docs/README.md",
+    " D docs/THEME.md",
+    " D docs/TRES_FULL_TRANSITION.md",
+    " D docs/adr/0001-adopt-vue-application-platform.md",
+    " D docs/adr/0002-adopt-tresjs-scene-composition.md",
+    " D docs/adr/0003-unify-webgpu-webgl2-renderer.md",
+    " D docs/adr/0004-preserve-demand-rendering.md",
+    " D docs/adr/0005-integrate-uikit-with-vue.md",
+    " D docs/adr/0006-use-incremental-migration.md",
+    " D docs/adr/0007-unify-brand-token-system.md",
+    " D docs/adr/0008-three-delivery-budget.md",
+    " D docs/adr/0009-use-webgpu-three-compat-entry.md",
+    " D docs/adr/0010-close-unified-renderer-decision.md",
+    " D docs/adr/README.md",
+    " D docs/agents/README.md",
+    " D docs/archive/MIGRATION_VUE_TRES.md",
+    " D docs/archive/TRES_HYBRID_EXPERIMENTS.md",
+    " D docs/archive/TRES_POST_MIGRATION_AUDIT.md",
+    " M docs/evidence/README.md",
+    " M index.html",
+    " M package.json",
+    " M scripts/bundle-breakdown.ts",
+    " M scripts/check-build-budgets.ts",
+    " M scripts/phase10-route-cycle-soak.ts",
+    " M scripts/phase7-live-gate.ts",
+    " M scripts/visual-parity.ts",
+    " M skills/justlovejazz-release/SKILL.md",
+    " M skills/justlovejazz-ui/SKILL.md",
+    " M skills/uikit3/SKILL.md",
+    " M src/__tests__/Experience.destroyOwnership.test.ts",
+    " M src/app/views/HomeView.vue",
+    " M src/app/views/ServicesView.vue",
+    " M src/assets/console-theme/_import.less",
+    " M src/core/i18n.ts",
+    " M vitest.config.ts",
+    "?? scripts/build-assets.ts",
+    "?? src/__tests__/buildAssets.test.ts"
+  ],
+  "command": "bun scripts/bundle-breakdown.ts",
+  "note": "Source-mapped analysis build; production gzip budgets are checked separately.",
+  "chunk": "vendor-three-Blk4tFVJ.js",
+  "rawBytes": 1068520,
+  "sourceCount": 8,
+  "modules": [
+    {
+      "source": "../../../home/la6/Documents/GitHub/justlovejazz/node_modules/three/build/three.webgpu.js",
+      "mappedBytes": 669412
+    },
+    {
+      "source": "../../../home/la6/Documents/GitHub/justlovejazz/node_modules/three/build/three.core.js",
+      "mappedBytes": 375562
+    },
+    {
+      "source": "../../../home/la6/Documents/GitHub/justlovejazz/node_modules/three/build/three.tsl.js",
+      "mappedBytes": 11501
+    },
+    {
+      "source": "../../../home/la6/Documents/GitHub/justlovejazz/node_modules/three/examples/jsm/tsl/display/BloomNode.js",
+      "mappedBytes": 5660
+    },
+    {
+      "source": "../../../home/la6/Documents/GitHub/justlovejazz/node_modules/three/examples/jsm/geometries/RoundedBoxGeometry.js",
+      "mappedBytes": 2748
+    },
+    {
+      "source": "../../../home/la6/Documents/GitHub/justlovejazz/node_modules/three/examples/jsm/utils/BufferGeometryUtils.js",
+      "mappedBytes": 2422
+    },
+    {
+      "source": "../../../home/la6/Documents/GitHub/justlovejazz/node_modules/three/examples/jsm/utils/SkeletonUtils.js",
+      "mappedBytes": 442
+    },
+    {
+      "source": "../../../home/la6/Documents/GitHub/justlovejazz/src/three-webgpu-compat.ts",
+      "mappedBytes": 92
+    }
+  ]
+}

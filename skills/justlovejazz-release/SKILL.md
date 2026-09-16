@@ -1,28 +1,16 @@
 ---
 name: justlovejazz-release
-description: Verify and publish a scoped JUSTLOVEJAZZ change through its local quality gate, Conventional Commit, non-default branch, push, and pull request. Use when preparing a commit, PR, release handoff, or final pre-publication verification.
+description: Verify and publish a scoped JUSTLOVEJAZZ change when the user requests a commit, push or pull request.
 ---
 
 # JUSTLOVEJAZZ release
 
-Review the working tree first and isolate the intended change from unrelated
-user work. Match verification to the affected surface, then run the complete
-gate before opening a pull request:
+Inspect the working tree and final diff; preserve unrelated work. Follow
+[Development](../../docs/DEVELOPMENT.md) for the complete runtime release gate
+and the documentation-only exception. Run `git diff --check` before delivery.
 
-```bash
-bun run format:check
-bun run lint
-bun run type-check
-bun run type-check:vue
-bun run build
-bun run budget:build
-bun run test:unit
-bun run test:serial
-```
-
-Inspect the final diff and `git diff --check`. Work from a scoped non-default
-branch, stage only the intended files and use a concise Conventional Commit.
-Push the branch and open a pull request against `main`.
-
-Treat CI and review as evidence about the same scoped outcome. Resolve failures
-at their source and keep unrelated cleanup outside the release.
+When publication is requested, use a scoped non-default branch, stage only
+intended files, write a Conventional Commit, push and open a PR against `main`.
+Describe the outcome, checks and material limits. Loading this skill alone does
+not authorize external publication. Read CI/review results for this change;
+resolve failures without adding unrelated cleanup or repeated full checks.

@@ -1,43 +1,57 @@
-# Evidence runbook
+# Evidence
 
-This directory stores reproducible, machine-readable verification artifacts.
-Evidence is append-only: never overwrite a prior report or silently replace a
-baseline value. Every new artifact must carry a UTC timestamp, the commit under
-test, the command, environment/viewport, backend and result.
+Reports are dated observations, not agent instructions or current PASS claims.
+Preserve existing JSON, metadata and captures; do not rewrite results during
+source or documentation cleanup.
 
-## Producers
+| Artifact directory          | Producer / use                                                                 |
+| --------------------------- | ------------------------------------------------------------------------------ |
+| `phase7-live-gate/`         | `bun scripts/phase7-live-gate.ts`: representative renderer checks              |
+| `phase10-route-cycle-soak/` | `bun scripts/phase10-route-cycle-soak.ts`: route resources and runtime destroy |
+| `visual-parity/`            | `bun scripts/visual-parity.ts`: CDP captures and pixel comparisons             |
+| `bundle-breakdown/`         | `bun scripts/bundle-breakdown.ts`: mapped Three source-module bytes            |
+| `mobile-resize-gate/`       | Historical physical mobile resize/DPR captures                                 |
+| `shared-transition-qa/`     | Historical transition matrix                                                   |
 
-| Directory                   | Producer                                  | Purpose                                                                      |
-| --------------------------- | ----------------------------------------- | ---------------------------------------------------------------------------- |
-| `phase7-live-gate/`         | `bun scripts/phase7-live-gate.ts`         | representative WebGPU/WebGLBackend readiness, rendering, pacing and teardown |
-| `phase10-route-cycle-soak/` | `bun scripts/phase10-route-cycle-soak.ts` | route-cycle resource plateau and root-destroy baseline                       |
-| `mobile-resize-gate/`       | mobile resize/viewport gate               | real mobile DPR and resize propagation                                       |
-| `visual-parity/`            | `bun scripts/visual-parity.ts`            | backend screenshots, masks, diffs and metadata                               |
-| `bundle-breakdown/`         | `bun scripts/bundle-breakdown.ts`         | chunk and delivery budget observations                                       |
+The live/soak tools default to a dev server at `http://127.0.0.1:5173`;
+`JLZ_DEV_BASE` overrides it. Live gate supports `JLZ_CDP_URL` or
+`JLZ_HARDWARE_CHROME=1`. Inspect each script's options for the selected run.
+The dev-only forced-backend query cannot force production preview.
 
-JSON reports are the source for numeric claims. PNGs and their `.meta.json`
-files are visual evidence, not substitutes for a report. `docs/` links to
-evidence; it does not duplicate large payloads in prose.
+New evidence must identify UTC time, revision/dirty state, command, browser,
+device, backend, viewport/DPR, failures and skips. Verify the report actually
+contains those fields; gaps in existing scripts are tracked in [NEXT](../../NEXT.md).
+Name missing metrics as unavailable. Runtime destroy is not full Vue unmount.
 
-## Naming and review
+Keep comparable
+numbers in the report and link it from review notes rather than copying tables
+into documentation. The bundle tool uses a commit-based filename and overwrites
+on repeat: preserve an existing report before rerunning that revision. Its mapped
+source bytes do not replace the gzip budget check.
 
-Use `<UTC-ISO>-report.json` for a run report, or
-`<commit>-<scope>-<backend>-<UTC>.png` for a visual capture. Keep the commit
-SHA and tool version in the report. Review agents should check that the report
-is from the current commit or explicitly label it historical.
+## Measurement protocol
 
-When updating `docs/PERFORMANCE_BASELINE.md`, append a dated observation and
-retain the previous row. A failed or partial run is recorded as such; it is
-never converted into a passing baseline by editing the JSON.
+Record revision/dirty state, build hash, command, browser, device/GPU, actual
+backend, adapter classification, viewport/DPR, power and motion preference.
+Warm shaders/caches for one unmeasured route cycle, then collect at least three
+equal active-burst windows per route/backend; report each run and worst p95.
+Measure settled idle with frame deltas, loop ticks and demand reasons separately
+from intentional continuous effects. CPU timing is not GPU timing.
 
-## Agent procedure
+Capture after splash Enter at matching route/story state, viewport, locale,
+theme and motion. Outside approved grain/cursor/video masks, at most 0.5% of
+pixels may exceed a 0.1 perceptual threshold. Keep diff/masks/metadata together;
+judge intentional redesigns against their task, not an obsolete screenshot.
+WebGL direct rendering does not promise WebGPU post-processing parity.
 
-1. Check `git status --short` and record the commit under test.
-2. Run the narrowest producer that proves the changed contract.
-3. Inspect the generated JSON and verify backend, viewport, DPR and result.
-4. Add a short dated baseline note only when the metric is comparable.
-5. Link the artifact path in the commit or review notes; do not publish
-   credentials, private URLs, cookies, API keys or raw user data.
+Check warmed resource trends, declared cache caps, runtime destroy and Vue root
+unmount separately. Missing counters and flat heap readings prove no leak result.
 
-The shared transition matrix is recorded in
-`shared-transition-qa/2026-08-25-transition-matrix.json`.
+## Historical limits
+
+The [2026-09-07 WebGL soak](phase10-route-cycle-soak/2026-09-07T21-34-23-617Z-report.json)
+measured 20 steady route visits, not 20 six-route rounds. Its destroy summary
+retained a canvas, program counts were unavailable and heap readings were flat.
+The [physical post review](phase7-live-gate/2026-09-07-visual-post-review.md)
+is representative dated evidence. Neither certifies the current checkout;
+physical WebGL device-loss restoration remains deferred in NEXT.
