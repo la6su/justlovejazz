@@ -10,9 +10,8 @@
 //   POST /__jlz-admin/save             upsert { slug, document } + compile theme
 //   POST /__jlz-admin/delete           { slug } → remove from the collection
 //
-// A legacy single-document `page.json` (the pre-slice-3 artifact) is wrapped
-// into a collection transparently on first read; the save endpoint then
-// retires it by writing `documents.json` instead.
+// The save body is strictly the `{ slug, document }` envelope; the envelope
+// slug must match the document slug.
 import { existsSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import type { IncomingMessage, ServerResponse } from 'node:http'

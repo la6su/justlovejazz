@@ -1684,9 +1684,9 @@ export class Experience {
       const theater = this.showreelTheater
       if (theater && theater.currentPhase !== 'closed') {
         theater.update(dt, this.camera.instance.aspect)
-        this.renderer.update(theater.scene, theater.camera, dt, worldState)
+        this.renderer.update(theater.scene, theater.camera, dt)
       } else {
-        this.renderer.update(this.scene, this.camera.instance, dt, worldState)
+        this.renderer.update(this.scene, this.camera.instance, dt)
       }
       const rendererDuration = frameTiming ? performance.now() - rendererStart : 0
       this.devPanel?.recordRenderFrame()

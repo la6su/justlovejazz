@@ -105,10 +105,10 @@ describe('i18n', () => {
 
     it('returns the same value for a key that is identical across languages', () => {
       // Proper nouns deliberately use the same value in EN and RU.
-      // 'blog.undercurrent.title' should be 'Undercurrent' in both.
-      const en = t('blog.undercurrent.title')
+      // 'works.section4.title' should be 'E-commerce' in both.
+      const en = t('works.section4.title')
       toggleLang()
-      const ru = t('blog.undercurrent.title')
+      const ru = t('works.section4.title')
       expect(en).toBe(ru)
     })
   })
@@ -215,7 +215,6 @@ describe('i18n', () => {
         'lab.shaderLab.title',
         'contact.email.title',
         'contact.social.title',
-        'blog.undercurrent.title',
       ]
 
       // For each key: EN value should not equal the key (key exists in EN),

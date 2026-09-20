@@ -4,7 +4,6 @@ import { WebGPURenderer } from 'three/webgpu'
 import { Sizes } from './Sizes'
 import { DeviceCapability } from '../core/DeviceCapability'
 import { eventBus } from '../core/EventBus'
-import { type WorldState } from '../core/types'
 import { PostProcessingManager } from '../core/PostProcessingManager'
 import { RenderPipeline, type RenderPipelineConfig, type PostParams } from '../core/RenderPipeline'
 import {
@@ -376,19 +375,15 @@ export class Renderer {
   }
 
   /** Render scene → post → screen. */
-  update(scene: THREE.Scene, camera: THREE.Camera, dt: number, _worldState?: WorldState): void {
+  update(scene: THREE.Scene, camera: THREE.Camera, dt: number): void {
     // During a device-loss recovery the pipeline is torn down and rebuilt;
     // skip the frame so we never render through a disposed renderer.
     if (this._recovering || this._recoveryFailed || this._disposed) return
     // ── Fog ──
-    // Fog is managed by World.ts (per-section fog color + density from
-    // WorldConfig). World.init() creates scene.fog, World.updateTransform()
-    // updates it on section change. Do NOT touch scene.fog here — that would
-    // overwrite the per-section fog with a stale envColor + 0.03 fog.
-    //
-    // Fog works on ALL backends now (we use MeshPhysicalMaterial, not
-    // NodeMaterial — classic fog uniforms work fine on WebGLRenderer, and
-    // WebGPURenderer handles fog via TSL internally).
+    // Fog is managed by SceneCoordinator (per-section fog color + density
+    // from WorldConfig). SceneCoordinator creates scene.fog on init and
+    // updates it on section change. Do NOT touch scene.fog here — that
+    // would overwrite the per-section fog with a stale envColor value.
 
     // Native WebGPU owns the TSL post graph. WebGLBackend is a direct-render
     // parity path, so skip the otherwise-unused crossfade and uniform writes.

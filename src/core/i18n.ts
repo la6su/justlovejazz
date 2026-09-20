@@ -49,11 +49,6 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'nav.contact': 'Contact',
     'nav.blog': 'Blog',
 
-    // Navigation sheet (section 5)
-    'blog.undercurrent.title': 'Undercurrent',
-    'blog.glass.title': 'Glassmorphism',
-    'blog.rendering.title': 'On-demand Rendering',
-
     // Menu section (section 5, two-column navigation template)
     'menu.navigate': 'Menu',
 
@@ -136,7 +131,6 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'works.room4.context':
       'Pro193: an online store for tall men, centred on fit, clothing and a clear path to product.',
     'works.enterRooms': 'Explore the four rooms',
-    'works.roomHint': 'Scroll to explore · Select a work to enter',
     'works.section1.title': 'Motion & CG',
     'works.section2.title': 'Motion & CG',
     'works.section3.title': 'Product website',
@@ -234,11 +228,6 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'nav.contact': 'Контакты',
     'nav.blog': 'Блог',
 
-    // Navigation section (RU)
-    'blog.undercurrent.title': 'Undercurrent',
-    'blog.glass.title': 'Glassmorphism',
-    'blog.rendering.title': 'Рендеринг по требованию',
-
     // Menu overlay (RU)
     'menu.navigate': 'Меню',
 
@@ -322,7 +311,6 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'works.room4.context':
       'Pro193: интернет-магазин для высоких мужчин, построенный вокруг посадки, вещей и ясного выбора.',
     'works.enterRooms': 'Войти в четыре комнаты',
-    'works.roomHint': 'Листайте комнаты · Откройте работу',
     'works.section1.title': 'Моушн и CG',
     'works.section2.title': 'Моушн и CG',
     'works.section3.title': 'Продуктовый сайт',

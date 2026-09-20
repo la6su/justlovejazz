@@ -1,12 +1,18 @@
-// Section4 — Works: an infinite stream of real case planes.
-// Clicking a carousel card opens the fullscreen FullscreenOverlay.
+// src/Experience/Scene/WorksSection.ts — the imperatively-created Works
+// section group (slot 3, the cube back face).
+//
+// The only section group created imperatively: its creator owns the live
+// BakuCarousel + JunniParticles. Every other slot adopts its declarative
+// root from SectionGroupRoots.vue.
+
 import * as THREE from 'three'
-import { JunniParticles } from '../../Experience/World/JunniParticles'
-import { BakuCarousel } from '../../Experience/World/BakuCarousel'
-import type { PageId } from '../_shared/constants'
+import { JunniParticles } from '../World/JunniParticles'
+import { BakuCarousel } from '../World/BakuCarousel'
+import type { PageId } from '../../sections/_shared/constants'
 import type { StorySide } from '../../core/storyState'
 
-export function createSection3(
+/** Create the Works section group around the baku. */
+export function createWorksSection(
   page: () => PageId = () => 'home',
   storySide: () => StorySide = () => 'center',
 ): THREE.Group {
@@ -14,16 +20,17 @@ export function createSection3(
   g.name = 'works'
 
   // Shared sprite sheet texture (6 frames, 768×128 — junni pattern.jpg).
-  // Loaded inside createSection3() per RULES.md ownership rule.
-  // R-3 fix: disable mipmaps on sprite sheet — default LinearMipmapLinearFilter
-  // averages across frame boundaries at distance → visible color bleeding between
-  // adjacent animation frames. LinearFilter (no mipmaps) keeps frames crisp.
+  // Loaded by this creator so the group is the explicit texture owner:
+  // multiple SectionGroups instances must never overwrite a module-level
+  // texture slot owned by another instance.
+  // Disable mipmaps on the sprite sheet — the default LinearMipmapLinearFilter
+  // averages across frame boundaries at distance, so visible color bleeds
+  // between adjacent animation frames. LinearFilter (no mipmaps) keeps the
+  // frames crisp.
   const particleTexture = new THREE.TextureLoader().load('/textures/sec3-particles.jpg')
   particleTexture.colorSpace = THREE.SRGBColorSpace
   particleTexture.minFilter = THREE.LinearFilter
   particleTexture.generateMipmaps = false
-  // The group is the explicit owner: multiple SectionGroups instances must
-  // never overwrite a module-level texture slot owned by another instance.
   g.userData.ownedTextures = [particleTexture]
 
   // BakuCarousel — the project stream resolves from depth around the baku.
