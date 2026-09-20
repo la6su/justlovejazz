@@ -5,6 +5,7 @@ public/
 projects/
 test-results/
 playwright-report/
+.tmp-pw/
 *.lock
 bun.lock
 .codex/config.toml

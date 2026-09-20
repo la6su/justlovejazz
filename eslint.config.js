@@ -19,6 +19,7 @@ export default tseslint.config(
       'scripts/**',
       '.claude/**',
       'coverage/**',
+      '.tmp-pw/**',
     ],
   },
   {

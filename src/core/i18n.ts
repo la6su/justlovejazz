@@ -97,15 +97,19 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'services.creativeDirection.statement':
       'Define the goal. Direct the story, design and technology around it.',
     'services.interactiveDev.title': 'Development',
-    'services.interactiveDev.lead': 'Fast websites and interfaces built around real tasks.',
+    'services.interactiveDev.lead': 'Fast to ship, built around real tasks.',
     'services.interactiveDev.caption': 'Responsive input. Clear journeys. Measured performance.',
+    'services.interactiveDev.detail':
+      'One scene, one demand signal, one measurable reason to move.',
     'services.motionRealtime.title': 'Motion',
-    'services.motionRealtime.lead': 'Show how the product works and why it matters.',
+    'services.motionRealtime.lead': "Show how the product works and why it's worth choosing.",
     'services.motionRealtime.word1': 'Context',
     'services.motionRealtime.word2': 'Impulse',
     'services.motionRealtime.word3': 'Calm',
+    'services.motionRealtime.detail':
+      'Transitions are authored as states: context, impulse, calm — each settling on purpose.',
     'services.aiSystems.title': 'AI & automation',
-    'services.aiSystems.lead': 'Connect tools and remove repetitive work.',
+    'services.aiSystems.lead': 'Automate the routine: content, handoffs and publishing.',
     'services.aiSystems.statement':
       'Shorten the path from idea to delivery. Keep people in control of important decisions.',
     'services.aiSystems.action': 'Start a project',
@@ -277,16 +281,20 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'services.creativeDirection.statement':
       'Определить цель. Связать с ней историю, дизайн и технологии.',
     'services.interactiveDev.title': 'Разработка',
-    'services.interactiveDev.lead': 'Быстрые сайты и интерфейсы для реальных задач.',
+    'services.interactiveDev.lead': 'Быстрый запуск — и фокус на реальных задачах.',
     'services.interactiveDev.caption':
       'Быстрый отклик. Понятный путь. Измеримая производительность.',
+    'services.interactiveDev.detail':
+      'Одна сцена, один сигнал спроса, одна измеримая причина двигаться.',
     'services.motionRealtime.title': 'Моушн',
-    'services.motionRealtime.lead': 'Показать, как работает продукт и в чём его ценность.',
+    'services.motionRealtime.lead': 'Показать, как работает продукт и почему его выбирают.',
     'services.motionRealtime.word1': 'Контекст',
     'services.motionRealtime.word2': 'Импульс',
     'services.motionRealtime.word3': 'Покой',
+    'services.motionRealtime.detail':
+      'Транзишены собраны как состояния: контекст, импульс, покой — каждое оседает осознанно.',
     'services.aiSystems.title': 'AI и автоматизация',
-    'services.aiSystems.lead': 'Связать инструменты и убрать повторяющуюся работу.',
+    'services.aiSystems.lead': 'Автоматизируем рутину: контент, передачи и публикацию.',
     'services.aiSystems.statement':
       'Сократить путь от идеи до результата. Сохранить контроль человека над важными решениями.',
     'services.aiSystems.action': 'Начать проект',

@@ -6,20 +6,21 @@ remains open. Implement one useful slice at a time and remove completed items.
 ## Brand implementation
 
 Direction: [BRAND](docs/BRAND.md). Refine the existing console and shared world;
-these are product slices, not prerequisites for unrelated work.
+these are product slices, not prerequisites for unrelated work. Business
+positioning and copy for Home/Services is aligned with BRAND (business-first
+language, concrete automation, delivery speed separated from runtime
+performance, no music-led interpretations); the case chapters in
+`src/Data/CaseStudies.ts` already follow the BRAND chapter structure with
+factual claims until approved proof arrives.
 
-1. **Business positioning and copy:** align Home, Services and case narratives
-   with BRAND: business context/data → directing decisions → solution → verified
-   value. Explain automation and speed concretely; distinguish delivery speed
-   from runtime performance. Remove music-led interpretations and unsupported claims.
-2. **Typography and controls:** polish one representative Works screen in EN/RU,
+1. **Typography and controls:** polish one representative Works screen in EN/RU,
    desktop/mobile and dark/inverse. Audit tiny metadata (`.jlz-meta-text` defaults
    to 0.62rem), spacing, focus and all control states; extend the proven pattern.
-3. **Signature spatial transition:** prototype Works room → case using the
+2. **Signature spatial transition:** prototype Works room → case using the
    existing installation/showreel owners. Coordinate aperture/material, camera
    and DOM timing; verify reversal/interruption, reduced motion and both backends.
    Resolve the shared still/video contract in this slice before generalizing it.
-4. **Section spaces and microinteraction pass:** develop the route characters
+3. **Section spaces and microinteraction pass:** develop the route characters
    in BRAND incrementally; share materials/motion rules, not identical scenes.
    Polish entry, hover/press, loading, exit and return; keep mobile composition
    and settled render demand intentional.

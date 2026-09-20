@@ -113,7 +113,7 @@ useJlzPage('services', () => rootEl.value)
               Development
             </h2>
             <p class="uk-text-lead uk-margin-small-top" data-i18n="services.interactiveDev.lead">
-              Fast websites and interfaces built around real tasks.
+              Fast to ship, built around real tasks.
             </p>
           </div>
           <div class="jlz-section-bottom">
@@ -152,7 +152,7 @@ useJlzPage('services', () => rootEl.value)
                   >
                     Responsive input. Clear journeys. Measured performance.
                   </p>
-                  <p class="jlz-service-runtime__detail">
+                  <p class="jlz-service-runtime__detail" data-i18n="services.interactiveDev.detail">
                     One scene, one demand signal, one measurable reason to move.
                   </p>
                   <div uk-scrollspy="cls: uk-animation-slide-bottom-small; delay: 90; repeat: true">
@@ -194,7 +194,7 @@ useJlzPage('services', () => rootEl.value)
               Motion
             </h2>
             <p class="uk-text-lead uk-margin-small-top" data-i18n="services.motionRealtime.lead">
-              Show how the product works and why it matters.
+              Show how the product works and why it's worth choosing.
             </p>
           </div>
           <div class="jlz-section-bottom">
@@ -209,13 +209,13 @@ useJlzPage('services', () => rootEl.value)
                     aria-label="Motion sequence"
                     uk-scrollspy="target: > span; cls: uk-animation-slide-bottom-small; delay: 110; repeat: true"
                   >
-                    <span data-i18n="services.motionRealtime.word1">Hold</span>
-                    <span data-i18n="services.motionRealtime.word2">Shift</span>
-                    <span data-i18n="services.motionRealtime.word3">Land</span>
+                    <span data-i18n="services.motionRealtime.word1">Context</span>
+                    <span data-i18n="services.motionRealtime.word2">Impulse</span>
+                    <span data-i18n="services.motionRealtime.word3">Calm</span>
                   </div>
-                  <p class="jlz-service-motion__detail">
-                    Transitions are authored as states: hold attention, shift context, land on
-                    meaning.
+                  <p class="jlz-service-motion__detail" data-i18n="services.motionRealtime.detail">
+                    Transitions are authored as states: context, impulse, calm — each settling on
+                    purpose.
                   </p>
                   <div uk-scrollspy="cls: uk-animation-slide-left-small; delay: 120; repeat: true">
                     <a
@@ -256,7 +256,7 @@ useJlzPage('services', () => rootEl.value)
               AI & automation
             </h2>
             <p class="uk-text-lead uk-margin-small-top" data-i18n="services.aiSystems.lead">
-              Connect tools and remove repetitive work.
+              Automate the routine: content, handoffs and publishing.
             </p>
           </div>
           <div class="jlz-section-bottom">
