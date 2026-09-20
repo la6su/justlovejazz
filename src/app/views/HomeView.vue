@@ -47,7 +47,7 @@ useJlzPage('home', () => rootEl.value)
             Studio
           </h2>
           <p class="uk-text-lead uk-margin-small-top" data-i18n="home.studio.lead">
-            Crafted with love.
+            Technology with a point of view.
           </p>
         </div>
         <div class="jlz-section-bottom">
