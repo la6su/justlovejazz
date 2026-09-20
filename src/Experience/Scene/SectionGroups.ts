@@ -21,7 +21,7 @@ import * as THREE from 'three'
 // The Works back face is the only imperatively-created section group (its
 // creator owns the live BakuCarousel + JunniParticles); every other slot
 // adopts its declarative root from SectionGroupRoots.vue.
-import { createSection3 } from '../../sections/works/scene'
+import { createWorksSection } from './WorksSection'
 import { disposeMaterialDeep } from '../../Utils/dispose'
 import type { PageId } from '../../sections/_shared/constants'
 import type { StorySide } from '../../core/storyState'
@@ -47,15 +47,6 @@ export function disposeSceneObjectResources(
       else if (obj.material) disposeMaterialDeep(obj.material)
     }
   })
-}
-
-// Index → creator function. 6 sections (1:1 cube faces).
-type SectionCreator = (page: () => PageId, storySide: () => StorySide) => THREE.Group
-
-/** Create the imperatively-owned Works section group (back face, slot 3). */
-function createWorksSectionGroup(page: () => PageId, storySide: () => StorySide): THREE.Group {
-  const fn: SectionCreator = createSection3
-  return fn(page, storySide)
 }
 
 /**
@@ -87,7 +78,7 @@ export class SectionGroups {
   ) {
     for (let i = 0; i < count; i++) {
       const adoptedIndex = i === 0 ? 0 : i === 1 ? 1 : i === 2 ? 2 : i === 4 ? 3 : i === 5 ? 4 : -1
-      const group = sectionRoots?.[adoptedIndex] ?? createWorksSectionGroup(page, storySide)
+      const group = sectionRoots?.[adoptedIndex] ?? createWorksSection(page, storySide)
       if (adoptedIndex >= 0) this.adopted.add(group)
       // Hide non-particle geometry until bespoke visuals are ready (T-070..T-074).
       // Particles remain for atmospheric depth. Remove this call section by section
