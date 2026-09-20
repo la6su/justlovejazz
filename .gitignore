@@ -167,6 +167,8 @@ references/**/.gitattributes
 # Test output
 test-results/
 playwright-report/
+# Playwright browser cache (used when the system browser cache is read-only)
+.tmp-pw/
 # Browser-tool session artifacts (never committed)
 .playwright-mcp/
 # External reference checkouts (never committed)

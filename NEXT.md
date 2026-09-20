@@ -47,46 +47,28 @@ retired. `scripts/bundle-breakdown.ts` now selects the shared vendor exactly
 3. **Cheap docs check.** Add local file/heading-link validation for tracked
    Markdown to existing Bun tooling; exclude external URLs and historical
    evidence payloads. No new framework.
+4. **Two-branch delivery workflow (user-deferred).** The remote `dev` branch
+   is a 2026-07-28 relic whose commits are superseded by the migration; the
+   user wants `dev` as the integration branch (scoped PRs land there, then the
+   user verifies in a real browser before `dev` → `main`). When picked up:
+   back up the relic with a tag, reset `dev` to `main`, add `dev` to the CI
+   trigger in `.github/workflows/lighthouse.yml`, and update the Git delivery
+   wording in AGENTS.md and DEVELOPMENT.md.
 
 ## Audit cleanup (2026-09-17)
 
-Post-transition audit of the current tree: no dead files, duplicate GPU
-owners or untyped event paths remain; the findings below are bounded
-single-owner slices. Confirmed decisions: minimal comment scope (wrong claims
-only), orphaned placeholder assets stay until approved media arrive, the
-cleanup batch runs before the brand slices and ships as one scoped branch/PR.
-Verify each slice with focused tests, full local gate before publication.
+The 2026-09-17 post-transition audit found no dead files, duplicate GPU
+owners or untyped event paths; the bounded slices it listed (dead i18n keys,
+stale owner comments, the last `sections/` file, the dead `Renderer.update`
+parameter) shipped in #216. One deferred item remains:
 
-1. **Dead i18n keys.** `blog.undercurrent.title`, `blog.glass.title`,
-   `blog.rendering.title` (article titles belong to the SSG content sources)
-   and `works.roomHint` have no runtime reader. Remove them from both EN/RU
-   dictionaries; `src/__tests__/i18n.test.ts` uses `blog.undercurrent.title`
-   as a parity probe key — replace it with a live key in the same slice.
-2. **Stale migration comments (minimal scope).** Correct only claims that
-   reference deleted owners or non-existent docs: `src/Experience/Renderer.ts:384` names
-   the deleted `World.ts` and the removed classic `WebGLRenderer` path;
-   `src/sections/works/scene.ts:17-18` cites the non-existent `RULES.md` and
-   `R-3` issue code; `admin/vite-plugin.ts:13-15` still describes the legacy
-   `page.json` wrap the code no longer performs. Pre-migration issue codes
-   (A-001…A-015) and `Phase N` provenance notes stay as-is.
-3. **Sections residue.** `src/sections/works/scene.ts` is the last file of the
-   retired `sections/` tree and exports the legacy-named `createSection3`.
-   Move the group factory next to its consumer in `Experience/Scene/`, rename
-   the export, update the `SectionGroups` wiring and its tests. `PageId` stays
-   in `sections/_shared/constants.ts` (a `routeManifest.ts` move would touch
-   every importer without changing behavior — rejected for this slice).
-4. **Dead Renderer parameter.** `Renderer.update()` accepts `_worldState` but
-   never reads it (post parameters moved to `PostProcessingManager`);
-   `Experience.ts` still passes it at the two draw sites. Drop the parameter
-   from the signature and both call sites; the `worldState` consumers in
-   Experience/coordinator are untouched. Verify renderer lifecycle tests.
-5. **Lazy lifecycle consistency (deferred, optional).** `BakuCarousel` init
+1. **Lazy lifecycle consistency (deferred, optional).** `BakuCarousel` init
    (`Experience.ensureCarouselInitialized`) and the Lab gamepad use
    hand-rolled promise memoization and request counters that duplicate the
    `LazyStage` contract the five route stages already share. Convert both to
    `ensureLazyStage`/`disposeLazyStage` only if the conversion keeps the
    lifecycle tests green without new indirection; otherwise leave them and do
-   not add a second abstraction layer. Not part of the first cleanup batch.
+   not add a second abstraction layer.
 
 ## Product / input needed
 
