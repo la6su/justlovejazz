@@ -186,7 +186,6 @@ function resetBootstrapBindings(): void {
   _bootstrapAbort.abort()
   clearReadyWatchdog()
   clearReadyEventTimer()
-  clearSplashRevealTimer()
   clearBootstrapStyle()
   clearHostProbe()
   _titleObserver?.disconnect()
@@ -254,19 +253,6 @@ export function createSplashRevealTimer(onReveal: () => void): {
     },
     clear,
   }
-}
-
-const splashRevealTimer = createSplashRevealTimer(() => {
-  revealActiveSplashTitle()
-  setupTitleObserver()
-})
-
-function clearSplashRevealTimer(): void {
-  splashRevealTimer.clear()
-}
-
-function scheduleSplashRevealTimer(delayMs: number): void {
-  splashRevealTimer.schedule(delayMs)
 }
 
 function transitionBootstrap(next: BootstrapState): boolean {
@@ -512,7 +498,6 @@ async function startAppOnce(): Promise<void> {
   _bootstrapUnsubs.push(
     eventBus.on('jlz:webgl-ready', () => {
       clearReadyWatchdog()
-      clearSplashRevealTimer()
       showEnterButton()
     }),
   )
@@ -522,7 +507,6 @@ async function startAppOnce(): Promise<void> {
   _bootstrapUnsubs.push(
     eventBus.on('jlz:webgl-failed', () => {
       clearReadyWatchdog()
-      clearSplashRevealTimer()
       if (_bootstrapState !== 'failed') transitionBootstrap('failed')
       showLoadError()
     }),
@@ -531,11 +515,58 @@ async function startAppOnce(): Promise<void> {
   // jlz:splash-entered fires when user clicks Enter — splash starts fading.
   // Let the active title answer the opening curtain, rather than animating
   // every title in the document behind the splash.
+  // ── Splash entered → reveal the first visible home content ──
+  // Keep this deliberately simple: Vue owns #spa-content, so we wait until
+  // the DOM actually contains the route content, then start the first reveal.
+  //
+  // Do NOT make the first animation depend on section-change, page-section-change,
+  // IntersectionObserver or a second bootstrap event. Those are for subsequent
+  // navigation/scroll transitions.
+
   _bootstrapUnsubs.push(
     eventBus.on('jlz:splash-entered', () => {
       transitionBootstrap('entered')
-      // Let the curtain begin to split, then reveal the title inside that gap.
-      scheduleSplashRevealTimer(90)
+
+      const reveal = () => {
+        const root = contentRoot()
+
+        const title = root.querySelector<HTMLElement>(
+          '.studio-title:not([data-blur-fade="off"])',
+        )
+
+        const eyebrow = root.querySelector<HTMLElement>('[data-eyebrow]')
+
+        // First title
+        if (title) {
+          const text = title.textContent?.trim() ?? ''
+
+          if (text) {
+            splashRevealedTitles.add(title)
+            BlurFade.for(title).show(0.55, text)
+          }
+        }
+
+        // First eyebrow
+        if (eyebrow) {
+          const text =
+            eyebrow.getAttribute('data-eyebrow-text') ??
+            eyebrow.textContent ??
+            ''
+
+          if (text.trim()) {
+            NoiseText.for(eyebrow).show(0.6, text)
+          }
+        }
+
+        // Start normal viewport-based title animation after the first reveal.
+        setupTitleObserver()
+      }
+
+      // Vue may still be finishing the route DOM when splash-entered fires.
+      // Two animation frames are enough and avoid another arbitrary 90ms timer.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(reveal)
+      })
     }),
   )
 
@@ -637,16 +668,4 @@ function setupTitleObserver(): void {
   )
   titles.forEach((t) => observer.observe(t))
   _titleObserver = observer
-}
-
-/** Fast first reveal that is synchronized with the splash curtain opening. */
-function revealActiveSplashTitle(): void {
-  const title = contentRoot().querySelector<HTMLElement>(
-    '.section-active .studio-title:not([data-blur-fade="off"]), [data-section="intro"] .studio-title:not([data-blur-fade="off"])',
-  )
-  if (!title) return
-
-  splashRevealedTitles.add(title)
-  const text = title.textContent?.trim() || ''
-  if (text && !prefersReducedMotion()) BlurFade.for(title).show(0.55, text)
 }
