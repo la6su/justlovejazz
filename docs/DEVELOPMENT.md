@@ -26,7 +26,8 @@ The normal browser suite builds and serves on port 4173, but may reuse an
 existing server locally: stop a stale server before collecting release evidence.
 Use the serial suite for release results; parallel timing tests have flaked on
 this workstation. Hosted checks are in `.github/workflows/lighthouse.yml`.
-Documentation-only changes need formatting and local reference checks. Runtime
+Documentation-only changes need formatting and local reference checks
+(`bun run docs:check` validates Markdown file/heading links). Runtime
 checks follow the changed behavior; full checks belong to runtime publication.
 
 ## Build outputs

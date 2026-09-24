@@ -10,12 +10,14 @@ import type { PageId } from '../sections/_shared/constants'
 // first /lab visit + final disposal) moved from World to Experience. Phase 8
 // slice 10: the `World` class leaves production — the object is read through
 // the SceneCoordinator's `labGamepad` owner getter and the coordinator's
-// `syncRouteVisuals` drives the visibility gate. The object is a static scene
-// object (no per-frame update, resize or camera), so the test drives
-// `ensureLabGamepad` on an Experience instance created without its heavy
-// constructor (renderer capability detection, UI construction). (The final
-// disposal on `destroy` is covered by the live gate's clean-disposal check,
-// like the other slices.)
+// `syncRouteVisuals` drives the visibility gate. 2026-09-25: the lifecycle
+// flow itself moved onto the shared LazyStage contract (`ensureLazyStage` /
+// `disposeLazyStage`) — the hand-rolled promise memoization + request counter
+// left with it. The object is a static scene object (no per-frame update,
+// resize or camera), so the test drives `ensureLabGamepad` on an Experience
+// instance created without its heavy constructor (renderer capability
+// detection, UI construction). (The final disposal on `destroy` is covered by
+// the live gate's clean-disposal check, like the other slices.)
 
 describe('Experience lab object lifecycle', () => {
   let exp: Experience
@@ -146,7 +148,7 @@ describe('Experience lab object lifecycle', () => {
     }) as unknown as LabExperimentObject
     const loadPromise = exp.ensureLabGamepad()
 
-    ;(exp as unknown as { invalidateLabGamepadLoad: () => void }).invalidateLabGamepadLoad()
+    ;(exp as unknown as { disposeLabGamepad: () => void }).disposeLabGamepad()
     resolveLoad(object)
     await loadPromise
 

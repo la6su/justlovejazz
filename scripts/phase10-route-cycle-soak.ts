@@ -58,6 +58,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { chromium } from '@playwright/test'
+import { evidenceMeta } from './evidence-meta'
 
 const BASE = process.env.JLZ_DEV_BASE ?? 'http://127.0.0.1:5173'
 const READY_TIMEOUT_MS = 240_000 // software backends need time to first-render
@@ -312,6 +313,10 @@ async function main(): Promise<void> {
 
   const report: {
     tool: string
+    commit: string
+    dirtyFiles: string[]
+    command: string
+    browser: string
     base: string
     host: string
     utc: string
@@ -341,6 +346,13 @@ async function main(): Promise<void> {
     notes: string[]
   } = {
     tool: 'phase10-route-cycle-soak',
+    // Evidence protocol (docs/evidence/README.md): revision/dirty state,
+    // command and browser identity. Backend identity is the captured
+    // `Phase 7 host ready` log line (see `backend` below).
+    ...evidenceMeta(
+      'bun scripts/phase10-route-cycle-soak.ts',
+      `chromium (headless) ${browser.version()}`,
+    ),
     base: BASE,
     host: `${process.platform} ${process.arch}`,
     utc: new Date().toISOString(),
