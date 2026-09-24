@@ -530,9 +530,7 @@ async function startAppOnce(): Promise<void> {
       const reveal = () => {
         const root = contentRoot()
 
-        const title = root.querySelector<HTMLElement>(
-          '.studio-title:not([data-blur-fade="off"])',
-        )
+        const title = root.querySelector<HTMLElement>('.studio-title:not([data-blur-fade="off"])')
 
         const eyebrow = root.querySelector<HTMLElement>('[data-eyebrow]')
 
@@ -548,10 +546,7 @@ async function startAppOnce(): Promise<void> {
 
         // First eyebrow
         if (eyebrow) {
-          const text =
-            eyebrow.getAttribute('data-eyebrow-text') ??
-            eyebrow.textContent ??
-            ''
+          const text = eyebrow.getAttribute('data-eyebrow-text') ?? eyebrow.textContent ?? ''
 
           if (text.trim()) {
             NoiseText.for(eyebrow).show(0.6, text)
