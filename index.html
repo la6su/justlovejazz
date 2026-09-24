@@ -33,7 +33,16 @@
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/logo.svg" />
 
-    <!-- Local font used by the loader -->
+    <!-- Self-hosted fonts — the splash renders before JS boots, so both
+         faces are preloaded: Commissioner (variable, splash spiral + body)
+         and JetBrains Mono (loader labels). Served immutable via /fonts/*. -->
+    <link
+      rel="preload"
+      href="/fonts/commissioner-variable.ttf"
+      as="font"
+      type="font/ttf"
+      crossorigin
+    />
     <link
       rel="preload"
       href="/fonts/jetbrains-mono-latin.woff2"
@@ -42,10 +51,8 @@
       crossorigin
     />
 
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Commissioner:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
-    />
+    <link rel="stylesheet" href="/fonts/commissioner.css" />
+    <link rel="stylesheet" href="/fonts/jetbrains-mono.css" />
 
     <style>
       :root {
@@ -800,6 +807,13 @@
           right: 20px;
         }
 
+        /* 44px touch targets (WCAG 2.5.5) on coarse/small screens. */
+        .jlz-loader-config button {
+          width: 44px;
+          height: 44px;
+          min-width: 44px;
+        }
+
         .jlz-splash-meta {
           top: calc(50% + 18vmin);
         }
@@ -1227,9 +1241,12 @@
       </div>
     </div>
 
-    <main id="app"></main>
+    <!-- Neutral mount node: the landmark <main id="spa-content"> is owned by
+         the route SFCs (and the prerender), keeping a single main landmark.
+         vite `prerender-index` injects the home shell into this exact div. -->
+    <div id="app"></div>
 
-    <div id="jlz-route-announcer" class="sr-only" aria-live="polite"></div>
+    <div id="jlz-route-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
 
     <script type="module" src="/src/entry-shell.ts"></script>
 
