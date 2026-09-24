@@ -57,6 +57,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { chromium } from '@playwright/test'
+import { evidenceMeta } from './evidence-meta'
 
 const BASE = process.env.JLZ_DEV_BASE ?? 'http://127.0.0.1:5173'
 const READY_TIMEOUT_MS = 240_000 // software backends need time to first-render
@@ -346,8 +347,15 @@ async function main(): Promise<void> {
   if (!cdpUrl) await browser.close()
 
   const allPassed = runs.every((r) => r.passed)
+  // Evidence protocol (docs/evidence/README.md): revision/dirty state,
+  // command and browser identity. The per-run backend identity is the
+  // `data-engine` canvas attribute + the captured `Phase 7 host ready` log.
+  const browserIdentity = `${
+    cdpUrl ? 'chromium (CDP attached)' : hardwareChrome ? 'chrome (headful)' : 'chromium (headless)'
+  } ${browser.version()}`
   const report = {
     tool: 'phase7-live-gate',
+    ...evidenceMeta('bun scripts/phase7-live-gate.ts', browserIdentity),
     base: BASE,
     host: `${process.platform} ${process.arch}`,
     utc: new Date().toISOString(),

@@ -619,7 +619,18 @@ export class Experience {
   /** Initialize the home-only carousel once, including after a deep-link
    *  visit. Phase 8 slice 6: moved from World — Experience owns the
    *  carousel reference (see `buildWorld`); World no longer owns scene
-   *  object init. */
+   *  object init.
+   *
+   *  Deliberately NOT on the LazyStage contract (2026-09-25 decision,
+   *  closes the NEXT.md "lazy lifecycle consistency" item): the carousel
+   *  instance is created and disposed by the SectionGroups owner (works
+   *  section factory), not here. LazyStage's failure path calls
+   *  `setStage(null)` + `release` — nulling the live scene-graph reference
+   *  and releasing an owner that SectionGroups still owns — and its
+   *  re-create-on-dispose semantics do not apply to a home-only owner that
+   *  is never disposed per route. Only the init retries here; the
+   *  conversion would add the second abstraction layer this item was
+   *  gated against. */
   public ensureCarouselInitialized(): Promise<void> {
     if (this._carouselInitPromise) return this._carouselInitPromise
     const carousel = this.carousel
@@ -910,40 +921,51 @@ export class Experience {
    *  (created once on the first /lab visit, then only toggled visible; the
    *  World's `syncRouteVisuals` reads the visibility gate off the `labGamepad`
    *  getter). The object is a static scene object — it is never disposed per
-   *  route leave, only on final destroy. */
-  public ensureLabGamepad(): Promise<void> {
-    if (this.labGamepad) return Promise.resolve()
-    if (this._labGamepadPromise) return this._labGamepadPromise
-    const experiment = getLabExperiment('lab')
-    if (!experiment) return Promise.resolve()
-    const request = ++this._labGamepadRequest
-    this._labGamepadPromise = experiment
-      .load()
-      .then((object) => {
-        if (request !== this._labGamepadRequest || this.labGamepad) {
-          object.dispose()
-          return
-        }
-        this.labGamepad = object
-        this.labGamepad.visible = this.currentPage() === 'lab'
-        this.scene.add(this.labGamepad)
-      })
-      .catch((error: unknown) => {
-        if (import.meta.env.DEV) {
-          console.error('[Experience] Lab experiment init failed:', error)
-        }
-      })
-      .finally(() => {
-        if (request === this._labGamepadRequest) {
-          this._labGamepadPromise = null
-        }
-      })
-    return this._labGamepadPromise
+   *  route leave, only on final destroy. Lifecycle flow: LazyStage.ts (the
+   *  former hand-rolled promise memoization + request counter lived here). */
+  private _labGamepadContract(): LazyStageContract<LabExperimentObject> {
+    return {
+      label: 'LabGamepad',
+      owner: {
+        getStage: () => this.labGamepad,
+        setStage: (value) => {
+          this.labGamepad = value
+        },
+        getPromise: () => this._labGamepadPromise,
+        setPromise: (value) => {
+          this._labGamepadPromise = value
+        },
+        getRequest: () => this._labGamepadRequest,
+        advanceRequest: () => ++this._labGamepadRequest,
+      },
+      create: () => {
+        const experiment = getLabExperiment('lab')
+        // No isCurrent guard on the resolved object: the manifest load may
+        // have already constructed it, so a retired request must fall through
+        // to the LazyStage stale check, which releases the late result
+        // (dispose) instead of silently dropping it.
+        return experiment ? experiment.load() : Promise.resolve(null)
+      },
+      attach: (stage) => {
+        this.scene.add(stage)
+      },
+      configure: (stage) => {
+        stage.visible = this.currentPage() === 'lab'
+      },
+      release: (stage) => {
+        stage.removeFromParent()
+        stage.dispose()
+      },
+    }
   }
 
-  private invalidateLabGamepadLoad(): void {
-    this._labGamepadRequest++
-    this._labGamepadPromise = null
+  public ensureLabGamepad(): Promise<void> {
+    return ensureLazyStage(this._labGamepadContract())
+  }
+
+  /** Invalidate any in-flight load and dispose the live object (final teardown). */
+  private disposeLabGamepad(): void {
+    disposeLazyStage(this._labGamepadContract())
   }
 
   /** Create a studio environment map (procedural equirect → PMREM) for glass
@@ -1834,11 +1856,9 @@ export class Experience {
     this.disposeManifestoInkStage()
     // Phase 8 slice 9: the Lab experiment object (created once on the first
     // /lab visit; a direct child of the Tres-owned scene, never disposed per
-    // route leave).
-    this.invalidateLabGamepadLoad()
-    this.labGamepad?.removeFromParent()
-    this.labGamepad?.dispose()
-    this.labGamepad = null
+    // route leave). disposeLazyStage invalidates any in-flight load, releases
+    // the live object and resets the owner state.
+    this.disposeLabGamepad()
     // Phase 8 slice 2: the stable section groups owner (BakuCarousel-first
     // disposal ordering + Works particle texture live in the owner).
     this.sectionGroups?.dispose()

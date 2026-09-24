@@ -39,16 +39,13 @@ retired. `scripts/bundle-breakdown.ts` now selects the shared vendor exactly
    pending Three delivery review with current gzip, startup/backend/idle and
    resource evidence. Keep existing budgets unless a change has a measured
    rationale within the task scope.
-2. **Evidence report metadata.** The live/soak console filters are strict now
-   (every `console.error` is captured; nothing broad is excluded), but the
-   generated reports do not record the revision/dirty state or backend identity
-   the evidence protocol requires. Add that metadata to the
-   `scripts/phase7-live-gate.ts` and `scripts/phase10-route-cycle-soak.ts`
-   reports; regenerate on each tool's supported server.
-3. **Cheap docs check.** Add local file/heading-link validation for tracked
-   Markdown to existing Bun tooling; exclude external URLs and historical
-   evidence payloads. No new framework.
-4. **Two-branch delivery workflow (user-deferred).** The remote `dev` branch
+2. **Evidence report regeneration.** The live/soak reports now record the
+   evidence protocol's revision/dirty state, command and browser identity
+   (shared `scripts/evidence-meta.ts`, bundle-tool convention; per-run
+   backend identity stays the `data-engine` attribute plus the captured
+   host-ready log). Remaining: regenerate each report on its supported
+   server.
+3. **Two-branch delivery workflow (user-deferred).** The remote `dev` branch
    is a 2026-07-28 relic whose commits are superseded by the migration; the
    user wants `dev` as the integration branch (scoped PRs land there, then the
    user verifies in a real browser before `dev` → `main`). When picked up:
@@ -61,15 +58,17 @@ retired. `scripts/bundle-breakdown.ts` now selects the shared vendor exactly
 The 2026-09-17 post-transition audit found no dead files, duplicate GPU
 owners or untyped event paths; the bounded slices it listed (dead i18n keys,
 stale owner comments, the last `sections/` file, the dead `Renderer.update`
-parameter) shipped in #216. One deferred item remains:
+parameter) shipped in #216. The last deferred item is closed:
 
-1. **Lazy lifecycle consistency (deferred, optional).** `BakuCarousel` init
-   (`Experience.ensureCarouselInitialized`) and the Lab gamepad use
-   hand-rolled promise memoization and request counters that duplicate the
-   `LazyStage` contract the five route stages already share. Convert both to
-   `ensureLazyStage`/`disposeLazyStage` only if the conversion keeps the
-   lifecycle tests green without new indirection; otherwise leave them and do
-   not add a second abstraction layer.
+1. **Lazy lifecycle consistency (closed 2026-09-25).** The Lab gamepad now
+   runs through the shared `ensureLazyStage`/`disposeLazyStage` flow — its
+   hand-rolled promise memoization, request counter and teardown lines are
+   gone. The BakuCarousel init intentionally stays hand-rolled (decision
+   recorded on `Experience.ensureCarouselInitialized`): the instance is
+   created and disposed by the SectionGroups owner, LazyStage's failure path
+   would null the live scene-graph reference, and a home-only owner that is
+   never disposed per route does not fit the stage contract — converting it
+   would add the second abstraction layer this item was gated against.
 
 ## Product / input needed
 
