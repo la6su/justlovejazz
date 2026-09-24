@@ -212,9 +212,6 @@ export const BRAND_TOKENS: Readonly<Record<string, Token>> = {
   ...Object.fromEntries(Object.entries(LAYOUT).map(([k, v]) => [`${BRAND_TOKEN_PREFIX}-${k}`, v])),
 }
 
-/** Every canonical token name (`jlz-*`), for exhaustive iteration. */
-export const BRAND_TOKEN_NAMES: readonly string[] = Object.freeze(Object.keys(BRAND_TOKENS))
-
 /**
  * The token value for a canonical name. Strict lookup: an unknown name is a
  * caller bug — this never falls back to a default (the routePage lesson).

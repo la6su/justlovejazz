@@ -3,12 +3,14 @@ import { readFileSync, existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import {
   BRAND_TOKENS,
-  BRAND_TOKEN_NAMES,
   BRAND_TOKEN_ALIASES,
   BRAND_TOKEN_PREFIX,
   brandToken,
   isBrandToken,
 } from '../core/brandTokens'
+
+/** The canonical names, derived from the manifest for exhaustive iteration. */
+const BRAND_TOKEN_NAMES: readonly string[] = Object.freeze(Object.keys(BRAND_TOKENS))
 
 // Resolved from the project root (vitest runs from there) rather than
 // `import.meta.url` — under the jsdom environment vitest rewrites

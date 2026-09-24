@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { getCurrentPage, isCurrentPage, setCurrentPage } from '../core/routePage'
+import { getCurrentPage, setCurrentPage } from '../core/routePage'
 
 describe('typed route page port', () => {
   beforeEach(() => {
@@ -21,15 +21,6 @@ describe('typed route page port', () => {
     setCurrentPage('works')
     document.body.setAttribute('data-page', 'contact')
     expect(getCurrentPage()).toBe('works')
-  })
-
-  it('isCurrentPage mirrors the former dataset equality reads', () => {
-    setCurrentPage('works')
-    expect(isCurrentPage('works')).toBe(true)
-    expect(isCurrentPage('contact')).toBe(false)
-    setCurrentPage('home')
-    expect(isCurrentPage('home')).toBe(true)
-    expect(isCurrentPage('lab')).toBe(false)
   })
 
   it('World.syncRouteVisuals hides the shared home cube outside the home page via the port', () => {

@@ -1,37 +1,21 @@
 import { TresCanvas } from '@tresjs/core'
 import { h } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, describe, expect, it } from 'vitest'
+import { createRendererMock, installCanvasPointerShims } from './tresHarness'
 import type { PerspectiveCamera, Scene } from 'three'
 import type { TresContext } from '@tresjs/core'
 import CinematicCamera from '../app/scene/CinematicCamera.vue'
 
-function createRenderer() {
-  const canvas = document.createElement('canvas')
-  return {
-    isRenderer: true,
-    domElement: canvas,
-    init: vi.fn().mockResolvedValue(undefined),
-    render: vi.fn(),
-    setSize: vi.fn(),
-    setPixelRatio: vi.fn(),
-    setClearColor: vi.fn(),
-    dispose: vi.fn(),
-    shadowMap: { enabled: false, type: 0 },
-  }
-}
-
 describe('CinematicCamera declarative Tres component', () => {
   beforeAll(() => {
-    HTMLCanvasElement.prototype.setPointerCapture ??= () => undefined
-    HTMLCanvasElement.prototype.releasePointerCapture ??= () => undefined
-    HTMLCanvasElement.prototype.hasPointerCapture ??= () => false
+    installCanvasPointerShims()
   })
 
   afterEach(() => document.body.replaceChildren())
 
   it('registers one active camera and removes it with the Tres subtree', async () => {
-    const renderer = createRenderer()
+    const renderer = createRendererMock()
     const mounted = {
       scene: null as Scene | null,
       camera: null as PerspectiveCamera | null,

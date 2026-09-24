@@ -2,36 +2,21 @@ import { TresCanvas } from '@tresjs/core'
 import { defineComponent, h, shallowRef } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { createRendererMock, installCanvasPointerShims } from './tresHarness'
 import type { Mesh, Scene } from 'three'
 import EnvSky from '../app/scene/EnvSky.vue'
 import EnvSphereOwner from '../app/scene/EnvSphereOwner.vue'
 import type { EnvSphere } from '../Experience/World/EnvSphere'
 
-function createRenderer() {
-  return {
-    isRenderer: true,
-    domElement: document.createElement('canvas'),
-    init: vi.fn().mockResolvedValue(undefined),
-    render: vi.fn(),
-    setSize: vi.fn(),
-    setPixelRatio: vi.fn(),
-    setClearColor: vi.fn(),
-    dispose: vi.fn(),
-    shadowMap: { enabled: false, type: 0 },
-  }
-}
-
 describe('EnvSphereOwner declarative sky lifecycle', () => {
   beforeAll(() => {
-    HTMLCanvasElement.prototype.setPointerCapture ??= () => undefined
-    HTMLCanvasElement.prototype.releasePointerCapture ??= () => undefined
-    HTMLCanvasElement.prototype.hasPointerCapture ??= () => false
+    installCanvasPointerShims()
   })
 
   afterEach(() => document.body.replaceChildren())
 
   it('gives Tres the sky geometry while EnvSphere disposes its borrowed material once', async () => {
-    const renderer = createRenderer()
+    const renderer = createRendererMock()
     const mounted = {
       scene: null as Scene | null,
       sphere: null as EnvSphere | null,

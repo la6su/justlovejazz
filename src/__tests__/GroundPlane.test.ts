@@ -1,37 +1,21 @@
 import { TresCanvas } from '@tresjs/core'
 import { h } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, describe, expect, it } from 'vitest'
+import { createRendererMock, installCanvasPointerShims } from './tresHarness'
 import type { Scene } from 'three'
 import GroundPlane from '../app/scene/GroundPlane.vue'
 import type { GroundPlaneNode } from '../Experience/Scene/GroundPlane'
 
-function createRenderer() {
-  const canvas = document.createElement('canvas')
-  return {
-    isRenderer: true,
-    domElement: canvas,
-    init: vi.fn().mockResolvedValue(undefined),
-    render: vi.fn(),
-    setSize: vi.fn(),
-    setPixelRatio: vi.fn(),
-    setClearColor: vi.fn(),
-    dispose: vi.fn(),
-    shadowMap: { enabled: false, type: 0 },
-  }
-}
-
 describe('GroundPlane declarative Tres component', () => {
   beforeAll(() => {
-    HTMLCanvasElement.prototype.setPointerCapture ??= () => undefined
-    HTMLCanvasElement.prototype.releasePointerCapture ??= () => undefined
-    HTMLCanvasElement.prototype.hasPointerCapture ??= () => false
+    installCanvasPointerShims()
   })
 
   afterEach(() => document.body.replaceChildren())
 
   it('mounts and removes the exclusive ground node with the Tres subtree', async () => {
-    const renderer = createRenderer()
+    const renderer = createRendererMock()
     const mounted = { scene: null as Scene | null, ground: null as GroundPlaneNode | null }
     const wrapper = mount(TresCanvas, {
       attachTo: document.body,

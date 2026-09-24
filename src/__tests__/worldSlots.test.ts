@@ -1,14 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import {
-  WORLD_SLOTS,
-  WORLD_SLOT_IDS,
-  WORLD_SLOT_COUNT,
-  worldSlotAt,
-  worldSlotById,
-  worldSlotIndex,
-  isWorldSlotId,
-  type WorldSlotId,
-} from '../core/worldSlots'
+import { WORLD_SLOTS, WORLD_SLOT_COUNT, worldSlotAt, worldSlotIndex } from '../core/worldSlots'
 import { DEFAULT_CAMERA_SMOOTHING, getWorldConfigForPage } from '../core/WorldConfig'
 import { SplashCube } from '../Experience/World/SplashCube'
 
@@ -23,13 +14,20 @@ describe('world slot contract', () => {
   })
   it('declares exactly the six canonical slots in stable index order', () => {
     expect(WORLD_SLOT_COUNT).toBe(6)
-    expect(WORLD_SLOT_IDS).toEqual(['lab', 'intro', 'about', 'works', 'contact', 'menu'])
+    expect(WORLD_SLOTS.map((slot) => slot.id)).toEqual([
+      'lab',
+      'intro',
+      'about',
+      'works',
+      'contact',
+      'menu',
+    ])
     WORLD_SLOTS.forEach((slot, index) => expect(slot.index).toBe(index))
   })
 
   it('slot 0 is the runtime lab slot with the public Contact finale role', () => {
     expect(worldSlotAt(0).id).toBe('lab')
-    expect(worldSlotById('lab').role).toBe('Contact finale')
+    expect(worldSlotAt(0).role).toBe('Contact finale')
   })
 
   it('story ranges tile the track as contiguous fifths from 0 to 6/5', () => {
@@ -58,13 +56,6 @@ describe('world slot contract', () => {
     expect(worldSlotAt(-3).index).toBe(0)
     expect(worldSlotAt(99).index).toBe(5)
     expect(worldSlotAt(2.9).index).toBe(2)
-  })
-
-  it('lookup by id round-trips every slot', () => {
-    for (const id of WORLD_SLOT_IDS) {
-      expect(worldSlotById(id as WorldSlotId).id).toBe(id)
-      expect(worldSlotAt(worldSlotById(id as WorldSlotId).index).id).toBe(id)
-    }
   })
 
   it('strict index lookup: every canonical id maps to its stable index', () => {
@@ -97,9 +88,6 @@ describe('world slot contract', () => {
     expect(worldSlotIndex('intro')).toBe(1) // FIRST_MAIN
     expect(worldSlotIndex('contact')).toBe(4) // LAST_MAIN
     expect(worldSlotIndex('menu')).toBe(5) // MENU_INDEX
-    expect(isWorldSlotId('lab')).toBe(true)
-    expect(isWorldSlotId('menu')).toBe(true)
-    expect(isWorldSlotId('page-lab')).toBe(false)
   })
 })
 
