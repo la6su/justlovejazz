@@ -96,11 +96,6 @@ export const WORLD_SLOTS: readonly WorldSlotDef[] = [
   },
 ] as const satisfies readonly WorldSlotDef[]
 
-/** The six slot IDs in stable index order. */
-export const WORLD_SLOT_IDS: readonly WorldSlotId[] = Object.freeze(
-  WORLD_SLOTS.map((slot) => slot.id),
-)
-
 /** Slot count — consumers must not hard-code 6 anywhere else. */
 export const WORLD_SLOT_COUNT = WORLD_SLOTS.length
 
@@ -110,11 +105,6 @@ const SLOT_BY_ID = new Map<WorldSlotId, WorldSlotDef>(WORLD_SLOTS.map((slot) => 
 export function worldSlotAt(index: number): WorldSlotDef {
   const clamped = Math.max(0, Math.min(WORLD_SLOT_COUNT - 1, Math.trunc(index)))
   return WORLD_SLOTS[clamped]!
-}
-
-/** Lookup by slot ID. */
-export function worldSlotById(id: WorldSlotId): WorldSlotDef {
-  return SLOT_BY_ID.get(id)!
 }
 
 /**
@@ -127,9 +117,4 @@ export function worldSlotById(id: WorldSlotId): WorldSlotDef {
  */
 export function worldSlotIndex(id: string): number | undefined {
   return SLOT_BY_ID.get(id as WorldSlotId)?.index
-}
-
-/** True when `id` is a canonical slot ID. */
-export function isWorldSlotId(id: string): id is WorldSlotId {
-  return SLOT_BY_ID.has(id as WorldSlotId)
 }

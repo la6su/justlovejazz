@@ -2,27 +2,13 @@ import { TresCanvas, useLoop } from '@tresjs/core'
 import { defineComponent, h } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { createRendererMock, installCanvasPointerShims } from './tresHarness'
 
 type TresReadyContext = {
   renderer: {
     advance(): void
     invalidate(): void
     loop: { start(): void; stop(): void }
-  }
-}
-
-function createRenderer() {
-  const canvas = document.createElement('canvas')
-  return {
-    isRenderer: true,
-    domElement: canvas,
-    init: vi.fn().mockResolvedValue(undefined),
-    render: vi.fn(),
-    setSize: vi.fn(),
-    setPixelRatio: vi.fn(),
-    setClearColor: vi.fn(),
-    dispose: vi.fn(),
-    shadowMap: { enabled: false, type: 0 },
   }
 }
 
@@ -35,7 +21,7 @@ const LoopProbe = defineComponent({
 })
 
 async function mountCanvas(renderMode: 'manual' | 'on-demand') {
-  const renderer = createRenderer()
+  const renderer = createRendererMock()
   const ready = { context: null as TresReadyContext | null }
   const ticks = vi.fn()
   const wrapper = mount(TresCanvas, {
@@ -58,9 +44,7 @@ async function mountCanvas(renderMode: 'manual' | 'on-demand') {
 
 describe('TresJS 5.8.3 loop contract', () => {
   beforeAll(() => {
-    HTMLCanvasElement.prototype.setPointerCapture ??= () => undefined
-    HTMLCanvasElement.prototype.releasePointerCapture ??= () => undefined
-    HTMLCanvasElement.prototype.hasPointerCapture ??= () => false
+    installCanvasPointerShims()
   })
 
   afterEach(() => {

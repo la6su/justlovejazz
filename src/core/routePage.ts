@@ -26,8 +26,3 @@ export function setCurrentPage(page: PageId): void {
   if (!PAGE_IDS.has(page)) return
   currentPage = page
 }
-
-/** Convenience predicate: `true` when the current page is `page`. */
-export function isCurrentPage(page: PageId): boolean {
-  return getCurrentPage() === page
-}

@@ -43,20 +43,6 @@
 export type StorySide = 'center' | 'footer' | 'menu'
 
 /**
- * The readonly story state both observers converge on. `sectionIndex` is
- * the side-aware slot index (footer → 0, menu → 5, center → the main
- * section, which is numerically the same slot); `progress` is the
- * side-aware continuous progress on the slot scale.
- */
-export interface StoryState {
-  readonly side: StorySide
-  /** Continuous story progress on the slot scale (0..1). */
-  readonly progress: number
-  /** The side-aware active slot index (0..5). */
-  readonly sectionIndex: number
-}
-
-/**
  * The continuous story progress (slot scale, 0..1) for a scroll offset.
  * 1:1 with the former inline rescale in `CinematicNav.getOverallProgress`:
  * the main position is clamped to [0, mainCount − 1], then re-based so the

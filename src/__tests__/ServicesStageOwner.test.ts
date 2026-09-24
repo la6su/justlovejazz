@@ -2,6 +2,7 @@ import { TresCanvas } from '@tresjs/core'
 import { h } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { createRendererMock, installCanvasPointerShims } from './tresHarness'
 import type { Scene } from 'three'
 import * as THREE from 'three'
 import ServicesStageOwner from '../app/scene/ServicesStageOwner.vue'
@@ -9,24 +10,12 @@ import type { ServicesStage } from '../Experience/World/ServicesStage'
 
 describe('ServicesStageOwner lifecycle spike', () => {
   beforeAll(() => {
-    HTMLCanvasElement.prototype.setPointerCapture ??= () => undefined
-    HTMLCanvasElement.prototype.releasePointerCapture ??= () => undefined
-    HTMLCanvasElement.prototype.hasPointerCapture ??= () => false
+    installCanvasPointerShims()
   })
   afterEach(() => document.body.replaceChildren())
 
   it('attaches the imperative owner once and disposes it with Vue teardown', async () => {
-    const renderer = {
-      isRenderer: true,
-      domElement: document.createElement('canvas'),
-      init: vi.fn().mockResolvedValue(undefined),
-      render: vi.fn(),
-      setSize: vi.fn(),
-      setPixelRatio: vi.fn(),
-      setClearColor: vi.fn(),
-      dispose: vi.fn(),
-      shadowMap: { enabled: false, type: 0 },
-    }
+    const renderer = createRendererMock()
     const mounted = { scene: null as Scene | null, stage: null as ServicesStage | null }
     const wrapper = mount(TresCanvas, {
       attachTo: document.body,

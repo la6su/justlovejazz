@@ -1,9 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import {
-  storyProgressFromScroll,
-  mainSectionFromPosition,
-  type StoryState,
-} from '../core/storyState'
+import { storyProgressFromScroll, mainSectionFromPosition } from '../core/storyState'
 import { sectionIndexAt } from '../core/storyProgress'
 import { worldSlotIndex, WORLD_SLOT_COUNT } from '../core/worldSlots'
 
@@ -55,19 +51,6 @@ describe('mainSectionFromPosition (the main-section rounding rule)', () => {
   it('clamps out-of-range positions to the end mains', () => {
     expect(mainSectionFromPosition(-2, FIRST_MAIN, MAIN_COUNT)).toBe(1)
     expect(mainSectionFromPosition(9, FIRST_MAIN, MAIN_COUNT)).toBe(4)
-  })
-})
-
-describe('story state shape', () => {
-  it('exposes the readonly story state both observers converge on', () => {
-    const state: StoryState = {
-      side: 'center',
-      progress: storyProgressFromScroll(1000, 1000, MAIN_COUNT, FIRST_MAIN, SECTIONS),
-      sectionIndex: sectionIndexAt(0.4, SECTIONS),
-    }
-    expect(state.side).toBe('center')
-    expect(state.progress).toBeCloseTo(2 / 5)
-    expect(state.sectionIndex).toBe(2)
   })
 })
 

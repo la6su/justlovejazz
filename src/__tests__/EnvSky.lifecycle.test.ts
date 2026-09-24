@@ -2,29 +2,18 @@ import { TresCanvas } from '@tresjs/core'
 import { h } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { createRendererMock, installCanvasPointerShims } from './tresHarness'
 import * as THREE from 'three'
 import EnvSky from '../app/scene/EnvSky.vue'
 
 describe('EnvSky declarative lifecycle spike', () => {
   beforeAll(() => {
-    HTMLCanvasElement.prototype.setPointerCapture ??= () => undefined
-    HTMLCanvasElement.prototype.releasePointerCapture ??= () => undefined
-    HTMLCanvasElement.prototype.hasPointerCapture ??= () => false
+    installCanvasPointerShims()
   })
   afterEach(() => document.body.replaceChildren())
 
   it('owns the plane geometry while borrowing the ambient material', async () => {
-    const renderer = {
-      isRenderer: true,
-      domElement: document.createElement('canvas'),
-      init: vi.fn().mockResolvedValue(undefined),
-      render: vi.fn(),
-      setSize: vi.fn(),
-      setPixelRatio: vi.fn(),
-      setClearColor: vi.fn(),
-      dispose: vi.fn(),
-      shadowMap: { enabled: false, type: 0 },
-    }
+    const renderer = createRendererMock()
     const material = new THREE.MeshBasicMaterial()
     const mounted = { scene: null as THREE.Scene | null, mesh: null as THREE.Mesh | null }
     const wrapper = mount(TresCanvas, {

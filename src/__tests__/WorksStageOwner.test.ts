@@ -2,6 +2,7 @@ import { TresCanvas } from '@tresjs/core'
 import { h, markRaw, shallowRef } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { createRendererMock, installCanvasPointerShims } from './tresHarness'
 import * as THREE from 'three'
 import WorksStageOwner from '../app/scene/WorksStageOwner.vue'
 import { WorksPlaneStage } from '../Experience/World/WorksPlaneStage'
@@ -9,9 +10,7 @@ import { WorksInstallation } from '../Experience/World/WorksInstallation'
 
 describe('WorksStageOwner declarative attachment', () => {
   beforeAll(() => {
-    HTMLCanvasElement.prototype.setPointerCapture ??= () => undefined
-    HTMLCanvasElement.prototype.releasePointerCapture ??= () => undefined
-    HTMLCanvasElement.prototype.hasPointerCapture ??= () => false
+    installCanvasPointerShims()
   })
 
   afterEach(() => document.body.replaceChildren())
@@ -19,17 +18,7 @@ describe('WorksStageOwner declarative attachment', () => {
   it.each(['vue-first', 'runtime-first'] as const)(
     'transfers and releases installation nodes (%s)',
     async (order) => {
-      const renderer = {
-        isRenderer: true,
-        domElement: document.createElement('canvas'),
-        init: vi.fn().mockResolvedValue(undefined),
-        render: vi.fn(),
-        setSize: vi.fn(),
-        setPixelRatio: vi.fn(),
-        setClearColor: vi.fn(),
-        dispose: vi.fn(),
-        shadowMap: { enabled: false, type: 0 },
-      }
+      const renderer = createRendererMock()
       const stage = new WorksPlaneStage()
       const dispose = vi.spyOn(stage, 'dispose')
       const stageRef = shallowRef<WorksPlaneStage | null>(null)

@@ -1,29 +1,14 @@
 import { TresCanvas } from '@tresjs/core'
 import { h } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, describe, expect, it } from 'vitest'
+import { createRendererMock, installCanvasPointerShims } from './tresHarness'
 import type { Group, Scene } from 'three'
 import SectionGroupRoots from '../app/scene/SectionGroupRoots.vue'
 
-function renderer() {
-  return {
-    isRenderer: true,
-    domElement: document.createElement('canvas'),
-    init: vi.fn().mockResolvedValue(undefined),
-    render: vi.fn(),
-    setSize: vi.fn(),
-    setPixelRatio: vi.fn(),
-    setClearColor: vi.fn(),
-    dispose: vi.fn(),
-    shadowMap: { enabled: false, type: 0 },
-  }
-}
-
 describe('SectionGroupRoots declarative Tres spike', () => {
   beforeAll(() => {
-    HTMLCanvasElement.prototype.setPointerCapture ??= () => undefined
-    HTMLCanvasElement.prototype.releasePointerCapture ??= () => undefined
-    HTMLCanvasElement.prototype.hasPointerCapture ??= () => false
+    installCanvasPointerShims()
   })
   afterEach(() => document.body.replaceChildren())
 
@@ -34,7 +19,7 @@ describe('SectionGroupRoots declarative Tres spike', () => {
       attachTo: document.body,
       props: {
         renderMode: 'manual',
-        renderer: (() => renderer()) as never,
+        renderer: (() => createRendererMock()) as never,
         onReady: (context) => {
           scene = context.scene.value
           context.renderer.loop.stop()
