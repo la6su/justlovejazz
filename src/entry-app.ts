@@ -233,30 +233,6 @@ function clearReadyEventTimer(): void {
   readyEventTimer.clear()
 }
 
-/** Own the delayed curtain/title handoff so retry/failure cannot reveal stale DOM. */
-export function createSplashRevealTimer(onReveal: () => void): {
-  schedule: (delayMs: number) => void
-  clear: () => void
-} {
-  let timer: ReturnType<typeof setTimeout> | null = null
-  const clear = () => {
-    if (timer !== null) {
-      clearTimeout(timer)
-      timer = null
-    }
-  }
-  return {
-    schedule: (delayMs) => {
-      clear()
-      timer = setTimeout(() => {
-        timer = null
-        onReveal()
-      }, delayMs)
-    },
-    clear,
-  }
-}
-
 function transitionBootstrap(next: BootstrapState): boolean {
   const result = tryTransition(_bootstrapState, next)
   if (!result) {
