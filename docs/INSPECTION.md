@@ -227,3 +227,76 @@ concrete need appears — e.g. interactive camera exploration in the Lab
   local idioms, some exported as domain functions with their own tests;
   centralizing them adds import coupling for no gain.
 - No action items produced. Nothing added to the NEXT queue.
+
+## Inspection 4 — 2026-09-25, Tres-native loop modernization (Cientos enablement)
+
+The user's directive changed the optimization target: instead of "smallest
+possible diff", the goals became (1) run the TresJS ecosystem unmodified —
+core 5.9.0 + Cientos 5.9.0 — so visual iteration can use ecosystem helpers,
+and (2) improve developer experience around the persistent Tres root. The
+current implementation is preserved on `archive/pre-tres-native-loop`.
+
+### Decision: ADR 0005 — the Tres loop is the one RAF host
+
+Inspection 3 had recorded "no wheels reinvented" and kept the
+`setAnimationLoop` driver (ADR 0004). That verdict answered the question
+"does the hand-rolled layer duplicate Cientos?" but missed the DX cost of a
+stopped Tres loop: every `useLoop` subscriber — all Cientos animation
+components — is dead when the loop is paused forever. The audit verified the
+way out in the `@tresjs/core` dist (5.8.3 and 5.9.0 alike):
+
+- `replaceRenderFunction` (public, also exposed as `useLoop().render`)
+  replaces the loop's render step: `type RenderFunction =
+(notifySuccess: () => void) => void`.
+- The loop tick runs before/after hooks every RAF and calls the render
+  function only when a frame is pending (`frames` accounting).
+- `invalidate()` only bumps pending frames when the count is zero, and the
+  loop auto-starts on ready.
+
+New topology (ADR 0005):
+
+- The render STEP stays on the Experience pipeline: SceneHost installs a
+  frame-accounting delegate via `replaceRenderFunction`, so a Tres tick can
+  never double-render behind `RenderPipeline`'s back.
+- The RenderScheduler keeps its exact policy (bounded windows, hidden-tab
+  pause, reduced-motion settle, diagnostics — `renderScheduler.test.ts`
+  passes unchanged) and drives the Tres loop through the new `SceneLoopPort`
+  on the SceneHost bridge: `onFrame` installs the frame callback into the
+  before-render hooks; `start`/`stop` open and close windows.
+- The manager's `invalidate` is wrapped once in `onReady`: any ecosystem
+  call (Cientos CameraControls change events, future helpers) raises a typed
+  `'external'` `FrameReason` demand, so external components open windows
+  exactly like internal owners.
+- `Renderer.setAnimationLoop` and its device-loss re-attach path are
+  deleted: the loop is instance-agnostic, recovery swaps the adopted
+  instance only, and a terminal failure closes the window through the
+  existing `jlz:webgl-failed` event (gated by `_renderDisabled`).
+
+### What was NOT replaced (Cientos verdicts, re-checked)
+
+- `CameraControls` — Lab has no interactive camera today; adopting it would
+  be a new feature, not a refactor. Now wired to work out of the box: the
+  canvas stays `pointer-events: none`, so enabling it on a route is a
+  product decision queued for visual iteration.
+- `useTexture` / `useGLTF` — `caseTexture` and `LazyStage` remain strictly
+  stronger (in-flight dedup, late-owner protection, refcounted GPU release).
+- `useProgress` — the boot loader tracks fonts + scene readiness before Vue
+  exists; Cientos's composable covers only in-Tres loader assets.
+- `Sky` / `Environment` / `Stars` / `Sparkles` / `Text` / `Html` — the
+  project constructs are TSL product visuals (EnvSphere sky, Junni/ink
+  particles, NoiseText DOM); the Cientos pieces solve different problems.
+
+### DX pass: readySlot
+
+The seven `let x / let resolveX / new Promise` triples in `SceneHost.vue`
+(one per declarative node, ~55 lines) deduplicated into
+`app/readySlot.ts` (`createReadySlot` + `await readyNode(slot)`), keeping
+the sync fast-path semantics; adding the next declarative node is now one
+slot line + one template binding.
+
+### Verified
+
+tsc, vue-tsc, eslint (0 errors), prettier, vitest 112 files / 692 tests,
+production build + budgets (vendor-three 298.44 kB gzip / 350 kB budget,
+Cientos tree-shaken until imported), e2e 23 passed / 1 skipped — baseline
+parity on the `WebGLBackend` CI path.
