@@ -196,8 +196,8 @@ describe('SceneHost async lifecycle', () => {
       new THREE.Group() as unknown as import('../Experience/World/WorksPlaneStage').WorksPlaneStage
     const installation =
       new THREE.Group() as unknown as import('../Experience/World/WorksInstallation').WorksInstallation
-    await host.mountWorksPlaneStage(stage)
-    await host.mountWorksInstallation(stage, installation)
+    await host.stages.works.mountStage(stage)
+    await host.stages.works.mountInstallation(stage, installation)
     expect(
       document
         .querySelector('[data-stage-mounted="true"]')
@@ -206,14 +206,14 @@ describe('SceneHost async lifecycle', () => {
 
     const staleStage =
       new THREE.Group() as unknown as import('../Experience/World/WorksPlaneStage').WorksPlaneStage
-    await host.unmountWorksPlaneStage(staleStage)
+    await host.stages.works.unmountStage(staleStage)
     expect(
       document
         .querySelector('[data-stage-mounted="true"]')
         ?.getAttribute('data-installation-mounted'),
     ).toBe('true')
 
-    await host.unmountWorksPlaneStage(stage)
+    await host.stages.works.unmountStage(stage)
     expect(
       document
         .querySelector('[data-stage-mounted="false"]')

@@ -36,10 +36,14 @@ describe('Experience works stage lifecycle', () => {
       _worksPlaneStagePromise: null,
       _worksPlaneStageRequest: 0,
       _host: {
-        mountWorksPlaneStage: vi.fn(async (stage: WorksPlaneStage) => scene.add(stage)),
-        unmountWorksPlaneStage: vi.fn(async (stage: WorksPlaneStage) => stage.removeFromParent()),
-        mountWorksInstallation: vi.fn(async () => undefined),
-        unmountWorksInstallation: vi.fn(async () => undefined),
+        stages: {
+          works: {
+            mountStage: vi.fn(async (stage: WorksPlaneStage) => scene.add(stage)),
+            unmountStage: vi.fn(async (stage: WorksPlaneStage) => stage.removeFromParent()),
+            mountInstallation: vi.fn(async () => undefined),
+            unmountInstallation: vi.fn(async () => undefined),
+          },
+        },
       },
     } as unknown as Partial<Experience>) as Experience
     // The coordinator reads the stage through an owner getter over Experience's
@@ -117,28 +121,31 @@ describe('Experience works stage lifecycle', () => {
       await pending
       const stage = coordinator.worksPlaneStage
       expect(stage).toBeInstanceOf(WorksPlaneStage)
-      const host = (exp as unknown as { _host: { mountWorksPlaneStage: ReturnType<typeof vi.fn> } })
-        ._host
-      expect(host.mountWorksPlaneStage).toHaveBeenCalledWith(stage)
+      const host = (
+        exp as unknown as {
+          _host: {
+            stages: {
+              works: {
+                mountStage: ReturnType<typeof vi.fn>
+                unmountStage: ReturnType<typeof vi.fn>
+                mountInstallation: ReturnType<typeof vi.fn>
+                unmountInstallation: ReturnType<typeof vi.fn>
+              }
+            }
+          }
+        }
+      )._host.stages.works
+      expect(host.mountStage).toHaveBeenCalledWith(stage)
       const installation = stage?.installationOwner
       expect(installation).toBeInstanceOf(WorksInstallation)
-      expect(
-        (host as unknown as { mountWorksInstallation: ReturnType<typeof vi.fn> })
-          .mountWorksInstallation,
-      ).toHaveBeenCalledWith(stage, installation)
+      expect(host.mountInstallation).toHaveBeenCalledWith(stage, installation)
 
       // Leaving /works disposes the owner and clears the field.
       setCurrentPage('home')
       exp.disposeWorksPlaneStage()
       expect(coordinator.worksPlaneStage).toBeNull()
-      expect(
-        (host as unknown as { unmountWorksPlaneStage: ReturnType<typeof vi.fn> })
-          .unmountWorksPlaneStage,
-      ).toHaveBeenCalledWith(stage)
-      expect(
-        (host as unknown as { unmountWorksInstallation: ReturnType<typeof vi.fn> })
-          .unmountWorksInstallation,
-      ).toHaveBeenCalledWith(stage, installation)
+      expect(host.unmountStage).toHaveBeenCalledWith(stage)
+      expect(host.unmountInstallation).toHaveBeenCalledWith(stage, installation)
       expect(disposeSpy).toHaveBeenCalledTimes(1)
       expect(stage?.parent).toBeNull()
     } finally {

@@ -355,16 +355,7 @@ async function boot(): Promise<BootResult> {
         envSphere: host.envSphere,
         replaceRenderer: (renderer) => sceneHost.replaceRenderer(renderer),
         loop: host.loop,
-        mountWorksPlaneStage: (stage) => host.mountWorksPlaneStage(stage),
-        unmountWorksPlaneStage: (stage) => host.unmountWorksPlaneStage(stage),
-        mountWorksInstallation: (stage, installation) =>
-          host.mountWorksInstallation(stage, installation),
-        mountContactHaloStage: (stage) => host.mountContactHaloStage(stage),
-        unmountContactHaloStage: (stage) => host.unmountContactHaloStage(stage),
-        mountManifestoInkStage: (stage) => host.mountManifestoInkStage(stage),
-        unmountManifestoInkStage: (stage) => host.unmountManifestoInkStage(stage),
-        unmountWorksInstallation: (stage, installation) =>
-          host.unmountWorksInstallation(stage, installation),
+        stages: host.stages,
       },
       getCurrentPage,
     )

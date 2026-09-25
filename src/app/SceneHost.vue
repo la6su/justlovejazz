@@ -23,7 +23,7 @@
 // replaced Tres render function. On-demand avoids manual mode's delayed
 // advance().
 //
-import { markRaw, nextTick, onBeforeUnmount, ref, shallowRef, toValue } from 'vue'
+import { onBeforeUnmount, ref, toValue } from 'vue'
 import { TresCanvas } from '@tresjs/core'
 import type { TresContext, TresRendererSetupContext } from '@tresjs/core'
 import type { PerspectiveCamera } from 'three'
@@ -35,8 +35,9 @@ import {
   inspectUnifiedBackend,
   type UnifiedRenderSurface,
 } from '../core/unifiedRenderer'
-import { sceneHost, type SceneLoopPort } from './sceneHost'
+import { sceneHost, type SceneLoopPort, type SceneStagePorts } from './sceneHost'
 import { createReadySlot, readyNode } from './readySlot'
+import { createStageSlot } from './stageSlot'
 import CinematicLights from './scene/CinematicLights.vue'
 import CinematicCamera from './scene/CinematicCamera.vue'
 import GroundPlane from './scene/GroundPlane.vue'
@@ -130,69 +131,47 @@ const envSphereSlot = createReadySlot<EnvSphere>()
 const envSkySlot = createReadySlot<unknown>()
 /** Template-facing alias: the env sphere must mount before the sky plane. */
 const envSphereNode = envSphereSlot.value
-const declarativeWorksStage = shallowRef<WorksPlaneStage | null>(null)
-const declarativeWorksInstallation = shallowRef<WorksInstallation | null>(null)
-const declarativeContactHalo = shallowRef<ContactHaloStage | null>(null)
-const declarativeManifestoInk = shallowRef<ManifestoInkStage | null>(null)
+
+// ── Declarative stage slots (mount/unmount boundaries) ──
+// One slot per stage family replaces the hand-written mount/unmount pairs.
+// The works installation is a child of the works stage, so its port keeps the
+// two-level guard (the child never attaches to — or outlives — a retired stage).
+const worksStageSlot = createStageSlot<WorksPlaneStage>({ isAlive: () => !disposed })
+const worksInstallationSlot = createStageSlot<WorksInstallation>({ isAlive: () => !disposed })
+const contactHaloSlot = createStageSlot<ContactHaloStage>({ isAlive: () => !disposed })
+const manifestoInkSlot = createStageSlot<ManifestoInkStage>({ isAlive: () => !disposed })
+
+// Top-level aliases keep the template's declarative bindings unchanged
+// (setup-scope refs auto-unwrap, so `:object` receives the raw object).
+const declarativeWorksStage = worksStageSlot.object
+const declarativeWorksInstallation = worksInstallationSlot.object
+const declarativeContactHalo = contactHaloSlot.object
+const declarativeManifestoInk = manifestoInkSlot.object
+
+const stages: SceneStagePorts = {
+  works: {
+    mountStage: (stage) => worksStageSlot.mount(stage),
+    unmountStage: async (stage) => {
+      if (worksStageSlot.object.value !== stage) return
+      // The installation is a child of this stage. Clear the child boundary
+      // with its parent so a later stage can never inherit a retired installation.
+      worksInstallationSlot.object.value = null
+      await worksStageSlot.unmount(stage)
+    },
+    mountInstallation: (stage, installation) => {
+      if (worksStageSlot.object.value !== stage) return Promise.resolve()
+      return worksInstallationSlot.mount(installation)
+    },
+    unmountInstallation: (stage, installation) => {
+      if (worksStageSlot.object.value !== stage) return Promise.resolve()
+      return worksInstallationSlot.unmount(installation)
+    },
+  },
+  contactHalo: contactHaloSlot,
+  manifestoInk: manifestoInkSlot,
+}
+
 const disposedRenderers = new WeakSet<object>()
-
-async function mountWorksPlaneStage(stage: WorksPlaneStage): Promise<void> {
-  if (disposed) return
-  declarativeWorksStage.value = stage
-  await nextTick()
-}
-
-async function unmountWorksPlaneStage(stage: WorksPlaneStage): Promise<void> {
-  if (declarativeWorksStage.value !== stage) return
-  declarativeWorksStage.value = null
-  // The installation is a child of this stage. Clear the child boundary with
-  // its parent so a later stage can never inherit a retired installation.
-  declarativeWorksInstallation.value = null
-  await nextTick()
-}
-
-async function mountWorksInstallation(
-  stage: WorksPlaneStage,
-  installation: WorksInstallation,
-): Promise<void> {
-  if (disposed || declarativeWorksStage.value !== stage) return
-  declarativeWorksInstallation.value = markRaw(installation)
-  await nextTick()
-}
-
-async function unmountWorksInstallation(
-  stage: WorksPlaneStage,
-  installation: WorksInstallation,
-): Promise<void> {
-  if (declarativeWorksStage.value !== stage || declarativeWorksInstallation.value !== installation)
-    return
-  declarativeWorksInstallation.value = null
-  await nextTick()
-}
-
-async function mountContactHaloStage(stage: ContactHaloStage): Promise<void> {
-  if (disposed) return
-  declarativeContactHalo.value = markRaw(stage)
-  await nextTick()
-}
-
-async function unmountContactHaloStage(stage: ContactHaloStage): Promise<void> {
-  if (declarativeContactHalo.value !== stage) return
-  declarativeContactHalo.value = null
-  await nextTick()
-}
-
-async function mountManifestoInkStage(stage: ManifestoInkStage): Promise<void> {
-  if (disposed) return
-  declarativeManifestoInk.value = markRaw(stage)
-  await nextTick()
-}
-
-async function unmountManifestoInkStage(stage: ManifestoInkStage): Promise<void> {
-  if (declarativeManifestoInk.value !== stage) return
-  declarativeManifestoInk.value = null
-  await nextTick()
-}
 
 function disposeRendererOnce(renderer: UnifiedRenderSurface | null): void {
   if (!renderer || disposedRenderers.has(renderer)) return
@@ -299,14 +278,7 @@ async function onReady(context: TresContext): Promise<void> {
     servicesStage,
     envSphere,
     loop: loopPort,
-    mountWorksPlaneStage,
-    unmountWorksPlaneStage,
-    mountWorksInstallation,
-    unmountWorksInstallation,
-    mountContactHaloStage,
-    unmountContactHaloStage,
-    mountManifestoInkStage,
-    unmountManifestoInkStage,
+    stages,
   })
 }
 
@@ -332,8 +304,8 @@ onBeforeUnmount(() => {
   if (createdRenderer !== liveRenderer) disposeRendererOnce(createdRenderer)
   liveRenderer = null
   createdRenderer = null
-  declarativeWorksStage.value = null
-  declarativeWorksInstallation.value = null
+  worksStageSlot.object.value = null
+  worksInstallationSlot.object.value = null
 })
 </script>
 
