@@ -36,6 +36,12 @@ function fakeReady(overrides?: Partial<SceneHostReady>): SceneHostReady {
     sectionRoots: [],
     servicesStage: {} as SceneHostReady['servicesStage'],
     envSphere: {} as SceneHostReady['envSphere'],
+    loop: {
+      onFrame: () => undefined,
+      start: () => undefined,
+      stop: () => undefined,
+      onExternalInvalidate: () => () => undefined,
+    },
     mountWorksPlaneStage: async () => undefined,
     unmountWorksPlaneStage: async () => undefined,
     mountWorksInstallation: async () => undefined,

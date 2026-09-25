@@ -16,9 +16,12 @@
 // inspection (software-adapter re-creation through the pure
 // `planUnifiedBackend` policy). Scene owners enter Tres through explicit
 // `primitive` adapters (`:dispose="null"` — Experience stays the single
-// disposal owner). RenderMode is `on-demand`: Tres's internal loop is
-// stopped immediately after ready and the `RenderScheduler` (ADR 0004) is the
-// single loop driver. On-demand also avoids manual mode's delayed advance().
+// disposal owner). RenderMode is `on-demand` and the Tres loop is the one
+// RAF host (ADR 0005): the `RenderScheduler` (ADR 0004) owns its start/stop
+// through the `SceneLoopPort`, the frame callback runs in the before-render
+// hooks, and the render STEP stays on the Experience pipeline via the
+// replaced Tres render function. On-demand avoids manual mode's delayed
+// advance().
 //
 import { markRaw, nextTick, onBeforeUnmount, ref, shallowRef, toValue } from 'vue'
 import { TresCanvas } from '@tresjs/core'
@@ -32,7 +35,8 @@ import {
   inspectUnifiedBackend,
   type UnifiedRenderSurface,
 } from '../core/unifiedRenderer'
-import { sceneHost } from './sceneHost'
+import { sceneHost, type SceneLoopPort } from './sceneHost'
+import { createReadySlot, readyNode } from './readySlot'
 import CinematicLights from './scene/CinematicLights.vue'
 import CinematicCamera from './scene/CinematicCamera.vue'
 import GroundPlane from './scene/GroundPlane.vue'
@@ -87,45 +91,49 @@ let liveRenderer: UnifiedRenderSurface | null = null
 let createdRenderer: UnifiedRenderSurface | null = null
 let unbindRendererOwner: (() => void) | null = null
 let stopTresLoop: (() => void) | null = null
-let declarativeCamera: PerspectiveCamera | null = null
-let resolveDeclarativeCamera!: (camera: PerspectiveCamera) => void
-const declarativeCameraReady = new Promise<PerspectiveCamera>((resolve) => {
-  resolveDeclarativeCamera = resolve
-})
-let declarativeLights: CinematicLightsNodes | null = null
-let resolveDeclarativeLights!: (lights: CinematicLightsNodes) => void
-const declarativeLightsReady = new Promise<CinematicLightsNodes>((resolve) => {
-  resolveDeclarativeLights = resolve
-})
-let declarativeGround: GroundPlaneNode | null = null
-let resolveDeclarativeGround!: (ground: GroundPlaneNode) => void
-const declarativeGroundReady = new Promise<GroundPlaneNode>((resolve) => {
-  resolveDeclarativeGround = resolve
-})
-let declarativeSectionRoots: readonly Group[] | null = null
-let resolveDeclarativeSectionRoots!: (groups: readonly Group[]) => void
-const declarativeSectionRootsReady = new Promise<readonly Group[]>((resolve) => {
-  resolveDeclarativeSectionRoots = resolve
-})
-let declarativeServicesStage: ServicesStage | null = null
-let resolveDeclarativeServicesStage!: (stage: ServicesStage) => void
-const declarativeServicesStageReady = new Promise<ServicesStage>((resolve) => {
-  resolveDeclarativeServicesStage = resolve
-})
-const declarativeEnvSphere = shallowRef<EnvSphere | null>(null)
+
+// ── ADR 0005: Tres-native loop port state ──
+// Late-bound to the live Tres renderer manager in `onReady`; every port call
+// before ready (or after unmount) is a safe no-op.
+type RendererManager = TresContext['renderer']
+let liveManager: RendererManager | null = null
+let frameCallback: ((time: number) => void) | null = null
+let externalInvalidateHandler: (() => void) | null = null
+
+const loopPort: SceneLoopPort = {
+  onFrame(callback) {
+    frameCallback = callback
+  },
+  start() {
+    liveManager?.loop.start()
+  },
+  stop() {
+    liveManager?.loop.stop()
+  },
+  onExternalInvalidate(handler) {
+    externalInvalidateHandler = handler
+    return () => {
+      if (externalInvalidateHandler === handler) externalInvalidateHandler = null
+    }
+  },
+}
+// ── Declarative node ready slots ──
+// Each scene node reports itself through a slot: the template binds
+// `@ready="slot.resolve"`, and `onReady` awaits the nodes it needs (sync
+// fast path when the node already mounted).
+const cameraSlot = createReadySlot<PerspectiveCamera>()
+const lightsSlot = createReadySlot<CinematicLightsNodes>()
+const groundSlot = createReadySlot<GroundPlaneNode>()
+const sectionRootsSlot = createReadySlot<readonly Group[]>()
+const servicesStageSlot = createReadySlot<ServicesStage>()
+const envSphereSlot = createReadySlot<EnvSphere>()
+const envSkySlot = createReadySlot<unknown>()
+/** Template-facing alias: the env sphere must mount before the sky plane. */
+const envSphereNode = envSphereSlot.value
 const declarativeWorksStage = shallowRef<WorksPlaneStage | null>(null)
 const declarativeWorksInstallation = shallowRef<WorksInstallation | null>(null)
 const declarativeContactHalo = shallowRef<ContactHaloStage | null>(null)
 const declarativeManifestoInk = shallowRef<ManifestoInkStage | null>(null)
-let resolveDeclarativeEnvSphere!: (owner: EnvSphere) => void
-const declarativeEnvSphereReady = new Promise<EnvSphere>((resolve) => {
-  resolveDeclarativeEnvSphere = resolve
-})
-let declarativeEnvSky = false
-let resolveDeclarativeEnvSky!: () => void
-const declarativeEnvSkyReady = new Promise<void>((resolve) => {
-  resolveDeclarativeEnvSky = resolve
-})
 const disposedRenderers = new WeakSet<object>()
 
 async function mountWorksPlaneStage(stage: WorksPlaneStage): Promise<void> {
@@ -186,36 +194,6 @@ async function unmountManifestoInkStage(stage: ManifestoInkStage): Promise<void>
   await nextTick()
 }
 
-function onDeclarativeCameraReady(camera: PerspectiveCamera): void {
-  declarativeCamera = camera
-  resolveDeclarativeCamera(camera)
-}
-
-function onDeclarativeLightsReady(lights: CinematicLightsNodes): void {
-  declarativeLights = lights
-  resolveDeclarativeLights(lights)
-}
-function onDeclarativeGroundReady(ground: GroundPlaneNode): void {
-  declarativeGround = ground
-  resolveDeclarativeGround(ground)
-}
-function onDeclarativeSectionRootsReady(groups: Group[]): void {
-  declarativeSectionRoots = groups
-  resolveDeclarativeSectionRoots(groups)
-}
-function onDeclarativeServicesStageReady(stage: ServicesStage): void {
-  declarativeServicesStage = stage
-  resolveDeclarativeServicesStage(stage)
-}
-function onDeclarativeEnvSphereReady(owner: EnvSphere): void {
-  declarativeEnvSphere.value = owner
-  resolveDeclarativeEnvSphere(owner)
-}
-function onDeclarativeEnvSkyReady(): void {
-  declarativeEnvSky = true
-  resolveDeclarativeEnvSky()
-}
-
 function disposeRendererOnce(renderer: UnifiedRenderSurface | null): void {
   if (!renderer || disposedRenderers.has(renderer)) return
   disposedRenderers.add(renderer)
@@ -224,21 +202,44 @@ function disposeRendererOnce(renderer: UnifiedRenderSurface | null): void {
 
 async function onReady(context: TresContext): Promise<void> {
   if (noScene || resolved) return
-  // Tres starts its internal RAF when the renderer becomes ready. The
-  // RenderScheduler owns the actual renderer loop, so stop Tres immediately
-  // (before any async backend fallback work can yield) and keep the cleanup
-  // handle for an unmount during that async window.
-  stopTresLoop = () => context.renderer.loop.stop()
+  // ADR 0005: the persistent Tres loop is the one RAF host. Install the
+  // bridges BEFORE any async work can yield so the first scheduler tick (and
+  // any ecosystem invalidate) always lands on the final wiring.
+  const manager = context.renderer
+  liveManager = manager
+  // The render STEP stays on the Experience pipeline (Renderer.update →
+  // RenderPipeline). Tres's default render function would double-render
+  // behind the pipeline's back — replace it with the frame-accounting
+  // delegate that only drains Tres's pending-frame counter (public
+  // `replaceRenderFunction` / `useLoop().render` seam).
+  manager.replaceRenderFunction((notify) => notify())
+  // The scheduler's frame callback runs inside Tres's before-render hooks,
+  // so `useLoop` subscribers (Cientos components included) share this RAF.
+  // The frame contract expects a ms timestamp (Experience `Time.update`).
+  manager.loop.onBeforeLoop(() => frameCallback?.(performance.now()))
+  // Ecosystem wake path: Cientos components invalidate the manager on their
+  // change events; the wrap translates each call into a typed scheduler
+  // demand so external activity opens a render window.
+  const baseInvalidate = manager.invalidate.bind(manager)
+  manager.invalidate = (...args: Parameters<typeof baseInvalidate>) => {
+    baseInvalidate(...args)
+    externalInvalidateHandler?.()
+  }
+  // Tres auto-starts its loop when ready. The RenderScheduler owns
+  // start/stop (ADR 0004/0005): pause it until Experience's first
+  // invalidation opens the first window, and keep the cleanup handle for an
+  // unmount during the async backend-fallback window below.
+  stopTresLoop = () => manager.loop.stop()
   stopTresLoop()
   const generation = ++lifecycleGeneration
   const isCurrent = (): boolean => !disposed && generation === lifecycleGeneration
-  const camera = declarativeCamera ?? (await declarativeCameraReady)
-  const lights = declarativeLights ?? (await declarativeLightsReady)
-  const ground = declarativeGround ?? (await declarativeGroundReady)
-  const sectionRoots = declarativeSectionRoots ?? (await declarativeSectionRootsReady)
-  const servicesStage = declarativeServicesStage ?? (await declarativeServicesStageReady)
-  const envSphere = declarativeEnvSphere.value ?? (await declarativeEnvSphereReady)
-  if (!declarativeEnvSky) await declarativeEnvSkyReady
+  const camera = await readyNode(cameraSlot)
+  const lights = await readyNode(lightsSlot)
+  const ground = await readyNode(groundSlot)
+  const sectionRoots = await readyNode(sectionRootsSlot)
+  const servicesStage = await readyNode(servicesStageSlot)
+  const envSphere = await readyNode(envSphereSlot)
+  if (!envSkySlot.value.value) await envSkySlot.promise
   if (!isCurrent()) return
   const canvas =
     (tresRef.value?.$el as HTMLCanvasElement | undefined) ?? document.createElement('canvas')
@@ -297,6 +298,7 @@ async function onReady(context: TresContext): Promise<void> {
     sectionRoots,
     servicesStage,
     envSphere,
+    loop: loopPort,
     mountWorksPlaneStage,
     unmountWorksPlaneStage,
     mountWorksInstallation,
@@ -323,6 +325,9 @@ onBeforeUnmount(() => {
   stopTresLoop = null
   unbindRendererOwner?.()
   unbindRendererOwner = null
+  liveManager = null
+  frameCallback = null
+  externalInvalidateHandler = null
   disposeRendererOnce(liveRenderer)
   if (createdRenderer !== liveRenderer) disposeRendererOnce(createdRenderer)
   liveRenderer = null
@@ -344,16 +349,16 @@ onBeforeUnmount(() => {
       @ready="onReady"
       @error="onError"
     >
-      <CinematicCamera @ready="onDeclarativeCameraReady" />
-      <CinematicLights @ready="onDeclarativeLightsReady" />
-      <GroundPlane @ready="onDeclarativeGroundReady" />
-      <SectionGroupRoots @ready="onDeclarativeSectionRootsReady" />
-      <ServicesStageOwner @ready="onDeclarativeServicesStageReady" />
-      <EnvSphereOwner @ready="onDeclarativeEnvSphereReady" />
+      <CinematicCamera @ready="cameraSlot.resolve" />
+      <CinematicLights @ready="lightsSlot.resolve" />
+      <GroundPlane @ready="groundSlot.resolve" />
+      <SectionGroupRoots @ready="sectionRootsSlot.resolve" />
+      <ServicesStageOwner @ready="servicesStageSlot.resolve" />
+      <EnvSphereOwner @ready="envSphereSlot.resolve" />
       <EnvSky
-        v-if="declarativeEnvSphere"
-        :material="declarativeEnvSphere.skyMaterial"
-        @ready="onDeclarativeEnvSkyReady"
+        v-if="envSphereNode"
+        :material="envSphereNode.skyMaterial"
+        @ready="envSkySlot.resolve"
       />
       <primitive v-if="declarativeContactHalo" :object="declarativeContactHalo" :dispose="null" />
       <primitive v-if="declarativeManifestoInk" :object="declarativeManifestoInk" :dispose="null" />

@@ -52,6 +52,12 @@ retired. `scripts/bundle-breakdown.ts` now selects the shared vendor exactly
    back up the relic with a tag, reset `dev` to `main`, add `dev` to the CI
    trigger in `.github/workflows/lighthouse.yml`, and update the Git delivery
    wording in AGENTS.md and DEVELOPMENT.md.
+4. **Visual iteration on the TresJS ecosystem (enabled by ADR 0005).**
+   Cientos 5.9.0 is installed and the persistent Tres loop now hosts
+   `useLoop` subscribers, so ecosystem helpers (CameraControls, Sparkles,
+   Html, …) work unmodified. First candidate when visual work resumes:
+   interactive camera exploration in the Lab via Cientos `CameraControls`
+   (needs a product decision on `pointer-events` for the canvas).
 
 ## Audit cleanup (2026-09-17)
 

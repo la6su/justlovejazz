@@ -92,9 +92,6 @@ export class Renderer {
   // Failure-state DOM owner. Keep one overlay per renderer and remove it on
   // terminal teardown so repeated device-loss failures cannot accumulate UI.
   private _unsupportedOverlay: HTMLElement | null = null
-  // Animation-loop owner boundary: Experience registers its frame callback
-  // here so device-loss recovery can re-attach it to the replacement renderer.
-  private _loopCallback: ((time: number) => void) | null = null
 
   constructor(sizes: Sizes) {
     this.sizes = sizes
@@ -166,26 +163,13 @@ export class Renderer {
   }
 
   /**
-   * Animation-loop owner boundary: Experience registers its frame callback
-   * here (not directly on `this.instance`) so a device-loss recovery can
-   * re-attach it to the replacement renderer. A `null` callback (tab hidden)
-   * stays null across recovery.
-   */
-  public setAnimationLoop(callback: ((time: number) => void) | null): void {
-    const effectiveCallback = this._recoveryFailed ? null : callback
-    this._loopCallback = effectiveCallback
-    ;(
-      this.instance as {
-        setAnimationLoop?: (cb: ((time: number) => void) | null) => void
-      }
-    ).setAnimationLoop?.(effectiveCallback)
-  }
-
-  /**
    * Hook bounded device-loss recovery onto a WebGPURenderer. Three invokes
    * `onDeviceLost` when the underlying device is lost; we run the bounded
    * recovery and then defer to Three's own handler for its internal
-   * bookkeeping.
+   * bookkeeping. The render loop itself lives on the Tres host (ADR 0005):
+   * a recovery only swaps the adopted instance, so nothing to re-attach —
+   * and a terminal failure emits `jlz:webgl-failed`, which Experience
+   * answers by closing the scheduler window.
    */
   private attachDeviceLossRecovery(renderer: WebGPURenderer): void {
     const wg = renderer as any
@@ -197,14 +181,9 @@ export class Renderer {
       }
       const action = deviceLostAction(this._deviceLostAttempts)
       if (action === 'exhausted') {
-        // Budget spent: surface an explicit failure state and stop.
+        // Budget spent: surface an explicit failure state and stop. Experience
+        // listens to `jlz:webgl-failed` and closes the render window.
         this._recoveryFailed = true
-        this._loopCallback = null
-        ;(
-          this.instance as {
-            setAnimationLoop?: (cb: ((time: number) => void) | null) => void
-          }
-        ).setAnimationLoop?.(null)
         console.error('[Renderer] device-loss recovery budget exhausted — surfacing failure state')
         eventBus.emit('jlz:webgl-failed')
         this.showUnsupportedMessage()
@@ -216,9 +195,8 @@ export class Renderer {
   }
 
   /**
-   * Re-create the renderer on the same canvas after a device loss, rebuild the
-   * post pipeline, and re-attach the animation loop. Bounded by
-   * MAX_DEVICE_LOST_RECOVERIES (see deviceLostAction).
+   * Wait for the browser to restore a lost WebGL2 context on this canvas
+   * (bounded — 5 s), optionally requesting the restore ourselves.
    */
   private async waitForWebGLContextRestore(
     canvas: HTMLCanvasElement,
@@ -257,6 +235,11 @@ export class Renderer {
     }
   }
 
+  /**
+   * Re-create the renderer on the same canvas after a device loss and rebuild
+   * the post pipeline. Bounded by MAX_DEVICE_LOST_RECOVERIES (see
+   * deviceLostAction); the Tres-owned loop needs no re-attachment (ADR 0005).
+   */
   private async recoverFromDeviceLost(info?: { api?: string }): Promise<void> {
     if (this._disposed || this._recovering) return
     this._recovering = true
@@ -339,12 +322,10 @@ export class Renderer {
       this._pipelineConfig = this.buildPipelineConfig()
       this.pipeline = RenderPipeline.create(this.instance, this._pipelineConfig)
       this.attachDeviceLossRecovery(this.instance)
-      // Re-attach the animation loop (or the hidden-tab null) on the new instance.
-      if (this._loopCallback) {
-        this.instance.setAnimationLoop(this._loopCallback)
-      }
       // Phase 7: sync the persistent Tres context to the replacement so the
-      // SceneHost bridge keeps describing the live renderer.
+      // SceneHost bridge keeps describing the live renderer. The Tres-owned
+      // loop (ADR 0005) needs no re-attachment — the pipeline delegate reads
+      // the adopted instance through this swap.
       this._onInstanceReplaced?.(this.instance)
       // The old PMREM environment died with the lost device — ask Experience
       // to regenerate it (and re-bind it to the glass cube).
@@ -360,12 +341,6 @@ export class Renderer {
       replacement?.dispose()
       if (this._disposed || generation !== this._lifecycleGeneration) return
       this._recoveryFailed = true
-      this._loopCallback = null
-      ;(
-        this.instance as {
-          setAnimationLoop?: (cb: ((time: number) => void) | null) => void
-        }
-      ).setAnimationLoop?.(null)
       eventBus.emit('jlz:webgl-failed')
       this.showUnsupportedMessage()
       console.error('[Renderer] device-loss recovery failed:', e)
@@ -444,7 +419,6 @@ export class Renderer {
     if (this._disposed) return
     this._disposed = true
     this._lifecycleGeneration += 1
-    this._loopCallback = null
     this._onInstanceReplaced = null
     this.pipeline?.dispose()
     this.instance.dispose()

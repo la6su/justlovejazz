@@ -13,6 +13,14 @@
 // Phase 8 slice 10 removed the legacy `worldObject` primitive slot: the
 // SceneCoordinator adds its sections + scene owners to the Tres-owned scene
 // directly, so no explicit `<primitive>` adapter remains.
+//
+// ADR 0005 (Tres-native demand loop): the persistent Tres loop is the one RAF
+// host. The RenderScheduler opens/closes activity windows on it through the
+// `SceneLoopPort`, and its frame callback runs inside Tres's before-render
+// hooks — so `useLoop` subscribers (Cientos components included) share the
+// loop. The render STEP itself stays on the Experience pipeline: SceneHost
+// replaces Tres's default render function with a frame-accounting delegate
+// and translates ecosystem `invalidate()` calls into scheduler demands.
 
 import type * as THREE from 'three'
 import type { TresContext } from '@tresjs/core'
@@ -27,6 +35,27 @@ import type { WorksPlaneStage } from '../Experience/World/WorksPlaneStage'
 import type { WorksInstallation } from '../Experience/World/WorksInstallation'
 import type { ContactHaloStage } from '../Experience/World/ContactHaloStage'
 import type { ManifestoInkStage } from '../Experience/World/ManifestoInkStage'
+
+/**
+ * The Tres-native loop port (ADR 0005). The RenderScheduler is still the
+ * single demand-loop owner (AGENTS.md); the port is only the edge to the
+ * Tres-owned RAF that replaced the renderer's `setAnimationLoop` driver.
+ */
+export interface SceneLoopPort {
+  /** Install (or clear) the scheduler's frame callback (before-render bridge). */
+  onFrame(callback: ((time: number) => void) | null): void
+  /** Open the scheduler window: resume the Tres-owned RAF. */
+  start(): void
+  /** Close the scheduler window: pause the Tres-owned RAF (zero idle ticks). */
+  stop(): void
+  /**
+   * Register (or clear) the ecosystem wake handler. Fired when Tres/Cientos
+   * code calls the renderer-manager `invalidate()` (CameraControls change
+   * events, future Cientos helpers) so the scheduler can open a window.
+   * Returns the unsubscribe function.
+   */
+  onExternalInvalidate(handler: (() => void) | null): () => void
+}
 
 /** The readiness state published once the persistent Tres root is live. */
 export interface SceneHostReady {
@@ -52,6 +81,8 @@ export interface SceneHostReady {
   servicesStage: ServicesStage
   /** The Vue lifecycle owns construction and teardown of this ambient owner. */
   envSphere: EnvSphere
+  /** The Tres-native loop port the RenderScheduler drives (ADR 0005). */
+  loop: SceneLoopPort
   mountWorksPlaneStage(stage: WorksPlaneStage): Promise<void>
   unmountWorksPlaneStage(stage: WorksPlaneStage): Promise<void>
   mountWorksInstallation(stage: WorksPlaneStage, installation: WorksInstallation): Promise<void>

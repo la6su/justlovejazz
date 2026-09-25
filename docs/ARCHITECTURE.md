@@ -86,13 +86,26 @@ node-material scene, without that post graph; its draw path temporarily clears
 fog and restores shared state afterwards. Post processing restores tone mapping
 even on failure. Backend equivalence must not be inferred from class identity.
 
-Tres uses `on-demand` mode, then its internal loop is explicitly stopped.
-`RenderScheduler` drives bounded `renderer.setAnimationLoop` windows, clearing
-the callback when settled or hidden. Owners declare activity through
-`renderDemand.ts`; no scene owner starts a competing RAF loop. Reduced motion
-settles transitions and releases demand synchronously, including live preference
-changes. Visible continuous effects may keep demand active. State-only updates
-must not advance animation clocks without a presented frame.
+Tres uses `on-demand` mode, and the persistent Tres loop is the one RAF host
+(ADR 0005). `RenderScheduler` owns bounded activity windows on that loop
+through the `SceneLoopPort` (SceneHost bridge): it starts the loop on typed
+invalidation and pauses it when settled or hidden, so idle tabs run zero RAF
+ticks. The scheduler's frame callback runs inside Tres's before-render hooks,
+so `useLoop` subscribers — Cientos components included — share the loop and
+drive windows through ecosystem `invalidate()` calls, which the bridge
+translates into typed `external` demands. The render STEP stays on the
+Experience pipeline: SceneHost replaces Tres's default render function
+(public `replaceRenderFunction` / `useLoop().render` seam) with a
+frame-accounting delegate, so a Tres tick can never double-render behind the
+pipeline's back. Owners declare activity through `renderDemand.ts`; no scene
+owner starts a competing RAF loop. Reduced motion settles transitions and
+releases demand synchronously, including live preference changes. Visible
+continuous effects may keep demand active. State-only updates must not
+advance animation clocks without a presented frame.
+
+Declarative scene nodes report themselves through `app/readySlot.ts` slots
+(live value + one-shot promise); `onReady` awaits them and resolves the
+bridge.
 
 Recovery and async setup are generation-guarded. Failed replacement owners are
 disposed; terminal renderer failure prevents later invalidation from reviving
@@ -126,10 +139,17 @@ the throwing `WebGLRenderer` symbol is a required package integration seam.
 Preserve official package subpaths. Remove the seam only when an equivalent
 upstream entry passes delivery and lifecycle checks.
 
-The bounded loop was retained because Tres's manual `advance()` path kept idle
-RAF work. Hybrid scene ownership is intentional: declarative leaves coexist
-with imperative animation/resource controllers. There is no open migration
-or reason to replace these owners without a concrete product/runtime need.
+The bounded loop was originally driven through the renderer's
+`setAnimationLoop` because Tres's manual `advance()` path kept idle RAF work.
+ADR 0005 (2026-09-25) moved the driver onto the Tres loop itself while keeping
+the bounded-window policy: `@tresjs/core` 5.9.0 exposes the public
+`replaceRenderFunction` seam, so the pipeline owns the render step, the
+scheduler owns start/stop, and the ecosystem (`useLoop`, Cientos) works
+unmodified. The renderer's `setAnimationLoop` boundary is deleted; terminal
+device-loss failure closes the loop window through `jlz:webgl-failed`.
+Hybrid scene ownership is intentional: declarative leaves coexist with
+imperative animation/resource controllers. There is no open migration or
+reason to replace these owners without a concrete product/runtime need.
 Budget values and checks live in [Development](DEVELOPMENT.md).
 
 ## Media and semantic UI

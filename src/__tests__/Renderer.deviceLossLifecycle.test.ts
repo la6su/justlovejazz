@@ -40,7 +40,6 @@ type RendererInternals = {
   init: (adopted: AdoptedRenderer) => Promise<void>
   recoverFromDeviceLost: () => Promise<void>
   dispose: () => void
-  setAnimationLoop: (callback: ((time: number) => void) | null) => void
 }
 
 function fakeRenderer() {
@@ -49,7 +48,6 @@ function fakeRenderer() {
     dispose: vi.fn(),
     setPixelRatio: vi.fn(),
     setSize: vi.fn(),
-    setAnimationLoop: vi.fn(),
     backend: {},
   }
 }
@@ -74,7 +72,6 @@ function makeRenderer(
     _lifecycleGeneration: 0,
     _forceWebGL: false,
     _onInstanceReplaced: onInstanceReplaced,
-    _loopCallback: vi.fn(),
     _onResize: vi.fn(),
   }) as unknown as RendererInternals
 }
@@ -136,7 +133,6 @@ describe('Renderer device-loss lifecycle', () => {
 
     expect(replacement.dispose).toHaveBeenCalledOnce()
     expect(onInstanceReplaced).not.toHaveBeenCalled()
-    expect(replacement.setAnimationLoop).not.toHaveBeenCalled()
   })
 
   it('does not surface a late recovery failure after teardown', async () => {
@@ -160,7 +156,7 @@ describe('Renderer device-loss lifecycle', () => {
     expect(showUnsupported).not.toHaveBeenCalled()
   })
 
-  it('publishes and reattaches a replacement when recovery is current', async () => {
+  it('publishes a replacement when recovery is current without touching the loop (ADR 0005)', async () => {
     const oldInstance = fakeRenderer()
     const replacement = fakeRenderer()
     mocks.create.mockResolvedValueOnce(replacement)
@@ -171,7 +167,9 @@ describe('Renderer device-loss lifecycle', () => {
     await renderer.recoverFromDeviceLost()
 
     expect(onInstanceReplaced).toHaveBeenCalledWith(replacement)
-    expect(replacement.setAnimationLoop).toHaveBeenCalledOnce()
+    // ADR 0005: the Tres-owned loop is instance-agnostic — the swap needs no
+    // loop re-attachment (the deleted setAnimationLoop boundary stays gone).
+    expect((replacement as unknown as Record<string, unknown>).setAnimationLoop).toBeUndefined()
   })
 
   it('disposes an installed replacement when post-swap setup fails', async () => {
@@ -187,12 +185,10 @@ describe('Renderer device-loss lifecycle', () => {
 
     await renderer.recoverFromDeviceLost()
 
-    const state = renderer as unknown as { _recoveryFailed: boolean; _loopCallback: unknown }
+    const state = renderer as unknown as { _recoveryFailed: boolean }
     expect(replacement.dispose).toHaveBeenCalledOnce()
     expect(oldInstance.dispose).toHaveBeenCalledOnce()
-    expect(replacement.setAnimationLoop).toHaveBeenCalledWith(null)
     expect(state._recoveryFailed).toBe(true)
-    expect(state._loopCallback).toBeNull()
     expect(emit).toHaveBeenCalledWith('jlz:webgl-failed')
     document.querySelector('.renderer-unsupported')?.remove()
   })
@@ -225,12 +221,10 @@ describe('Renderer device-loss lifecycle', () => {
 
     await renderer.recoverFromDeviceLost()
 
-    const state = renderer as unknown as { _recoveryFailed: boolean; _loopCallback: unknown }
+    const state = renderer as unknown as { _recoveryFailed: boolean }
     expect(state._recoveryFailed).toBe(true)
-    expect(state._loopCallback).toBeNull()
     expect(emit).toHaveBeenCalledWith('jlz:webgl-failed')
     expect(oldInstance.dispose).toHaveBeenCalledOnce()
-    expect(oldInstance.setAnimationLoop).toHaveBeenCalledWith(null)
     expect(() => {
       ;(renderer as unknown as { update: (...args: unknown[]) => void }).update({}, {}, 1 / 60)
     }).not.toThrow()
@@ -238,17 +232,13 @@ describe('Renderer device-loss lifecycle', () => {
     document.querySelector('.renderer-unsupported')?.remove()
   })
 
-  it('does not reattach a loop after terminal recovery failure', () => {
+  it('keeps the setAnimationLoop boundary removed (ADR 0005)', () => {
     const instance = fakeRenderer()
-    const renderer = Object.assign(makeRenderer(instance, vi.fn()), {
-      _recoveryFailed: true,
-    })
-    const callback = vi.fn()
+    const renderer = makeRenderer(instance, vi.fn())
 
-    renderer.setAnimationLoop(callback)
-
-    expect(instance.setAnimationLoop).toHaveBeenCalledWith(null)
-    expect((renderer as unknown as { _loopCallback: unknown })._loopCallback).toBeNull()
+    // The renderer is no longer a loop owner: Experience drives the Tres loop
+    // through the SceneHost port, so the old boundary method must stay gone.
+    expect((renderer as unknown as Record<string, unknown>).setAnimationLoop).toBeUndefined()
   })
 
   it('stops the live loop when the device-loss recovery budget is exhausted', () => {
@@ -269,11 +259,9 @@ describe('Renderer device-loss lifecycle', () => {
 
     instance.onDeviceLost({ reason: 'lost' })
 
-    const state = renderer as unknown as { _recoveryFailed: boolean; _loopCallback: unknown }
+    const state = renderer as unknown as { _recoveryFailed: boolean }
     expect(state._recoveryFailed).toBe(true)
-    expect(state._loopCallback).toBeNull()
     expect(emit).toHaveBeenCalledWith('jlz:webgl-failed')
-    expect(instance.setAnimationLoop).toHaveBeenCalledWith(null)
     expect(showUnsupported).toHaveBeenCalledOnce()
     expect(originalOnDeviceLost).toHaveBeenCalledOnce()
     document.querySelector('.renderer-unsupported')?.remove()
