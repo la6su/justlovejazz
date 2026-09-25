@@ -16,6 +16,14 @@
 // Framework-neutral by design: the `LoopDriver` port is the only edge to a
 // real renderer (`renderer.setAnimationLoop`), so the policy is unit-tested
 // without a renderer, a canvas or rAF.
+//
+// ADR 0005 (2026-09-25, Tres-native demand loop): the `LoopDriver` edge now
+// installs the frame callback into the persistent Tres loop (through the
+// SceneHost `SceneLoopPort`) instead of the renderer's `setAnimationLoop`,
+// so `useLoop` subscribers (Cientos components included) share the RAF. The
+// policy below is unchanged — the Tres loop pauses when settled, resumes on
+// invalidation, and ecosystem `invalidate()` calls arrive typed as
+// 'external' through the port's wake path.
 
 export type FrameReason =
   | 'first-frame'
@@ -27,6 +35,8 @@ export type FrameReason =
   | 'motion-preference'
   | 'visibility-resume'
   | 'recovery'
+  /** An ecosystem `invalidate()` (Tres/Cientos) translated by the SceneHost bridge. */
+  | 'external'
 
 /** The single edge to the renderer's animation loop. */
 export interface LoopDriver {

@@ -33,6 +33,7 @@ import {
   type RenderActivity,
 } from '../core/renderDemand'
 import { RenderScheduler, type FrameReason } from '../core/RenderScheduler'
+import type { SceneLoopPort } from '../app/sceneHost'
 // ContentReveal owns per-section auto/inverse themes and sends this runtime
 // jlz:theme-applied events for 3D synchronisation.
 import { eventBus } from '../core/EventBus'
@@ -93,6 +94,8 @@ interface ExperienceHost {
   servicesStage: ServicesStage
   envSphere: EnvSphere
   replaceRenderer(renderer: RenderSurface): void
+  /** The Tres-native loop port (ADR 0005): scheduler edges to the Tres RAF. */
+  loop: SceneLoopPort
   mountWorksPlaneStage(stage: WorksPlaneStage): Promise<void>
   unmountWorksPlaneStage(stage: WorksPlaneStage): Promise<void>
   mountWorksInstallation(stage: WorksPlaneStage, installation: WorksInstallation): Promise<void>
@@ -281,11 +284,18 @@ export class Experience {
   private static readonly AMBIENT_BREATH_INTERVAL = 2.5 // seconds between idle refresh frames
   private _reducedMotion = false // synchronized with prefers-reduced-motion (updated in init)
   private _reducedMotionUnsub: (() => void) | null = null
-  // Phase 7 (ADR 0004): the single animation-loop driver. Experience is the
-  // only setAnimationLoop caller (through the Renderer owner boundary); the
-  // scheduler starts the loop on invalidation and stops it after the settled
-  // frame (zero settled draws). Hidden-tab pause/resume is owned here too.
+  // Phase 7 (ADR 0004) / ADR 0005: the single demand-loop policy. The frame
+  // callback installs into the persistent Tres loop through the SceneHost
+  // port (the renderer's setAnimationLoop boundary is gone); the scheduler
+  // still starts the loop on invalidation and stops it after the settled
+  // frame (zero idle ticks, zero settled draws). Hidden-tab pause/resume is
+  // owned here too.
   private _scheduler!: RenderScheduler
+  /** Ecosystem wake path (ADR 0005): Tres/Cientos `invalidate()` demands. */
+  private _unsubExternalInvalidate: (() => void) | null = null
+  /** Terminal render-failure gate (device-loss budget exhausted). */
+  private _onWebGLFailed: (() => void) | null = null
+  private _renderDisabled = false
   /** Reused per-frame activity snapshot; predicates consume it synchronously.
    *  The settle decision reads it after the frame, so a same-frame raise
    *  (section change, breath fire, …) is honored. */
@@ -376,15 +386,35 @@ export class Experience {
       ensureLabGamepad: () => this.ensureLabGamepad(),
     })
 
-    // Phase 7 (ADR 0004): construct the single loop driver. The Renderer is
-    // the setAnimationLoop owner boundary (device-loss recovery re-attaches
-    // the stored callback); the scheduler decides WHEN the callback is
-    // installed. `autoVisibility` (default, DOM present) pauses the loop
-    // while the tab is hidden and resumes it with exactly one invalidation.
+    // Phase 7 (ADR 0004) / ADR 0005: construct the single loop policy. The
+    // driver edge targets the persistent Tres loop through the SceneHost
+    // port — non-null installs the frame callback (window open), null stops
+    // the loop (window closed). `autoVisibility` (default, DOM present)
+    // pauses the loop while the tab is hidden and resumes it with exactly
+    // one invalidation.
     this._scheduler = new RenderScheduler(
-      { setLoop: (cb) => this.renderer.setAnimationLoop(cb) },
+      {
+        setLoop: (cb) => {
+          this._host.loop.onFrame(cb)
+          if (cb) this._host.loop.start()
+          else this._host.loop.stop()
+        },
+      },
       { onFrame: (time) => this.update(time), isSettled: () => this._isLoopSettled() },
     )
+    // Ecosystem wake path (ADR 0005): Tres/Cientos `invalidate()` calls
+    // (CameraControls change events, future helpers) raise the same typed
+    // demand as internal activity, so external components can open windows.
+    this._unsubExternalInvalidate = this._host.loop.onExternalInvalidate(() =>
+      this._raiseRenderDemand('external'),
+    )
+    // ADR 0005: a terminal device-loss failure stops the loop through the
+    // event (the old Renderer.setAnimationLoop(null) boundary is gone).
+    this._onWebGLFailed = () => {
+      this._renderDisabled = true
+      this._scheduler.settleNow()
+    }
+    eventBus.on('jlz:webgl-failed', this._onWebGLFailed)
 
     // Wire resize → world (A-001/A-004: World.resize was empty + never called)
     this._onSizesResize = () => {
@@ -1360,6 +1390,7 @@ export class Experience {
    * already running by definition.
    */
   private _raiseRenderDemand(reason: FrameReason = 'dirty'): void {
+    if (this._renderDisabled) return
     this._needsRender = true
     this._scheduler.invalidate(reason)
   }
@@ -1374,6 +1405,7 @@ export class Experience {
   private _isLoopSettled(): boolean {
     return (
       this._updateFailed ||
+      this._renderDisabled ||
       (!this._needsRender &&
         demandSettles(this._activitySnapshot) &&
         this.cursor?.isSettled !== false)
@@ -1769,10 +1801,17 @@ export class Experience {
     // stop their RAF/timeout owners before tearing down the scene and UI.
     NoiseText.disposeAll()
     BlurFade.disposeAll()
-    // Stop the loop driver FIRST — RenderScheduler.destroy() clears the
-    // setAnimationLoop callback, the visibility listener and any pending
-    // invalidation, so no frame fires after dispose().
+    // Stop the loop driver FIRST — RenderScheduler.destroy() closes the
+    // Tres loop window through the SceneHost port, clears the frame
+    // callback, the visibility listener and any pending invalidation, so no
+    // frame fires after dispose().
     this._scheduler.destroy()
+    this._unsubExternalInvalidate?.()
+    this._unsubExternalInvalidate = null
+    if (this._onWebGLFailed) {
+      eventBus.off('jlz:webgl-failed', this._onWebGLFailed)
+      this._onWebGLFailed = null
+    }
     this._reducedMotionUnsub?.()
     this._reducedMotionUnsub = null
     this._cancelBreath()

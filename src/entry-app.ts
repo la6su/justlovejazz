@@ -378,6 +378,7 @@ async function boot(): Promise<BootResult> {
         servicesStage: host.servicesStage,
         envSphere: host.envSphere,
         replaceRenderer: (renderer) => sceneHost.replaceRenderer(renderer),
+        loop: host.loop,
         mountWorksPlaneStage: (stage) => host.mountWorksPlaneStage(stage),
         unmountWorksPlaneStage: (stage) => host.unmountWorksPlaneStage(stage),
         mountWorksInstallation: (stage, installation) =>

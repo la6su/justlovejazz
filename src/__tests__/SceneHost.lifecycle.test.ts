@@ -5,6 +5,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   loopStop: vi.fn(),
+  loopStart: vi.fn(),
+  onBeforeLoop: vi.fn(() => () => undefined),
+  invalidate: vi.fn(),
+  replaceRenderFunction: vi.fn(),
   candidate: {
     dispose: vi.fn(),
     backend: {},
@@ -21,12 +25,18 @@ vi.mock('@tresjs/core', () => ({
         emit('ready', {
           scene: { value: new THREE.Scene() },
           renderer: {
-            loop: { stop: mocks.loopStop },
+            loop: {
+              stop: mocks.loopStop,
+              start: mocks.loopStart,
+              onBeforeLoop: mocks.onBeforeLoop,
+            },
             instance: {
               dispose: vi.fn(),
               domElement: document.createElement('canvas'),
               backend: {},
             },
+            invalidate: mocks.invalidate,
+            replaceRenderFunction: mocks.replaceRenderFunction,
           },
         })
       })
@@ -140,6 +150,10 @@ describe('SceneHost async lifecycle', () => {
   beforeEach(() => {
     mocks.candidate.dispose.mockReset()
     mocks.loopStop.mockReset()
+    mocks.loopStart.mockReset()
+    mocks.onBeforeLoop.mockClear()
+    mocks.invalidate.mockReset()
+    mocks.replaceRenderFunction.mockReset()
     mocks.init.mockReset()
     __resetSceneHostForTests()
   })
@@ -159,10 +173,16 @@ describe('SceneHost async lifecycle', () => {
     expect(mocks.loopStop).toHaveBeenCalled()
   })
 
-  it('stops Tres internal loop when ready hands ownership to RenderScheduler', async () => {
+  it('installs the ADR 0005 bridges and stops Tres internal loop when ready hands ownership to RenderScheduler', async () => {
     const wrapper = mount(SceneHost, { attachTo: document.body })
     await flushPromises()
 
+    // The render step is delegated away from Tres's default render function.
+    expect(mocks.replaceRenderFunction).toHaveBeenCalledOnce()
+    // The scheduler frame bridge runs inside Tres's before-render hooks.
+    expect(mocks.onBeforeLoop).toHaveBeenCalledOnce()
+    // Tres auto-starts its loop on ready; SceneHost pauses it immediately —
+    // the RenderScheduler owns start/stop from here.
     expect(mocks.loopStop).toHaveBeenCalled()
     wrapper.unmount()
   })
