@@ -174,6 +174,7 @@ test.describe('JustLoveJazz — page boot smoke', () => {
 
     expect(html).toContain('/fonts/commissioner.css')
     expect(html).not.toContain('/fonts/inter.css')
+    expect(html).not.toContain('fonts.googleapis.com')
     expect(blogHtml).toContain('/fonts/commissioner.css')
     expect(blogHtml).not.toContain('/fonts/inter.css')
     expect(fontResponse.ok()).toBe(true)
@@ -196,12 +197,14 @@ test.describe('JustLoveJazz — page boot smoke', () => {
     await expect(main).not.toBeEmpty({ timeout: 20000 })
   })
 
-  test('skip link targets first section (#section-intro)', async ({ page }) => {
+  test('skip link targets the app content root (#app)', async ({ page }) => {
     await page.goto('/')
 
     const skip = page.locator('a.skip-link')
     await expect(skip).toHaveCount(1)
-    await expect(skip).toHaveAttribute('href', '#section-intro')
+    // `#app` exists on every route before and after JS boots (unlike the
+    // home-only `#section-intro`), so the skip target is route-independent.
+    await expect(skip).toHaveAttribute('href', '#app')
   })
 
   test('in-app route changes are announced without exposing the decorative canvas', async ({

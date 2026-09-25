@@ -89,9 +89,11 @@ function initLangToggle(): void {
 function showEnterButton(): void {
   const enterBtn = document.getElementById('jlz-splash-enter') as HTMLButtonElement | null
   if (!enterBtn) return
-  // Fill progress ring to 100% then show Enter
+  // Fill progress ring to 100% then show Enter. Flip aria-disabled so AT
+  // users (and Playwright actionability) see the button as activatable.
   updateLoaderProgress(100)
   enterBtn.classList.add('is-ready')
+  enterBtn.setAttribute('aria-disabled', 'false')
 }
 
 // ── Show a load error when 3D fails to initialize ──
