@@ -148,3 +148,82 @@ Verification after fixes: build + prerender injection confirmed in
 `dist/index.html`; unit 112 files / 692 tests; e2e 23 passed / 1 skipped
 (documented GPU-conditional skip); `tsc`, `vue-tsc`, `eslint` (0 errors),
 `prettier` clean.
+
+## Inspection 3 — 2026-09-25, reinvented-wheel audit (TresJS core + Cientos)
+
+Trigger: user request to audit final-refactor overengineering, verify the
+validity of hand-rolled solutions ("are we reinventing the wheel?") and
+assess adopting more of [TresJS core](https://tresjs.org) and
+[Cientos](https://cientos.tresjs.org). Method: full inventory of the 20
+`Experience/World` + `Scene` classes against the core 5.8.3 export surface
+(`node_modules` dist inspection) and the Cientos 5.9.0 catalog (npm
+registry: peer-locks `@tresjs/core` 5.9.0; transitive deps three-stdlib,
+camera-controls, stats-gl, stats.js, three-mesh-bvh, @vueuse/core,
+three-custom-shader-material); import-graph orphan scan over all of
+`src/`; cross-read of the documented decisions in
+[ARCHITECTURE](ARCHITECTURE.md).
+
+### Verdict: no wheels — the custom layer is product, not plumbing
+
+- All 20 World/Scene classes are product-specific constructs with no
+  library equivalent: Baku/SplashCube (CPU-jelly transmission glass with
+  per-role materials), BakuCarousel (editorial infinite media stream),
+  JunniParticles/PointerInk/ManifestoInk (TSL NodeMaterial subgraphs for
+  the WebGPU pipeline), DrawTrail (world-space cursor ribbon with console
+  signals), CasePlane (TSL vertex wobble), ShowreelTheater (render-mode
+  swap owner of the ONE pipeline), ParticleBurst (deterministic frames —
+  deliberately not a simulation). Cientos's generic counterparts
+  (Sparkles, Stars, Text3D, Environment, Html) solve different problems.
+- `caseTexture.ts` refcount cache is STRONGER than `useTexture`: in-flight
+  dedup across BakuCarousel + WorksPlaneStage, `pendingDrop` late-owner
+  protection, root teardown sweep — a documented ~12 MB GPU win. A
+  composable swap would weaken the single-disposal-owner contract.
+- GLTF/DRACO loading (ContactCyprusStage) is 8 lines with a disposed-guard
+  that disposes late results; `useGLTF` requires Vue setup context, and
+  the owner is a three-object class by design (LazyStage lifecycle).
+- `WireframeTypography` needs per-glyph meshes (the word "breathes as a
+  small flock"); `Text3D` renders one rigid mesh.
+- `RenderScheduler` vs `useLoop` is a documented delivery decision, not a
+  wheel: Tres's manual `advance()` kept idle RAF work; the bounded
+  scheduler is locked by `TresLoop.contract.test.ts` (ARCHITECTURE.md →
+  Renderer and scheduling).
+
+### Can we use more TresJS core? The used surface is already the right one
+
+Production imports: `TresCanvas` + custom renderer factory (single
+construction owner), declarative `Tres*` nodes, `primitive` adapters with
+`:dispose="null"`, `useTresContext().camera.setActiveCamera`, on-demand
+mode with the internal loop stopped. Unused core composables, evaluated:
+
+- `useLoop` / `useCreateRafLoop` — deliberately bypassed (bounded scheduler
+  owns the loop; competing RAF loops are contractually forbidden).
+- `useLoader` / `useTexture` / `useSizes` / `useCamera` / `useCameraManager`
+  — each is weaker than the existing owner (refcount cache / Sizes with
+  DPR caps / cinematic camera contract); adopting them would move
+  ownership backwards.
+- `useAsyncState` / `useEventManager` / `useGraph` — trivial helpers; the
+  project's generation guards and typed event ports are stricter.
+
+### Cientos: deliberately not installed
+
+Cientos 5.9.0 peer-locks `@tresjs/core` to 5.9.0 (project pins 5.8.3) and
+pulls six transitive dependencies. None of its catalog entries replaces
+existing code today (see verdicts above). Installing "for the future" is a
+speculative dependency, which the project rules forbid. Re-evaluate when a
+concrete need appears — e.g. interactive camera exploration in the Lab
+(CameraControls), scene-anchored DOM overlays (Html), or a core upgrade to
+5.9.x.
+
+### Overengineering scan: clean
+
+- Import-graph orphan scan: 0 dead modules (28 raw candidates were all
+  false positives — router lazy imports with extensions, the
+  `three-webgpu-compat` alias seam, ambient type files, and consumers in
+  `scripts/`/`admin/`).
+- Small abstractions (`createDeferredInitialHashGate`,
+  `createSingleFrameOwner`) are tested, consumed and carry documented
+  contracts.
+- Micro-helpers (1–2-line `lerp`/`ease`/`clamp` idioms in ~10 files) are
+  local idioms, some exported as domain functions with their own tests;
+  centralizing them adds import coupling for no gain.
+- No action items produced. Nothing added to the NEXT queue.
