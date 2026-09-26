@@ -9,12 +9,11 @@ import { ContentReveal } from './ContentReveal'
 import { Cursor } from './Cursor'
 import type { UIManager } from '../UI/UIManager'
 import { input } from './Input'
-import { StateBus } from '../core/StateBus'
+import { SfxSystem } from '../core/SfxSystem'
 import type { PageId } from '../sections/_shared/constants'
 import { NoiseText } from './NoiseText'
 import { BlurFade } from './BlurFade'
 
-import { SfxSystem } from '../core/SfxSystem'
 import { ExperienceUI } from './ExperienceUI'
 import { SceneCoordinator } from './SceneCoordinator'
 // worldDNA.ts removed — TSL node system never attached (attachWorldDNA never
@@ -222,10 +221,6 @@ export class Experience {
   // cached so a lazy Contact stage cannot miss it.
   private _contactCyprusActive = false
   private _contactIsLight = false
-  // Resolve the animation state owner before any async renderer/Tres setup can
-  // raise demand. Renderer initialization may emit a resize/invalidation
-  // before `init()` reaches the world-build handoff.
-  private bus: StateBus = StateBus.getInstance()
 
   // Phase 7 slice 4: the former UI features (cinematic nav, menu, overlay,
   // Works portfolio, UI-facing window handlers) live in ExperienceUI.
@@ -1410,7 +1405,9 @@ export class Experience {
       const avgMs = this._fpsSum / Experience.LOW_FPS_WINDOW
       this._lowFps = 1000 / Math.max(1, avgMs) < Experience.LOW_FPS_THRESHOLD
     }
-    this.bus.tick(dt)
+    // Section state deadlines (ready → viewing → passed) advance here —
+    // the former StateBus tick's only live responsibility.
+    this.coordinator?.updateSections(dt)
     // Cursor always updates (DOM, cheap — not GPU rendering)
     this.cursor.update()
 
@@ -1818,7 +1815,6 @@ export class Experience {
     // Last-resort sweep for cold-cache failures and in-flight loads that had
     // no owner card yet. In-flight entries self-dispose when they settle.
     disposeAllCaseTextures()
-    this.bus?.cancelAll()
     this.devPanel?.dispose()
     delete (window as unknown as { __jlzRuntimeSnapshot?: () => unknown }).__jlzRuntimeSnapshot
     delete (window as unknown as { __jlzRuntimeDestroy?: () => void }).__jlzRuntimeDestroy

@@ -9,7 +9,6 @@
 
 import * as THREE from 'three'
 import { Section, SectionState } from '../core/Section'
-import { StateBus } from '../core/StateBus'
 import { prefersReducedMotion } from '../core/motionPolicy'
 import { type CameraTarget, type WorldState, BakuRole } from '../core/types'
 import type { PageId } from '../sections/_shared/constants'
@@ -175,13 +174,10 @@ export class SceneCoordinator {
     // is independent of the sections added below.
     this.syncRouteVisuals()
 
-    const bus = StateBus.getInstance()
-
     this.configs.forEach((config, index) => {
       const section = new Section(config, index)
       if (index === 1) {
         // Intro = index 1 (canonical Lab/Contact finale = 0)
-        bus.set(`section:${config.id}:state`, 1)
         section.forceState(SectionState.VIEWING)
       } else {
         section.forceState(SectionState.READY)
@@ -777,6 +773,14 @@ export class SceneCoordinator {
       s.dispose()
     })
     this.sections = []
+  }
+
+  /** Advance the sections' pending state deadlines (called from the frame
+   *  path where the former StateBus tick used to run). */
+  public updateSections(dt: number): void {
+    this.sections.forEach((s) => {
+      s.update(dt)
+    })
   }
 
   // Phase 8 slice 2: the stable section groups (incl. the BakuCarousel dispose

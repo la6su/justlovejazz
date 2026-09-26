@@ -1,19 +1,12 @@
-// src/core/Section.ts — Per-section state machine + opacity animation
+// src/core/Section.ts — Per-section state machine (ready → viewing → passed)
 
 import * as THREE from 'three'
-import { StateBus } from './StateBus'
 import { type PhaseConfig, type CameraTransform, type BakuTransform } from './WorldConfig'
 
 export enum SectionState {
   READY = 'ready',
   VIEWING = 'viewing',
   PASSED = 'passed',
-}
-
-const STATE_VALUE: Record<SectionState, number> = {
-  [SectionState.READY]: 0,
-  [SectionState.VIEWING]: 1,
-  [SectionState.PASSED]: 2,
 }
 
 export type { CameraTransform, BakuTransform }
@@ -24,7 +17,16 @@ interface LightData {
   intensity: number
 }
 
-/** Route transition state only; renderable section content lives in SectionGroups. */
+/** Route transition state only; renderable section content lives in SectionGroups.
+ *
+ *  The state flip is a plain deadline, not a sampled animation: the eased
+ *  float the former StateBus animated was never read mid-flight — consumers
+ *  only gate on the discrete `state` and the flip timing (the former bus
+ *  re-armed its animation on every scroll frame, which asymptotically
+ *  DELAYED the documented 0.8 s flip; the deadline keeps the first-call
+ *  deadline instead, so the flip lands exactly `duration` after the first
+ *  switchState toward a target). `update(dt)` advances the deadline from the
+ *  frame path (SceneCoordinator.updateSections). */
 export class Section {
   private _disposed = false
   public phaseConfig: PhaseConfig
@@ -37,12 +39,11 @@ export class Section {
 
   // Viewing state machinery (ready/viewing/passed)
   private _state: SectionState = SectionState.READY
-  private _stateDoneHandler: ((eventName: string, data: unknown) => void) | null = null
+  /** Pending delayed flip; null when no transition is in flight. */
+  private _pendingState: { target: SectionState; remaining: number } | null = null
   public get state(): SectionState {
     return this._state
   }
-
-  private stateChannel: string
 
   constructor(
     config: PhaseConfig,
@@ -50,7 +51,6 @@ export class Section {
   ) {
     this.name = `section-${config.id}`
     this.phaseConfig = config
-    this.stateChannel = `section:${config.id}:state`
 
     // Extract transforms from PhaseConfig
     this.cameraTransform = {
@@ -78,56 +78,43 @@ export class Section {
       ambientColor: config.lighting.ambientColor.clone(),
       intensity: config.lighting.intensity,
     }
+  }
 
-    const bus = StateBus.getInstance()
-    bus.channel(this.stateChannel, STATE_VALUE[SectionState.READY])
-    // Listen for animation completion to sync _state. When the animate()
-    // completes, StateBus emits 'done:${name}' and we resolve _state.
-    this._stateDoneHandler = (_eventName: string, data: unknown) => {
-      if (this._disposed) return
-      if (data !== this.stateChannel) return
-      const val = bus.get(this.stateChannel)
-      let resolved: SectionState
-      if (val < 0.5) resolved = SectionState.READY
-      else if (val < 1.5) resolved = SectionState.VIEWING
-      else resolved = SectionState.PASSED
-      if (resolved !== this._state) {
-        this._state = resolved
-      }
+  /** Advance the pending state flip; called from the frame path. */
+  public update(dt: number): void {
+    if (this._disposed || !this._pendingState) return
+    if (!Number.isFinite(dt) || dt <= 0) return
+    this._pendingState.remaining -= dt
+    if (this._pendingState.remaining <= 0) {
+      this._state = this._pendingState.target
+      this._pendingState = null
     }
-    bus.on(`done:${this.stateChannel}`, this._stateDoneHandler)
   }
 
   public switchState(target: SectionState, duration: number = 1.0, reduced: boolean = false): void {
     if (this._disposed) return
-    const bus = StateBus.getInstance()
-    const current = bus.get(this.stateChannel)
-    const targetValue = STATE_VALUE[target]
-    if (Math.abs(targetValue - current) < 0.001) return
-    const dur = reduced ? 0 : duration
-    bus.animate(this.stateChannel, targetValue, dur, 'easeOutQuart')
     if (reduced) {
-      bus.set(this.stateChannel, targetValue)
+      this._pendingState = null
       this._state = target
+      return
     }
+    // Keep the first deadline toward a target (scroll calls this every frame
+    // while the state still reads READY — restarting per frame would defer
+    // the flip indefinitely, the exact artifact this replaced).
+    if (this._pendingState?.target === target) return
+    if (target === this._state && !this._pendingState) return
+    this._pendingState = { target, remaining: duration }
   }
 
   public forceState(state: SectionState): void {
     if (this._disposed) return
-    const bus = StateBus.getInstance()
-    bus.set(this.stateChannel, STATE_VALUE[state])
+    this._pendingState = null
     this._state = state
   }
 
   public dispose(): void {
     if (this._disposed) return
     this._disposed = true
-    const bus = StateBus.getInstance()
-    bus.cancel(this.stateChannel)
-    if (this._stateDoneHandler) {
-      bus.off(`done:${this.stateChannel}`, this._stateDoneHandler)
-      this._stateDoneHandler = null
-    }
-    bus.removeChannel(this.stateChannel)
+    this._pendingState = null
   }
 }

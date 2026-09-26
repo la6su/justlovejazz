@@ -29,7 +29,6 @@ function createSeededExperience() {
     labGamepad: vi.fn(),
     sectionGroups: vi.fn(),
     coordinator: vi.fn(),
-    bus: vi.fn(),
     devPanel: vi.fn(),
     renderer: vi.fn(),
     camera: vi.fn(),
@@ -67,7 +66,6 @@ function createSeededExperience() {
     labGamepad,
     sectionGroups: { dispose: spies.sectionGroups },
     coordinator: { dispose: spies.coordinator },
-    bus: { cancelAll: spies.bus },
     devPanel: { dispose: spies.devPanel },
     renderer: { dispose: spies.renderer },
     camera: { destroy: spies.camera },
@@ -99,7 +97,6 @@ describe('Experience destroy ownership boundary', () => {
     expect(spies.labGamepad).toHaveBeenCalledOnce()
     expect(spies.sectionGroups).toHaveBeenCalledOnce()
     expect(spies.coordinator).toHaveBeenCalledOnce()
-    expect(spies.bus).toHaveBeenCalledOnce()
     expect(spies.devPanel).toHaveBeenCalledOnce()
     expect(spies.renderer).toHaveBeenCalledOnce()
     expect(spies.camera).toHaveBeenCalledOnce()
