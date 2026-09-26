@@ -4,11 +4,11 @@
 // crossfades them per section, RenderPipeline diffs them against its snapshot,
 // WebGPUPostPipeline writes them into the TSL uniform nodes. Declaring the
 // shape once (instead of four hand-maintained copies) makes adding a channel
-// a one-file change, and copyPostParams keeps the per-frame handoff
-// allocation-free.
+// a one-file change, and both RenderPipeline handoffs (snapshot update and
+// the PERF-11 TSL uniform handoff) go through copyPostParams.
 
 /** Shadow/highlight tint multipliers (RGB, 1 = neutral). */
-export type PostGradeTuple = [number, number, number]
+type PostGradeTuple = [number, number, number]
 
 export interface PostParams {
   /** 0–1, bloom intensity multiplier. */

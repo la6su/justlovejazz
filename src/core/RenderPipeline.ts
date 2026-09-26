@@ -21,7 +21,7 @@ import * as THREE from 'three'
 import { WebGPURenderer } from 'three/webgpu'
 import { WebGPUPostPipeline } from './WebGPUPostPipeline'
 import { withNoToneMapping } from './toneMappingGuard'
-import type { PostParams } from './postParams'
+import { copyPostParams, type PostParams } from './postParams'
 
 function tupleIs(a: [number, number, number], b: [number, number, number]): boolean {
   return Object.is(a[0], b[0]) && Object.is(a[1], b[1]) && Object.is(a[2], b[2])
@@ -112,24 +112,10 @@ export class RenderPipeline {
     ) {
       return
     }
-    this._params.bloom = params.bloom
-    this._params.vignette = params.vignette
-    this._params.grain = params.grain
-    this._params.chromatic = params.chromatic
-    this._params.bloomRadius = params.bloomRadius
-    this._params.bloomThreshold = params.bloomThreshold
-    this._params.refract = params.refract
-    this._params.border = params.border
-    this._params.gradeShadows = [
-      params.gradeShadows[0],
-      params.gradeShadows[1],
-      params.gradeShadows[2],
-    ]
-    this._params.gradeHighlights = [
-      params.gradeHighlights[0],
-      params.gradeHighlights[1],
-      params.gradeHighlights[2],
-    ]
+    // Copy through the canonical in-place helper — the diff above decides
+    // WHEN; this decides HOW (element-wise, allocation-free, tuple references
+    // preserved for any holder of the snapshot).
+    copyPostParams(this._params, params)
     this._webgpuParamsDirty = true
   }
 
@@ -158,22 +144,8 @@ export class RenderPipeline {
           if (this._webgpuParamsDirty) {
             // PERF-11: mutate the cached params object only on dirty handoff;
             // settled WebGPU frames need neither scalar nor tuple writes.
-            const p = this._webgpuParamsCache
-            p.bloom = this._params.bloom
-            p.bloomRadius = this._params.bloomRadius
-            p.bloomThreshold = this._params.bloomThreshold
-            p.vignette = this._params.vignette
-            p.grain = this._params.grain
-            p.chromatic = this._params.chromatic
-            p.refract = this._params.refract
-            p.border = this._params.border
-            p.gradeShadows[0] = this._params.gradeShadows[0]
-            p.gradeShadows[1] = this._params.gradeShadows[1]
-            p.gradeShadows[2] = this._params.gradeShadows[2]
-            p.gradeHighlights[0] = this._params.gradeHighlights[0]
-            p.gradeHighlights[1] = this._params.gradeHighlights[1]
-            p.gradeHighlights[2] = this._params.gradeHighlights[2]
-            this._webgpuPipeline.updateParams(p)
+            copyPostParams(this._webgpuParamsCache, this._params)
+            this._webgpuPipeline.updateParams(this._webgpuParamsCache)
             this._webgpuParamsDirty = false
           }
           // Disable renderer tone mapping during TSL pipeline render — the TSL
