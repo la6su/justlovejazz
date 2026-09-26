@@ -12,7 +12,7 @@ const manifestoModule = vi.hoisted(() => {
 
 vi.mock('../Experience/World/ManifestoInkStage', () => manifestoModule.promise)
 
-import { Experience } from '../Experience/Experience'
+import { seedExperience } from './experienceSeed'
 
 class DeferredManifestoInkStage extends THREE.Group {
   static constructed = vi.fn()
@@ -27,8 +27,8 @@ class DeferredManifestoInkStage extends THREE.Group {
   }
 }
 
-function makeDestroyableExperience(scene: THREE.Scene): Experience {
-  return Object.assign(Object.create(Experience.prototype), {
+function makeDestroyableExperience(scene: THREE.Scene): ReturnType<typeof seedExperience> {
+  return seedExperience({
     _destroyed: false,
     _lifecycleGeneration: 0,
     _scheduler: { destroy: vi.fn() },
@@ -36,14 +36,6 @@ function makeDestroyableExperience(scene: THREE.Scene): Experience {
     _mouseTrailRafPending: false,
     _onMouseMoveForTrail: null,
     _readinessGate: null,
-    _worksPlaneStageRequest: 0,
-    _contactTypographyStageRequest: 0,
-    _contactCyprusStageRequest: 0,
-    _contactHaloStageRequest: 0,
-    _manifestoInkStageRequest: 0,
-    _labGamepadRequest: 0,
-    manifestoInkStage: null,
-    _manifestoInkStagePromise: null,
     features: { destroy: vi.fn() },
     renderer: { dispose: vi.fn() },
     camera: { destroy: vi.fn() },
@@ -59,13 +51,13 @@ function makeDestroyableExperience(scene: THREE.Scene): Experience {
         },
       },
     },
-  }) as Experience
+  })
 }
 
 describe('Experience Manifesto ink lazy owner', () => {
   it('retires a pending import during root teardown before it can construct or attach', async () => {
     const scene = new THREE.Scene()
-    const experience = makeDestroyableExperience(scene)
+    const { exp: experience, slots } = makeDestroyableExperience(scene)
 
     const pending = experience.ensureManifestoInkStageInitialized()
     experience.destroy()
@@ -74,21 +66,16 @@ describe('Experience Manifesto ink lazy owner', () => {
 
     expect(DeferredManifestoInkStage.constructed).not.toHaveBeenCalled()
     expect(scene.children).toHaveLength(0)
-    expect(
-      (experience as unknown as { manifestoInkStage: THREE.Group | null }).manifestoInkStage,
-    ).toBeNull()
-    expect(
-      (experience as unknown as { _manifestoInkStagePromise: Promise<void> | null })
-        ._manifestoInkStagePromise,
-    ).toBeNull()
+    expect(slots.manifestoInk.getStage()).toBeNull()
+    expect(slots.manifestoInk.owner.getPromise()).toBeNull()
   })
 
   it('disposes a live ink stage during root teardown', () => {
     const scene = new THREE.Scene()
     const stage = new DeferredManifestoInkStage()
     scene.add(stage)
-    const experience = makeDestroyableExperience(scene)
-    ;(experience as unknown as { manifestoInkStage: typeof stage }).manifestoInkStage = stage
+    const { exp: experience, slots } = makeDestroyableExperience(scene)
+    slots.manifestoInk.setStage(stage)
 
     experience.destroy()
 

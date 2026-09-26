@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { describe, expect, it, vi } from 'vitest'
-import { Experience } from '../Experience/Experience'
 import { Renderer } from '../Experience/Renderer'
+import { seedExperience } from './experienceSeed'
 
 /**
  * Pins the destroy() ownership boundary established by the Tres transition
@@ -9,9 +9,8 @@ import { Renderer } from '../Experience/Renderer'
  * Experience-owned owner exactly once, while Vue-owned scene owners survive
  * because the persistent host's Vue unmount owns their terminal disposal.
  *
- * Follows the established Object.create seeding pattern from
- * Experience.lifecycle.test.ts — destroy() is exercised against real
- * prototype methods with hand-seeded owner fields.
+ * Follows the shared seedExperience pattern — destroy() is exercised against
+ * real prototype methods with hand-seeded owner fields.
  */
 function createSeededExperience() {
   const spies = {
@@ -46,7 +45,7 @@ function createSeededExperience() {
   const scene = new THREE.Scene()
   scene.environment = { dispose: spies.environment } as unknown as THREE.Texture
 
-  const experience = Object.assign(Object.create(Experience.prototype), {
+  const { exp: experience } = seedExperience({
     _destroyed: false,
     _lifecycleGeneration: 0,
     _readinessGate: null,
@@ -75,13 +74,7 @@ function createSeededExperience() {
     sizes: { destroy: spies.sizes },
     sfx: { dispose: spies.sfx },
     scene,
-    _worksPlaneStageRequest: 0,
-    _contactTypographyStageRequest: 0,
-    _contactCyprusStageRequest: 0,
-    _contactHaloStageRequest: 0,
-    _manifestoInkStageRequest: 0,
-    _labGamepadRequest: 0,
-  }) as Experience
+  })
 
   return { experience, spies, servicesStage, envSphere, particleBurst, labGamepad, scene }
 }

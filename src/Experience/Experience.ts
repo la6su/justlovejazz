@@ -43,7 +43,12 @@ import { eventBus } from '../core/EventBus'
 import { CinematicLights } from './World/Lights'
 import { GroundPlane } from './Scene/GroundPlane'
 import { SectionGroups } from './Scene/SectionGroups'
-import { disposeLazyStage, ensureLazyStage, type LazyStageContract } from './LazyStage'
+import {
+  createLazyStageSlot,
+  disposeLazyStage,
+  ensureLazyStage,
+  type LazyStageContract,
+} from './LazyStage'
 import type { EnvSphere } from './World/EnvSphere'
 import { SplashCube } from './World/SplashCube'
 import { ParticleBurst } from './World/ParticleBurst'
@@ -175,14 +180,35 @@ export class Experience {
   // attachBakuCarousel adapter + carousel getter.
   private carousel: BakuCarousel | null = null
   private _carouselInitPromise: Promise<void> | null = null
-  // Phase 8 slice 7: the /works case-plane owner (lazy — created on the first
-  // /works visit, disposed when leaving, so the ~8 decoded 1440×810 textures
-  // never look like a navigation leak). The World frame path reads it through
-  // the attachWorksPlaneStage adapter + worksPlaneStage getter.
-  private worksPlaneStage: WorksPlaneStage | null = null
+  // Lazy route-owned stages: each slot owns the stage reference + memoized
+  // init promise + request id (LazyStage.ts); the private getters below keep
+  // the historical read sites unchanged.
+  private readonly _worksPlaneSlot = createLazyStageSlot<WorksPlaneStage>()
+  private readonly _contactTypographySlot = createLazyStageSlot<ContactTypographyStage>()
+  private readonly _contactCyprusSlot = createLazyStageSlot<ContactCyprusStage>()
+  private readonly _contactHaloSlot = createLazyStageSlot<ContactHaloStage>()
+  private readonly _manifestoInkSlot = createLazyStageSlot<ManifestoInkStage>()
+  private readonly _labGamepadSlot = createLazyStageSlot<LabExperimentObject>()
   private servicesStage: ServicesStage | null = null
-  private _worksPlaneStagePromise: Promise<void> | null = null
-  private _worksPlaneStageRequest = 0
+  /** Stage references read through their slots (null until created / after dispose). */
+  private get worksPlaneStage(): WorksPlaneStage | null {
+    return this._worksPlaneSlot.getStage()
+  }
+  private get contactTypographyStage(): ContactTypographyStage | null {
+    return this._contactTypographySlot.getStage()
+  }
+  private get contactCyprusStage(): ContactCyprusStage | null {
+    return this._contactCyprusSlot.getStage()
+  }
+  private get contactHaloStage(): ContactHaloStage | null {
+    return this._contactHaloSlot.getStage()
+  }
+  private get manifestoInkStage(): ManifestoInkStage | null {
+    return this._manifestoInkSlot.getStage()
+  }
+  private get labGamepad(): LabExperimentObject | null {
+    return this._labGamepadSlot.getStage()
+  }
   // Showreel theater: a private render mode (own scene + ortho camera) swapped
   // in at the render call while open. Created lazily on the first
   // `jlz:showreel-open`, so neither the video element nor its texture exist
@@ -191,37 +217,11 @@ export class Experience {
   private _showreelOpenUnsub: (() => void) | null = null
   private _showreelCloseUnsub: (() => void) | null = null
   private _showreelTogglePlayUnsub: (() => void) | null = null
-  // Phase 8 slice 8: the lazy 3D Agros backdrop (ContactCyprusStage, Draco model),
-  // created on the first /contact visit and disposed when leaving, so the
-  // decoded assets never look like a navigation leak. The World frame path
-  // reads it through the attachContactCyprusStage adapter + getter; the
-  // cube-visibility gate reads
-  // `contactCyprusStage.isActive` off the attached stage.
-  private contactTypographyStage: ContactTypographyStage | null = null
-  private contactCyprusStage: ContactCyprusStage | null = null
-  private contactHaloStage: ContactHaloStage | null = null
-  private _contactTypographyStagePromise: Promise<void> | null = null
-  private _contactTypographyStageRequest = 0
-  private _contactCyprusStagePromise: Promise<void> | null = null
-  private _contactCyprusStageRequest = 0
-  private _contactHaloStagePromise: Promise<void> | null = null
-  private _contactHaloStageRequest = 0
-  // The /manifesto ink wash — same lazy-stage contract as the contact halo.
-  private manifestoInkStage: ManifestoInkStage | null = null
-  private _manifestoInkStagePromise: Promise<void> | null = null
-  private _manifestoInkStageRequest = 0
   // Phase 8 slice 8 (moved from World): the target Cyprus-active state (the
   // Agros frame replaces the shared cube) + the effective text polarity
   // cached so a lazy Contact stage cannot miss it.
   private _contactCyprusActive = false
   private _contactIsLight = false
-  // Phase 8 slice 9: the Lab experiment object (a static scene object created
-  // once on the first /lab visit, then only toggled visible — never disposed
-  // per route leave; disposed only on final destroy). World's `syncRouteVisuals`
-  // reads the visibility gate off the `labGamepad` getter.
-  private labGamepad: LabExperimentObject | null = null
-  private _labGamepadPromise: Promise<void> | null = null
-  private _labGamepadRequest = 0
   // Resolve the animation state owner before any async renderer/Tres setup can
   // raise demand. Renderer initialization may emit a resize/invalidation
   // before `init()` reaches the world-build handoff.
@@ -674,18 +674,7 @@ export class Experience {
   private _worksPlaneStageContract(): LazyStageContract<WorksPlaneStage> {
     return {
       label: 'WorksPlaneStage',
-      owner: {
-        getStage: () => this.worksPlaneStage,
-        setStage: (value) => {
-          this.worksPlaneStage = value
-        },
-        getPromise: () => this._worksPlaneStagePromise,
-        setPromise: (value) => {
-          this._worksPlaneStagePromise = value
-        },
-        getRequest: () => this._worksPlaneStageRequest,
-        advanceRequest: () => ++this._worksPlaneStageRequest,
-      },
+      owner: this._worksPlaneSlot.owner,
       create: () => new WorksPlaneStage(),
       // SceneHost/Vue owns attachment. The controller remains the sole lazy
       // texture, TSL, animation and explicit GPU-disposal owner for now.
@@ -727,18 +716,7 @@ export class Experience {
   private _contactTypographyStageContract(): LazyStageContract<ContactTypographyStage> {
     return {
       label: 'ContactTypographyStage',
-      owner: {
-        getStage: () => this.contactTypographyStage,
-        setStage: (value) => {
-          this.contactTypographyStage = value
-        },
-        getPromise: () => this._contactTypographyStagePromise,
-        setPromise: (value) => {
-          this._contactTypographyStagePromise = value
-        },
-        getRequest: () => this._contactTypographyStageRequest,
-        advanceRequest: () => ++this._contactTypographyStageRequest,
-      },
+      owner: this._contactTypographySlot.owner,
       create: (isCurrent) =>
         import('./World/ContactTypographyStage').then(({ ContactTypographyStage }) =>
           isCurrent() ? new ContactTypographyStage() : null,
@@ -770,18 +748,7 @@ export class Experience {
   private _contactHaloStageContract(): LazyStageContract<ContactHaloStage> {
     return {
       label: 'ContactHaloStage',
-      owner: {
-        getStage: () => this.contactHaloStage,
-        setStage: (value) => {
-          this.contactHaloStage = value
-        },
-        getPromise: () => this._contactHaloStagePromise,
-        setPromise: (value) => {
-          this._contactHaloStagePromise = value
-        },
-        getRequest: () => this._contactHaloStageRequest,
-        advanceRequest: () => ++this._contactHaloStageRequest,
-      },
+      owner: this._contactHaloSlot.owner,
       create: (isCurrent) =>
         import('./World/ContactHaloStage').then(({ ContactHaloStage }) =>
           isCurrent() ? new ContactHaloStage() : null,
@@ -813,18 +780,7 @@ export class Experience {
   private _manifestoInkStageContract(): LazyStageContract<ManifestoInkStage> {
     return {
       label: 'ManifestoInkStage',
-      owner: {
-        getStage: () => this.manifestoInkStage,
-        setStage: (value) => {
-          this.manifestoInkStage = value
-        },
-        getPromise: () => this._manifestoInkStagePromise,
-        setPromise: (value) => {
-          this._manifestoInkStagePromise = value
-        },
-        getRequest: () => this._manifestoInkStageRequest,
-        advanceRequest: () => ++this._manifestoInkStageRequest,
-      },
+      owner: this._manifestoInkSlot.owner,
       create: (isCurrent) =>
         import('./World/ManifestoInkStage').then(({ ManifestoInkStage }) =>
           isCurrent() ? new ManifestoInkStage() : null,
@@ -860,18 +816,7 @@ export class Experience {
   private _contactCyprusStageContract(): LazyStageContract<ContactCyprusStage> {
     return {
       label: 'ContactCyprusStage',
-      owner: {
-        getStage: () => this.contactCyprusStage,
-        setStage: (value) => {
-          this.contactCyprusStage = value
-        },
-        getPromise: () => this._contactCyprusStagePromise,
-        setPromise: (value) => {
-          this._contactCyprusStagePromise = value
-        },
-        getRequest: () => this._contactCyprusStageRequest,
-        advanceRequest: () => ++this._contactCyprusStageRequest,
-      },
+      owner: this._contactCyprusSlot.owner,
       create: (isCurrent) =>
         import('./World/ContactCyprusStage').then(({ ContactCyprusStage }) =>
           isCurrent() ? new ContactCyprusStage() : null,
@@ -910,9 +855,9 @@ export class Experience {
     this.contactCyprusStage?.setActive(this._contactCyprusActive)
     if (this._contactCyprusActive && !this.contactCyprusStage) {
       const initialization = this.ensureContactCyprusStageInitialized()
-      const request = this._contactCyprusStageRequest
+      const request = this._contactCyprusSlot.getRequest()
       void initialization.then(() => {
-        if (request !== this._contactCyprusStageRequest || !this._contactCyprusActive) return
+        if (request !== this._contactCyprusSlot.getRequest() || !this._contactCyprusActive) return
         this.coordinator.syncRouteVisuals()
       })
     }
@@ -929,18 +874,7 @@ export class Experience {
   private _labGamepadContract(): LazyStageContract<LabExperimentObject> {
     return {
       label: 'LabGamepad',
-      owner: {
-        getStage: () => this.labGamepad,
-        setStage: (value) => {
-          this.labGamepad = value
-        },
-        getPromise: () => this._labGamepadPromise,
-        setPromise: (value) => {
-          this._labGamepadPromise = value
-        },
-        getRequest: () => this._labGamepadRequest,
-        advanceRequest: () => ++this._labGamepadRequest,
-      },
+      owner: this._labGamepadSlot.owner,
       create: () => {
         const experiment = getLabExperiment('lab')
         // No isCurrent guard on the resolved object: the manifest load may

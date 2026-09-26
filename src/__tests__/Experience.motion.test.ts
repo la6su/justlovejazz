@@ -1,15 +1,14 @@
 import { describe, expect, it, vi } from 'vitest'
-import { Experience } from '../Experience/Experience'
+import { seedExperience } from './experienceSeed'
 
-function createExperience(reducedMotion: boolean): Experience {
-  return Object.assign(Object.create(Experience.prototype), {
+function createExperience(reducedMotion: boolean): ReturnType<typeof seedExperience>['exp'] {
+  return seedExperience({
     _reducedMotion: reducedMotion,
     _destroyed: false,
     _scheduler: { settleNow: vi.fn() },
     _cancelBreath: vi.fn(),
     _raiseRenderDemand: vi.fn(),
-    contactTypographyStage: null,
-  }) as Experience
+  }).exp
 }
 
 describe('Experience reduced-motion synchronization', () => {
@@ -30,17 +29,23 @@ describe('Experience reduced-motion synchronization', () => {
   })
 
   it('forwards a live preference change to the mounted Contact typography owner', () => {
-    const experience = createExperience(false)
     const setReducedMotion = vi.fn()
-    const owner = experience as unknown as {
+    const { exp, slots } = seedExperience({
+      _reducedMotion: false,
+      _destroyed: false,
+      _scheduler: { settleNow: vi.fn() },
+      _cancelBreath: vi.fn(),
+      _raiseRenderDemand: vi.fn(),
+      contactTypographyStage: { setReducedMotion },
+    })
+    const owner = exp as unknown as {
       _handleReducedMotionChange: (reduced: boolean) => void
-      contactTypographyStage: { setReducedMotion: (reduced: boolean) => void }
     }
-    owner.contactTypographyStage = { setReducedMotion }
 
     owner._handleReducedMotionChange(true)
 
     expect(setReducedMotion).toHaveBeenCalledWith(true)
+    expect(slots.contactTypography.getStage()).not.toBeNull()
   })
 
   it('forwards a live preference change to the shared camera owner', () => {

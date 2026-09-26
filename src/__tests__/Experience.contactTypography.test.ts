@@ -1,20 +1,16 @@
 import * as THREE from 'three'
 import { describe, expect, it, vi } from 'vitest'
-import { Experience } from '../Experience/Experience'
 import { ContactCyprusStage } from '../Experience/World/ContactCyprusStage'
 import { ContactTypographyStage } from '../Experience/World/ContactTypographyStage'
+import { seedExperience } from './experienceSeed'
 
 describe('Experience contact typography lazy owner', () => {
   it('contains initialization failure and permits a later retry', async () => {
-    const scene = new THREE.Scene()
-    const exp = Object.assign(Object.create(Experience.prototype), {
-      scene,
-      contactTypographyStage: null,
-      _contactTypographyStagePromise: null,
-      _contactTypographyStageRequest: 0,
+    const { exp, slots } = seedExperience({
+      scene: new THREE.Scene(),
       _contactIsLight: false,
       currentPage: () => 'contact',
-    } as unknown as Partial<Experience>) as Experience
+    })
     const setActiveSpy = vi
       .spyOn(ContactTypographyStage.prototype, 'setActive')
       .mockImplementationOnce(() => {
@@ -24,21 +20,12 @@ describe('Experience contact typography lazy owner', () => {
 
     try {
       await expect(exp.ensureContactTypographyStageInitialized()).resolves.toBeUndefined()
-      expect(
-        (exp as unknown as { contactTypographyStage: ContactTypographyStage | null })
-          .contactTypographyStage,
-      ).toBeNull()
-      expect(
-        (exp as unknown as { _contactTypographyStagePromise: Promise<void> | null })
-          ._contactTypographyStagePromise,
-      ).toBeNull()
+      expect(slots.contactTypography.getStage()).toBeNull()
+      expect(slots.contactTypography.owner.getPromise()).toBeNull()
       expect(disposeSpy).toHaveBeenCalledTimes(1)
 
       await exp.ensureContactTypographyStageInitialized()
-      expect(
-        (exp as unknown as { contactTypographyStage: ContactTypographyStage | null })
-          .contactTypographyStage,
-      ).toBeInstanceOf(ContactTypographyStage)
+      expect(slots.contactTypography.getStage()).toBeInstanceOf(ContactTypographyStage)
       expect(setActiveSpy).toHaveBeenCalledTimes(2)
     } finally {
       setActiveSpy.mockRestore()
@@ -48,19 +35,15 @@ describe('Experience contact typography lazy owner', () => {
 
   it('creates the stage on demand and disposes it from the scene', async () => {
     const scene = new THREE.Scene()
-    const exp = Object.assign(Object.create(Experience.prototype), {
+    const { exp, slots } = seedExperience({
       scene,
-      contactTypographyStage: null,
-      _contactTypographyStagePromise: null,
-      _contactTypographyStageRequest: 0,
       _contactIsLight: false,
-    } as unknown as Partial<Experience>) as Experience
+    })
     const disposeSpy = vi.spyOn(ContactTypographyStage.prototype, 'dispose')
 
     try {
       await exp.ensureContactTypographyStageInitialized()
-      const stage = (exp as unknown as { contactTypographyStage: ContactTypographyStage })
-        .contactTypographyStage
+      const stage = slots.contactTypography.getStage() as ContactTypographyStage
       expect(stage).toBeInstanceOf(ContactTypographyStage)
       expect(stage.parent).toBe(scene)
 
@@ -75,16 +58,12 @@ describe('Experience contact typography lazy owner', () => {
 
 describe('Experience contact Cyprus lazy owner', () => {
   it('prewarms exactly once inside the guarded lazy owner', async () => {
-    const scene = new THREE.Scene()
-    const exp = Object.assign(Object.create(Experience.prototype), {
-      scene,
-      contactCyprusStage: null,
-      _contactCyprusStagePromise: null,
-      _contactCyprusStageRequest: 0,
+    const { exp } = seedExperience({
+      scene: new THREE.Scene(),
       _contactCyprusActive: false,
       currentPage: () => 'contact',
       camera: { instance: new THREE.PerspectiveCamera() },
-    } as unknown as Partial<Experience>) as Experience
+    })
     const loadSpy = vi.spyOn(ContactCyprusStage.prototype, 'load').mockResolvedValue(undefined)
     const prewarmSpy = vi.spyOn(ContactCyprusStage.prototype, 'prewarm')
 
@@ -99,18 +78,14 @@ describe('Experience contact Cyprus lazy owner', () => {
   })
 
   it('does not let a stale section callback activate a newer stage', async () => {
-    const scene = new THREE.Scene()
     const syncRouteVisuals = vi.fn()
-    const exp = Object.assign(Object.create(Experience.prototype), {
-      scene,
-      contactCyprusStage: null,
-      _contactCyprusStagePromise: null,
-      _contactCyprusStageRequest: 0,
+    const { exp, slots } = seedExperience({
+      scene: new THREE.Scene(),
       _contactCyprusActive: false,
       currentPage: () => 'contact',
       camera: { instance: new THREE.PerspectiveCamera() },
       coordinator: { syncRouteVisuals },
-    } as unknown as Partial<Experience>) as Experience
+    })
     let oldResolve!: () => void
     let newResolve!: () => void
     let loadCount = 0
@@ -140,8 +115,7 @@ describe('Experience contact Cyprus lazy owner', () => {
       expect(syncRouteVisuals).not.toHaveBeenCalled()
 
       newResolve()
-      await (exp as unknown as { _contactCyprusStagePromise: Promise<void> })
-        ._contactCyprusStagePromise
+      await slots.contactCyprus.owner.getPromise()
       await Promise.resolve()
       await Promise.resolve()
       expect(setActiveSpy).toHaveBeenCalledTimes(1)
@@ -154,16 +128,12 @@ describe('Experience contact Cyprus lazy owner', () => {
   })
 
   it('invalidates a pending load when the owner is disposed', async () => {
-    const scene = new THREE.Scene()
-    const exp = Object.assign(Object.create(Experience.prototype), {
-      scene,
-      contactCyprusStage: null,
-      _contactCyprusStagePromise: null,
-      _contactCyprusStageRequest: 0,
+    const { exp, slots } = seedExperience({
+      scene: new THREE.Scene(),
       _contactCyprusActive: false,
       currentPage: () => 'contact',
       camera: { instance: new THREE.PerspectiveCamera() },
-    } as unknown as Partial<Experience>) as Experience
+    })
     let resolveLoad!: () => void
     const pending = new Promise<void>((resolve) => {
       resolveLoad = resolve
@@ -174,20 +144,13 @@ describe('Experience contact Cyprus lazy owner', () => {
     try {
       const loading = exp.ensureContactCyprusStageInitialized()
       await vi.dynamicImportSettled()
-      expect(
-        (exp as unknown as { contactCyprusStage: ContactCyprusStage | null }).contactCyprusStage,
-      ).not.toBeNull()
+      expect(slots.contactCyprus.getStage()).not.toBeNull()
       exp.disposeContactCyprusStage()
       resolveLoad()
       await loading
 
-      expect(
-        (exp as unknown as { contactCyprusStage: ContactCyprusStage | null }).contactCyprusStage,
-      ).toBeNull()
-      expect(
-        (exp as unknown as { _contactCyprusStagePromise: Promise<void> | null })
-          ._contactCyprusStagePromise,
-      ).toBeNull()
+      expect(slots.contactCyprus.getStage()).toBeNull()
+      expect(slots.contactCyprus.owner.getPromise()).toBeNull()
       expect(disposeSpy).toHaveBeenCalled()
     } finally {
       loadSpy.mockRestore()
@@ -196,16 +159,12 @@ describe('Experience contact Cyprus lazy owner', () => {
   })
 
   it('cleans up a failed load without creating an unhandled rejection', async () => {
-    const scene = new THREE.Scene()
-    const exp = Object.assign(Object.create(Experience.prototype), {
-      scene,
-      contactCyprusStage: null,
-      _contactCyprusStagePromise: null,
-      _contactCyprusStageRequest: 0,
+    const { exp, slots } = seedExperience({
+      scene: new THREE.Scene(),
       _contactCyprusActive: false,
       currentPage: () => 'contact',
       camera: { instance: new THREE.PerspectiveCamera() },
-    } as unknown as Partial<Experience>) as Experience
+    })
     const loadSpy = vi
       .spyOn(ContactCyprusStage.prototype, 'load')
       .mockRejectedValue(new Error('fixture load failure'))
@@ -213,13 +172,8 @@ describe('Experience contact Cyprus lazy owner', () => {
 
     try {
       await expect(exp.ensureContactCyprusStageInitialized()).resolves.toBeUndefined()
-      expect(
-        (exp as unknown as { contactCyprusStage: ContactCyprusStage | null }).contactCyprusStage,
-      ).toBeNull()
-      expect(
-        (exp as unknown as { _contactCyprusStagePromise: Promise<void> | null })
-          ._contactCyprusStagePromise,
-      ).toBeNull()
+      expect(slots.contactCyprus.getStage()).toBeNull()
+      expect(slots.contactCyprus.owner.getPromise()).toBeNull()
       expect(disposeSpy).toHaveBeenCalledTimes(1)
     } finally {
       loadSpy.mockRestore()
