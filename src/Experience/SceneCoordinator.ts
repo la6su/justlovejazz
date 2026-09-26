@@ -14,6 +14,7 @@ import type { PageId } from '../core/routeManifest'
 import { type PhaseConfig } from '../core/WorldConfig'
 import { SectionStateMachine } from './SectionStateMachine'
 import { SceneTransformPass, type WorldTransformResult } from './SceneTransformPass'
+import { SceneFramePass, bakuVisibleOnRoute } from './SceneFramePass'
 import type { SceneCoordinatorOwners } from './sceneOwners'
 import type { DrawTrail } from './World/DrawTrail'
 import type { SplashCube } from './World/SplashCube'
@@ -31,6 +32,7 @@ export type { SceneCoordinatorOwners } from './sceneOwners'
 export class SceneCoordinator {
   private _story = new SectionStateMachine()
   private _transform: SceneTransformPass
+  private _frame: SceneFramePass
   private _reducedMotion = prefersReducedMotion()
   private sceneRef: THREE.Scene
   private owners: SceneCoordinatorOwners
@@ -100,6 +102,12 @@ export class SceneCoordinator {
       story: this._story,
       owners,
       page,
+      isReducedMotion: () => this._reducedMotion,
+    })
+    this._frame = new SceneFramePass({
+      owners,
+      page,
+      currentSectionIndex: () => this._story.currentSectionIndex,
       isReducedMotion: () => this._reducedMotion,
     })
   }
@@ -199,10 +207,7 @@ export class SceneCoordinator {
 
   /** Sync the 3D Works composition with CinematicNav's active DOM chapter. */
   public setWorksPlaneStageSection(index: number): void {
-    if (this.worksPlaneStageSection === index) return
-    this.worksPlaneStageSection = index
-    this.owners.worksPlaneStage()?.setActive(this.page() === 'works', index)
-    this._transform.invalidate()
+    if (this._frame.setWorksPlaneStageSection(index)) this._transform.invalidate()
   }
 
   /**
@@ -270,107 +275,11 @@ export class SceneCoordinator {
     this.manifestoInkStage?.setTheme(isLight)
   }
 
+  /** The demand-gated owner frame fan-out. On an idle frame it keeps
+   *  route ownership state synchronized without advancing any animation
+   *  clock (parity pinned by SceneCoordinator.motionParity). */
   public update(deltaTime: number, needsRender: boolean = true): void {
-    // Route identity is stable for this synchronous frame. Snapshot it once
-    // so the owner path does not repeat the live page getter at each branch;
-    // the getter remains authoritative on the next frame after navigation.
-    const page = this.page()
-    // The splash handoff owns its short render window, independent of ambient
-    // scene animation. Experience keeps `_needsRender` raised while active.
-    const burst = this.owners.particleBurst()
-    if (burst?.isActive) burst.update(deltaTime)
-
-    // ── On-demand: decorative 3D animations only run when rendering ──
-    // When idle (settled on a section, no transition, no cursor movement),
-    // skip baku rotation, cursor light, draw trail, particle drift, and
-    // BakuCarousel updates — the last rendered frame stays on screen.
-    // Exception: Experience forces needsRender while hasVisibleParticles().
-    if (!needsRender) {
-      // Keep route ownership state synchronized, but do not advance any
-      // animation clock without a frame. Otherwise a reveal can complete in
-      // invisible time and the next demand frame jumps to its end state.
-      const worksStage = this.owners.worksPlaneStage()
-      if (worksStage && page === 'works') {
-        worksStage.setActive(true, this.worksPlaneStageSection)
-      }
-      return
-    }
-
-    // EnvSphere is a demand-driven owner too: its palette crossfade advertises
-    // `isAnimating` through hasVisibleAmbientMotion(), so this update remains
-    // on the rendered path until the target weights settle.
-    this.owners.envSphere()?.update(deltaTime)
-
-    const worksStage = this.owners.worksPlaneStage()
-    if (worksStage) {
-      worksStage.setActive(page === 'works', this.worksPlaneStageSection)
-      worksStage.update(deltaTime)
-    }
-    const servicesStage = this.owners.servicesStage?.()
-    if (servicesStage) {
-      servicesStage.visible = page === 'services'
-      if (servicesStage.visible && this._camera instanceof THREE.PerspectiveCamera) {
-        servicesStage.updateState(
-          this._camera,
-          THREE.MathUtils.clamp(this.currentSectionIndex - 1, 0, 3),
-          deltaTime,
-          this.isReducedMotion,
-        )
-      }
-    }
-    this.contactTypographyStage?.update(deltaTime)
-    this.contactHaloStage?.update(deltaTime)
-    this.manifestoInkStage?.update(deltaTime)
-    const contactCyprusStage = this.owners.contactCyprusStage()
-    contactCyprusStage?.update(deltaTime)
-    // Lab object: authored idle motion advances only on rendered frames; the
-    // object itself guards visibility and reduced motion (motion contract in
-    // Lab/manifest.ts). Optional calls keep inert experiments legal.
-    this.labGamepad?.update?.(deltaTime)
-    const baku = this.owners.baku()
-
-    if (!this.isReducedMotion) {
-      if (baku?.visible) baku.update(deltaTime)
-      const isStandaloneWorks = page === 'works'
-      const isWorksStoryFrame = this.currentSectionIndex === 3
-      const trail = this.owners.drawTrail()
-      if (trail && this._camera && (isStandaloneWorks || isWorksStoryFrame)) {
-        trail.update(deltaTime, this._camera)
-      }
-    }
-
-    // ── BakuCarousel (a child of the Works group — its reference + per-frame
-    // drive live on Experience) + per-section modules (morph, particles, orbs,
-    // …) ──
-    // JunniParticles: GPU drift via uTime — only present on Works currently
-    // (see Scene/WorksSection.ts header comment).
-    const carousel = this.owners.carousel()
-    // SectionGroups owns a stable array for the lifetime of this frame; reuse
-    // one snapshot for carousel visibility and particle drift below.
-    const groups = this.sceneGroups
-    const carouselGroup = groups[3]
-    // Let a departing slider settle its morph even after the section group
-    // falls below the visual fade threshold. Otherwise on-demand rendering
-    // can freeze the planes half-folded and keep a persistent render reason.
-    if (carousel && (carouselGroup?.visible || carousel.isAnimating)) carousel.update(deltaTime)
-    if (carousel) {
-      if (baku) {
-        // Works becomes a pure media field once the cube-face handoff settles:
-        // only the planes and the existing particle field remain visible.
-        baku.visible =
-          this._bakuVisibleOnRoute(page, contactCyprusStage?.isActive ?? false) &&
-          (page !== 'home' || !(carousel.isActive && carousel.morphProgress > 0.82))
-      }
-    }
-    if (!this.isReducedMotion) {
-      for (const group of groups) {
-        if (!group.visible) continue
-        // Update JunniParticles — GPU-side drift (Works section).
-        const particles = group.userData.particles as
-          import('./World/JunniParticles').JunniParticles | undefined
-        if (particles && particles.visible !== false) particles.update(deltaTime)
-      }
-    }
+    this._frame.update(deltaTime, needsRender)
   }
 
   /** The pooled scroll→world transform pass (range mapping, easing,
@@ -425,7 +334,7 @@ export class SceneCoordinator {
    *  Phase 8 slice 8: the Contact typography + Cyprus stage cameras are forwarded
    *  directly by Experience (it owns both stages). */
   public setCamera(cam: THREE.Camera): void {
-    this._camera = cam
+    this._frame.setCamera(cam)
   }
 
   /** Keep route-specific hero objects isolated from the shared home cube.
@@ -436,10 +345,7 @@ export class SceneCoordinator {
     const isLab = page === 'lab'
     const baku = this.owners.baku()
     if (baku)
-      baku.visible = this._bakuVisibleOnRoute(
-        page,
-        this.owners.contactCyprusStage()?.isActive ?? false,
-      )
+      baku.visible = bakuVisibleOnRoute(page, this.owners.contactCyprusStage()?.isActive ?? false)
     const labGamepad = this.owners.labGamepad()
     if (labGamepad) {
       labGamepad.visible = isLab
@@ -448,20 +354,6 @@ export class SceneCoordinator {
       if (isLab) labGamepad.resetMotion?.()
     }
     this._transform.invalidate()
-  }
-
-  private _camera: THREE.Camera | undefined
-  private worksPlaneStageSection = 0
-
-  /**
-   * The route-static half of the baku visibility contract, shared by the
-   * frame path and syncRouteVisuals: baku is a home/manifesto resident —
-   * never visible on the Lab or standalone Works route, and it yields while
-   * the Contact Cyprus stage owns the scene. The frame path additionally
-   * folds the home carousel-morph clause on top of this predicate.
-   */
-  private _bakuVisibleOnRoute(page: PageId, contactCyprusActive: boolean): boolean {
-    return page !== 'lab' && page !== 'works' && !(page === 'contact' && contactCyprusActive)
   }
 
   /** Check whether reduced motion is active */
