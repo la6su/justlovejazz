@@ -20,7 +20,7 @@ import { SceneCoordinator } from './SceneCoordinator'
 // called). updateWorldDNAAudio set uniforms nobody read. All dead.
 import { observeReducedMotion, prefersReducedMotion } from '../core/motionPolicy'
 import { FrameTiming } from '../core/FrameTiming'
-import { WORLD_SLOT_COUNT, worldSlotIndex } from '../core/worldSlots'
+import { WORKS_SLOT_INDEX, WORLD_SLOT_COUNT } from '../core/worldSlots'
 import { DEFAULT_CAMERA_SMOOTHING } from '../core/WorldConfig'
 import {
   NO_ACTIVITY,
@@ -45,6 +45,7 @@ import { GroundPlane } from './Scene/GroundPlane'
 import { SectionGroups } from './Scene/SectionGroups'
 import {
   createLazyStageSlot,
+  createImportedLazyStage,
   disposeLazyStage,
   ensureLazyStage,
   type LazyStageContract,
@@ -65,9 +66,6 @@ import { getLabExperiment, type LabExperimentObject } from './Lab/manifest'
 import { disposeAllCaseTextures } from './World/caseTexture'
 import { contentRoot } from '../core/contentRoot'
 // DissolveOverlay removed — cover transition in ProjectDetail replaces it.
-
-/** The Works story frame — the six-slot contract, not a literal. */
-const WORKS_SLOT_INDEX = worldSlotIndex('works')!
 
 /**
  * Phase 7: the persistent SceneHost readiness state handed to Experience by
@@ -665,10 +663,10 @@ export class Experience {
     return {
       label: 'ContactTypographyStage',
       owner: this._contactTypographySlot.owner,
-      create: (isCurrent) =>
-        import('./World/ContactTypographyStage').then(({ ContactTypographyStage }) =>
-          isCurrent() ? new ContactTypographyStage() : null,
-        ),
+      create: createImportedLazyStage(
+        () => import('./World/ContactTypographyStage'),
+        ({ ContactTypographyStage }) => ContactTypographyStage,
+      ),
       attach: (stage) => {
         this.scene.add(stage)
       },
@@ -697,10 +695,10 @@ export class Experience {
     return {
       label: 'ContactHaloStage',
       owner: this._contactHaloSlot.owner,
-      create: (isCurrent) =>
-        import('./World/ContactHaloStage').then(({ ContactHaloStage }) =>
-          isCurrent() ? new ContactHaloStage() : null,
-        ),
+      create: createImportedLazyStage(
+        () => import('./World/ContactHaloStage'),
+        ({ ContactHaloStage }) => ContactHaloStage,
+      ),
       attach: (stage) => this._host.stages.contactHalo.mount(stage),
       configure: (stage) => {
         stage.setTheme(this._contactIsLight)
@@ -729,10 +727,10 @@ export class Experience {
     return {
       label: 'ManifestoInkStage',
       owner: this._manifestoInkSlot.owner,
-      create: (isCurrent) =>
-        import('./World/ManifestoInkStage').then(({ ManifestoInkStage }) =>
-          isCurrent() ? new ManifestoInkStage() : null,
-        ),
+      create: createImportedLazyStage(
+        () => import('./World/ManifestoInkStage'),
+        ({ ManifestoInkStage }) => ManifestoInkStage,
+      ),
       attach: (stage) => this._host.stages.manifestoInk.mount(stage),
       configure: (stage) => {
         // The effective-polarity cache is refreshed on every theme event
@@ -765,10 +763,10 @@ export class Experience {
     return {
       label: 'ContactCyprusStage',
       owner: this._contactCyprusSlot.owner,
-      create: (isCurrent) =>
-        import('./World/ContactCyprusStage').then(({ ContactCyprusStage }) =>
-          isCurrent() ? new ContactCyprusStage() : null,
-        ),
+      create: createImportedLazyStage(
+        () => import('./World/ContactCyprusStage'),
+        ({ ContactCyprusStage }) => ContactCyprusStage,
+      ),
       attach: (stage) => {
         this.scene.add(stage)
       },

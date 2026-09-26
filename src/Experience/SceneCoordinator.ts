@@ -429,9 +429,7 @@ export class SceneCoordinator {
         // Works becomes a pure media field once the cube-face handoff settles:
         // only the planes and the existing particle field remain visible.
         baku.visible =
-          page !== 'lab' &&
-          page !== 'works' &&
-          !(page === 'contact' && (contactCyprusStage?.isActive ?? false)) &&
+          this._bakuVisibleOnRoute(page, contactCyprusStage?.isActive ?? false) &&
           (page !== 'home' || !(carousel.isActive && carousel.morphProgress > 0.82))
       }
     }
@@ -821,10 +819,10 @@ export class SceneCoordinator {
     const isLab = page === 'lab'
     const baku = this.owners.baku()
     if (baku)
-      baku.visible =
-        !isLab &&
-        page !== 'works' &&
-        !(page === 'contact' && (this.owners.contactCyprusStage()?.isActive ?? false))
+      baku.visible = this._bakuVisibleOnRoute(
+        page,
+        this.owners.contactCyprusStage()?.isActive ?? false,
+      )
     const labGamepad = this.owners.labGamepad()
     if (labGamepad) {
       labGamepad.visible = isLab
@@ -837,6 +835,17 @@ export class SceneCoordinator {
 
   private _camera: THREE.Camera | undefined
   private worksPlaneStageSection = 0
+
+  /**
+   * The route-static half of the baku visibility contract, shared by the
+   * frame path and syncRouteVisuals: baku is a home/manifesto resident —
+   * never visible on the Lab or standalone Works route, and it yields while
+   * the Contact Cyprus stage owns the scene. The frame path additionally
+   * folds the home carousel-morph clause on top of this predicate.
+   */
+  private _bakuVisibleOnRoute(page: PageId, contactCyprusActive: boolean): boolean {
+    return page !== 'lab' && page !== 'works' && !(page === 'contact' && contactCyprusActive)
+  }
 
   /** Apply easing function to t (0..1) based on scene.transition.easing config.
    *  'ease-in-out' (default) = smoothstep (S-curve, comfort plateaus)
