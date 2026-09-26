@@ -20,7 +20,7 @@
 // the runtime `lab` slot but publicly renders the Contact finale. The
 // product role below keeps that fact explicit next to the ID.
 
-export type WorldSlotId = 'lab' | 'intro' | 'about' | 'works' | 'contact' | 'menu'
+type WorldSlotId = 'lab' | 'intro' | 'about' | 'works' | 'contact' | 'menu'
 
 interface WorldSlotDef {
   /** Stable 0-based slot index. Never reordered; consumers index by this. */

@@ -29,23 +29,23 @@ All paths below are relative to `src/`. Framework-neutral `core/` contracts
 sit below Vue views, DOM controllers and scene owners. Typed ports connect
 these layers; scene state must not be inferred from DOM datasets.
 
-| Concern                             | Source owners                                                                                                               |
-| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| Route paths and views               | `core/routeManifest.ts`, `app/routes.ts`, `app/index.ts` (router mount), `app/views/`                                       |
-| Route state and deferred navigation | `core/routePage.ts`, `core/routeContinuation.ts`                                                                            |
-| Locale and route metadata           | `core/i18n.ts`, `core/pageMeta.ts`, `core/pageMetaData.ts`                                                                  |
-| Blog and sitemap                    | `core/blogPages.ts`, `blogContent.ts`, `blogMeta.ts`, `sitemap.ts`, `sitemapEntries.ts`; `content/blog/` at repository root |
-| Project data and case resolution    | `Data/Projects.ts`, `Data/CaseStudies.ts`, `core/caseStudies.ts`, `core/worksExperience.ts`                                 |
-| Theme, sound and motion             | `core/ThemeManager.ts`, `brandTokens.ts`, `SfxSystem.ts`, `motionPolicy.ts`                                                 |
-| Typed app events                    | `core/EventBus.ts` (`AppEvents`); `window.__jlzEmit` for non-module producers                                               |
-| Semantic route lifecycle / UIkit    | `app/useJlzPage.ts`, `app/menuLifecycle.ts`, `UI/UIMenu.ts`                                                                 |
-| Story navigation and snapshots      | `UI/CinematicNav.ts`, `core/storyState.ts`, `core/storyProgress.ts`                                                         |
-| Renderer factory, policy, recovery  | `core/unifiedRenderer.ts`, `core/rendererBackend.ts`, `Experience/Renderer.ts`, `app/sceneHost.ts`                          |
-| Demand and timing                   | `core/RenderScheduler.ts`, `renderDemand.ts`, `FrameTiming.ts`, `FrameGapStats.ts`                                          |
-| Device quality and diagnostics      | `core/DeviceCapability.ts`, `RuntimeResourceSnapshot.ts`, `DevPanel.ts`                                                     |
-| Scene coordination and slots        | `Experience/SceneCoordinator.ts`, `Experience/Scene/SectionGroups.ts`, `core/WorldConfig.ts`, `worldSlots.ts`               |
-| Post graph and tone mapping         | `core/RenderPipeline.ts`, `WebGPUPostPipeline.ts`, `PostProcessingManager.ts`, `toneMappingGuard.ts`                        |
-| Async stages and disposal helpers   | `Experience/LazyStage.ts`, `Utils/dispose.ts`                                                                               |
+| Concern                             | Source owners                                                                                                                                               |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Route paths and views               | `core/routeManifest.ts`, `app/routes.ts`, `app/index.ts` (router mount), `app/views/`                                                                       |
+| Route state and deferred navigation | `core/routePage.ts`, `core/routeContinuation.ts`                                                                                                            |
+| Locale and route metadata           | `core/i18n.ts`, `core/pageMeta.ts`, `core/pageMetaData.ts`                                                                                                  |
+| Blog and sitemap                    | `core/blogPages.ts`, `blogContent.ts`, `blogMeta.ts`, `sitemap.ts`, `sitemapEntries.ts`; `content/blog/` at repository root                                 |
+| Project data and case resolution    | `Data/Projects.ts`, `Data/CaseStudies.ts`, `core/caseStudies.ts`, `core/worksExperience.ts`                                                                 |
+| Theme, sound and motion             | `core/ThemeManager.ts`, `brandTokens.ts`, `SfxSystem.ts`, `motionPolicy.ts`                                                                                 |
+| Typed app events                    | `core/EventBus.ts` (`AppEvents`); `window.__jlzEmit` for non-module producers                                                                               |
+| Semantic route lifecycle / UIkit    | `app/useJlzPage.ts`, `app/menuLifecycle.ts`, `UI/UIMenu.ts`                                                                                                 |
+| Story navigation and snapshots      | `UI/CinematicNav.ts`, `core/storyState.ts`, `core/storyProgress.ts`                                                                                         |
+| Renderer factory, policy, recovery  | `core/unifiedRenderer.ts`, `core/rendererBackend.ts`, `Experience/Renderer.ts`, `app/sceneHost.ts`                                                          |
+| Demand and timing                   | `core/RenderScheduler.ts`, `renderDemand.ts`, `FrameTiming.ts`, `FrameGapStats.ts`                                                                          |
+| Device quality and diagnostics      | `core/DeviceCapability.ts`, `RuntimeResourceSnapshot.ts`, `DevPanel.ts`                                                                                     |
+| Scene coordination and slots        | `Experience/SceneCoordinator.ts`, `Experience/Scene/SectionGroups.ts`, `core/WorldConfig.ts`, `worldSlots.ts`                                               |
+| Post graph and tone mapping         | `core/RenderPipeline.ts`, `WebGPUPostPipeline.ts`, `PostProcessingManager.ts`, `toneMappingGuard.ts`                                                        |
+| Async stages and disposal helpers   | `Experience/LazyStage.ts` (runtime-constructed stages), `app/stageSlot.ts` + `app/sceneHost.ts` ports (declarative stage mount surface), `Utils/dispose.ts` |
 
 The table maps boundaries, not every implementation detail. Owner-specific
 regressions belong in `src/__tests__/`, not a second prose inventory.
@@ -133,10 +133,14 @@ the loop and emits `jlz:webgl-failed`.
 
 ## Delivery decisions
 
-`vite.config.ts` aliases only bare `three` to `three-webgpu-compat.ts`.
-TresJS's static default-renderer import otherwise retains the classic runtime;
-the throwing `WebGLRenderer` symbol is a required package integration seam.
-Preserve official package subpaths. Remove the seam only when an equivalent
+`vite.config.ts` aliases bare `three` to `three-webgpu-compat.ts` and the
+`three-stdlib` barrel to `three-stdlib-compat.ts` (the 28-module re-export
+shim covering exactly what the Cientos bundle references; guarded by the
+`check:stdlib` release gate). TresJS's static default-renderer import
+otherwise retains the classic runtime; the throwing `WebGLRenderer` symbol
+is a required package integration seam, and the compat entry additionally
+provides the classic-only symbols the stdlib deep modules read. Preserve
+official package subpaths. Remove the seams only when an equivalent
 upstream entry passes delivery and lifecycle checks.
 
 The bounded loop was originally driven through the renderer's

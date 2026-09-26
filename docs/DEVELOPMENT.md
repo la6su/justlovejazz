@@ -12,6 +12,7 @@ Run focused checks while editing. The complete runtime release gate is:
 
 ```bash
 bun run format:check
+bun run check:stdlib
 bun run lint
 bun run type-check
 bun run type-check:vue
@@ -80,6 +81,9 @@ Before upgrading: inspect official compatibility/release information and the
 installed types, state the concrete need, pin the tested matrix, measure
 bundle/startup impact and verify both backend paths. Do not add overlapping
 helpers or remove the scoped Three entry without equivalent delivery evidence.
+Upgrading `@tresjs/cientos` (or anything it pulls in) must additionally pass
+`bun run check:stdlib` — the gate diffs the two compat shims against the
+installed bundles in both directions.
 
 [Evidence tools](evidence/README.md) provide targeted renderer, soak, visual
 and bundle reports. State commit, environment, backend and skips with each

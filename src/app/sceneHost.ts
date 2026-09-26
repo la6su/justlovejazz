@@ -70,7 +70,7 @@ export interface StagePort<T> {
  * The Works plane stage is a two-level boundary: the stage is mounted first
  * and owns its installation child, which never outlives its stage.
  */
-export interface WorksStagePort {
+interface WorksStagePort {
   mountStage(stage: WorksPlaneStage): Promise<void>
   unmountStage(stage: WorksPlaneStage): Promise<void>
   mountInstallation(stage: WorksPlaneStage, installation: WorksInstallation): Promise<void>

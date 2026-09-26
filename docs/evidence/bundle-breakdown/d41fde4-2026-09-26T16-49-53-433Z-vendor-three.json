@@ -1,0 +1,56 @@
+{
+  "commit": "d41fde499b3b5449c0ff3e5e4037d87591ba3b8e",
+  "generatedAt": "2026-09-26T16:49:53.433Z",
+  "dirtyFiles": [
+    "M package.json",
+    " M scripts/bundle-breakdown.ts",
+    " M scripts/check-stdlib-modules.mjs",
+    " M src/Experience/Experience.ts",
+    " M src/Experience/SceneCoordinator.ts",
+    " M src/app/readySlot.ts",
+    " M src/app/sceneHost.ts",
+    " M src/app/stageSlot.ts",
+    " M src/core/worldSlots.ts",
+    " M src/entry-app.ts",
+    " M vite.config.ts"
+  ],
+  "command": "bun scripts/bundle-breakdown.ts",
+  "note": "Source-mapped analysis build; production gzip budgets are checked separately.",
+  "chunk": "vendor-three-CxY-ZUk2.js",
+  "rawBytes": 1069064,
+  "sourceCount": 8,
+  "modules": [
+    {
+      "source": "../../../home/z/my-project/justlovejazz/node_modules/three/build/three.webgpu.js",
+      "mappedBytes": 669500
+    },
+    {
+      "source": "../../../home/z/my-project/justlovejazz/node_modules/three/build/three.core.js",
+      "mappedBytes": 375692
+    },
+    {
+      "source": "../../../home/z/my-project/justlovejazz/node_modules/three/build/three.tsl.js",
+      "mappedBytes": 11501
+    },
+    {
+      "source": "../../../home/z/my-project/justlovejazz/node_modules/three/examples/jsm/tsl/display/BloomNode.js",
+      "mappedBytes": 5660
+    },
+    {
+      "source": "../../../home/z/my-project/justlovejazz/node_modules/three/examples/jsm/geometries/RoundedBoxGeometry.js",
+      "mappedBytes": 2955
+    },
+    {
+      "source": "../../../home/z/my-project/justlovejazz/node_modules/three/examples/jsm/utils/BufferGeometryUtils.js",
+      "mappedBytes": 2422
+    },
+    {
+      "source": "../../../home/z/my-project/justlovejazz/node_modules/three/examples/jsm/utils/SkeletonUtils.js",
+      "mappedBytes": 442
+    },
+    {
+      "source": "../../../home/z/my-project/justlovejazz/src/three-webgpu-compat.ts",
+      "mappedBytes": 211
+    }
+  ]
+}

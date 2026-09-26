@@ -67,9 +67,9 @@ export class SceneCoordinator {
   private _transformCacheRevision = -1
   private _transformCacheScroll = Number.NaN
   private _transformCachePage: PageId | null = null
-  // PERF-1 fix: cache ranges (configs.map(c => c.range) was called every frame
-  // in updateTransform → 360 array allocs/sec at 60fps). Ranges are immutable
-  // after init(), so cache once.
+  // Ranges are cached: configs.map(c => c.range) used to run every frame in
+  // updateTransform (~360 array allocs/sec at 60 fps). Ranges are immutable
+  // after init(), so they are built once.
   private _rangesCache: [number, number][] | null = null
   private _reducedMotion = prefersReducedMotion()
   private sceneRef: THREE.Scene
@@ -493,7 +493,7 @@ export class SceneCoordinator {
     const carouselOwner = this.owners.carousel()
 
     // ── Find from/to indices from range config
-    // PERF-1 fix: use cached ranges (built once in init) instead of map() every frame
+    // Use the cached ranges (built once in init) instead of map() every frame
     const ranges = this._rangesCache ?? this.configs.map((c) => c.range)
     if (!this._rangesCache) this._rangesCache = ranges
     let fromIndex = 0
@@ -531,10 +531,11 @@ export class SceneCoordinator {
       toCfg?.scene?.transition?.easing ?? fromCfg?.scene?.transition?.easing ?? 'ease-in-out'
     t = this._applyEasing(t, easing)
 
-    // Bug 2: double-ease for bg + group fade so each section's color
-    // holds until mid-transition, then quickly flips. Prevents the about
-    // section's dark bg from bleeding into flexible's light bg too early
-    // (white text contrast loss). Camera/baku still use the single-eased t.
+    // Deliberate second ease (parity-locked): bg + group fade use the doubly-
+    // eased t so each section's color holds until mid-transition, then quickly
+    // flips. Prevents the about section's dark bg from bleeding into
+    // flexible's light bg too early (white text contrast loss). Camera/baku
+    // still use the single-eased t.
     const bgT = this._applyEasing(t, easing)
 
     // ── Update current section index + fire per-section systems ──

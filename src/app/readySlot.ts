@@ -6,7 +6,7 @@
 // let/resolver/promise triple a node used to need (ADR 0005 DX pass).
 import { shallowRef, type ShallowRef } from 'vue'
 
-export interface ReadySlot<T> {
+interface ReadySlot<T> {
   /** The mounted node, or `null` before its `ready` emit. */
   value: ShallowRef<T | null>
   /** Resolves with the node on its `ready` emit. */
