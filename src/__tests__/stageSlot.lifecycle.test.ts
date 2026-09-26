@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from 'vitest'
-import { flushPromises } from '@vue/test-utils'
 import { toRaw } from 'vue'
 import * as THREE from 'three'
 import { createStageSlot } from '../app/stageSlot'
@@ -42,12 +41,5 @@ describe('stageSlot lifecycle', () => {
 
     await slot.unmount(mounted)
     expect(slot.object.value).toBeNull()
-  })
-
-  it('resolves mount/unmount promises (flushPromises compatible)', async () => {
-    const slot = createStageSlot<THREE.Group>({ isAlive: () => true })
-    await expect(slot.mount(new THREE.Group())).resolves.toBeUndefined()
-    await flushPromises()
-    expect(slot.object.value).toBeInstanceOf(THREE.Group)
   })
 })

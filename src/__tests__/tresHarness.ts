@@ -44,22 +44,21 @@ interface MountedSceneCanvas {
 
 /**
  * Mount a declarative scene component under a real TresCanvas with the shared
- * renderer double (manual render mode unless overridden). Resolves after the
- * canvas reports ready and the internal loop is stopped — the shared preamble
- * of the declarative lifecycle tests. Component listeners (e.g. `onReady`)
- * pass through `props` like any Vue prop.
+ * renderer double in manual render mode. Resolves after the canvas reports
+ * ready and the internal loop is stopped — the shared preamble of the
+ * declarative lifecycle tests. Component listeners (e.g. `onReady`) pass
+ * through `props` like any Vue prop.
  */
 export async function mountSceneCanvas(
   component: Component,
   props: Record<string, unknown> | (() => Record<string, unknown>) = {},
-  options: { renderMode?: 'manual' | 'on-demand' } = {},
 ): Promise<MountedSceneCanvas> {
   const renderer = createRendererMock()
   const ready: { context: TresContext | null } = { context: null }
   const wrapper = mount(TresCanvas, {
     attachTo: document.body,
     props: {
-      renderMode: options.renderMode ?? 'manual',
+      renderMode: 'manual',
       renderer: (() => renderer) as never,
       onReady: (context: TresContext) => {
         ready.context = context

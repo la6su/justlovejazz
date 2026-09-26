@@ -147,13 +147,9 @@ export class DevPanel {
     f.addBinding(this.stats, 'postPasses', { readonly: true, label: 'post passes' })
   }
 
-  // ── Navigation folder REMOVED (2026-07-11) — the section slider + prev/next
-  // buttons drove the old joystick via a private-field cast hack. It was
-  // unreliable on content pages (section change
-  // goes through jlz:page-section-change there, not jlz:section-change) and
-  // the slider's 0-5 range didn't map cleanly to the 4-main-sections layout.
-  // Navigation is owned by the cinematic story track; DevPanel remains a
-  // diagnostics surface rather than a second navigation input.
+  // ── Navigation is deliberately absent: the cinematic story track owns it,
+  // and DevPanel stays a diagnostics surface, not a second navigation input
+  // (the 2026-07-11 slider/prev-next folder was removed for that reason).
 
   // ── BakuCarousel folder ───────────────────────────────────────────────
   private buildCarouselFolder(): void {

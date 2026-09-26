@@ -1,3 +1,9 @@
+// NoiseText voice lifecycle. The shared TextReveal machinery (RAF + safety
+// timeout, disconnect finalize, read-before-cancel source contract) is pinned
+// once in textReveal.lifecycle.test.ts; this file keeps NoiseText's own
+// contracts: the frame-buffer reuse, the disposeAll instanceof filter and the
+// hide-before-show guard.
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { NoiseText } from '../Experience/NoiseText'
 
@@ -10,47 +16,6 @@ describe('NoiseText lifecycle', () => {
   afterEach(() => {
     NoiseText.disposeAll()
     vi.useRealTimers()
-  })
-
-  it('stops RAF and timeout work when the target leaves the document', () => {
-    const callbacks: FrameRequestCallback[] = []
-    const request = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
-      callbacks.push(callback)
-      return callbacks.length
-    })
-    const cancel = vi.spyOn(window, 'cancelAnimationFrame')
-    const element = document.createElement('span')
-    element.textContent = 'Hello'
-    document.body.append(element)
-
-    NoiseText.for(element).show(1)
-    expect(request).toHaveBeenCalledTimes(1)
-    element.remove()
-
-    callbacks[0]!(performance.now())
-
-    expect(request).toHaveBeenCalledTimes(1)
-    expect(cancel).toHaveBeenCalledWith(1)
-    expect(element.textContent).toBe('Hello')
-    vi.runOnlyPendingTimers()
-    expect(request).toHaveBeenCalledTimes(1)
-  })
-
-  it('continues scheduling frames while the target remains connected', () => {
-    const callbacks: FrameRequestCallback[] = []
-    const request = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
-      callbacks.push(callback)
-      return callbacks.length
-    })
-    const element = document.createElement('span')
-    element.textContent = 'Hello'
-    document.body.append(element)
-
-    NoiseText.for(element).show(1)
-    callbacks[0]!(0)
-
-    expect(request).toHaveBeenCalledTimes(2)
-    expect(element.textContent).not.toBe('')
   })
 
   it('reuses its frame buffer across animation ticks', () => {

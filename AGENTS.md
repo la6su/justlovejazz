@@ -16,7 +16,8 @@ metaphor, not a music theme; [BRAND](docs/BRAND.md) owns the direction.
 - Prefer the smallest complete solution and existing owners/libraries. Remove
   obsolete paths; avoid speculative abstractions and compatibility layers.
 - Read docs by task, not as a startup bundle. Use deterministic checks and
-  concise results. Delegate only when requested; isolate concurrent writes.
+  concise results; report which checks ran. Delegate only when requested;
+  isolate concurrent writes.
 - Broader goal: autonomous 3D/image/video/sound development. Homelab details
   belong to environment instructions; this repository is the portfolio.
 

@@ -1,3 +1,9 @@
+// BlurFade voice lifecycle. The shared TextReveal machinery (RAF + safety
+// timeout, disconnect finalize, read-before-cancel source contract) is pinned
+// once in textReveal.lifecycle.test.ts; this file keeps BlurFade's own
+// contracts: markup-safe text splitting, the disposeAll instanceof filter,
+// the rotation cache and the restore-on-hide flow.
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { BlurFade } from '../Experience/BlurFade'
 
@@ -10,46 +16,6 @@ describe('BlurFade lifecycle', () => {
   afterEach(() => {
     BlurFade.disposeAll()
     vi.useRealTimers()
-  })
-
-  it('stops RAF and timeout work when the target leaves the document', () => {
-    const callbacks: FrameRequestCallback[] = []
-    const request = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
-      callbacks.push(callback)
-      return callbacks.length
-    })
-    const cancel = vi.spyOn(window, 'cancelAnimationFrame')
-    const element = document.createElement('h2')
-    element.textContent = 'Hello'
-    document.body.append(element)
-
-    BlurFade.for(element).show(1)
-    expect(request).toHaveBeenCalledTimes(1)
-    element.remove()
-
-    callbacks[0]!(performance.now())
-
-    expect(request).toHaveBeenCalledTimes(1)
-    expect(cancel).toHaveBeenCalledWith(1)
-    vi.runOnlyPendingTimers()
-    expect(request).toHaveBeenCalledTimes(1)
-  })
-
-  it('continues scheduling frames while the target remains connected', () => {
-    const callbacks: FrameRequestCallback[] = []
-    const request = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
-      callbacks.push(callback)
-      return callbacks.length
-    })
-    const element = document.createElement('h2')
-    element.textContent = 'Hello'
-    document.body.append(element)
-
-    BlurFade.for(element).show(1)
-    callbacks[0]!(performance.now())
-
-    expect(request).toHaveBeenCalledTimes(2)
-    expect(element.querySelectorAll('span')).toHaveLength(5)
   })
 
   it('keeps editorial text as text instead of parsing it as markup', () => {

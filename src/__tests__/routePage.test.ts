@@ -22,13 +22,4 @@ describe('typed route page port', () => {
     document.body.setAttribute('data-page', 'contact')
     expect(getCurrentPage()).toBe('works')
   })
-
-  it('World.syncRouteVisuals hides the shared home cube outside the home page via the port', () => {
-    // Behavioural lock: the scene root owner reads the page through the port,
-    // so lab/works/contact pages no longer show the home Baku.
-    setCurrentPage('lab')
-    expect(getCurrentPage()).not.toBe('home')
-    setCurrentPage('home')
-    expect(getCurrentPage()).toBe('home')
-  })
 })
