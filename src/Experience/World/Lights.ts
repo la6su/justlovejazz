@@ -105,6 +105,11 @@ const SECTION_PRESETS: Record<string, SectionLightPreset> = {
 // Fallback to sec_about for unknown sections
 const DEFAULT_PRESET = SECTION_PRESETS['sec_about']!
 
+/** The intro preset the declarative `CinematicLights.vue` binds as its
+ *  initial attribute values — one source of truth for the authored numbers
+ *  (the controller snaps the same preset on construction). */
+export const CINEMATIC_INTRO_PRESET: Readonly<SectionLightPreset> = SECTION_PRESETS['sec_intro']!
+
 export class CinematicLights {
   private _disposed = false
   private keyLight: THREE.DirectionalLight

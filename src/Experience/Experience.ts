@@ -852,13 +852,6 @@ export class Experience {
     disposeLazyStage(this._manifestoInkStageContract())
   }
 
-  /** Cache the effective polarity so a lazy Contact stage cannot miss it. */
-  public syncContactTheme(isLight: boolean): void {
-    this._contactIsLight = isLight
-    this.contactTypographyStage?.setTheme(isLight)
-    this.contactHaloStage?.setTheme(isLight)
-  }
-
   /** Lazily load the Contact location asset instead of keeping it in the home
    *  scene. Phase 8 slice 8: moved from World — Experience owns the lazy
    *  stage (the World frame path reads it through the documented
@@ -1202,8 +1195,11 @@ export class Experience {
       }
       if (this.coordinator) {
         // Experience caches the effective polarity so lazy creation cannot
-        // default to white text against a light route background.
-        this.syncContactTheme(detail.isLight)
+        // default to white text against a light route background. The live
+        // stages' theme fan-out is the coordinator's syncTypographyTheme —
+        // one owner per change (was: a second Experience fan-out that
+        // re-applied the same theme to typography + halo twice per event).
+        this._contactIsLight = detail.isLight
         // Theme-only syncs — skip when just the section moved (same polarity).
         if (detail.themeChanged !== false) {
           this.ground.syncTheme(detail.isLight)
@@ -1500,7 +1496,7 @@ export class Experience {
     // world.updateTransform(). If we use stale _bakuCarouselActive from
     // last frame, _needsRender stays false and carousel.update() never
     // runs → morph stalls at ~0.35. See BakuCarousel.ts §update.
-    const carousel = this.features.getFrameCarousel()
+    const carousel = this.features.getCarousel()
     this._bakuCarouselActive = carousel?.isAnimating ?? false
     const carouselActive = this._bakuCarouselActive
     const worksPlaneActive = this.worksPlaneStage?.isAnimating ?? false

@@ -17,8 +17,6 @@ import type { PageId } from '../sections/_shared/constants'
 import HomeView from './views/HomeView.vue'
 import CaseStudyView from './views/CaseStudyView.vue'
 
-export type { PageId }
-
 // Keep the landing view in the initial app graph so the first shell can render
 // without a second route fetch. Secondary pages are explicit route-level
 // chunks: this keeps their semantic DOM and page-only code out of the startup
