@@ -51,20 +51,18 @@ export interface MountedSceneCanvas {
  */
 export async function mountSceneCanvas(
   component: Component,
-  props:
-    | Record<string, unknown>
-    | (() => Record<string, unknown>) = {},
+  props: Record<string, unknown> | (() => Record<string, unknown>) = {},
   options: { renderMode?: 'manual' | 'on-demand' } = {},
 ): Promise<MountedSceneCanvas> {
   const renderer = createRendererMock()
-  let ready: TresContext | null = null
+  const ready: { context: TresContext | null } = { context: null }
   const wrapper = mount(TresCanvas, {
     attachTo: document.body,
     props: {
       renderMode: options.renderMode ?? 'manual',
       renderer: (() => renderer) as never,
       onReady: (context: TresContext) => {
-        ready = context
+        ready.context = context
         context.renderer.loop.stop()
       },
     },
@@ -76,12 +74,12 @@ export async function mountSceneCanvas(
   })
   await flushPromises()
   await new Promise((resolve) => setTimeout(resolve, 0))
-  if (!ready) throw new Error('TresCanvas did not become ready')
+  if (!ready.context) throw new Error('TresCanvas did not become ready')
   return {
     wrapper,
     renderer,
-    scene: ready.scene.value,
-    context: ready,
+    scene: ready.context.scene.value,
+    context: ready.context,
     unmount: () => wrapper.unmount(),
   }
 }

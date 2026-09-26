@@ -1,4 +1,4 @@
-import { h, markRaw, shallowRef } from 'vue'
+import { markRaw, shallowRef } from 'vue'
 import { flushPromises } from '@vue/test-utils'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { installCanvasPointerShims, mountSceneCanvas } from './tresHarness'
