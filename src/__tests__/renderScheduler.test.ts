@@ -310,18 +310,20 @@ describe('RenderScheduler (Phase 7 single loop driver)', () => {
   })
 })
 
-/** Reasons are a closed, typed union. */
-const ALL_REASONS: FrameReason[] = [
-  'first-frame',
-  'dirty',
-  'breath',
-  'nav',
-  'cursor',
-  'resize',
-  'motion-preference',
-  'visibility-resume',
-  'recovery',
-]
+/** Reasons are a closed, typed union. The `satisfies Record<FrameReason, true>`
+ * pin makes a new variant a type error here until it is listed. */
+const ALL_REASONS: FrameReason[] = Object.keys({
+  'first-frame': true,
+  dirty: true,
+  breath: true,
+  nav: true,
+  cursor: true,
+  resize: true,
+  'motion-preference': true,
+  'visibility-resume': true,
+  recovery: true,
+  external: true,
+} satisfies Record<FrameReason, true>) as FrameReason[]
 it('FrameReason covers the typed activity contract', () => {
   expect(ALL_REASONS).toHaveLength(new Set(ALL_REASONS).size)
 })

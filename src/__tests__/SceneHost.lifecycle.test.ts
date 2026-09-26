@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const mocks = vi.hoisted(() => ({
   loopStop: vi.fn(),
   loopStart: vi.fn(),
-  onBeforeLoop: vi.fn(() => () => undefined),
+  onBeforeLoop: vi.fn((_callback?: (time: number) => void) => () => undefined),
   invalidate: vi.fn(),
   replaceRenderFunction: vi.fn(),
   candidate: {
@@ -185,6 +185,65 @@ describe('SceneHost async lifecycle', () => {
     // the RenderScheduler owns start/stop from here.
     expect(mocks.loopStop).toHaveBeenCalled()
     wrapper.unmount()
+  })
+
+  it('forwards the before-loop bridge to the registered scheduler frame callback', async () => {
+    const wrapper = mount(SceneHost, { attachTo: document.body })
+    await flushPromises()
+    const host = await sceneHost.ready
+
+    const frames: number[] = []
+    host.loop.onFrame((time) => frames.push(time))
+    // SceneHost installs exactly one bridge into the Tres loop; driving it
+    // (what the Tres loop does every RAF tick) runs the registered callback
+    // with a ms timestamp (the Experience Time.update contract).
+    expect(mocks.onBeforeLoop).toHaveBeenCalledOnce()
+    const bridge = mocks.onBeforeLoop.mock.calls[0]?.[0] as (time: number) => void
+    bridge(0)
+    expect(frames).toHaveLength(1)
+    expect(typeof frames[0]).toBe('number')
+
+    // After unmount the port clears the callback: a late RAF tick is a no-op.
+    wrapper.unmount()
+    expect(() => bridge(0)).not.toThrow()
+    expect(frames).toHaveLength(1)
+  })
+
+  it('routes ecosystem invalidate() calls through the typed wake handler', async () => {
+    const wrapper = mount(SceneHost, { attachTo: document.body })
+    await flushPromises()
+    const host = await sceneHost.ready
+
+    const wake = vi.fn()
+    const unbind = host.loop.onExternalInvalidate(wake)
+    // After the ADR 0005 wrap, the manager's invalidate is the bridging one:
+    // the base manager call keeps its arguments and the scheduler wake fires.
+    const wrapped = (host.context.renderer as { invalidate: (...args: unknown[]) => void })
+      .invalidate
+    wrapped('frame')
+    expect(mocks.invalidate).toHaveBeenCalledWith('frame')
+    expect(wake).toHaveBeenCalledOnce()
+
+    // Unsubscribing removes the wake handler without breaking the base call.
+    unbind()
+    wrapped('frame')
+    expect(mocks.invalidate).toHaveBeenCalledTimes(2)
+    expect(wake).toHaveBeenCalledOnce()
+    wrapper.unmount()
+  })
+
+  it('loop port calls after unmount are safe no-ops (documented port contract)', async () => {
+    const wrapper = mount(SceneHost, { attachTo: document.body })
+    await flushPromises()
+    const host = await sceneHost.ready
+    wrapper.unmount()
+
+    expect(() => {
+      host.loop.start()
+      host.loop.stop()
+      host.loop.onFrame(null)
+      host.loop.onExternalInvalidate(null)
+    }).not.toThrow()
   })
 
   it('publishes the lazy Works attachment boundary with the ready host', async () => {

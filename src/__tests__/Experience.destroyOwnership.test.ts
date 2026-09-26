@@ -149,7 +149,6 @@ describe('Experience destroy ownership boundary', () => {
     const renderer = Object.assign(Object.create(Renderer.prototype), {
       _disposed: false,
       _lifecycleGeneration: 0,
-      _loopCallback: null,
       _onInstanceReplaced: null,
       pipeline: { dispose: pipelineDispose },
       instance: { dispose: instanceDispose },
