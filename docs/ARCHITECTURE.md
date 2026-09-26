@@ -31,7 +31,7 @@ these layers; scene state must not be inferred from DOM datasets.
 
 | Concern                             | Source owners                                                                                                                                               |
 | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Route paths and views               | `core/routeManifest.ts`, `app/routes.ts`, `app/index.ts` (router mount), `app/views/`                                                                       |
+| Route paths and views               | `core/routeManifest.ts` (paths + the `PageId` vocabulary), `app/routes.ts`, `app/index.ts` (router mount), `app/views/`                                     |
 | Route state and deferred navigation | `core/routePage.ts`, `core/routeContinuation.ts`                                                                                                            |
 | Locale and route metadata           | `core/i18n.ts`, `core/pageMeta.ts`, `core/pageMetaData.ts`                                                                                                  |
 | Blog and sitemap                    | `core/blogPages.ts`, `blogContent.ts`, `blogMeta.ts`, `sitemap.ts`, `sitemapEntries.ts`; `content/blog/` at repository root                                 |
@@ -52,7 +52,8 @@ regressions belong in `src/__tests__/`, not a second prose inventory.
 
 ## Routes and world slots
 
-`routeManifest.ts` owns the six top-level SPA paths. `app/routes.ts` adds
+`routeManifest.ts` owns the six top-level SPA paths and the closed `PageId`
+vocabulary (formerly in the removed `src/sections/_shared/constants.ts`). `app/routes.ts` adds
 `/works/:projectId`; `core/caseStudies.ts` resolves project data. Metadata,
 blog paths and builder publishing have their own typed sources listed above.
 Vue Router owns history; `CinematicNav` owns story scrolling and sheets.
@@ -142,6 +143,20 @@ is a required package integration seam, and the compat entry additionally
 provides the classic-only symbols the stdlib deep modules read. Preserve
 official package subpaths. Remove the seams only when an equivalent
 upstream entry passes delivery and lifecycle checks.
+
+Ecosystem adoption is audited, not assumed. Cientos is raster-era in large
+parts: components built on classic `shaderMaterial`/`WebGLCubeRenderTarget`
+cannot run on this WebGPU/TSL pipeline. The 2026-09-27 parity audit
+(Inspection 10) verified every overlap surface and adopted nothing new:
+`Sparkles`/`Precipitation` are raster shaders behind an authored TSL-native
+`JunniParticles`; `Environment` needs renderer-native PMREM
+(`isPMREMTexture` pass-through) that preset HDRIs cannot produce; `Html` has
+no consumer surface (Vue owns semantic DOM by design); `useProgress` mutates
+module-global `DefaultLoadingManager` state behind a milestone splash that
+owns its own choreography; `useTexture`/`useGLTF`/`useAnimations` need Vue
+setup context and would weaken the refcounted cache and lazy-stage
+contracts. The standing rule for any future adoption is the #228 model:
+lazy chunk, stdlib-shim entry, eval-safety review, no new eager imports.
 
 The bounded loop was originally driven through the renderer's
 `setAnimationLoop` because Tres's manual `advance()` path kept idle RAF work.

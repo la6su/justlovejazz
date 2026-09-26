@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import UIkit from 'uikit'
 import { ContentReveal } from '../Experience/ContentReveal'
 import { eventBus } from '../core/EventBus'
-import type { PageId } from '../sections/_shared/constants'
+import type { PageId } from '../core/routeManifest'
 
 describe('ContentReveal typed page port', () => {
   let reveal: ContentReveal

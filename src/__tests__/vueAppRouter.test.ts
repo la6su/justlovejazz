@@ -46,7 +46,7 @@ import { ROUTE_MANIFEST, resolvePage } from '../core/routeManifest'
 import { eventBus } from '../core/EventBus'
 import { applyTranslations } from '../core/i18n'
 import { applyMetaTags } from '../core/pageMeta'
-import type { PageId } from '../sections/_shared/constants'
+import type { PageId } from '../core/routeManifest'
 
 const setupAnnouncer = (): void => {
   if (!document.getElementById('jlz-route-announcer')) {

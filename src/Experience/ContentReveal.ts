@@ -10,7 +10,7 @@
 //   typed sectionTheme contract; EnvSphere syncs via that event.
 
 import { eventBus, type AppEvents } from '../core/EventBus'
-import type { PageId } from '../sections/_shared/constants'
+import type { PageId } from '../core/routeManifest'
 import { themeManager, type ThemeMode } from '../core/ThemeManager'
 import { getWorldConfigForPage, type PhaseConfig } from '../core/WorldConfig'
 import { resolveEffectiveTheme, type ThemeAppliedPort } from '../core/sectionTheme'

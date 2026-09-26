@@ -56,18 +56,10 @@ retired. `scripts/bundle-breakdown.ts` now selects the shared vendor exactly
    user verifies in a real browser before `dev` → `main`). When picked up:
    back up the relic with a tag, reset `dev` to `main`, add `dev` to the CI
    trigger in `.github/workflows/lighthouse.yml`, and update the Git delivery
-   wording in AGENTS.md and DEVELOPMENT.md.
-4. **Visual iteration on the TresJS ecosystem (enabled by ADR 0005).**
-   The first adoption shipped 2026-09-26 (PR #228): the Lab camera
-   exploration runs Cientos `CameraControls` behind an async boundary with
-   a stated pointer-events policy (fine pointer + no reduced motion;
-   wheel keeps page scroll). Open next, unevaluated: whether any other
-   ecosystem helper (`Sparkles`, `Html`, `Environment`) earns its place —
-   adopt one only with the same laziness and contract discipline as #228.
-   Evaluated and deliberately not adopted (Inspection 9, 2026-09-26):
-   `renderMode` on-demand scheduling policy, `fpsLimit`, `useProgress` —
-   the documented RenderScheduler/loader contracts cover what they provide.
-5. **Experience.ts / SceneCoordinator.ts split (architectural, largest item).**
+   wording in [DEVELOPMENT](docs/DEVELOPMENT.md) (§ Git delivery) and the
+   release skill (`skills/justlovejazz-release/SKILL.md` — the "PR against
+   `main`" rule is the one that changes).
+4. **Experience.ts / SceneCoordinator.ts split (architectural, largest item).**
    `src/Experience/Experience.ts` (~1.8k lines) and
    `src/Experience/SceneCoordinator.ts` (~1k lines) are the last god-classes.
    Inspection 8 mapped the split-ready clusters (lazy-stage registry,
@@ -85,8 +77,10 @@ retired. `scripts/bundle-breakdown.ts` now selects the shared vendor exactly
 
 The 2026-09-17 post-transition audit found no dead files, duplicate GPU
 owners or untyped event paths; the bounded slices it listed (dead i18n keys,
-stale owner comments, the last `sections/` file, the dead `Renderer.update`
-parameter) shipped in #216. The last deferred item is closed:
+stale owner comments, the dead `Renderer.update` parameter) shipped in #216.
+The `sections/` residue closed 2026-09-27: `PageId` moved into
+`core/routeManifest.ts` (its true owner — the manifest is the path + page
+source of truth) and the directory is gone. The last deferred item is closed:
 
 1. **Lazy lifecycle consistency (closed 2026-09-25).** The Lab gamepad now
    runs through the shared `ensureLazyStage`/`disposeLazyStage` flow — its

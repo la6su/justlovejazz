@@ -16,7 +16,7 @@
 import { t, getLang } from './i18n'
 import { pathForPage } from './routeManifest'
 import { PAGE_META_DATA, type PageMetaData } from './pageMetaData'
-import type { PageId } from '../sections/_shared/constants'
+import type { PageId } from './routeManifest'
 
 const SITE_NAME = 'JUSTLOVEJAZZ'
 

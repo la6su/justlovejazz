@@ -10,7 +10,7 @@ import { Cursor } from './Cursor'
 import type { UIManager } from '../UI/UIManager'
 import { input } from './Input'
 import { SfxSystem } from '../core/SfxSystem'
-import type { PageId } from '../sections/_shared/constants'
+import type { PageId } from '../core/routeManifest'
 import { NoiseText } from './NoiseText'
 import { BlurFade } from './BlurFade'
 

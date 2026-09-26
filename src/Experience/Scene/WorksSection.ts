@@ -8,7 +8,7 @@
 import * as THREE from 'three'
 import { JunniParticles } from '../World/JunniParticles'
 import { BakuCarousel } from '../World/BakuCarousel'
-import type { PageId } from '../../sections/_shared/constants'
+import type { PageId } from '../../core/routeManifest'
 import type { StorySide } from '../../core/storyState'
 
 /** Create the Works section group around the baku. */

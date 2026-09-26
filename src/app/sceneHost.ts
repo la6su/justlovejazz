@@ -126,8 +126,8 @@ const state: SceneHostState = { settled: false, context: null }
 
 /**
  * The one-shot scene-host signal. Production code must never create a second
- * Tres root (AGENTS.md: exactly one canvas, renderer and loop owner during
- * migration); the bridge is module-scoped to enforce that.
+ * Tres root (AGENTS.md: exactly one canvas, renderer and loop owner); the
+ * bridge is module-scoped to enforce that.
  */
 export const sceneHost = {
   ready: new Promise<SceneHostReady>((resolve, reject) => {

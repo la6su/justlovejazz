@@ -4,7 +4,7 @@ import { Experience } from '../Experience/Experience'
 import { SceneCoordinator, type SceneCoordinatorOwners } from '../Experience/SceneCoordinator'
 import { WorksPlaneStage } from '../Experience/World/WorksPlaneStage'
 import { WorksInstallation } from '../Experience/World/WorksInstallation'
-import type { PageId } from '../sections/_shared/constants'
+import type { PageId } from '../core/routeManifest'
 import { getCurrentPage, setCurrentPage } from '../core/routePage'
 import { seedExperience } from './experienceSeed'
 

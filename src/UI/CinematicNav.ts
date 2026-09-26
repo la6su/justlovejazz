@@ -6,7 +6,7 @@
 // without occupying a story frame.
 
 import { prefersReducedMotion } from '../core/motionPolicy'
-import type { PageId } from '../sections/_shared/constants'
+import type { PageId } from '../core/routeManifest'
 import { worldSlotIndex, WORLD_SLOT_COUNT } from '../core/worldSlots'
 import {
   clampStoryPosition,
