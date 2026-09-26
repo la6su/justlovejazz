@@ -71,6 +71,14 @@ function createSeededExperience() {
     camera: { destroy: spies.camera },
     sizes: { destroy: spies.sizes },
     sfx: { dispose: spies.sfx },
+    // The env owner's disposeCurrent contract: release the texture AND clear
+    // the scene reference (both are asserted below).
+    _environment: {
+      disposeCurrent: () => {
+        spies.environment()
+        scene.environment = null
+      },
+    },
     scene,
   })
 

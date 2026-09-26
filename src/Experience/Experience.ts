@@ -1,5 +1,4 @@
 import * as THREE from 'three'
-import { PMREMGenerator as WebGPUPMREMGenerator } from 'three/webgpu'
 import { Sizes } from './Sizes'
 import { Time } from './Time'
 import { Camera } from './Camera'
@@ -21,6 +20,7 @@ import { SceneCoordinator } from './SceneCoordinator'
 import { observeReducedMotion, prefersReducedMotion } from '../core/motionPolicy'
 import { FrameTiming } from '../core/FrameTiming'
 import { FpsTracker } from './FpsTracker'
+import { SceneEnvironment } from './SceneEnvironment'
 import { WORKS_SLOT_INDEX, WORLD_SLOT_COUNT } from '../core/worldSlots'
 import { DEFAULT_CAMERA_SMOOTHING } from '../core/WorldConfig'
 import {
@@ -235,6 +235,9 @@ export class Experience {
   public get lowFps(): boolean {
     return this._fpsTracker.lowFps
   }
+  // Procedural IBL environment owner (SceneEnvironment.ts): applied once
+  // after renderer.init() and re-applied after a device-loss recovery.
+  private _environment!: SceneEnvironment
 
   // Phase 7 readiness contract: `jlz:webgl-ready` may only fire after the
   // initial World's FIRST SUCCESSFUL RENDER — the scheduler 'first-frame'
@@ -272,6 +275,13 @@ export class Experience {
     this.scene = host.scene
     this.camera = new Camera(this.sizes, host.camera)
     this.renderer = new Renderer(this.sizes)
+    // The env owner reads the renderer + glass cube lazily: it is applied
+    // after renderer.init() and again after a device-loss recovery.
+    this._environment = new SceneEnvironment({
+      scene: this.scene,
+      renderer: () => this.renderer,
+      baku: () => this.baku,
+    })
 
     // Phase 7 slice 4: the former UI features reach the scene through a
     // narrow getter-based port (the scene + owners only exist after init).
@@ -385,7 +395,7 @@ export class Experience {
     if (this._onRendererRecovered) return
     this._onRendererRecovered = () => {
       if (this._destroyed) return
-      this.setupEnvironment()
+      this._environment.apply()
       if (this._destroyed) return
       this._raiseRenderDemand('recovery')
     }
@@ -846,131 +856,6 @@ export class Experience {
     disposeLazyStage(this._labGamepadContract())
   }
 
-  /** Create a studio environment map (procedural equirect → PMREM) for glass
-   *  reflections. Called once after world init (and after `renderer.init()`,
-   *  which the TSL generator requires). Sets scene.environment so all PBR
-   *  materials (MeshPhysicalNodeMaterial, MeshStandardMaterial) get
-   *  image-based lighting reflections. Zero per-frame cost.
-   *
-   *  GENERATOR — one owner, no secondary contexts: the renderer-native TSL
-   *  `PMREMGenerator` from `three/webgpu` on the unified `WebGPURenderer`
-   *  (the only renderer class the app constructs). It sets
-   *  `isPMREMTexture` on the result natively, so the common `PMREMNode`
-   *  passes the texture through instead of double-PMREMing it (double
-   *  processing used to render the glass cube darker on WebGPU with a
-   *  concentrated bright-spot artifact). The former classic-generator
-   *  branch (dev-forced `?renderer=webgl` QA path) was removed together
-   *  with that path in Phase 10. The former secondary offscreen WebGL
-   *  context (created solely for PMREM generation on the WebGPU path) was
-   *  removed in the Phase 6 unified-renderer slice. */
-  private setupEnvironment(): void {
-    // Procedural environment map (day34 pattern) — bright sky gradient + 3 sun
-    // spots for visible glass reflections. RoomEnvironment was too dim (soft
-    // architectural studio light) → glass looked dark. This procedural env
-    // gives strong directional highlights like day34 reference.
-    let envTex: THREE.CanvasTexture | null = null
-    let pmrem: WebGPUPMREMGenerator | null = null
-    let nextEnvironment: THREE.Texture | null = null
-    const previousEnvironment = this.scene.environment
-    try {
-      // Procedural grayscale texture (sky-to-ground tonal contrast + soft spots).
-      // 512×256 is sufficient for the deliberately soft PMREM reflections and
-      // quarters the synchronous startup work of the previous 1024×512 source.
-      const envWidth = 512
-      const envHeight = 256
-      const envCanvas = document.createElement('canvas')
-      envCanvas.width = envWidth
-      envCanvas.height = envHeight
-      const ctx = envCanvas.getContext('2d')!
-      // Vertical gradient: neutral horizon → bright sky → graphite ground,
-      // plus one soft bright area for a gentle
-      // reflection point on the glass + darker ground area for contrast.
-      // The contrast between bright sky and dark ground gives the glass rich,
-      // dynamic reflections (you can see the "horizon line" refract through
-      // the cube as it rotates). The palette stays neutral so it does not
-      // introduce a third colour system behind lime and teal UI signals.
-      const grad = ctx.createLinearGradient(0, 0, 0, envHeight)
-      grad.addColorStop(0.0, 'rgb(170,170,170)')
-      grad.addColorStop(0.4, 'rgb(225,225,225)')
-      grad.addColorStop(0.7, 'rgb(205,205,205)')
-      grad.addColorStop(0.71, 'rgb(58,58,58)')
-      grad.addColorStop(1.0, 'rgb(24,24,24)')
-      ctx.fillStyle = grad
-      ctx.fillRect(0, 0, envWidth, envHeight)
-      // Soft bright area (upper-left sky region) — broad, diffused light source
-      // for glass reflections. Broad radius + moderate brightness
-      // = soft highlight, NOT a sharp sun spot.
-      const softSpot = ctx.createRadialGradient(140, 70, 0, 140, 70, 150)
-      softSpot.addColorStop(0.0, 'rgba(255,255,255,0.6)')
-      softSpot.addColorStop(0.5, 'rgba(235,235,235,0.25)')
-      softSpot.addColorStop(1.0, 'rgba(220,220,220,0)')
-      ctx.fillStyle = softSpot
-      ctx.fillRect(0, 0, envWidth, envHeight)
-      // Second soft highlight (lower-right, dimmer) — gives the cube a second
-      // reflection point that appears as it rotates, adding visual interest.
-      const softSpot2 = ctx.createRadialGradient(380, 180, 0, 380, 180, 100)
-      softSpot2.addColorStop(0.0, 'rgba(205,205,205,0.35)')
-      softSpot2.addColorStop(1.0, 'rgba(185,185,185,0)')
-      ctx.fillStyle = softSpot2
-      ctx.fillRect(0, 0, envWidth, envHeight)
-      envTex = new THREE.CanvasTexture(envCanvas)
-      envTex.mapping = THREE.EquirectangularReflectionMapping
-      envTex.colorSpace = THREE.SRGBColorSpace
-
-      // Renderer-native TSL PMREM — runs on the live renderer after init and
-      // sets isPMREMTexture on the result natively (PMREMNode pass-through,
-      // no double processing). The unified WebGPURenderer is the only
-      // instance class (Phase 6 production default; the classic
-      // WebGLRenderer path was removed in Phase 10), so this is the single
-      // generator.
-      pmrem = new WebGPUPMREMGenerator(this.renderer.instance)
-      const envRT = pmrem.fromEquirectangular(envTex)
-      nextEnvironment = envRT.texture
-      // Set environmentIntensity explicitly (day34 pattern). Without this,
-      // WebGPU MeshPhysicalNodeMaterial and WebGL2 MeshPhysicalMaterial can
-      // apply scene.environment at different strengths → parity drift
-      // (WebGPU appeared darker than WebGL2). Explicit 1.0 on both ensures
-      // identical IBL strength; material envMapIntensity controls the rest.
-      ;(this.scene as unknown as { environmentIntensity?: number }).environmentIntensity = 1.0
-      // Bind the PMREM texture directly to the glass cube material's envMap.
-      // On WebGPU, scene.environment may not reach MeshPhysicalNodeMaterial
-      // reliably through the TSL post-pipeline (PassNode RT caching drift).
-      // Explicit mat.envMap guarantees the glass sees the environment on BOTH
-      // paths → parity. Shared texture, no extra VRAM.
-      // Generate completely before replacing the live binding. A recovery
-      // failure must preserve the previous environment rather than leaving
-      // the scene without reflections.
-      this.scene.environment = nextEnvironment
-      try {
-        this.baku?.bindEnvironment(nextEnvironment)
-      } catch (error) {
-        this.scene.environment = previousEnvironment ?? null
-        nextEnvironment.dispose()
-        nextEnvironment = null
-        throw error
-      }
-      if (previousEnvironment && previousEnvironment !== nextEnvironment) {
-        previousEnvironment.dispose()
-      }
-      if (import.meta.env.DEV) {
-        console.info(
-          '[Experience] Procedural env map (gradient + sun spots) set — glass reflections active (PMREM via renderer-native TSL generator)',
-        )
-      }
-    } catch (e) {
-      if (nextEnvironment) {
-        this.scene.environment = previousEnvironment ?? null
-        nextEnvironment.dispose()
-      }
-      if (import.meta.env.DEV) {
-        console.warn('[Experience] Procedural env map generation failed:', e)
-      }
-    } finally {
-      pmrem?.dispose()
-      envTex?.dispose()
-    }
-  }
-
   async init() {
     if (this._destroyed) return
     const token = this.lifecycleToken()
@@ -1090,14 +975,10 @@ export class Experience {
     this._syncPolaritySurfaces(initialIsLight)
 
     // ── Glassmorphism: studio environment map for realistic glass reflections ──
-    // RoomEnvironment is a procedural studio scene (walls + lights) rendered
-    // ONCE to a PMREM (pre-filtered mipmap radiance environment) texture.
-    // This gives the glass cube its reflections — without it, MeshPhysicalMaterial
-    // has NO reflections and glass looks flat/dead. Generated once at init,
-    // costs ZERO per frame. The PMREM also benefits the ground plane (subtle
-    // reflections). try/catch: PMREMGenerator expects WebGLRenderer; on
-    // WebGPURenderer it may fail (duck-typed), so we fall back gracefully.
-    this.setupEnvironment()
+    // Generated once at init, costs ZERO per frame. The PMREM also benefits
+    // the ground plane (subtle reflections). Failure inside the owner
+    // preserves the previous environment (see SceneEnvironment.apply).
+    this._environment.apply()
 
     // Phase 7 slice 4: the former UI features (CinematicNav, UIMenu,
     // overlay, Works portfolio, UI-facing window handlers) are created and
@@ -1753,12 +1634,9 @@ export class Experience {
     this.sizes.destroy()
     input.destroy()
     this.sfx.dispose()
-    // scene.environment PMREM texture — not previously disposed (leak on
-    // HMR teardown). Dispose the texture + clear the reference.
-    if (this.scene.environment) {
-      this.scene.environment.dispose()
-      this.scene.environment = null
-    }
+    // The scene environment PMREM texture — disposed + reference cleared by
+    // its owner (was a leak on HMR teardown before the owner existed).
+    this._environment?.disposeCurrent()
   }
 
   // (ensurePortfolio / getCarousel / onProjectSelect removed — Phase 7
