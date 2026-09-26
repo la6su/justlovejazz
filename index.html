@@ -20,8 +20,16 @@
       content="Interactive digital experiences, WebGPU, Three.js and creative systems."
     />
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="JUSTLOVEJAZZ" />
+    <meta property="og:locale" content="en_US" />
     <meta property="og:url" content="https://justlovejazz.dev/" />
-    <meta property="og:image" content="/logo.svg" />
+    <!-- Raster og:image: social crawlers (Twitter/Facebook/LinkedIn) do not
+         render SVG previews; /preview.jpg is the 1200x630 share card. -->
+    <meta property="og:image" content="https://justlovejazz.dev/preview.jpg" />
+    <meta property="og:image:secure_url" content="https://justlovejazz.dev/preview.jpg" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="JUSTLOVEJAZZ — Digital Experience" />
@@ -29,9 +37,15 @@
       name="twitter:description"
       content="Interactive digital experiences, WebGPU, Three.js and creative systems."
     />
+    <meta name="twitter:image" content="https://justlovejazz.dev/preview.jpg" />
+
+    <meta name="theme-color" content="#050507" />
+    <meta name="color-scheme" content="dark light" />
 
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/logo.svg" />
+    <link rel="mask-icon" href="/logo.svg" color="#232534" />
+    <link rel="manifest" href="/site.webmanifest" />
 
     <!-- Self-hosted fonts — the splash renders before JS boots, so both
          faces are preloaded: Commissioner (variable, splash spiral + body)
@@ -823,6 +837,17 @@
         }
       }
     </style>
+
+    <!-- No-JS fallback: the loader overlay (#jlz-app-loader, z-index 30000)
+         would cover the prerendered home shell forever — hide it so crawlers
+         with JS off (and future no-JS visitors) see the prerendered content. -->
+    <noscript>
+      <style>
+        #jlz-app-loader {
+          display: none !important;
+        }
+      </style>
+    </noscript>
   </head>
 
   <body>
