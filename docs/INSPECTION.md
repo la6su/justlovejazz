@@ -1,9 +1,14 @@
-# Inspection — 2026-09-25
+# Inspection log
 
-Dated audit record (like evidence, not a queue): test-suite review for
-"tests for the sake of tests" plus a redundancy/overengineering pass over
-the runtime modules, requested by the user. Scope: main @ 887443c +
-engineering-slices working tree. Method: per-file metrics (lines / tests /
+Dated audit record (like evidence, not a queue): successive inspection
+entries below; the latest entry reflects current architecture, earlier
+ones are history and carry superseded markers where a later decision
+reversed them.
+
+Inspection 1 is a test-suite review for "tests for the sake of tests"
+plus a redundancy/overengineering pass over the runtime modules,
+requested by the user. Scope: main @ 887443c + engineering-slices
+working tree. Method: per-file metrics (lines / tests /
 expects / mocks) over all 112 unit files, full reads of the smallest and
 mock-heaviest files, dead-export scan over `src/core`, `src/UI`,
 `src/Utils` cross-referenced against production, test and script
@@ -129,7 +134,9 @@ full e2e run (chromium headless) before and after fixes.
 - The Vue/TresJS contract layer already follows the framework's best
   practices: persistent `SceneHost` outside `RouterView` (single
   canvas/renderer/camera/scene owner), `render-mode="on-demand"` with the
-  internal loop stopped in favor of `RenderScheduler`, declarative
+  internal loop stopped in favor of `RenderScheduler` (superseded
+  2026-09-25 by #224 / ADR 0005: the persistent Tres loop is now the RAF
+  host and the scheduler drives it through `SceneLoopPort`), declarative
   `TresMesh`/`TresPerspectiveCamera` wrappers with typed `ready` emits,
   `useTresContext().camera.setActiveCamera`, `markRaw` on three objects,
   `primitive` adapters with `:dispose="null"` preserving Experience as
@@ -150,6 +157,12 @@ Verification after fixes: build + prerender injection confirmed in
 `prettier` clean.
 
 ## Inspection 3 — 2026-09-25, reinvented-wheel audit (TresJS core + Cientos)
+
+> Superseded in part on 2026-09-25 by #224 (ADR 0005): `@tresjs/cientos`
+> 5.9.0 is installed as the declared ecosystem foundation, the persistent
+> Tres loop is the RAF host, and `useLoop`/`invalidate()` are the supported
+> wake edge. The verdicts below record the pre-#224 state; the
+> "no wheels" product verdicts remain current.
 
 Trigger: user request to audit final-refactor overengineering, verify the
 validity of hand-rolled solutions ("are we reinventing the wheel?") and
@@ -197,6 +210,9 @@ mode with the internal loop stopped. Unused core composables, evaluated:
 
 - `useLoop` / `useCreateRafLoop` — deliberately bypassed (bounded scheduler
   owns the loop; competing RAF loops are contractually forbidden).
+  _(Superseded 2026-09-25, #224 / ADR 0005: the scheduler now drives the
+  Tres loop via `SceneLoopPort`; `useLoop` subscribers share that RAF —
+  see ARCHITECTURE → Renderer and scheduling.)_
 - `useLoader` / `useTexture` / `useSizes` / `useCamera` / `useCameraManager`
   — each is weaker than the existing owner (refcount cache / Sizes with
   DPR caps / cinematic camera contract); adopting them would move
@@ -205,6 +221,11 @@ mode with the internal loop stopped. Unused core composables, evaluated:
   project's generation guards and typed event ports are stricter.
 
 ### Cientos: deliberately not installed
+
+> Superseded 2026-09-25 by #224 (ADR 0005): the project upgraded
+> `@tresjs/core` to 5.9.0 and installed `@tresjs/cientos` 5.9.0 as the
+> declared foundation for the Tres-native demand loop. First component
+> adoption is queued; the peer-lock obstacle named below is gone.
 
 Cientos 5.9.0 peer-locks `@tresjs/core` to 5.9.0 (project pins 5.8.3) and
 pulls six transitive dependencies. None of its catalog entries replaces

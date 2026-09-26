@@ -1,10 +1,9 @@
 // src/core/RenderScheduler.ts — Phase 7 single renderer-loop driver.
 //
-// ADR 0004 (superseding clarification, 2026-08-16): the bounded
-// `setAnimationLoop` port is the single renderer-loop integration. The
-// TresCanvas internal loop stays stopped and this scheduler is the single
-// caller of `renderer.setAnimationLoop` — it installs the loop for bounded
-// activity windows and clears it when settled.
+// ADR 0004 (2026-08-16): the scheduler is the single frame-policy owner —
+// it installs the frame callback for bounded activity windows and clears it
+// when settled. (Its "single setAnimationLoop caller" wording is
+// superseded by ADR 0005 below.)
 //
 // Contract:
 // - start on dirty work (an `invalidate` with a typed reason) or on resume;
@@ -14,8 +13,8 @@
 // - reduced motion settles synchronously (`settleNow`).
 //
 // Framework-neutral by design: the `LoopDriver` port is the only edge to a
-// real renderer (`renderer.setAnimationLoop`), so the policy is unit-tested
-// without a renderer, a canvas or rAF.
+// loop host, so the policy is unit-tested without a renderer, a canvas or
+// rAF.
 //
 // ADR 0005 (2026-09-25, Tres-native demand loop): the `LoopDriver` edge now
 // installs the frame callback into the persistent Tres loop (through the

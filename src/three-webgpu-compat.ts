@@ -1,6 +1,6 @@
 // Compatibility entry for the current TresJS runtime.
 //
-// The application always supplies its own WebGPURenderer factory. TresJS 5.8
+// The application always supplies its own WebGPURenderer factory. TresJS 5.9
 // still imports WebGLRenderer for its default renderer path and an instanceof
 // guard, so keep that symbol available without retaining Three's classic
 // renderer module in the production graph.

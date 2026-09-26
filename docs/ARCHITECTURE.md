@@ -4,7 +4,7 @@
 
 ```text
 index.html inline splash → entry-shell.ts → entry-app.ts
-  → app/AppShell.vue + router.ts + semantic app/views/
+  → app/AppShell.vue + app/index.ts (Vue Router mount) + semantic app/views/
   → persistent app/SceneHost.vue / TresCanvas
     → core/unifiedRenderer.ts → Experience/Renderer.ts
     → core/RenderScheduler.ts → core/RenderPipeline.ts
@@ -31,7 +31,7 @@ these layers; scene state must not be inferred from DOM datasets.
 
 | Concern                             | Source owners                                                                                                               |
 | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| Route paths and views               | `core/routeManifest.ts`, `app/routes.ts`, `router.ts`, `app/views/`                                                         |
+| Route paths and views               | `core/routeManifest.ts`, `app/routes.ts`, `app/index.ts` (router mount), `app/views/`                                       |
 | Route state and deferred navigation | `core/routePage.ts`, `core/routeContinuation.ts`                                                                            |
 | Locale and route metadata           | `core/i18n.ts`, `core/pageMeta.ts`, `core/pageMetaData.ts`                                                                  |
 | Blog and sitemap                    | `core/blogPages.ts`, `blogContent.ts`, `blogMeta.ts`, `sitemap.ts`, `sitemapEntries.ts`; `content/blog/` at repository root |

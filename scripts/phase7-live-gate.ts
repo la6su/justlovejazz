@@ -13,9 +13,10 @@
  *      World's first successful render (factory return alone never
  *      satisfies readiness);
  *   2. settled idle (zero draws) — after the splash is dismissed and the
- *      scene settles, the RenderScheduler (ADR 0004, the single
- *      setAnimationLoop caller) reports the loop INACTIVE: the loop stopped
- *      after the settled frame, so a settled scene draws nothing;
+ *      scene settles, the RenderScheduler (ADR 0005: it drives the
+ *      persistent Tres loop through the SceneLoopPort) reports the loop
+ *      INACTIVE: the loop stopped after the settled frame, so a settled
+ *      scene draws nothing;
  *   3. disposal match (Phase 6 contract) — `__jlzRuntimeDestroy()` tears
  *      the Experience down without fatal errors and the Vue-owned canvas
  *      element survives `Renderer.dispose()` (the renderer, not the DOM,

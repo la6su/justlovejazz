@@ -150,7 +150,7 @@ export const sceneHost = {
   },
   /**
    * Swap the live renderer after a device-loss recovery (or a software
-   * adapter re-creation outside SceneHost). Tres 5.8.3 keeps the renderer as
+   * adapter re-creation outside SceneHost). Tres 5.9 keeps the renderer as
    * a plain value on the manager, so the swap is a plain assignment; the
    * RenderScheduler keeps driving the replacement through the Renderer
    * owner boundary.

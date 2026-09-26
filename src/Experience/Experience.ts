@@ -1313,12 +1313,14 @@ export class Experience {
     this.camera.instance.position.set(0, 5, 10)
     this.camera.instance.lookAt(0, 0, 0)
     this.camera.instance.updateProjectionMatrix()
-    // Phase 7 (ADR 0004): the loop is demand-driven — the scheduler (built in
-    // the constructor) is the single setAnimationLoop caller. It installs the
-    // frame callback on the first 'first-frame' invalidation and stops it
-    // after the settled frame (zero settled draws). WebGPURenderer on the
-    // WebGPU backend still paces through setAnimationLoop (swap-chain sync) —
-    // the driver, not the start/stop policy, is unchanged from Phase 6.
+    // Phase 7 (ADR 0004) / ADR 0005: the loop is demand-driven — the
+    // scheduler (built in the constructor) owns the frame policy: the frame
+    // callback starts on the first 'first-frame' invalidation and stops
+    // after the settled frame (zero settled draws), running inside the
+    // persistent Tres loop via the SceneHost SceneLoopPort. WebGPURenderer
+    // on the WebGPU backend still paces through setAnimationLoop
+    // (swap-chain sync) — the driver, not the start/stop policy, is
+    // unchanged from Phase 6.
     this._scheduler.invalidate('first-frame')
 
     // ── DrawTrail: trigger render on mousemove (Works section only) ──
@@ -1762,8 +1764,9 @@ export class Experience {
       }
     }
 
-    // NOTE: do NOT call requestAnimationFrame here — setAnimationLoop (set in
-    // init()) drives the loop. Calling rAF on top would double the frame rate
+    // NOTE: do NOT call requestAnimationFrame here — the persistent Tres
+    // loop (driven by the scheduler through the SceneLoopPort, ADR 0005) is
+    // the one RAF host. Calling rAF on top would double the frame rate
     // and fight the WebGPU swap chain synchronization.
   }
 
