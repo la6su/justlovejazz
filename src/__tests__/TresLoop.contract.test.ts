@@ -42,7 +42,7 @@ async function mountCanvas(renderMode: 'manual' | 'on-demand') {
   return { wrapper, renderer, context: ready.context, ticks }
 }
 
-describe('TresJS 5.8.3 loop contract', () => {
+describe('TresJS 5.9 loop contract', () => {
   beforeAll(() => {
     installCanvasPointerShims()
   })
