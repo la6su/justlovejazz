@@ -66,11 +66,12 @@ retired. `scripts/bundle-breakdown.ts` now selects the shared vendor exactly
    showreel controller, environment/PMREM, FPS tracker) and the entangled
    state that blocks them (`_needsRender`/`_activitySnapshot` writers,
    polarity cache, carousel ownership). Sequencing when picked up:
-   migrate the private-state test seeds (14 files seed via
-   `experienceSeed.ts`/`Object.create`) to slot/port seams FIRST, then move
-   clusters; update the ARCHITECTURE.md ownership table + teardown section
-   and the `vite.config.ts` chunk regexes in the same change; keep
-   `Experience.destroyOwnership.test.ts` green or rename it in the same PR.
+   migrate the private-state test seeds that bypass the Experience
+   constructor (`experienceSeed.ts` / `Object.create` bags) to slot/port
+   seams FIRST, then move clusters; update the ARCHITECTURE.md ownership
+   table + teardown section and the `vite.config.ts` chunk regexes in the
+   same change; keep `Experience.destroyOwnership.test.ts` green or rename
+   it in the same PR.
    The parity-locked SceneCoordinator double-ease must not be "fixed" mid-split.
 
 ## Audit cleanup (2026-09-17)

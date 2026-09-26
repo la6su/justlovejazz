@@ -988,3 +988,101 @@ Verification: prettier clean, tsc + vue-tsc green, eslint 0 errors (16
 pre-existing warnings), vitest 116 files / 714 tests green, docs:check
 green, check:stdlib green, build + prerender + budgets identical to
 baseline, e2e chromium serial 27 passed / 1 skipped (new DPR pin).
+
+## Inspection 13 — 2026-09-27, TvT.js docs-pattern adoption + dead/tautological test sweep (post-#232)
+
+Scope: the user's follow-up to the TvT.js cross-check — "continue the refactor
+per the TvT.js example: change the documentation, remove redundant/dead code,
+over-engineering and dead tests." Two parallel audits (reference repo deep
+read; symbol-level dead-code/dead-test sweep of this repo at c73d2a2), every
+candidate re-verified before acting.
+
+### What was adopted from TvT.js — and what was deliberately rejected
+
+- Adopted: the disclosure norm. TvT.js's AGENTS.md requires every agent
+  report to state which verification ran. The positive form is now in our
+  AGENTS.md ("report which checks ran") — our gate set (unit + e2e + budgets)
+  stays, unlike TvT.js's build-debug ban, which substitutes prose for gates
+  in a repo with zero tests.
+- Adopted in spirit, rejected as ceremony: the "primary code evidence" file
+  list at the top of every spec. This repo already implements the principle —
+  the ARCHITECTURE.md ownership table maps every concern to source owners,
+  ADR 0005 names its owners inline, and `docs:check` verifies cited paths
+  resolve. A parallel evidence-header layer would duplicate the table and
+  decay (TvT.js's flagship spec drifted from its own code within months:
+  4 documented preview categories vs 8 in code). The uniform
+  Purpose/Covers/Requirements skeleton was rejected for the same reason:
+  spec structure without an execution story is cargo cult.
+- Rejected: TvT.js's metadata ceremony (koroFileHeader stamps consumed by
+  nothing), its openspec changes/ flow (empty since inception), lint config
+  without a lint script. Our docs drift items found by this sweep were fixed
+  in code, not codified.
+
+### Dead/tautological coverage out
+
+- `routePage.test.ts`: the third test ("World.syncRouteVisuals hides …")
+  exercised only the port's own setter/getter under the name of a class that
+  left production in Phase 8; its assertions duplicated test 1 exactly.
+- `stageSlot.lifecycle.test.ts`: the "resolves promises (flushPromises
+  compatible)" test — tests 1/3 already await mount/unmount; a never-resolving
+  promise would time out there.
+- `experienceSeed.ts`: the `contactHaloStage`/`manifestoInkStage` bag keys
+  were never passed by any test (both voices are injected via the returned
+  `slots` record) — dropped from the routing map.
+- `tresHarness.mountSceneCanvas`: the `renderMode` option had no caller —
+  all 9 mount sites use the hardcoded manual mode; the option is gone.
+
+### Mirrored machinery tests collapsed into base-class suites
+
+- New `textReveal.lifecycle.test.ts`: the disconnect-finalize and
+  reschedule-while-connected tests existed as copy-equivalent pairs in the
+  BlurFade and NoiseText files while the `TextReveal` base (which owns that
+  machinery) had no dedicated suite. The base suite adds tests neither voice
+  had: the safety-timeout finalize path, the empty-element early return, the
+  explicit `show(sourceText)` source capture, and the read-before-cancel
+  re-show contract (D-3/D-9) at the base level. BlurFade/NoiseText keep their
+  genuine voice contracts (markup-safe split, XSS-as-text, frame buffer,
+  rotation cache, disposeAll instanceof filters, restore-on-hide).
+- New `PointerInkStage.lifecycle.test.ts`: same pattern — the reveal-damp,
+  pointer-chase, reduced-motion, disposed-guard and shared-geometry tests
+  existed twice (ManifestoInkStage ↔ ContactHaloStage, diff = tint hexes and
+  one damping constant) while the shell had no suite. Voice files reduce to
+  their real contract: the theme tints. Harness voices use unique geometry
+  keys/element types so the module-global shared-geometry map and per-class
+  registries never collide across suites.
+- `Experience.resizeOwners.test.ts`: the "does not initialize a missing lazy
+  Cyprus owner" test asserted only `.not.toThrow()` — it now pins the slot
+  directly (stage stays null, request id stays 0).
+
+### Dead surface out — copyPostParams wired, not deleted
+
+#230 shipped `copyPostParams` (core/postParams.ts) with the claim that it
+"keeps the PERF-11 in-place handoff", but both RenderPipeline handoff sites
+(18-line snapshot copy, 14-line TSL-cache handoff) remained hand-written —
+an unwired helper was the worst of both worlds. Both sites now go through
+the canonical helper (the header's "adding a channel is a one-file change"
+claim is finally true), `PostGradeTuple` is unexported (module-local; only
+`NEUTRAL_GRADE` crosses the module boundary), and the stale DevPanel
+tombstone comment (8 lines about a 2026-07-11 removal) is compressed to the
+decision that matters (navigation deliberately absent).
+
+### Deliberately kept
+
+- Private-field perf pins (EnvSphere weights, NoiseText chars, BlurFade
+  rotations): they pin documented allocation-free invariants, not behavior.
+- The four "ignores late public calls after terminal teardown" twins:
+  different classes, per-owner contracts.
+- FrameGapStats vs FrameTiming split (DevPanel p50/p95 vs gate-critical
+  timing capture — different owners, evaluated in Inspection 9).
+- All 21 `jlz:*` events, all observability surfaces (RuntimeResourceSnapshot,
+  FrameTiming, FrameGapStats have live readers: DevPanel, phase7-live-gate).
+
+Verification: prettier clean, tsc + vue-tsc green, eslint 0 errors (16
+pre-existing warnings), vitest 117 files / 711 tests green (714 → 711: the 6
+dead/duplicated and 10 mirrored tests are out, 13 dedicated base-contract
+tests in, including the safety-timeout, empty-element and read-before-cancel
+contracts that had no coverage), docs:check 18 files / 36 links green,
+check:stdlib 28/28 + 5/5 green, build (incl. home/blog prerender, builder
+pages, sitemap) green, budgets identical to baseline (splash 2.82/5, vendor
+three 298.65/350, uikit 53.66/56), e2e chromium serial 27 passed / 1 skipped
+(baseline parity).
