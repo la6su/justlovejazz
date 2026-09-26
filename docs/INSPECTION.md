@@ -571,3 +571,96 @@ stats-gl, a circular init order that crashed every page at boot ("Ls is
 not a function", 14 e2e failures). The rule now carries an explicit
 only-modules-with-no-eager-importer constraint, and `check:stdlib` is
 wired into CI as a fast-fail dependency-upgrade gate.
+
+## Inspection 8 — 2026-09-26, blockers-out pass (stale docs, dead surface, seam guards)
+
+Trigger: user request to keep modernizing per the DX goals — remove blockers
+and outdated information from the codebase and documents, drop over-
+engineering, and drive the project toward top-tier practice, analysis first,
+autonomous execution. Scope: main @ d41fde4 (Inspection 7 merged via #228).
+Method: two parallel deep audits — (1) scripted dead-export sweep over all
+top-level src/{core,app,Experience} modules cross-referenced against every
+consumer, plus duplication and file-size review; (2) claim-by-claim docs-
+truth audit of every tracked .md except this append-only log. Every claim
+was re-verified against the code before acting (the audits' false-positive
+rate on prior rounds made this mandatory).
+
+### Actions taken (same PR)
+
+- Blocker: stale docs misdirecting contributors. `ARCHITECTURE.md` claimed
+  vite aliases "only bare `three`" — wrong since #228 added the
+  `three-stdlib` shim alias + `check:stdlib` gate; the ownership table also
+  lacked the declarative stage-mount surface (`app/stageSlot.ts` +
+  `sceneHost.ts` ports). `ADR 0005` said `render-mode="manual"` while the
+  code and ARCHITECTURE both say `on-demand`, and still listed the Lab
+  CameraControls adoption as "queued" though #228 shipped it.
+  `DEVELOPMENT.md`'s release gate omitted `check:stdlib`, so a contributor
+  could pass all 8 documented commands and still fail CI on shim drift.
+  `NEXT.md` Engineering item 4 still carried the "needs a pointer-events
+  product decision" blocker. All five fixed; NEXT items 1–2 updated to the
+  fresh evidence state.
+- Blocker: unclosed TEMP decision — the repo's only TODO/TEMP/FIXME marker
+  was `allowedHosts: true, // TEMP` (dev server host allowlist wide open).
+  Now `allowedHosts: ['project.6la.ru']` (loopback stays implicitly allowed),
+  matching the reverse-proxy comment above it.
+- Dead surface: five type exports with zero importers anywhere (repo-wide)
+  dropped their `export` keyword (`WorldSlotId`, `ReadySlot`, `StageSlot`,
+  `StageSlotOptions`, `WorksStagePort` — consumers receive these
+  structurally from the factories). The unreferenced `lhci` npm script was
+  removed (CI runs `lighthouse-ci-action` against the same
+  `.lighthouserc.json` directly).
+- Comment truth: the garbled Phase-10 sentence in `Experience.setupEnvironment`
+  doc comment repaired; the `SceneCoordinator` tracker-style labels
+  ("PERF-1 fix", "Bug 2") rewritten as contract descriptions, with the
+  deliberate second ease now explicitly marked parity-locked so nobody
+  "fixes" the double `_applyEasing`.
+- Small dedups with stated contracts: `Experience._syncPolaritySurfaces()`
+  owns the ground/baku/typography polarity fan-out (the event handler keeps
+  its particles pass, the init replay its envSphere snap — leg-specific by
+  design, now written down); `entry-app` `revealStudioTitle()` owns the
+  `.studio-title` + 1.5 s BlurFade contract shared by the two section events
+  (the splash first-reveal stays distinct: 0.55 s + text + registry).
+- Seam guard completed: `check:stdlib` now also verifies the
+  `three-webgpu-compat` curated surface — each of the five curated symbols
+  (`WebGLRenderer`, `UniformsUtils`, `UniformsLib`, `ShaderChunk`,
+  `WebGLCubeRenderTarget`) must still have a consumer in the real
+  dependency graph (Tres bundle + Cientos bundle + exactly the shimmed
+  stdlib files) and must still be provided by the compat entry. The
+  previous round's guard covered only the stdlib shim; this closes the
+  second direction (silently dead stubs after a dependency upgrade).
+- Evidence tool generalized: `bundle-breakdown.ts` profiles BOTH delivery-
+  critical vendor chunks in one sourcemapped build (`vendor-three` +
+  `vendor-lab-controls`), run-unique filenames preserved. Fresh reports
+  committed for d41fde4: the shared chunk is pure three.js again (three.webgpu
+  - three.core + tsl + 4 example modules; three-stdlib fully migrated into
+    the lazy lab chunk: camera-controls 45 kB, cientos 32 kB, stats-gl 30 kB
+    raw tops).
+
+### Checked and sound (no action)
+
+- No dead runtime symbols remain in the swept surface; the surviving
+  exported-for-testing seams all keep the internal-use + one-test shape.
+- The 2× owner-component pattern (`ServicesStageOwner`/`EnvSphereOwner`,
+  ~12 shared lines) stays: a shared composable would be speculative until a
+  third owner appears (AGENTS.md rule).
+- The dual stage read-surface (Experience getters ↔ SceneCoordinator getters
+  over the same six slots) is alive on both legs (route logic vs frame
+  path); consolidation waits for a third consumer.
+- `Experience.ts` (1829 lines) and `SceneCoordinator.ts` (971) splitting
+  remains the documented architectural item, not a hygiene task for this pass.
+- The old `8b98b41` vendor-three evidence JSON predates the stdlib migration
+  and its commit is only on the #228 branch — legitimate dated evidence per
+  the evidence README; the fresh d41fde4 reports supersede its content.
+
+### Open queue (recorded honestly, largest first)
+
+- Live/soak evidence regeneration on their supported server (NEXT
+  Engineering item 2); the delivery-review judgment on startup/backend/idle
+  depends on it.
+- Two-branch delivery workflow (user-deferred), physical WebGL device-loss
+  restoration (user-deferred).
+
+Verification: tsc, vue-tsc, eslint (0 errors, 16 pre-existing warnings),
+prettier clean, vitest 114 files / 708 tests green, docs:check green
+(18 files / 35 links), check:stdlib green (28/28 shim + 5/5 curated),
+build + prerender + budgets green, e2e chromium 26 passed / 1 skipped.

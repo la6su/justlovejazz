@@ -22,12 +22,13 @@ swap needed loop re-attachment bookkeeping.
 
 The persistent Tres loop is the one RAF host:
 
-- `TresCanvas` runs `render-mode="manual"` but keeps its loop running;
+- `TresCanvas` runs `render-mode="on-demand"` with its loop kept running;
   `RenderScheduler` drives frames through a `SceneLoopPort`
   (`onBeforeLoop`) instead of owning `setAnimationLoop`.
 - `@tresjs/cientos` 5.9.0 is installed (with `@tresjs/core` 5.9.0) as the
-  declared foundation for ecosystem adoption; first component adoption is
-  queued (e.g. Lab camera exploration via CameraControls).
+  declared foundation for ecosystem adoption; the first component adoption
+  shipped 2026-09-26 (PR #228): the Lab camera exploration via Cientos
+  `CameraControls` (`src/app/scene/LabCameraControls.vue`).
 - Ecosystem wake path: the wrapped `manager.invalidate()` in
   `SceneHost.vue` maps Tres/Cientos invalidations to the scheduler's
   `external` frame reason, so components using `useLoop` semantics wake

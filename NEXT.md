@@ -35,16 +35,21 @@ retired. `scripts/bundle-breakdown.ts` now selects the shared vendor exactly
 (`scripts/build-assets.ts` excludes the Contact addon chunks), depends on
 `source-map-js` directly and writes run-unique reports. Remaining:
 
-1. **Three delivery review.** Run the fixed breakdown tool and refresh the
-   pending Three delivery review with current gzip, startup/backend/idle and
-   resource evidence. Keep existing budgets unless a change has a measured
-   rationale within the task scope.
+1. **Three delivery review.** The breakdown data is current (see the
+   2026-09-26 reports under `docs/evidence/bundle-breakdown/`): the shared
+   chunk is pure three.js again (the three-stdlib modules moved into the lazy
+   `vendor-lab-controls` chunk, 37.5 kB gzip) and every budget holds. What
+   remains is the judgment call on startup/backend/idle behavior, which needs
+   the live/soak evidence below. Keep existing budgets unless a change has a
+   measured rationale within the task scope.
 2. **Evidence report regeneration.** The live/soak reports now record the
    evidence protocol's revision/dirty state, command and browser identity
    (shared `scripts/evidence-meta.ts`, bundle-tool convention; per-run
    backend identity stays the `data-engine` attribute plus the captured
-   host-ready log). Remaining: regenerate each report on its supported
-   server.
+   host-ready log). Bundle breakdowns are regenerated on every delivery
+   slice (`bun scripts/bundle-breakdown.ts`, one build, one report per
+   vendor chunk). Remaining: regenerate each live/soak report on its
+   supported server.
 3. **Two-branch delivery workflow (user-deferred).** The remote `dev` branch
    is a 2026-07-28 relic whose commits are superseded by the migration; the
    user wants `dev` as the integration branch (scoped PRs land there, then the
@@ -53,11 +58,12 @@ retired. `scripts/bundle-breakdown.ts` now selects the shared vendor exactly
    trigger in `.github/workflows/lighthouse.yml`, and update the Git delivery
    wording in AGENTS.md and DEVELOPMENT.md.
 4. **Visual iteration on the TresJS ecosystem (enabled by ADR 0005).**
-   Cientos 5.9.0 is installed and the persistent Tres loop now hosts
-   `useLoop` subscribers, so ecosystem helpers (CameraControls, Sparkles,
-   Html, …) work unmodified. First candidate when visual work resumes:
-   interactive camera exploration in the Lab via Cientos `CameraControls`
-   (needs a product decision on `pointer-events` for the canvas).
+   The first adoption shipped 2026-09-26 (PR #228): the Lab camera
+   exploration runs Cientos `CameraControls` behind an async boundary with
+   a stated pointer-events policy (fine pointer + no reduced motion;
+   wheel keeps page scroll). Open next, unevaluated: whether any other
+   ecosystem helper (`Sparkles`, `Html`, `Environment`) earns its place —
+   adopt one only with the same laziness and contract discipline as #228.
 
 ## Audit cleanup (2026-09-17)
 
