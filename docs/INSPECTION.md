@@ -486,3 +486,88 @@ prettier clean, vitest 113 files / 700 tests green (StateBus.test.ts
 deleted with its class; Section lifecycle coverage rewritten to the
 deadline contract: 5 tests), docs:check green (18 files), build +
 prerender + budgets green, e2e chromium 25 passed / 1 skipped.
+
+## Inspection 7 — 2026-09-26, first Cientos adoption (Lab camera exploration)
+
+Trigger: continuation of the open queue — queue item 4 ("first real
+Cientos adoption, pointer-events decision pending") executed, plus the
+production-readiness push on the `feat/production-ready` branch. Scope:
+main @ 1da1f2e (Inspection 6 merged via #227) + the branch's boot/meta/
+assets fixes. The pointer-events product decision is made here, in code,
+as a stated policy rather than left pending.
+
+### Actions taken (same PR)
+
+- Lab camera exploration (ADR 0005's first Cientos component): the
+  decision lives once in `SceneHost.vue` — lab route AND a fine pointer
+  AND no reduced-motion preference — and publishes through the typed
+  port `src/core/labCameraPolicy.ts` (a plain module boolean, read per
+  rendered frame; SceneHost is the only writer, tests drive both sides).
+  Consumers: the template's `v-if` + canvas `pointer-events` flip, the
+  `body[data-lab-camera]` CSS port (section pass-through: canvas takes
+  drag-to-orbit, interactive descendants keep links/buttons; touch
+  devices never publish the attribute, so the page-scroll contract and
+  the canvas' `touch-action: none` survive), and the cinematic writer
+  (`Experience/Camera`), which fully yields while the controls own the
+  pose and re-adopts the orbit pose as the smoothing origin on hand-back
+  (no authored-framing snap; pinned by `Camera.labControls.test.ts`).
+- The controls are the Cientos `<CameraControls>` (ecosystem
+  `camera-controls` under the hood) behind an async-component boundary:
+  rotate-only orbit around the authored content target, wheel mapped to
+  NONE (the Cientos default DOLLY would hijack page scrolling wherever
+  the Lab pass-through exposes the canvas), middle/right untouched,
+  azimuth/polar/distance limits keep the gamepad framed. The whole
+  Cientos/camera-controls/three-stdlib surface loads only when the
+  policy activates (own lazy chunk `vendor-lab-controls`,
+  `includeDependenciesRecursively: false` so three.js itself stays in
+  `vendor-three` instead of being duplicated). Cold-start wake: the
+  controls' pointer handlers only dispatch events, so the first drag
+  opens a scheduler window through the wrapped `manager.invalidate()`
+  (the typed `external` demand); later frames ride the controls' own
+  `update` → invalidate path.
+- three-stdlib compatibility seam (the hidden cost of any Cientos
+  adoption): the Cientos bundle imports the whole three-stdlib barrel,
+  whose index re-exports ~200 modules including classic-WebGL
+  postprocessing passes that do not resolve against the WebGPU `three`
+  build. `src/three-stdlib-compat.ts` re-exports exactly the 28 modules
+  the Cientos bundle statically references (deep relative paths, so the
+  graph stays tree-shakable), and `src/three-webgpu-compat.ts` supplies
+  the two classic-only reads (`UniformsLib`/`UniformsUtils` in
+  Water/LineMaterial, eval-safe for the same never-mounted reasons) plus
+  loud dead-path stubs (`ShaderChunk`, `WebGLCubeRenderTarget`). The
+  seam is guarded by `scripts/check-stdlib-modules.mjs` (`check:stdlib`
+  npm script): it computes the import set from the installed Cientos
+  bundle and diffs the shim in both directions, so a dependency upgrade
+  reports what to add/drop instead of failing obscurely at build time.
+
+### Checked and sound (no action)
+
+- The yield/hand-back design keeps `Experience` the sole disposal owner
+  and the scheduler the sole frame-policy owner: the controls never
+  drive RAF, they only invalidate through the wrapped manager.
+- Keeping `EnvSky` / `CinematicCamera` (Inspection 3 verdicts stand):
+  Cientos `Sky` targets the classic shader path and `CameraControls`
+  full-range orbit — neither is a drop-in for the authored cinematic
+  track; the Lab wrapper is the right scope for the ecosystem controls.
+
+### Open queue (recorded honestly, largest first)
+
+- `EnvSky.vue` / `CinematicCamera` vs Cientos `Sky` / `CameraControls`:
+  superseded by the verdicts above — closed as "deliberately not
+  adopted"; revisit only if the authored framing requirements change.
+- Evidence regeneration (bundle breakdown for the new lazy chunk) needs
+  a long-lived dev/preview server; the committed JSON stays pre-Lab.
+
+Verification: tsc, vue-tsc, eslint (0 errors, 16 pre-existing warnings),
+prettier clean, vitest 114 files / 708 tests green (Lab camera yield +
+SceneHost mount-policy coverage included), docs:check green (18 files),
+check:stdlib green (28/28 shim coverage), build + prerender + budgets
+green (vendor-lab-controls 37.5 kB gzip, lazy), e2e chromium 26 passed /
+1 skipped. One defect caught and fixed during verification: the chunk
+rule initially matched `@vueuse/core`, which is a static dependency of
+the eager `@tresjs/core` — that turned `vendor-lab-controls` into an
+eager boot dependency and, through the misc chunk's commonJS interop for
+stats-gl, a circular init order that crashed every page at boot ("Ls is
+not a function", 14 e2e failures). The rule now carries an explicit
+only-modules-with-no-eager-importer constraint, and `check:stdlib` is
+wired into CI as a fast-fail dependency-upgrade gate.

@@ -1,7 +1,7 @@
-import { defineComponent, h, onMounted } from 'vue'
+import { defineComponent, h, nextTick, onMounted } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import * as THREE from 'three'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   loopStop: vi.fn(),
@@ -20,7 +20,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@tresjs/core', () => ({
   TresCanvas: defineComponent({
     emits: ['ready'],
-    setup(_, { emit, slots }) {
+    setup(_, { emit, attrs, slots }) {
       onMounted(() => {
         emit('ready', {
           scene: { value: new THREE.Scene() },
@@ -40,7 +40,9 @@ vi.mock('@tresjs/core', () => ({
           },
         })
       })
-      return () => h('div', [h('canvas'), slots.default?.()])
+      // The real TresCanvas applies the caller's attrs (the pointer-events
+      // style) to the canvas element it owns — forward them the same way.
+      return () => h('div', [h('canvas', { style: attrs.style }), slots.default?.()])
     },
   }),
 }))
@@ -143,11 +145,56 @@ vi.mock('../core/rendererBackend', () => ({
   planUnifiedBackend: vi.fn(() => ({ recreate: true, mode: 'webgl' })),
 }))
 
+// The Lab exploration decision reads the router location. Tests pin the
+// publish contract per route by swapping this return value.
+vi.mock('vue-router', () => ({
+  useRoute: vi.fn(() => ({ name: 'home' })),
+}))
+
+// The Lab controls wrapper needs a live Tres context (useTres/useLoop);
+// the stubbed TresCanvas provides none. The stub renders a marker so tests
+// can assert SceneHost's own mount decision (v-if gating + camera
+// readiness). SceneHost loads the real wrapper through defineAsyncComponent,
+// so the mock targets the wrapper module; the runtime probes the module
+// namespace for the standard flags while resolving the async component.
+vi.mock('../app/scene/LabCameraControls.vue', () => ({
+  __esModule: true,
+  __isTeleport: false,
+  default: defineComponent({
+    props: { camera: Object },
+    setup() {
+      return () => h('div', { 'data-lab-controls': 'true' })
+    },
+  }),
+}))
+
 import SceneHost from '../app/SceneHost.vue'
 import { __resetSceneHostForTests, sceneHost } from '../app/sceneHost'
+import { useRoute } from 'vue-router'
+import { isLabCameraActive, setLabCameraActive } from '../core/labCameraPolicy'
+import { reactive } from 'vue'
+
+const routeMock = vi.mocked(useRoute)
+// The real useRoute() hands out the live reactive location — tests mutate
+// this one to simulate navigation. The cast narrows the stub to the fields
+// SceneHost reads; a full RouteLocationNormalizedLoaded is router-internal.
+const routeLocation = reactive({ name: 'home' }) as unknown as ReturnType<typeof useRoute>
+
+function stubFinePointerMedia(): void {
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn((query: string) => ({
+      matches: query === '(pointer: fine)',
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    })),
+  )
+}
 
 describe('SceneHost async lifecycle', () => {
   beforeEach(() => {
+    routeLocation.name = 'home'
+    routeMock.mockReturnValue(routeLocation)
     mocks.candidate.dispose.mockReset()
     mocks.loopStop.mockReset()
     mocks.loopStart.mockReset()
@@ -156,6 +203,12 @@ describe('SceneHost async lifecycle', () => {
     mocks.replaceRenderFunction.mockReset()
     mocks.init.mockReset()
     __resetSceneHostForTests()
+  })
+
+  afterEach(() => {
+    setLabCameraActive(false)
+    vi.unstubAllGlobals()
+    document.body.removeAttribute('data-lab-camera')
   })
 
   it('disposes a late fallback candidate after unmount', async () => {
@@ -314,5 +367,59 @@ describe('SceneHost async lifecycle', () => {
     wrapper.unmount()
 
     expect(replacement.dispose).toHaveBeenCalledOnce()
+  })
+
+  it('mounts the Lab controls and publishes the exploration state on the lab route', async () => {
+    stubFinePointerMedia()
+    routeLocation.name = 'lab'
+
+    const wrapper = mount(SceneHost, { attachTo: document.body })
+    // Two flush rounds: one for the scene-host ready slots, one for the
+    // defineAsyncComponent boundary's dynamic import to resolve and render.
+    await flushPromises()
+    await nextTick()
+    await flushPromises()
+
+    // The CSS choreography port is on, the typed policy port matches, the
+    // canvas takes pointer input and the controls mounted next to the camera.
+    expect(document.body.getAttribute('data-lab-camera')).toBe('on')
+    expect(isLabCameraActive()).toBe(true)
+    expect(wrapper.find('canvas').attributes('style')).toContain('pointer-events: auto')
+    expect(wrapper.find('[data-lab-controls]').exists()).toBe(true)
+
+    // Leaving the lab route unmounts the controls and clears every port.
+    routeLocation.name = 'home'
+    await flushPromises()
+
+    expect(document.body.hasAttribute('data-lab-camera')).toBe(false)
+    expect(isLabCameraActive()).toBe(false)
+    expect(wrapper.find('canvas').attributes('style')).toContain('pointer-events: none')
+    expect(wrapper.find('[data-lab-controls]').exists()).toBe(false)
+
+    wrapper.unmount()
+  })
+
+  it('keeps the canvas inert when the lab route runs without a fine pointer', async () => {
+    // Touch devices: no (pointer: fine) match — the exploration stays off so
+    // the page-scroll contract survives (canvas keeps touch-action: none).
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn(() => ({
+        matches: false,
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+      })),
+    )
+    routeLocation.name = 'lab'
+
+    const wrapper = mount(SceneHost, { attachTo: document.body })
+    await flushPromises()
+
+    expect(document.body.hasAttribute('data-lab-camera')).toBe(false)
+    expect(isLabCameraActive()).toBe(false)
+    expect(wrapper.find('canvas').attributes('style')).toContain('pointer-events: none')
+    expect(wrapper.find('[data-lab-controls]').exists()).toBe(false)
+
+    wrapper.unmount()
   })
 })

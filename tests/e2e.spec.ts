@@ -117,6 +117,29 @@ test.describe('JustLoveJazz — page boot smoke', () => {
     const enter = page.locator('#jlz-splash-enter')
     await expect(enter).toHaveClass(/is-ready/)
     await expect(enter).toHaveAttribute('aria-disabled', 'false')
+
+    // The splash meta row reports the real boot state (no frozen 00%).
+    await expect(page.locator('[data-jlz-splash="progress"]')).toHaveText(/100%/)
+    await expect(page.locator('[data-jlz-splash="state"]')).toHaveText('READY')
+  })
+
+  test('home head ships production meta: theme-color, manifest, raster og:image, no-JS splash bypass', async ({
+    request,
+  }) => {
+    const html = await (await request.get('/')).text()
+
+    // PWA/theme parity with blog.html — site.webmanifest is cache-header'd
+    // but was unreachable from the home page.
+    expect(html).toContain('<meta name="theme-color" content="#050507" />')
+    expect(html).toContain('<link rel="manifest" href="/site.webmanifest" />')
+
+    // Social crawlers do not render SVG og previews — the share card must be
+    // the 1200x630 raster, not /logo.svg.
+    expect(html).toContain('https://justlovejazz.dev/preview.jpg')
+    expect(html).not.toMatch(/og:image[^>]+logo\.svg/)
+
+    // No-JS: the splash overlay must not trap the prerendered shell forever.
+    expect(html).toMatch(/<noscript>[\s\S]*#jlz-app-loader[\s\S]*<\/noscript>/)
   })
 
   test('every published SPA route resolves to the application shell', async ({ request }) => {

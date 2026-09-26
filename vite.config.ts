@@ -3,7 +3,7 @@ import vue from '@vitejs/plugin-vue'
 import { templateCompilerOptions } from '@tresjs/core'
 import { resolve } from 'node:path'
 
-import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync } from 'fs'
+import { existsSync, readFileSync } from 'fs'
 import { jlzAdminPlugin } from './admin/vite-plugin'
 import { publishedPages, validateBuilderDocuments } from './src/builder/documents'
 import { BLOG_ARTICLES } from './src/core/blogPages'
@@ -47,8 +47,13 @@ export default defineConfig(() => ({
   resolve: {
     // TresJS 5.8 statically imports WebGLRenderer from bare `three`. The
     // application supplies WebGPURenderer itself, so use the WebGPU entry and
-    // retain only a dead-path WebGLRenderer compatibility symbol.
-    alias: [{ find: /^three$/, replacement: resolve(__dirname, 'src/three-webgpu-compat.ts') }],
+    // retain only a dead-path WebGLRenderer compatibility symbol. The
+    // three-stdlib entry keeps the Cientos barrel resolution to the modules
+    // Cientos actually references (see src/three-stdlib-compat.ts).
+    alias: [
+      { find: /^three$/, replacement: resolve(__dirname, 'src/three-webgpu-compat.ts') },
+      { find: /^three-stdlib$/, replacement: resolve(__dirname, 'src/three-stdlib-compat.ts') },
+    ],
   },
   define: VUE_FEATURE_FLAGS,
   optimizeDeps: {
@@ -156,6 +161,33 @@ export default defineConfig(() => ({
               priority: 34,
             },
             {
+              // ADR 0005's first Cientos adoption (Lab camera exploration):
+              // the whole ecosystem surface loads ONLY when the exploration
+              // policy activates on the Lab route (the async
+              // LabCameraControls boundary in SceneHost). Priority above
+              // vendor-three so three-stdlib — matched by both — stays in
+              // this lazy group instead of the shared Three.js delivery.
+              //
+              // Only modules with NO eager importer may live here:
+              // `@vueuse/core` looked like part of the Cientos surface but is
+              // a static dependency of the eager @tresjs/core — matching it
+              // here turned this chunk into an eager boot dependency (and,
+              // through the misc chunk's commonJS interop for stats-gl, a
+              // circular init order that crashed every page at boot).
+              name: 'vendor-lab-controls',
+              test(id) {
+                return /[\\/]node_modules[\\/](?:@tresjs[\\/]cientos|camera-controls|three-stdlib|three-mesh-bvh|three-custom-shader-material|stats-gl)[\\/]/.test(
+                  id,
+                )
+              },
+              // False (the default is true!) — without it the group's
+              // recursive dependency capture drags three.js itself (a
+              // transitive dep of cientos/camera-controls) out of
+              // vendor-three and duplicates the whole WebGPU build here.
+              includeDependenciesRecursively: false,
+              priority: 40,
+            },
+            {
               name: 'vendor-three',
               // Match every Three.js and three-stdlib module.
               test(id) {
@@ -258,21 +290,6 @@ export default defineConfig(() => ({
         const prerenderPath = resolve(__dirname, 'prerender', 'home.html')
         const prerender = existsSync(prerenderPath) ? readFileSync(prerenderPath, 'utf8') : ''
         return html.replace('<div id="app"></div>', `<div id="app">${prerender}</div>`)
-      },
-    },
-    {
-      name: 'copy-projects',
-      closeBundle() {
-        const projects = readdirSync(resolve(__dirname, 'projects'))
-        mkdirSync(resolve(__dirname, 'dist', 'projects'), { recursive: true })
-        projects
-          .filter((f) => f.endsWith('.html'))
-          .forEach((f) =>
-            copyFileSync(
-              resolve(__dirname, 'projects', f),
-              resolve(__dirname, 'dist', 'projects', f),
-            ),
-          )
       },
     },
   ],

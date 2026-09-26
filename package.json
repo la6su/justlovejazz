@@ -9,6 +9,7 @@
     "type-check:vue": "vue-tsc --noEmit -p tsconfig.json",
     "build": "tsc && node scripts/prerender-home.mjs && node scripts/prerender-blog.mjs && node scripts/publish-builder-pages.mjs && bun scripts/generate-sitemap.ts && vite build",
     "budget:build": "bun scripts/check-build-budgets.ts",
+    "check:stdlib": "node scripts/check-stdlib-modules.mjs",
     "docs:check": "bun scripts/check-docs.ts",
     "preview": "vite preview",
     "test": "playwright test",
@@ -52,6 +53,7 @@
   "dependencies": {
     "@tresjs/cientos": "5.9.0",
     "@tresjs/core": "5.9.0",
+    "camera-controls": "3.1.2",
     "three": "0.185.1",
     "uikit": "^3.25.20",
     "vue": "3.5.41",

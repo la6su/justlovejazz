@@ -84,23 +84,26 @@ function initLangToggle(): void {
 function showEnterButton(): void {
   const enterBtn = document.getElementById('jlz-splash-enter') as HTMLButtonElement | null
   if (!enterBtn) return
-  // Fill progress ring to 100% then show Enter. Flip aria-disabled so AT
-  // users (and Playwright actionability) see the button as activatable.
+  // Pin the meta row at 100% / READY, then show Enter. Flip aria-disabled so
+  // AT users (and Playwright actionability) see the button as activatable.
   updateLoaderProgress(100)
   enterBtn.classList.add('is-ready')
   enterBtn.setAttribute('aria-disabled', 'false')
 }
 
 // ── Show a load error when 3D fails to initialize ──
-// Replaces the Enter button with an error message + retry link. This runs
-// if Experience.init() throws (jlz:webgl-failed) or if jlz:webgl-ready
-// doesn't fire within 30s (init hung). The Enter button must NEVER appear
-// when 3D isn't ready — clicking it would fade the splash to reveal an
+// Replaces the Enter button with an error message + retry link and flips the
+// splash status row to SIGNAL LOST. This runs if Experience.init() throws
+// (jlz:webgl-failed) or if jlz:webgl-ready doesn't fire within 30s (init
+// hung). The Enter button must NEVER appear when 3D isn't ready — clicking it
+// would fade the splash to reveal an
 // uninitialized scene (no carousel, no baku, broken camera).
 function showLoadError(): void {
   const enterBtn = document.getElementById('jlz-splash-enter')
   const loader = document.getElementById('jlz-app-loader')
   if (!loader) return
+  const status = document.querySelector(SPLASH_STATUS_SELECTOR)
+  if (status) status.textContent = 'SIGNAL LOST'
   // Replace the Enter button area with the console boot gate (styles live in
   // _console-language.less — the persistent chrome owner).
   if (enterBtn) {
@@ -122,21 +125,24 @@ function showLoadError(): void {
 }
 
 // ── Seamless splash loader ──
-// index.html has #jlz-app-loader with SVG squares + split curtains + progress.
-// Three.js loads lazily from this bootstrap — it does not block FCP.
-// We update progress as Experience.init() boots, then trigger curtain
-// split (fade-out class) when jlz:webgl-ready fires. Config buttons
-// (sound + language) are inside the loader — they fade out with the splash.
-// Fade-out is triggered by Enter button click (inline script in index.html), NOT auto.
-function updateLoaderProgress(pct: number): void {
-  const ring = document.querySelector('.jlz-splash-progress-ring') as SVGRectElement | null
-  if (!ring) return
+// index.html has #jlz-app-loader with the spiral/portal SVG + a percent/status
+// meta row. Three.js loads lazily from this bootstrap — it does not block FCP.
+// We update that row as Experience.init() boots (00% → 100%, INITIALIZING →
+// READY), then the Enter button unlocks when jlz:webgl-ready fires. Config
+// buttons (sound + language) are inside the loader — they fade out with the
+// splash. Fade-out is triggered by Enter button click (inline script in
+// index.html), NOT auto.
+const SPLASH_PERCENT_SELECTOR = '[data-jlz-splash="progress"]'
+const SPLASH_STATUS_SELECTOR = '[data-jlz-splash="state"]'
+
+// Exported for the splash meta-row contract test only (exported-for-testing
+// pattern); production callers are the boot flow below.
+export function updateLoaderProgress(pct: number): void {
   const value = Math.min(100, Math.max(0, Math.round(pct)))
-  // Perimeter of sq-4 rect = 4 × 266 = 1064
-  // dashoffset: 1064 (0%, empty) → 0 (100%, full ring)
-  const perimeter = 1064
-  const offset = perimeter - (perimeter * value) / 100
-  ring.style.strokeDashoffset = String(offset)
+  const percent = document.querySelector(SPLASH_PERCENT_SELECTOR)
+  if (percent) percent.textContent = `${String(value).padStart(2, '0')}%`
+  const status = document.querySelector(SPLASH_STATUS_SELECTOR)
+  if (status) status.textContent = value >= 100 ? 'READY' : 'INITIALIZING'
 }
 
 let _bootstrapState: BootstrapState = INITIAL_BOOTSTRAP_STATE

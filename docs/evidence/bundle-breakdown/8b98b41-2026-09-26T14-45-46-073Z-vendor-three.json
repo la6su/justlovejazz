@@ -1,0 +1,88 @@
+{
+  "commit": "8b98b41022724c748d4f8acfa30ac9533658d6e9",
+  "generatedAt": "2026-09-26T14:45:46.073Z",
+  "dirtyFiles": [
+    "M bun.lock",
+    " M package.json",
+    " M src/Experience/Camera.ts",
+    " M src/__tests__/SceneHost.lifecycle.test.ts",
+    " M src/app/SceneHost.vue",
+    " M src/assets/main.less",
+    " M src/three-webgpu-compat.ts",
+    " M vite.config.ts",
+    "?? src/__tests__/Camera.labControls.test.ts",
+    "?? src/core/labCameraPolicy.ts",
+    "?? src/three-stdlib-compat.ts"
+  ],
+  "command": "bun scripts/bundle-breakdown.ts",
+  "note": "Source-mapped analysis build; production gzip budgets are checked separately.",
+  "chunk": "vendor-three-RXVmH_ER.js",
+  "rawBytes": 1097481,
+  "sourceCount": 16,
+  "modules": [
+    {
+      "source": "../../../home/z/my-project/justlovejazz/node_modules/three/build/three.webgpu.js",
+      "mappedBytes": 669695
+    },
+    {
+      "source": "../../../home/z/my-project/justlovejazz/node_modules/three/build/three.core.js",
+      "mappedBytes": 375651
+    },
+    {
+      "source": "../../../home/z/my-project/justlovejazz/node_modules/three-stdlib/controls/OrbitControls.js",
+      "mappedBytes": 14000
+    },
+    {
+      "source": "../../../home/z/my-project/justlovejazz/node_modules/three/build/three.tsl.js",
+      "mappedBytes": 11501
+    },
+    {
+      "source": "../../../home/z/my-project/justlovejazz/node_modules/three/examples/jsm/tsl/display/BloomNode.js",
+      "mappedBytes": 5660
+    },
+    {
+      "source": "../../../home/z/my-project/justlovejazz/node_modules/three-stdlib/objects/Refractor.js",
+      "mappedBytes": 3856
+    },
+    {
+      "source": "../../../home/z/my-project/justlovejazz/node_modules/three-stdlib/objects/Reflector.js",
+      "mappedBytes": 3798
+    },
+    {
+      "source": "../../../home/z/my-project/justlovejazz/node_modules/three-stdlib/loaders/RGBELoader.js",
+      "mappedBytes": 3495
+    },
+    {
+      "source": "../../../home/z/my-project/justlovejazz/node_modules/three/examples/jsm/utils/BufferGeometryUtils.js",
+      "mappedBytes": 2419
+    },
+    {
+      "source": "../../../home/z/my-project/justlovejazz/node_modules/three-stdlib/shaders/VerticalBlurShader.js",
+      "mappedBytes": 2325
+    },
+    {
+      "source": "../../../home/z/my-project/justlovejazz/node_modules/three/examples/jsm/geometries/RoundedBoxGeometry.js",
+      "mappedBytes": 1679
+    },
+    {
+      "source": "../../../home/z/my-project/justlovejazz/node_modules/three-stdlib/shaders/HorizontalBlurShader.js",
+      "mappedBytes": 1050
+    },
+    {
+      "source": "../../../home/z/my-project/justlovejazz/node_modules/three-stdlib/controls/EventDispatcher.js",
+      "mappedBytes": 829
+    },
+    {
+      "source": "../../../home/z/my-project/justlovejazz/node_modules/three/examples/jsm/utils/SkeletonUtils.js",
+      "mappedBytes": 442
+    },
+    {
+      "source": "../../../home/z/my-project/justlovejazz/src/three-webgpu-compat.ts",
+      "mappedBytes": 211
+    },
+    {
+      "source": "../../../home/z/my-project/justlovejazz/node_modules/three-stdlib/_polyfill/constants.js",
+      "mappedBytes": 38
+    }
+  ]
+}
