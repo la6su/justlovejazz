@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { Experience } from '../Experience/Experience'
+import { seedExperience } from './experienceSeed'
 
 describe('Experience resize owner propagation', () => {
   it('forwards current viewport dimensions to every initialized lazy owner', () => {
@@ -7,14 +7,13 @@ describe('Experience resize owner propagation', () => {
     const rendererResize = vi.fn()
     const coordinatorResize = vi.fn()
     const cyprusResize = vi.fn()
-    const exp = Object.assign(Object.create(Experience.prototype), {
+    const { exp } = seedExperience({
       sizes: { width: 360, height: 800 },
       camera: { resize: cameraResize },
       renderer: { resize: rendererResize },
       coordinator: { resize: coordinatorResize },
-      worksPlaneStage: null,
       contactCyprusStage: { resize: cyprusResize },
-    } as unknown as Partial<Experience>) as Experience
+    })
 
     ;(exp as unknown as { resizeSceneOwners: () => void }).resizeSceneOwners()
 
@@ -26,14 +25,12 @@ describe('Experience resize owner propagation', () => {
   })
 
   it('does not initialize a missing lazy Cyprus owner during resize', () => {
-    const exp = Object.assign(Object.create(Experience.prototype), {
+    const { exp } = seedExperience({
       sizes: { width: 1920, height: 1080 },
       camera: undefined,
       renderer: undefined,
       coordinator: { resize: vi.fn() },
-      worksPlaneStage: null,
-      contactCyprusStage: null,
-    } as unknown as Partial<Experience>) as Experience
+    })
 
     expect(() =>
       (exp as unknown as { resizeSceneOwners: () => void }).resizeSceneOwners(),

@@ -409,3 +409,80 @@ Redundancy removal (each claim manually verified before acting):
 Verification: tsc, vue-tsc, eslint (0 errors), prettier clean, vitest
 114 files / 701 tests green, docs:check green (18 files), build +
 prerender + budgets green, e2e chromium green.
+
+## Inspection 6 — 2026-09-26, open-queue execution (slots, StateBus, text reveals)
+
+Trigger: user request to continue in the same spirit — best practices,
+refactoring, removing duplicates, dead code and over-engineering. Scope:
+main @ cad208b (Inspection 5 merged via #226). Method: the Inspection 5
+open queue executed top-down, with each behavioral decision verified
+against the call sites before acting.
+
+### Actions taken (same PR)
+
+- `createLazyStageSlot` (queue item 1, done): the six route-owned stages
+  no longer keep hand-copied field triples (stage / promise / request) on
+  Experience plus an 11-line owner adapter per contract. The slot owns
+  that state once (`LazyStage.ts`); Experience keeps one slot field per
+  stage, the private stage getters read through their slots (33 read
+  sites unchanged), and each contract's owner block collapses to
+  `slot.owner`. The Cyprus stale guard reads the live request id off the
+  slot. Test seed bags collapsed into the shared `seedExperience` helper
+  (`src/__tests__/experienceSeed.ts`): lazy-stage bag keys route into
+  fresh slots (truthy values pre-set the stage reference), so a
+  lifecycle test seeds one slot field instead of three flat fields.
+  Adding a lazy stage is now one slot + one contract.
+- `StateBus` removed (queue item 2, done): a 330-line animation engine
+  (10 easings, channels, event wildcards) whose only production channel
+  was `section:{id}:state` — a 3-value enum animated as an eased float
+  nobody samples. The visual-timing check the queue asked for found the
+  real artifact instead of a contract to preserve: `updateTransform()`
+  re-armed the bus animation on every scroll frame, so the documented
+  0.8 s flip asymptotically deferred (~2.2 s) under continuous scroll.
+  Section now owns a plain pending flip advanced by `update(dt)` from
+  the frame path (`SceneCoordinator.updateSections`), and the flip lands
+  exactly one duration after the FIRST switchState toward a target —
+  pinned by a 100-frame re-trigger test. Reduced motion still flips
+  instantly; forceState cancels a pending flip; disposed sections
+  ignore late transitions. Also dropped: a redundant `bus.set` in the
+  coordinator's section build (forceState already covered it) and the
+  `bus.cancelAll` sweep in destroy() (no channels left).
+- `textReveal.ts` (queue item 3, done): BlurFade/NoiseText shared
+  ~70-line lifecycle skeletons (RAF + safety-timeout pair, the D-3/D-9
+  read-source-before-cancel contract, finalize/cancel/hide, teardown
+  registry) — now one TextReveal base; the subclasses keep only their
+  per-class element registry, the frame-0 DOM setup and the per-frame
+  render. disposeAll() filters the one shared active set by instanceof,
+  so teardown semantics are unchanged. The query+guard+show blocks
+  repeated across the boot shell (splash / section-change /
+  page-section-change / title observer) and Experience's two eyebrow
+  handlers collapsed into `BlurFade.reveal` / `NoiseText.revealEyebrow`
+  statics on the reveal classes (textReveal.ts stays import-free — the
+  first draft put the helpers there and Vitest exposed the module-eval
+  TDZ cycle: `extends` resolves at load time, not call time). The
+  `contentRoot()` lookup, defined identically in entry-app.ts and
+  Experience.ts, moved to the shared `src/core/contentRoot.ts`.
+- Cientos CameraControls in the Lab (queue item 4): still blocked on the
+  pointer-events product decision; not forced.
+
+### Checked and sound (no action)
+
+- The six lazy-stage contracts' per-stage wiring (create/attach/load/
+  configure/release) is genuinely stage-specific; the slot factory
+  deduplicates only the state plumbing, which was the repeated part.
+- `Section.update` on the frame path costs one deadline check per
+  section per frame (6 branches) versus the former bus tick's Map
+  iteration over animated channels — no regression.
+
+### Open queue (recorded honestly, largest first)
+
+- First real Cientos adoption (ADR 0005 queue): CameraControls in the
+  Lab — pointer-events product decision still pending.
+- `EnvSky.vue` / `CinematicCamera` vs Cientos `Sky` / `CameraControls`:
+  Inspection 3 verdicts stand (not drop-in duplicates).
+
+Verification: tsc, vue-tsc, eslint (0 errors, 16 pre-existing warnings),
+prettier clean, vitest 113 files / 700 tests green (StateBus.test.ts
+deleted with its class; Section lifecycle coverage rewritten to the
+deadline contract: 5 tests), docs:check green (18 files), build +
+prerender + budgets green, e2e chromium 25 passed / 1 skipped.

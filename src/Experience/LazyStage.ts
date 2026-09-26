@@ -32,10 +32,53 @@ export interface LazyStageOwner<T> {
   advanceRequest: () => number
 }
 
+/** Owner-backed slot: the three lazy-stage fields (stage reference, memoized
+ *  init promise, request id) that every route-owned stage used to keep
+ *  hand-copied on Experience. The slot owns them once; Experience keeps one
+ *  slot field per stage and hands `slot.owner` to its contract, so a new
+ *  lazy stage is one field + one contract instead of a field triple plus an
+ *  11-line owner adapter. */
+export interface LazyStageSlot<T> {
+  /** The LazyStageOwner view for a LazyStageContract. */
+  readonly owner: LazyStageOwner<T>
+  /** Current stage reference (null until created / after dispose). */
+  getStage(): T | null
+  /** Set the stage reference (test seeding; production writes go through the contract flow). */
+  setStage(stage: T | null): void
+  /** Live request id, for external stale guards (e.g. the Cyprus section flip). */
+  getRequest(): number
+}
+
+export function createLazyStageSlot<T>(): LazyStageSlot<T> {
+  let stage: T | null = null
+  let promise: Promise<void> | null = null
+  let request = 0
+  const owner: LazyStageOwner<T> = {
+    getStage: () => stage,
+    setStage: (value) => {
+      stage = value
+    },
+    getPromise: () => promise,
+    setPromise: (value) => {
+      promise = value
+    },
+    getRequest: () => request,
+    advanceRequest: () => ++request,
+  }
+  return {
+    owner,
+    getStage: () => stage,
+    setStage: (value) => {
+      stage = value
+    },
+    getRequest: () => request,
+  }
+}
+
 export interface LazyStageContract<T extends Object3D> {
   /** DEV diagnostic label, e.g. `'WorksPlaneStage'`. */
   label: string
-  /** Mutable owner state (backed by the Experience flat fields). */
+  /** Mutable owner state (a {@link createLazyStageSlot} instance). */
   owner: LazyStageOwner<T>
   /**
    * Produce the instance — synchronously, or after a dynamic import. The

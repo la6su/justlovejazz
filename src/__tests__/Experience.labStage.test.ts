@@ -5,6 +5,7 @@ import { SceneCoordinator, type SceneCoordinatorOwners } from '../Experience/Sce
 import * as manifest from '../Experience/Lab/manifest'
 import type { LabExperimentObject } from '../Experience/Lab/manifest'
 import type { PageId } from '../sections/_shared/constants'
+import { seedExperience } from './experienceSeed'
 
 // Phase 8 slice 9: the Lab experiment object lifecycle (lazy creation on the
 // first /lab visit + final disposal) moved from World to Experience. Phase 8
@@ -26,14 +27,10 @@ describe('Experience lab object lifecycle', () => {
 
   /** Minimal state the lifecycle method touches (constructor bypassed). */
   function makeExperience(scene: THREE.Scene): Experience {
-    const exp = Object.assign(Object.create(Experience.prototype), {
+    const { exp, slots } = seedExperience({
       scene,
-      labGamepad: null,
       page: () => (document.body.dataset.page ?? 'home') as PageId,
-      _labGamepadPromise: null,
-      _labGamepadRequest: 0,
-    } as unknown as Partial<Experience>) as Experience
-    const bag = exp as unknown as { labGamepad?: LabExperimentObject | null }
+    })
     const owners: SceneCoordinatorOwners = {
       ground: () => null,
       sectionGroups: () => null,
@@ -44,7 +41,7 @@ describe('Experience lab object lifecycle', () => {
       carousel: () => null,
       worksPlaneStage: () => null,
       contactCyprusStage: () => null,
-      labGamepad: () => bag.labGamepad ?? null,
+      labGamepad: () => slots.labGamepad.getStage() as LabExperimentObject | null,
     }
     coordinator = new SceneCoordinator(
       scene,

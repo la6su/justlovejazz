@@ -6,6 +6,7 @@ import { WorksPlaneStage } from '../Experience/World/WorksPlaneStage'
 import { WorksInstallation } from '../Experience/World/WorksInstallation'
 import type { PageId } from '../sections/_shared/constants'
 import { getCurrentPage, setCurrentPage } from '../core/routePage'
+import { seedExperience } from './experienceSeed'
 
 // Phase 8 slice 7: the /works case-plane stage lifecycle (lazy creation +
 // disposal) moved from World to Experience. Phase 8 slice 10: the `World`
@@ -29,12 +30,9 @@ describe('Experience works stage lifecycle', () => {
 
   /** Minimal state the two lifecycle methods touch (constructor bypassed). */
   function makeExperience(scene: THREE.Scene): Experience {
-    const exp = Object.assign(Object.create(Experience.prototype), {
+    const { exp, slots } = seedExperience({
       scene,
-      worksPlaneStage: null,
       camera: { instance: new THREE.PerspectiveCamera() },
-      _worksPlaneStagePromise: null,
-      _worksPlaneStageRequest: 0,
       _host: {
         stages: {
           works: {
@@ -45,12 +43,11 @@ describe('Experience works stage lifecycle', () => {
           },
         },
       },
-    } as unknown as Partial<Experience>) as Experience
-    // The coordinator reads the stage through an owner getter over Experience's
-    // own field (the lazy stage changes identity per route — a stored reference
+    })
+    // The coordinator reads the stage through an owner getter over the lazy
+    // slot (the lazy stage changes identity per route — a stored reference
     // would go stale). Production wires this from within the constructor (the
-    // `this` closure); the test reads the same live field through a cast bag.
-    const bag = exp as unknown as { worksPlaneStage?: WorksPlaneStage | null }
+    // `this` closure); the test reads the same live slot.
     const owners: SceneCoordinatorOwners = {
       ground: () => null,
       sectionGroups: () => null,
@@ -59,7 +56,7 @@ describe('Experience works stage lifecycle', () => {
       particleBurst: () => null,
       drawTrail: () => null,
       carousel: () => null,
-      worksPlaneStage: () => bag.worksPlaneStage ?? null,
+      worksPlaneStage: () => slots.worksPlane.getStage() as WorksPlaneStage | null,
       contactCyprusStage: () => null,
       labGamepad: () => null,
     }

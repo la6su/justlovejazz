@@ -8,50 +8,52 @@
 //
 // Used by: entry-app.ts (IntersectionObserver reveal on .studio-title), FullscreenOverlay title.
 // For console-style typewriter (eyebrow numbers), see NoiseText.ts.
+//
+// Lifecycle machinery (RAF + safety timeout, cleanText contract, finalize/
+// cancel/hide, teardown registry) is shared in textReveal.ts; only the
+// per-character DOM rendering lives here.
 
-export class BlurFade {
+import { TextReveal } from './textReveal'
+
+export class BlurFade extends TextReveal {
+  /** Per-class registry: one instance per DOM element, prevents overlap. */
   private static instances = new WeakMap<HTMLElement, BlurFade>()
-  /** Active animation owners, kept enumerable for runtime teardown. */
-  private static active = new Set<BlurFade>()
-
-  private readonly el: HTMLElement
-  private cleanText = ''
-  private rafId: number | null = null
-  private timeoutId: number | null = null
-  private running = false
-  private start = 0
-  private dur = 1000
-  /** Rotation values are authored once per reveal, not re-parsed per RAF. */
-  private readonly rotations: number[] = []
-
-  private constructor(el: HTMLElement) {
-    this.el = el
-  }
 
   static for(el: HTMLElement): BlurFade {
-    let inst = this.instances.get(el)
+    let inst = BlurFade.instances.get(el)
     if (!inst) {
       inst = new BlurFade(el)
-      this.instances.set(el, inst)
+      BlurFade.instances.set(el, inst)
     }
     return inst
   }
 
-  show(dur: number = 0.6, sourceText?: string): void {
-    // D-3 fix: read sourceText BEFORE cancel(). cancel() restores the PREVIOUS
-    // cleanText into textContent — if translations were applied between shows,
-    // the old-language text would be read back as the new source. Reading first
-    // captures the current (possibly just-translated) textContent correctly.
-    const text = sourceText ?? (this.el.textContent || '')
-    this.cancel()
-    this.cleanText = text
-    if (this.cleanText.length === 0) return
+  /** Stop every active blur animation owned by the current Experience. */
+  static disposeAll(): void {
+    TextReveal.disposeAllWhere((instance) => instance instanceof BlurFade)
+  }
 
-    this.dur = dur * 1000
-    this.running = true
-    BlurFade.active.add(this)
-    this.start = performance.now()
-    this.el.setAttribute('data-visible', 'true')
+  /** Reveal a section title, collapsing the guard blocks the boot shell and
+   *  Experience repeated per event. Honors the `data-blur-fade="off"`
+   *  opt-out and the empty-text guard. With an explicit `sourceText` the
+   *  text becomes the reveal's cleanText (the splash path); without one the
+   *  reveal reads the DOM itself, as before. */
+  static reveal(el: HTMLElement, dur: number, sourceText?: string): void {
+    if (el.dataset.blurFade === 'off') return
+    const text = (sourceText ?? el.textContent) || ''
+    if (!text.trim()) return
+    BlurFade.for(el).show(dur, sourceText === undefined ? undefined : text)
+  }
+
+  /** Rotation values are authored once per reveal, not re-parsed per RAF. */
+  private readonly rotations: number[] = []
+
+  private constructor(el: HTMLElement) {
+    super(el)
+  }
+
+  /** Build the per-character spans (frame 0, before the first RAF tick). */
+  protected begin(): void {
     this.el.setAttribute('aria-label', this.cleanText)
     this.rotations.length = 0
 
@@ -71,30 +73,10 @@ export class BlurFade {
       return span
     })
     this.el.replaceChildren(...spans)
-
-    this.timeoutId = window.setTimeout(() => this.finalize(), this.dur + 200)
-    this.rafId = requestAnimationFrame(this.tick)
   }
 
-  hide(): void {
-    this.finalize()
-    if (this.cleanText) this.el.textContent = this.cleanText
-    this.el.removeAttribute('aria-label')
-    this.el.removeAttribute('data-visible')
-  }
-
-  private tick = (ts: number): void => {
-    if (!this.running) return
-    if (!this.el.isConnected) {
-      this.finalize()
-      return
-    }
-    const t = Math.min(1, (ts - this.start) / this.dur)
-    if (t >= 1) {
-      this.finalize()
-      return
-    }
-
+  /** Staggered per-character interpolation. */
+  protected renderFrame(t: number): void {
     const spans = this.el.children
     const n = spans.length
     // Stagger: each character starts at a different time
@@ -113,27 +95,15 @@ export class BlurFade {
       span.style.transform = `translateY(${translateY}px) rotate(${rotate}deg)`
       span.style.filter = `blur(${blur}px)`
     }
-
-    this.rafId = requestAnimationFrame(this.tick)
   }
 
-  finalize(): void {
-    this.running = false
-    BlurFade.active.delete(this)
-    if (this.rafId !== null) {
-      cancelAnimationFrame(this.rafId)
-      this.rafId = null
-    }
-    if (this.timeoutId !== null) {
-      clearTimeout(this.timeoutId)
-      this.timeoutId = null
-    }
-    // Set spans to their final resting state IN PLACE (do NOT removeAttribute
-    // style — that drops display:inline-block → inline, breaking per-character
-    // shift). Keep display:inline-block so the box model matches the during-anim
-    // state exactly. Set transform='none' and filter='none' (NOT translateY(0)/
-    // blur(0px)) — 'none' removes the compositing layer + filter pipeline, which
-    // changes subpixel AA vs the animated state. opacity='1' is the final value.
+  /** Set spans to their final resting state IN PLACE (do NOT removeAttribute
+   *  style — that drops display:inline-block → inline, breaking per-character
+   *  shift). Keep display:inline-block so the box model matches the during-anim
+   *  state exactly. Set transform='none' and filter='none' (NOT translateY(0)/
+   *  blur(0px)) — 'none' removes the compositing layer + filter pipeline, which
+   *  changes subpixel AA vs the animated state. opacity='1' is the final value. */
+  protected restoreFinalDom(): void {
     const spans = this.el.children
     for (let i = 0; i < spans.length; i++) {
       const sp = spans[i] as HTMLElement
@@ -143,24 +113,7 @@ export class BlurFade {
     }
   }
 
-  private cancel(): void {
-    this.running = false
-    BlurFade.active.delete(this)
-    if (this.rafId !== null) {
-      cancelAnimationFrame(this.rafId)
-      this.rafId = null
-    }
-    if (this.timeoutId !== null) {
-      clearTimeout(this.timeoutId)
-      this.timeoutId = null
-    }
-    if (this.cleanText) {
-      this.el.textContent = this.cleanText
-    }
-  }
-
-  /** Stop every active blur animation owned by the current Experience. */
-  static disposeAll(): void {
-    for (const instance of BlurFade.active) instance.finalize()
+  protected clearShowAttributes(): void {
+    this.el.removeAttribute('aria-label')
   }
 }

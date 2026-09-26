@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { describe, expect, it, vi } from 'vitest'
 import { Experience } from '../Experience/Experience'
+import { seedExperience } from './experienceSeed'
 
 type LifecycleProbe = {
   lifecycleToken: () => number
@@ -51,24 +52,20 @@ describe('Experience async lifecycle guard', () => {
     const sizes = { destroy: vi.fn() }
     const sfx = { dispose: vi.fn() }
     const features = { destroy: vi.fn() }
-    const experience = Object.assign(Object.create(Experience.prototype), {
+    const { exp: experience } = seedExperience({
       _destroyed: false,
       _lifecycleGeneration: 0,
       _scheduler: scheduler,
       _mouseTrailRafId: null,
       _onMouseMoveForTrail: null,
       _readinessGate: null,
-      _worksPlaneStageRequest: 0,
-      _contactTypographyStageRequest: 0,
-      _contactCyprusStageRequest: 0,
-      _labGamepadRequest: 0,
       features,
       renderer,
       camera,
       sizes,
       sfx,
       scene: new THREE.Scene(),
-    }) as Experience
+    })
 
     expect(() => experience.destroy()).not.toThrow()
     expect(scheduler.destroy).toHaveBeenCalledOnce()
