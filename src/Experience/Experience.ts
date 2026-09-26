@@ -20,6 +20,7 @@ import { SceneCoordinator } from './SceneCoordinator'
 // called). updateWorldDNAAudio set uniforms nobody read. All dead.
 import { observeReducedMotion, prefersReducedMotion } from '../core/motionPolicy'
 import { FrameTiming } from '../core/FrameTiming'
+import { FpsTracker } from './FpsTracker'
 import { WORKS_SLOT_INDEX, WORLD_SLOT_COUNT } from '../core/worldSlots'
 import { DEFAULT_CAMERA_SMOOTHING } from '../core/WorldConfig'
 import {
@@ -226,19 +227,13 @@ export class Experience {
    *  The settle decision reads it after the frame, so a same-frame raise
    *  (section change, breath fire, …) is honored. */
   private _activitySnapshot: RenderActivity = { ...NO_ACTIVITY }
-  // Render-budget FPS tracker — rolling window of frame times. If FPS < 30
-  // sustained over LOW_FPS_WINDOW consecutive frames, _lowFps flips true.
-  // Read by DevPanel (low fps ⚠ indicator). Future: auto-reduce particle count.
-  private _fpsFrameTimes: number[] = []
-  // PERF-7 fix: circular buffer index + running sum for O(1) FPS tracking.
-  private _fpsIdx = 0
-  private _fpsSum = 0
-  private _lowFps = false
-  private static readonly LOW_FPS_THRESHOLD = 30 // FPS below this = low
-  private static readonly LOW_FPS_WINDOW = 60 // frames to sustain before flag
+  // Render-budget FPS tracker (rolling window + low-FPS verdict, FpsTracker.ts).
+  // Read by DevPanel (low fps ⚠ indicator); the auto-reduce policy below is
+  // Experience's because it owns the scene groups.
+  private readonly _fpsTracker = new FpsTracker()
   /** True when FPS < 30 sustained over 60 frames. Read by DevPanel. */
   public get lowFps(): boolean {
-    return this._lowFps
+    return this._fpsTracker.lowFps
   }
 
   // Phase 7 readiness contract: `jlz:webgl-ready` may only fire after the
@@ -1335,29 +1330,7 @@ export class Experience {
     const frameStart = frameTiming ? performance.now() : 0
     this.time.update(time)
     const dt = this.time.delta / 1000
-    // ── Render-budget FPS tracker (rolling 60-frame window) ──
-    // PERF-7 fix: circular buffer + running sum (was array.shift() O(N) +
-    // reduce() O(N) every frame → ~7200 element-touches/sec). Now O(1) per
-    // frame: subtract outgoing, add incoming, advance ring index.
-    const ft = this.time.delta
-    if (this._fpsIdx < Experience.LOW_FPS_WINDOW) {
-      // Fill phase: accumulate
-      this._fpsSum += ft
-      this._fpsFrameTimes[this._fpsIdx] = ft
-      this._fpsIdx++
-      if (this._fpsIdx === Experience.LOW_FPS_WINDOW) {
-        const avgMs = this._fpsSum / Experience.LOW_FPS_WINDOW
-        this._lowFps = 1000 / Math.max(1, avgMs) < Experience.LOW_FPS_THRESHOLD
-      }
-    } else {
-      // Circular phase: subtract outgoing, add incoming
-      const idx = this._fpsIdx % Experience.LOW_FPS_WINDOW
-      this._fpsSum += ft - this._fpsFrameTimes[idx]!
-      this._fpsFrameTimes[idx] = ft
-      this._fpsIdx++
-      const avgMs = this._fpsSum / Experience.LOW_FPS_WINDOW
-      this._lowFps = 1000 / Math.max(1, avgMs) < Experience.LOW_FPS_THRESHOLD
-    }
+    this._fpsTracker.observe(this.time.delta)
     // Section state deadlines (ready → viewing → passed) advance here —
     // the former StateBus tick's only live responsibility.
     this.coordinator?.updateSections(dt)
@@ -1633,7 +1606,7 @@ export class Experience {
     // One-way: once reduced, never auto-restore (GPU spike would re-trigger).
     // Iterates all scene groups, finds JunniParticles via userData.particles,
     // halves their count. DevPanel shows the reduction (low fps ⚠ indicator).
-    if (this._lowFps && !this._particleReductionApplied && this.coordinator) {
+    if (this._fpsTracker.lowFps && !this._particleReductionApplied && this.coordinator) {
       this._particleReductionApplied = true
       for (const group of this.coordinator.sceneGroups) {
         const particles = group.userData.particles as
