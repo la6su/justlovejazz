@@ -543,6 +543,15 @@ async function startAppOnce(): Promise<void> {
     }
   }, 60000)
 
+  // The post-splash section title reveal contract, shared by both section
+  // events: one `.studio-title` per section container, 1.5 s BlurFade. (The
+  // splash first-reveal above is intentionally different: 0.55 s, the title
+  // text, and the splashRevealedTitles registry.)
+  function revealStudioTitle(container: ParentNode | null): void {
+    const title = container?.querySelector<HTMLElement>('.studio-title')
+    if (title) BlurFade.reveal(title, 1.5)
+  }
+
   // ── Animate titles on section change (home: data-section) ──
   _bootstrapUnsubs.push(
     eventBus.on('jlz:section-change', (payload) => {
@@ -550,8 +559,7 @@ async function startAppOnce(): Promise<void> {
       if (prefersReducedMotion()) return
       const section = contentRoot().querySelector(`[data-section="${payload.sectionId}"]`)
       if (!section) return
-      const title = section.querySelector<HTMLElement>('.studio-title')
-      if (title) BlurFade.reveal(title, 1.5)
+      revealStudioTitle(section)
     }),
   )
 
@@ -562,8 +570,7 @@ async function startAppOnce(): Promise<void> {
       const sections = contentRoot().querySelectorAll<HTMLElement>('[data-page-section]')
       const el = sections[index]
       if (!el) return
-      const title = el.querySelector<HTMLElement>('.studio-title')
-      if (title) BlurFade.reveal(title, 1.5)
+      revealStudioTitle(el)
       const eyebrow = el.querySelector<HTMLElement>('[data-eyebrow]')
       if (eyebrow) NoiseText.revealEyebrow(eyebrow)
     }),

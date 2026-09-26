@@ -16,7 +16,6 @@
     "test:serial": "playwright test --workers=1 --reporter=line",
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed",
-    "lhci": "bunx @lhci/cli@0.13.0 autorun",
     "wait:preview": "bun scripts/wait-for-url.ts http://127.0.0.1:4173/ 60000",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

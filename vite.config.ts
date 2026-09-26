@@ -308,7 +308,8 @@ export default defineConfig(() => ({
     // causing the page to reload every ~30 seconds.
     hmr: false,
     // Allow the reverse proxy host so Vite doesn't block requests from
-    // project.6la.ru (Caddy forwards to localhost:5173).
-    allowedHosts: true, // TEMP,
+    // project.6la.ru (Caddy forwards to localhost:5173). Loopback hosts are
+    // always allowed; this names the one public host that proxies in.
+    allowedHosts: ['project.6la.ru'],
   },
 }))

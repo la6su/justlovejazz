@@ -908,8 +908,8 @@ export class Experience {
    *  passes the texture through instead of double-PMREMing it (double
    *  processing used to render the glass cube darker on WebGPU with a
    *  concentrated bright-spot artifact). The former classic-generator
-   *  branch (dev-forced `?renderer=webgl` QA path) was removed in Phase 10,
-   *  together with that path itthis. The former secondary offscreen WebGL
+   *  branch (dev-forced `?renderer=webgl` QA path) was removed together
+   *  with that path in Phase 10. The former secondary offscreen WebGL
    *  context (created solely for PMREM generation on the WebGPU path) was
    *  removed in the Phase 6 unified-renderer slice. */
   private setupEnvironment(): void {
@@ -1119,9 +1119,7 @@ export class Experience {
         this._contactIsLight = detail.isLight
         // Theme-only syncs — skip when just the section moved (same polarity).
         if (detail.themeChanged !== false) {
-          this.ground.syncTheme(detail.isLight)
-          this.baku.setTheme(detail.isLight)
-          this.coordinator.syncTypographyTheme(detail.isLight)
+          this._syncPolaritySurfaces(detail.isLight)
           for (const group of this.coordinator.sceneGroups) {
             const particles = group.userData.particles as
               import('../Experience/World/JunniParticles').JunniParticles | undefined
@@ -1138,9 +1136,7 @@ export class Experience {
     // behind the semantic interface.
     const initialIsLight = this.contentReveal.isLight
     this.envSphere.snapToSection(this.coordinator.currentSectionIndex, initialIsLight)
-    this.ground?.syncTheme(initialIsLight)
-    this.baku?.setTheme(initialIsLight)
-    this.coordinator?.syncTypographyTheme(initialIsLight)
+    this._syncPolaritySurfaces(initialIsLight)
 
     // ── Glassmorphism: studio environment map for realistic glass reflections ──
     // RoomEnvironment is a procedural studio scene (walls + lights) rendered
@@ -1276,6 +1272,19 @@ export class Experience {
     this._readinessGate = createReadinessGate(this.firstRender, 20000)
     await this._readinessGate.promise
     this._readinessGate = null
+  }
+
+  /**
+   * Shared polarity surfaces for the theme fan-out: ambient ground, baku and
+   * the coordinator's typography sync. The event handler adds the per-group
+   * particles blending pass; the init replay adds the envSphere section snap —
+   * those stay at their call sites. Optional chaining is deliberate: the init
+   * replay can run before the lazy world stages exist.
+   */
+  private _syncPolaritySurfaces(isLight: boolean): void {
+    this.ground?.syncTheme(isLight)
+    this.baku?.setTheme(isLight)
+    this.coordinator?.syncTypographyTheme(isLight)
   }
 
   /**

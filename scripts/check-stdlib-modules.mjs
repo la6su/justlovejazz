@@ -17,6 +17,13 @@
 //     (dead code the bundler silently tree-shakes; this reports WHAT to drop);
 //   - every shim path must exist (a renamed/removed three-stdlib module).
 //
+// The sibling seam `src/three-webgpu-compat.ts` is covered too: its curated
+// classic-only symbols (WebGLRenderer, UniformsUtils, UniformsLib,
+// ShaderChunk, WebGLCubeRenderTarget) exist ONLY because specific modules in
+// the dependency graph reference them. When a dependency upgrade drops the
+// last consumer of one, the stub becomes silently dead code — this reports
+// exactly which stub to drop.
+//
 // Run: node scripts/check-stdlib-modules.mjs   (wired as `check:stdlib` —
 // dependency-upgrade gate, not a unit test: it reads the real node_modules
 // bundle rather than a Vitest stub).
@@ -27,10 +34,14 @@ import { fileURLToPath } from 'node:url'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const cientosBundle = join(root, 'node_modules/@tresjs/cientos/dist/trescientos.js')
-const shim = join(root, 'src/three-stdlib-compat.ts')
+const tresBundle = join(root, 'node_modules/@tresjs/core/dist/tres.js')
+const stdlibShim = join(root, 'src/three-stdlib-compat.ts')
+const webgpuCompat = join(root, 'src/three-webgpu-compat.ts')
+
+const failures = []
 
 const cientosSource = readFileSync(cientosBundle, 'utf8')
-const shimSource = readFileSync(shim, 'utf8')
+const shimSource = readFileSync(stdlibShim, 'utf8')
 
 // Collect every symbol the Cientos bundle imports from the three-stdlib
 // barrel (`import { A, B as C } from 'three-stdlib'`), including multiline
@@ -63,22 +74,80 @@ const brokenPaths = shimEntries
   .map((entry) => `${entry.symbol} -> ${entry.from} (file not found)`)
   .sort()
 
-if (missing.length === 0 && stale.length === 0 && brokenPaths.length === 0) {
+if (missing.length > 0 || stale.length > 0 || brokenPaths.length > 0) {
+  failures.push(
+    [
+      'three-stdlib shim drift against @tresjs/cientos:',
+      missing.length > 0 ? `  missing from the shim (add): ${missing.join(', ')}` : null,
+      stale.length > 0 ? `  dead in the shim (drop): ${stale.join(', ')}` : null,
+      brokenPaths.length > 0 ? `  broken paths:\n    ${brokenPaths.join('\n    ')}` : null,
+    ]
+      .filter(Boolean)
+      .join('\n'),
+    'Update src/three-stdlib-compat.ts to match the Cientos bundle.',
+  )
+} else {
   console.log(
     `three-stdlib shim OK: ${shimSymbols.size} re-exports cover the ${needed.size} symbols the Cientos bundle imports.`,
   )
-  process.exit(0)
 }
 
-const report = [
-  'three-stdlib shim drift against @tresjs/cientos:',
-  missing.length > 0 ? `  missing from the shim (add): ${missing.join(', ')}` : null,
-  stale.length > 0 ? `  dead in the shim (drop): ${stale.join(', ')}` : null,
-  brokenPaths.length > 0 ? `  broken paths:\n    ${brokenPaths.join('\n    ')}` : null,
-]
-  .filter(Boolean)
-  .join('\n')
+// ── three-webgpu-compat curated-surface liveness ──
+// The curated symbols exist only because concrete modules in the dependency
+// graph reference them. Scan the real consumers: the Tres core bundle, the
+// Cientos bundle, and exactly the stdlib files the stdlib shim re-exports.
+const consumerSources = []
+if (existsSync(tresBundle)) consumerSources.push(readFileSync(tresBundle, 'utf8'))
+consumerSources.push(cientosSource)
+for (const entry of shimEntries) {
+  const file = join(root, 'src', entry.from)
+  if (existsSync(file)) consumerSources.push(readFileSync(file, 'utf8'))
+}
+const consumerHaystack = consumerSources.join('\n')
 
-console.error(report)
-console.error('Update src/three-stdlib-compat.ts to match the Cientos bundle.')
-process.exit(1)
+const curated = [
+  { symbol: 'WebGLRenderer', why: "TresJS's default classic renderer path" },
+  { symbol: 'UniformsUtils', why: 'three-stdlib Water/LineMaterial uniform merges' },
+  { symbol: 'UniformsLib', why: 'three-stdlib Water/LineMaterial uniform chunks' },
+  { symbol: 'ShaderChunk', why: 'the Cientos SoftShadows component' },
+  { symbol: 'WebGLCubeRenderTarget', why: 'the Cientos Environment components' },
+]
+const compatSource = readFileSync(webgpuCompat, 'utf8')
+const deadCurated = curated.filter(({ symbol }) => {
+  const uses = consumerHaystack.match(new RegExp(`\\b${symbol}\\b`, 'g'))?.length ?? 0
+  return uses === 0
+})
+// A curated symbol missing from the compat file itself is a different drift:
+// the compat entry must keep providing everything the graph reads.
+const absentCurated = curated.filter(
+  ({ symbol }) => !new RegExp(`\\b${symbol}\\b`).test(compatSource),
+)
+
+if (deadCurated.length > 0) {
+  failures.push(
+    [
+      'three-webgpu-compat curated symbols with no consumer left:',
+      ...deadCurated.map(({ symbol, why }) => `  ${symbol} (existed for ${why})`),
+      'Drop the dead stubs from src/three-webgpu-compat.ts.',
+    ].join('\n'),
+  )
+}
+if (absentCurated.length > 0) {
+  failures.push(
+    [
+      'three-webgpu-compat no longer provides curated symbols the graph may read:',
+      ...absentCurated.map(({ symbol, why }) => `  ${symbol} (existed for ${why})`),
+      'Restore them in src/three-webgpu-compat.ts.',
+    ].join('\n'),
+  )
+}
+if (deadCurated.length === 0 && absentCurated.length === 0) {
+  console.log(
+    `three-webgpu-compat OK: all ${curated.length} curated symbols are alive and provided.`,
+  )
+}
+
+if (failures.length > 0) {
+  for (const failure of failures) console.error(failure)
+  process.exit(1)
+}

@@ -14,12 +14,12 @@ import type { StagePort } from './sceneHost'
 
 /** One declarative stage slot: the `StagePort` boundary plus the live object
  *  store the template's `<primitive>` reads. */
-export interface StageSlot<T extends object> extends StagePort<T> {
+interface StageSlot<T extends object> extends StagePort<T> {
   /** The mounted object, or `null` before mount / after unmount. */
   readonly object: ShallowRef<T | null>
 }
 
-export interface StageSlotOptions {
+interface StageSlotOptions {
   /** Live check — SceneHost passes its disposed guard. */
   isAlive(): boolean
 }
