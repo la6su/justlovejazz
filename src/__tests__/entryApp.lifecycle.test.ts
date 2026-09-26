@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createReadyEventTimer, createStyleOwner, initSplashToggles, updateLoaderProgress } from '../entry-app'
+import {
+  createReadyEventTimer,
+  createStyleOwner,
+  initSplashToggles,
+  updateLoaderProgress,
+} from '../entry-app'
 
 function mountSplashMeta(): void {
   document.body.innerHTML = `
