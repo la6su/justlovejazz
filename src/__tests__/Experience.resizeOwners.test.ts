@@ -25,7 +25,7 @@ describe('Experience resize owner propagation', () => {
   })
 
   it('does not initialize a missing lazy Cyprus owner during resize', () => {
-    const { exp } = seedExperience({
+    const { exp, slots } = seedExperience({
       sizes: { width: 1920, height: 1080 },
       camera: undefined,
       renderer: undefined,
@@ -35,5 +35,10 @@ describe('Experience resize owner propagation', () => {
     expect(() =>
       (exp as unknown as { resizeSceneOwners: () => void }).resizeSceneOwners(),
     ).not.toThrow()
+
+    // The resize fan-out reads the stage through the slot without kicking off
+    // the lazy ensure flow: no stage appears and no request was advanced.
+    expect(slots.contactCyprus.getStage()).toBeNull()
+    expect(slots.contactCyprus.getRequest()).toBe(0)
   })
 })
