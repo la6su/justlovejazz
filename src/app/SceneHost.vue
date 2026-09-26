@@ -23,12 +23,15 @@
 // replaced Tres render function. On-demand avoids manual mode's delayed
 // advance().
 //
-import { onBeforeUnmount, ref, toValue } from 'vue'
+import { computed, defineAsyncComponent, onBeforeUnmount, ref, toValue, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { TresCanvas } from '@tresjs/core'
 import type { TresContext, TresRendererSetupContext } from '@tresjs/core'
 import type { PerspectiveCamera } from 'three'
 import { planUnifiedBackend } from '../core/rendererBackend'
 import { DeviceCapability } from '../core/DeviceCapability'
+import { prefersReducedMotion, observeReducedMotion } from '../core/motionPolicy'
+import { setLabCameraActive } from '../core/labCameraPolicy'
 import {
   createUnifiedWebGPUInstance,
   initUnifiedWebGPUInstance,
@@ -131,6 +134,67 @@ const envSphereSlot = createReadySlot<EnvSphere>()
 const envSkySlot = createReadySlot<unknown>()
 /** Template-facing alias: the env sphere must mount before the sky plane. */
 const envSphereNode = envSphereSlot.value
+/** Template-facing alias: the controls need the resolved cinematic camera. */
+const cameraNode = cameraSlot.value
+
+// ── Lab camera exploration (ADR 0005's first Cientos adoption) ──
+// The Lab route is where interactive camera exploration belongs: the
+// declarative `<CameraControls>` (ecosystem camera-controls under the hood)
+// orbits the gamepad while the cinematic writer yields. The decision lives
+// HERE, once: lab route AND a fine pointer (touch keeps the page-scroll
+// contract — the canvas sets touch-action: none, so 1-finger orbit would
+// trap scrolling) AND no reduced-motion preference (no self-driven motion).
+// Consumers: the policy port (Experience/Camera), this template's v-if and
+// the `body[data-lab-camera]` CSS port the pass-through layers react to.
+const route = useRoute()
+const pointerQuery =
+  typeof window.matchMedia === 'function' ? window.matchMedia('(pointer: fine)') : null
+const pointerFine = ref(pointerQuery?.matches ?? false)
+const motionReduced = ref(prefersReducedMotion())
+const labCameraActive = computed(
+  () => route?.name === 'lab' && pointerFine.value && !motionReduced.value,
+)
+
+if (pointerQuery) {
+  const onPointerChange = (event: MediaQueryListEvent): void => {
+    pointerFine.value = event.matches
+  }
+  pointerQuery.addEventListener('change', onPointerChange)
+  onBeforeUnmount(() => pointerQuery.removeEventListener('change', onPointerChange))
+}
+const unobserveMotion = observeReducedMotion((reduced) => {
+  motionReduced.value = reduced
+})
+
+watch(
+  labCameraActive,
+  (active) => {
+    setLabCameraActive(active)
+    if (active) document.body.setAttribute('data-lab-camera', 'on')
+    else document.body.removeAttribute('data-lab-camera')
+  },
+  { immediate: true },
+)
+onBeforeUnmount(() => {
+  unobserveMotion()
+  setLabCameraActive(false)
+  document.body.removeAttribute('data-lab-camera')
+})
+
+// Rotate-only exploration limits and the wheel contract live inside the
+// wrapper (src/app/scene/LabCameraControls.vue). The whole Cientos/
+// camera-controls/stdlib dependency surface loads only when the exploration
+// policy first activates on the Lab route (async component = lazy chunk).
+const LabCameraControls = defineAsyncComponent(() => import('./scene/LabCameraControls.vue'))
+
+// Cold-start wake: camera-controls' own pointer handlers only dispatch
+// events — the first drag must open a scheduler window itself. The wrapped
+// manager invalidate translates into the typed 'external' demand (ADR 0005);
+// every later frame keeps the window open through the controls' own
+// 'update' → invalidate path until they go back to sleep.
+function onLabControlsStart(): void {
+  liveManager?.invalidate()
+}
 
 // ── Declarative stage slots (mount/unmount boundaries) ──
 // One slot per stage family replaces the hand-written mount/unmount pairs.
@@ -317,11 +381,16 @@ onBeforeUnmount(() => {
       render-mode="on-demand"
       :dpr="[1, initialDprCap]"
       :renderer="rendererFactory"
-      :style="{ pointerEvents: 'none' }"
+      :style="{ pointerEvents: labCameraActive ? 'auto' : 'none' }"
       @ready="onReady"
       @error="onError"
     >
       <CinematicCamera @ready="cameraSlot.resolve" />
+      <LabCameraControls
+        v-if="labCameraActive && cameraNode"
+        :camera="cameraNode"
+        @start="onLabControlsStart"
+      />
       <CinematicLights @ready="lightsSlot.resolve" />
       <GroundPlane @ready="groundSlot.resolve" />
       <SectionGroupRoots @ready="sectionRootsSlot.resolve" />

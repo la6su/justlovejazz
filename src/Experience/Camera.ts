@@ -5,6 +5,7 @@ import { input } from './Input'
 // (Easings import removed — inline easeInOutQuart, only function used)
 import { Device } from '../core/DeviceCapability'
 import { prefersReducedMotion } from '../core/motionPolicy'
+import { isLabCameraActive } from '../core/labCameraPolicy'
 import type { CameraTarget } from '../core/types'
 import { getCurrentPage } from '../core/routePage'
 
@@ -54,6 +55,11 @@ export class Camera {
   // A-015: Per-section cursor follow strength
   private _cursorFollowStrength: number | null = null
 
+  // Lab exploration (ADR 0005): true while the previous update() found the
+  // Lab CameraControls owning the pose. The first frame after the hand-back
+  // adopts the orbit pose as the smoothing origin (no authored-framing snap).
+  private _yielded = false
+
   /** Set cursor follow strength for current section (A-015) */
   setCursorFollow(strength: number): void {
     if (this._disposed) return
@@ -98,6 +104,10 @@ export class Camera {
   /** Lerp camera base state toward target with exponential smoothing */
   updateSmooth(target: CameraTarget, deltaT: number, smoothing = 5) {
     if (this._disposed) return
+    // While the Lab CameraControls own the pose the authored track is stale:
+    // smoothing toward it would fight the user's orbit. update() re-adopts
+    // the authored state from the live orbit pose on hand-back.
+    if (isLabCameraActive()) return
     if (!target) return
     const lerp = 1 - Math.exp(-smoothing * deltaT)
 
@@ -211,6 +221,22 @@ export class Camera {
 
   update(deltaT: number) {
     if (this._disposed) return
+    // ── 0. Lab exploration yield (ADR 0005) ──
+    // While the declarative Lab CameraControls own the camera the cinematic
+    // writer yields completely — position, lookAt and fov are the user's.
+    if (isLabCameraActive()) {
+      this._yielded = true
+      return
+    }
+    if (this._yielded) {
+      // Hand-back: adopt the orbit pose as the smoothing origin so the
+      // authored framing eases back in instead of snapping. The orientation
+      // stays continuous because the controls orbit the same authored target
+      // the writer looks at.
+      this.smoothPosition.copy(this.instance.position)
+      this.smoothFov = this.instance.fov
+      this._yielded = false
+    }
     // Preserve authored timing on high-refresh displays. A fixed lower bound
     // would advance shake, organic motion and FOV transitions faster than
     // wall-clock time at 144/240 Hz; only clamp invalid negatives and stalls.

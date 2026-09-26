@@ -63,6 +63,31 @@
   pointer-events: none;
 }
 
+// Lab camera exploration (ADR 0005's first Cientos adoption). SceneHost
+// publishes `body[data-lab-camera='on']` only on the Lab route with a fine
+// pointer and no reduced-motion preference. The wrapper + canvas then take
+// pointer input, and the experiment frames pass their empty middle through
+// to the canvas: drag-to-orbit around the gamepad, while interactive
+// descendants (links, buttons) and the menu/footer sheets keep working.
+// Touch devices never publish the attribute — sections stay solid, so
+// page scroll keeps the canvas' touch-action: none out of the way.
+body[data-lab-camera='on'] .jlz-scene-host,
+body[data-lab-camera='on'] .jlz-scene-host canvas {
+  pointer-events: auto;
+}
+
+body[data-lab-camera='on']
+  #spa-content
+  > .jlz-page
+  > .jlz-page-section:not(.jlz-menu-overlay):not([data-contact-footer]) {
+  pointer-events: none;
+
+  a,
+  button {
+    pointer-events: auto;
+  }
+}
+
 .jlz-scene-canvas {
   display: block;
   width: 100%;
