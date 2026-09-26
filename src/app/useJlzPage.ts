@@ -27,7 +27,8 @@ import type { PageId } from '../sections/_shared/constants'
 import { initMenuLifecycle } from './menuLifecycle'
 import { setCurrentPage } from '../core/routePage'
 
-export function uiKitUpdate(el: Element): void {
+/** In-file helper: UIkit's imperative update for the mounted subtree. */
+function uiKitUpdate(el: Element): void {
   ;(UIkit as unknown as { update(el: Element): void }).update(el)
 }
 

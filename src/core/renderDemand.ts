@@ -1,9 +1,9 @@
 // src/core/renderDemand.ts — Phase 3 pure render-demand decision contract.
 //
-// The renderer is demand-driven (docs/ARCHITECTURE.md): the animation loop
-// runs continuously but draws a frame only while the scene is changing, and
-// settles to idle when nothing is active. That per-frame decision lives in
-// `Experience.update()`; this contract owns the decision as pure,
+// The renderer is demand-driven (docs/ARCHITECTURE.md): the loop draws a
+// frame only while the scene is changing and stops entirely after the
+// settled frame (zero settled draws — ADR 0005). That per-frame decision
+// lives in `Experience.update()`; this contract owns the decision as pure,
 // side-effect-free functions so the scheduler is unit-tested without a
 // renderer, and the loop consumes it without changing any timing.
 //

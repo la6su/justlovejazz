@@ -431,19 +431,15 @@ export class ExperienceUI {
     }
   }
 
-  /** Get the BakuCarousel from the Experience-owned reference (index 3 in the
-   *  6-section layout; the carousel is a child of the Works group).
-   *  Returns null on non-home pages — the carousel is home-only. */
-  private getCarousel(): import('./World/BakuCarousel').BakuCarousel | null {
+  /** Frame access to the BakuCarousel (index 3 in the 6-section layout; the
+   *  carousel is a child of the Works group, home-only). Experience polls it
+   *  inside the frame decision because it may have started morphing this
+   *  frame. */
+  public getCarousel(): import('./World/BakuCarousel').BakuCarousel | null {
     // BakuCarousel only exists on home page — content pages don't init it
     if (this.host.page() !== 'home') return null
     // The reference lives on SceneCoordinator's typed owner boundary.
     return this.host.coordinator()?.carousel ?? null
-  }
-
-  /** Frame access: the carousel may have started morphing this frame. */
-  getFrameCarousel(): import('./World/BakuCarousel').BakuCarousel | null {
-    return this.getCarousel()
   }
 
   onProjectSelect(idx: number, preload: boolean = false): void {

@@ -89,8 +89,34 @@ test.describe('JustLoveJazz — page boot smoke', () => {
     const response = await request.get('/')
     const html = await response.text()
 
-    expect(html).not.toMatch(/modulepreload[^>]+(?:vendor-three|vendor-ui|chunk-core-world)/)
+    expect(html).not.toMatch(/modulepreload[^>]+(?:vendor-three|vendor-ui|chunk-core|chunk-world)/)
     expect(html).toContain('id="jlz-splash-enter"')
+  })
+
+  test('prerender injects the home sections into the #app mount node', async ({ request }) => {
+    // The #223 contract: the vite prerender REPLACES the literal
+    // '<div id="app"></div>' with the static home markup. A regression here is
+    // invisible to runtime tests (Vue mounts the sections itself either way),
+    // so pin the served build output directly.
+    const html = await (await request.get('/')).text()
+    expect(html).toMatch(/<div id="app">\s*<main\b/)
+    expect(html).toContain('data-section="intro"')
+  })
+
+  test('boot a11y contract: enter ships disabled and flips only with readiness', async ({
+    page,
+    request,
+  }) => {
+    // Static: the inline splash ships the enter control aria-disabled="true".
+    const html = await (await request.get('/')).text()
+    expect(html).toMatch(/<button\s+id="jlz-splash-enter"[\s\S]*?aria-disabled="true"/)
+
+    // Runtime: the readiness flip (synthetic jlz:webgl-ready on ?no-scene=1)
+    // enables the control — the #223 boot contract.
+    await page.goto('/?no-scene=1')
+    const enter = page.locator('#jlz-splash-enter')
+    await expect(enter).toHaveClass(/is-ready/)
+    await expect(enter).toHaveAttribute('aria-disabled', 'false')
   })
 
   test('every published SPA route resolves to the application shell', async ({ request }) => {
@@ -140,6 +166,7 @@ test.describe('JustLoveJazz — page boot smoke', () => {
 
     // jlz:webgl-ready fired (synthetic) — Enter becomes available.
     await expect(page.locator('#jlz-splash-enter')).toHaveClass(/is-ready/)
+    await expect(page.locator('#jlz-splash-enter')).toHaveAttribute('aria-disabled', 'false')
 
     // The no-scene path still mounts the navigation owner (startApp's router
     // branch runs before the no-scene early return inside boot()); wait for
@@ -171,17 +198,25 @@ test.describe('JustLoveJazz — page boot smoke', () => {
     const blogHtml = await (await request.get('/blog')).text()
     const fontCss = await (await request.get('/fonts/commissioner.css')).text()
     const fontResponse = await request.get('/fonts/commissioner-variable.ttf')
+    const monoCss = await (await request.get('/fonts/jetbrains-mono.css')).text()
 
     expect(html).toContain('/fonts/commissioner.css')
+    expect(html).toContain('/fonts/jetbrains-mono.css')
     expect(html).not.toContain('/fonts/inter.css')
     expect(html).not.toContain('fonts.googleapis.com')
     expect(blogHtml).toContain('/fonts/commissioner.css')
     expect(blogHtml).not.toContain('/fonts/inter.css')
+    // Both faces preload — the splash renders before JS boots.
+    expect(html).toMatch(/rel="preload"[^>]*href="\/fonts\/commissioner-variable\.ttf"/)
+    expect(html).toMatch(/rel="preload"[^>]*href="\/fonts\/jetbrains-mono-latin\.woff2"/)
     expect(fontResponse.ok()).toBe(true)
     expect(fontCss).toContain('font-weight: 100 900')
     expect(fontCss).toContain("font-family: 'Commissioner'")
     expect(fontCss).toContain('/fonts/commissioner-variable.ttf')
     expect(fontCss).toContain('font-style: oblique -12deg 0deg')
+    expect(monoCss).toContain('font-weight: 100 800')
+    expect(monoCss).toContain("font-family: 'JetBrains Mono'")
+    expect(monoCss).toContain('/fonts/jetbrains-mono-latin.woff2')
   })
 
   test('splash container + populated <main> render within timeout', async ({ page }) => {
@@ -494,6 +529,8 @@ test.describe('JustLoveJazz — Phase 7 persistent scene host', () => {
     // inspection + Tres context mount + the scene's first render.
     const enter = page.locator('#jlz-splash-enter')
     await expect(enter).toHaveClass(/is-ready/, { timeout: 120000 })
+    // The readiness flip also enables the control (boot a11y contract).
+    await expect(enter).toHaveAttribute('aria-disabled', 'false')
 
     // Exactly one canvas (the persistent Tres root, selector canvas.canvas),
     // hidden from the accessibility tree.

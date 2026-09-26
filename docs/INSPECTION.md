@@ -1,9 +1,14 @@
-# Inspection — 2026-09-25
+# Inspection log
 
-Dated audit record (like evidence, not a queue): test-suite review for
-"tests for the sake of tests" plus a redundancy/overengineering pass over
-the runtime modules, requested by the user. Scope: main @ 887443c +
-engineering-slices working tree. Method: per-file metrics (lines / tests /
+Dated audit record (like evidence, not a queue): successive inspection
+entries below; the latest entry reflects current architecture, earlier
+ones are history and carry superseded markers where a later decision
+reversed them.
+
+Inspection 1 is a test-suite review for "tests for the sake of tests"
+plus a redundancy/overengineering pass over the runtime modules,
+requested by the user. Scope: main @ 887443c + engineering-slices
+working tree. Method: per-file metrics (lines / tests /
 expects / mocks) over all 112 unit files, full reads of the smallest and
 mock-heaviest files, dead-export scan over `src/core`, `src/UI`,
 `src/Utils` cross-referenced against production, test and script
@@ -129,7 +134,9 @@ full e2e run (chromium headless) before and after fixes.
 - The Vue/TresJS contract layer already follows the framework's best
   practices: persistent `SceneHost` outside `RouterView` (single
   canvas/renderer/camera/scene owner), `render-mode="on-demand"` with the
-  internal loop stopped in favor of `RenderScheduler`, declarative
+  internal loop stopped in favor of `RenderScheduler` (superseded
+  2026-09-25 by #224 / ADR 0005: the persistent Tres loop is now the RAF
+  host and the scheduler drives it through `SceneLoopPort`), declarative
   `TresMesh`/`TresPerspectiveCamera` wrappers with typed `ready` emits,
   `useTresContext().camera.setActiveCamera`, `markRaw` on three objects,
   `primitive` adapters with `:dispose="null"` preserving Experience as
@@ -150,6 +157,12 @@ Verification after fixes: build + prerender injection confirmed in
 `prettier` clean.
 
 ## Inspection 3 — 2026-09-25, reinvented-wheel audit (TresJS core + Cientos)
+
+> Superseded in part on 2026-09-25 by #224 (ADR 0005): `@tresjs/cientos`
+> 5.9.0 is installed as the declared ecosystem foundation, the persistent
+> Tres loop is the RAF host, and `useLoop`/`invalidate()` are the supported
+> wake edge. The verdicts below record the pre-#224 state; the
+> "no wheels" product verdicts remain current.
 
 Trigger: user request to audit final-refactor overengineering, verify the
 validity of hand-rolled solutions ("are we reinventing the wheel?") and
@@ -197,6 +210,9 @@ mode with the internal loop stopped. Unused core composables, evaluated:
 
 - `useLoop` / `useCreateRafLoop` — deliberately bypassed (bounded scheduler
   owns the loop; competing RAF loops are contractually forbidden).
+  _(Superseded 2026-09-25, #224 / ADR 0005: the scheduler now drives the
+  Tres loop via `SceneLoopPort`; `useLoop` subscribers share that RAF —
+  see ARCHITECTURE → Renderer and scheduling.)_
 - `useLoader` / `useTexture` / `useSizes` / `useCamera` / `useCameraManager`
   — each is weaker than the existing owner (refcount cache / Sizes with
   DPR caps / cinematic camera contract); adopting them would move
@@ -205,6 +221,11 @@ mode with the internal loop stopped. Unused core composables, evaluated:
   project's generation guards and typed event ports are stricter.
 
 ### Cientos: deliberately not installed
+
+> Superseded 2026-09-25 by #224 (ADR 0005): the project upgraded
+> `@tresjs/core` to 5.9.0 and installed `@tresjs/cientos` 5.9.0 as the
+> declared foundation for the Tres-native demand loop. First component
+> adoption is queued; the peer-lock obstacle named below is gone.
 
 Cientos 5.9.0 peer-locks `@tresjs/core` to 5.9.0 (project pins 5.8.3) and
 pulls six transitive dependencies. None of its catalog entries replaces
@@ -284,3 +305,107 @@ how many files must a routine change touch?
 
 Verification: tsc, vue-tsc, eslint (0 errors; 16 warnings pre-existing),
 prettier clean, vitest 113 files / 694 tests green, docs:check green.
+
+## Inspection 5 — 2026-09-26, redundancy/docs/tests audit (post-#225)
+
+Trigger: user request to keep surfacing redundant and duplicated code and
+over-engineering, and to clear blockers in the form of outdated
+documentation, specifications and tests. Scope: main @ 4ad1de0 (all of
+#223/#224/#225 merged). Method: three parallel deep audits (code
+redundancy across src/app + Experience + core with ts-prune-style
+cross-grep; every tracked Markdown doc claim verified against the tree;
+test-suite staleness with symbol-level cross-referencing), then
+manual verification of every claim before acting.
+
+### Actions taken (same PR)
+
+Docs truth pass:
+
+- `docs/adr/0005-tres-native-demand-loop.md` created — the decision ~15
+  prose/code references call "ADR 0005" had no file, and the number
+  collided with the deleted snapshot's 0005 (uikit-vue). README now
+  explains the one active ADR file vs the snapshot retrieval protocol.
+- INSPECTION 2/3 verdicts reversed by #224 (loop stopped, `useLoop`
+  bypassed, "Cientos deliberately not installed") carry superseded
+  markers instead of reading as current architecture; retitled to a log.
+- PAGE_BUILDER save contract ("legacy compatibility still exists;
+  removal is in NEXT" — false since the strict `{ slug, document }`
+  handler landed), ARCHITECTURE `router.ts` (file does not exist →
+  `app/index.ts`), evidence README bundle-filename and metadata-producer
+  sentences, and the stale code comments that contradicted ADR 0005
+  (RenderScheduler header, renderDemand continuous-loop story,
+  Experience setAnimationLoop notes, Tres 5.8 version notes,
+  phase7-live-gate doc comment).
+
+Test contracts and coverage:
+
+- New `readySlot.lifecycle` (first direct tests for `createReadySlot`/
+  `readyNode` — the #224 helper had only indirect coverage) and three
+  SceneHost loop-integration tests driving the before-loop bridge, the
+  wrapped `invalidate()` wake path (reason `'external'`) and the
+  documented port-calls-after-unmount no-op — the heart of #224 was
+  guarded only by slow e2e before.
+- e2e pins for the #223 contracts that could silently regress: the
+  prerender `<div id="app">` injection (invisible to runtime tests —
+  Vue mounts the sections itself either way), the aria-disabled ship
+  `true` → ready `false` flip, jetbrains-mono.css + both font preloads;
+  the modulepreload guard now matches the real chunk names.
+- `renderScheduler` ALL_REASONS derives from a `satisfies
+Record<FrameReason, true>` pin including `external` — a new
+  FrameReason variant is now a type error, not silent test drift.
+
+Redundancy removal (each claim manually verified before acting):
+
+- Dead exports: `routes.ts` PageId re-export (zero importers; two
+  canonical paths for one type), `useJlzPage.uiKitUpdate` (in-file
+  only), `ExperienceUI.getFrameCarousel` (pass-through of the private
+  `getCarousel`).
+- Theme fan-out duplication: `Experience.syncContactTheme` re-applied
+  the same theme to contact typography + halo right before the
+  coordinator's `syncTypographyTheme` did it again on every
+  `jlz:theme-applied` — Experience now only caches the effective
+  polarity; one live fan-out owner.
+- `CinematicLights.vue` template carried a hand-copy of the intro light
+  preset the controller snaps on construction; it now binds
+  `CINEMATIC_INTRO_PRESET` (one authored source, zero boot-frame change).
+- Test harness: the 8× duplicated TresCanvas mount preamble collapsed
+  into `mountSceneCanvas` (−219/+124 in the touched files); suite 694 →
+  701 tests.
+
+### Checked and found sound (no refactor made, deliberately)
+
+- `TresLoop.contract.test.ts` keeps its file-local mount: it is the
+  vendor upgrade canary with a deliberately minimal assumed surface,
+  not a duplication of the shared harness.
+- `entry-app.startApp` (public shell entry), `clearBootstrapStyle` /
+  `clearReadyEventTimer` (live local helpers) — flagged by the scan,
+  verified alive, kept.
+- `EnvSky.vue` / `CinematicCamera` vs Cientos `Sky` / `CameraControls`:
+  still not drop-in duplicates (authored backdrop sharing EnvSphere's
+  material; controller-driven cinematic camera, not user orbit) —
+  Inspection 3 verdicts stand.
+- `caseTexture` refcount cache remains stronger than `useTexture`
+  (cross-consumer dedup + pendingDrop); Cientos adoption stays queued
+  per ADR 0005, not forced here.
+- The `.github` CI workflow is comprehensive (format, types, lint, unit,
+  build, budgets, e2e, lighthouse) — a test-audit claim of "no CI" was
+  wrong and is corrected by this entry.
+
+### Open queue (recorded honestly, largest first)
+
+- `createLazyStageSlot` — the six hand-copied lazy-stage field triples +
+  12 wrapper pairs in Experience (~250–300 lines) still await the slot
+  factory; test seed bags (`Object.assign(Object.create(...))`, 22
+  sites) want a shared seed helper in the same pass.
+- `StateBus` is a 3-value enum animated as an eased float nobody samples
+  (~330 LOC with tests) — a plain field + deadline would replace it;
+  needs a visual-timing check of the 0.8 s state flips first.
+- `BlurFade`/`NoiseText` share ~70 lines of registry/cancel/finalize
+  skeleton; `contentRoot()` ×3 and the eyebrow/title reveal blocks ×4–5
+  want a small `textReveal.ts` (splash-timing contracts pinned).
+- First real Cientos adoption (ADR 0005 queue): CameraControls in the
+  Lab needs the pointer-events product decision.
+
+Verification: tsc, vue-tsc, eslint (0 errors), prettier clean, vitest
+114 files / 701 tests green, docs:check green (18 files), build +
+prerender + budgets green, e2e chromium green.

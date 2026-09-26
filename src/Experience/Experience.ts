@@ -852,13 +852,6 @@ export class Experience {
     disposeLazyStage(this._manifestoInkStageContract())
   }
 
-  /** Cache the effective polarity so a lazy Contact stage cannot miss it. */
-  public syncContactTheme(isLight: boolean): void {
-    this._contactIsLight = isLight
-    this.contactTypographyStage?.setTheme(isLight)
-    this.contactHaloStage?.setTheme(isLight)
-  }
-
   /** Lazily load the Contact location asset instead of keeping it in the home
    *  scene. Phase 8 slice 8: moved from World — Experience owns the lazy
    *  stage (the World frame path reads it through the documented
@@ -1202,8 +1195,11 @@ export class Experience {
       }
       if (this.coordinator) {
         // Experience caches the effective polarity so lazy creation cannot
-        // default to white text against a light route background.
-        this.syncContactTheme(detail.isLight)
+        // default to white text against a light route background. The live
+        // stages' theme fan-out is the coordinator's syncTypographyTheme —
+        // one owner per change (was: a second Experience fan-out that
+        // re-applied the same theme to typography + halo twice per event).
+        this._contactIsLight = detail.isLight
         // Theme-only syncs — skip when just the section moved (same polarity).
         if (detail.themeChanged !== false) {
           this.ground.syncTheme(detail.isLight)
@@ -1313,12 +1309,14 @@ export class Experience {
     this.camera.instance.position.set(0, 5, 10)
     this.camera.instance.lookAt(0, 0, 0)
     this.camera.instance.updateProjectionMatrix()
-    // Phase 7 (ADR 0004): the loop is demand-driven — the scheduler (built in
-    // the constructor) is the single setAnimationLoop caller. It installs the
-    // frame callback on the first 'first-frame' invalidation and stops it
-    // after the settled frame (zero settled draws). WebGPURenderer on the
-    // WebGPU backend still paces through setAnimationLoop (swap-chain sync) —
-    // the driver, not the start/stop policy, is unchanged from Phase 6.
+    // Phase 7 (ADR 0004) / ADR 0005: the loop is demand-driven — the
+    // scheduler (built in the constructor) owns the frame policy: the frame
+    // callback starts on the first 'first-frame' invalidation and stops
+    // after the settled frame (zero settled draws), running inside the
+    // persistent Tres loop via the SceneHost SceneLoopPort. WebGPURenderer
+    // on the WebGPU backend still paces through setAnimationLoop
+    // (swap-chain sync) — the driver, not the start/stop policy, is
+    // unchanged from Phase 6.
     this._scheduler.invalidate('first-frame')
 
     // ── DrawTrail: trigger render on mousemove (Works section only) ──
@@ -1498,7 +1496,7 @@ export class Experience {
     // world.updateTransform(). If we use stale _bakuCarouselActive from
     // last frame, _needsRender stays false and carousel.update() never
     // runs → morph stalls at ~0.35. See BakuCarousel.ts §update.
-    const carousel = this.features.getFrameCarousel()
+    const carousel = this.features.getCarousel()
     this._bakuCarouselActive = carousel?.isAnimating ?? false
     const carouselActive = this._bakuCarouselActive
     const worksPlaneActive = this.worksPlaneStage?.isAnimating ?? false
@@ -1762,8 +1760,9 @@ export class Experience {
       }
     }
 
-    // NOTE: do NOT call requestAnimationFrame here — setAnimationLoop (set in
-    // init()) drives the loop. Calling rAF on top would double the frame rate
+    // NOTE: do NOT call requestAnimationFrame here — the persistent Tres
+    // loop (driven by the scheduler through the SceneLoopPort, ADR 0005) is
+    // the one RAF host. Calling rAF on top would double the frame rate
     // and fight the WebGPU swap chain synchronization.
   }
 

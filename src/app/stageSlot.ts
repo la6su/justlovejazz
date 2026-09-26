@@ -10,14 +10,13 @@
 // proceeds). One slot factory replaces the hand-written mount/unmount pair
 // each stage used to need (ADR 0005 DX pass; sibling of readySlot.ts).
 import { markRaw, nextTick, shallowRef, type ShallowRef } from 'vue'
+import type { StagePort } from './sceneHost'
 
-export interface StageSlot<T extends object> {
+/** One declarative stage slot: the `StagePort` boundary plus the live object
+ *  store the template's `<primitive>` reads. */
+export interface StageSlot<T extends object> extends StagePort<T> {
   /** The mounted object, or `null` before mount / after unmount. */
   readonly object: ShallowRef<T | null>
-  /** Attach the object; a no-op once the host is no longer alive. */
-  mount(object: T): Promise<void>
-  /** Detach exactly this object; a different mounted object is left alone. */
-  unmount(object: T): Promise<void>
 }
 
 export interface StageSlotOptions {

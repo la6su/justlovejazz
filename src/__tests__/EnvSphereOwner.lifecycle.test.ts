@@ -1,9 +1,7 @@
-import { TresCanvas } from '@tresjs/core'
 import { defineComponent, h, shallowRef } from 'vue'
-import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
-import { createRendererMock, installCanvasPointerShims } from './tresHarness'
-import type { Mesh, Scene } from 'three'
+import { installCanvasPointerShims, mountSceneCanvas } from './tresHarness'
+import type { Mesh } from 'three'
 import EnvSky from '../app/scene/EnvSky.vue'
 import EnvSphereOwner from '../app/scene/EnvSphereOwner.vue'
 import type { EnvSphere } from '../Experience/World/EnvSphere'
@@ -16,9 +14,7 @@ describe('EnvSphereOwner declarative sky lifecycle', () => {
   afterEach(() => document.body.replaceChildren())
 
   it('gives Tres the sky geometry while EnvSphere disposes its borrowed material once', async () => {
-    const renderer = createRendererMock()
     const mounted = {
-      scene: null as Scene | null,
       sphere: null as EnvSphere | null,
       sky: null as Mesh | null,
     }
@@ -42,22 +38,8 @@ describe('EnvSphereOwner declarative sky lifecycle', () => {
       },
     })
 
-    const wrapper = mount(TresCanvas, {
-      attachTo: document.body,
-      props: {
-        renderMode: 'manual',
-        renderer: (() => renderer) as never,
-        onReady: (context: { scene: { value: Scene }; renderer: { loop: { stop(): void } } }) => {
-          mounted.scene = context.scene.value
-          context.renderer.loop.stop()
-        },
-      },
-      slots: { default: () => h(Harness) },
-    })
-    await flushPromises()
-    await new Promise((resolve) => setTimeout(resolve, 0))
+    const { scene, unmount } = await mountSceneCanvas(Harness)
 
-    const scene = mounted.scene as Scene
     const sphere = mounted.sphere as EnvSphere
     const sky = mounted.sky as Mesh
     const disposeMaterial = vi.spyOn(sphere.skyMaterial, 'dispose')
@@ -67,7 +49,7 @@ describe('EnvSphereOwner declarative sky lifecycle', () => {
     expect(scene.getObjectByName('pavilion-sky')).toBe(sky)
     expect(sky.material).toBe(sphere.skyMaterial)
 
-    wrapper.unmount()
+    unmount()
 
     expect(disposeGeometry).toHaveBeenCalledOnce()
     expect(disposeMaterial).toHaveBeenCalledOnce()

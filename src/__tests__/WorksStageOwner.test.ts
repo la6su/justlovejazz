@@ -1,8 +1,7 @@
-import { TresCanvas } from '@tresjs/core'
-import { h, markRaw, shallowRef } from 'vue'
-import { flushPromises, mount } from '@vue/test-utils'
+import { markRaw, shallowRef } from 'vue'
+import { flushPromises } from '@vue/test-utils'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
-import { createRendererMock, installCanvasPointerShims } from './tresHarness'
+import { installCanvasPointerShims, mountSceneCanvas } from './tresHarness'
 import * as THREE from 'three'
 import WorksStageOwner from '../app/scene/WorksStageOwner.vue'
 import { WorksPlaneStage } from '../Experience/World/WorksPlaneStage'
@@ -18,32 +17,18 @@ describe('WorksStageOwner declarative attachment', () => {
   it.each(['vue-first', 'runtime-first'] as const)(
     'transfers and releases installation nodes (%s)',
     async (order) => {
-      const renderer = createRendererMock()
       const stage = new WorksPlaneStage()
       const dispose = vi.spyOn(stage, 'dispose')
       const stageRef = shallowRef<WorksPlaneStage | null>(null)
       const installationRef = shallowRef<WorksInstallation | null>(null)
-      const mounted = { scene: null as THREE.Scene | null }
-      const wrapper = mount(TresCanvas, {
-        attachTo: document.body,
-        props: {
-          renderMode: 'manual',
-          renderer: (() => renderer) as never,
-          onReady: (context) => {
-            mounted.scene = context.scene.value
-            context.renderer.loop.stop()
-          },
-        },
-        slots: {
-          default: () =>
-            h(WorksStageOwner, { stage: stageRef.value, installation: installationRef.value }),
-        },
-      })
-      await flushPromises()
+      const { scene, unmount } = await mountSceneCanvas(WorksStageOwner, () => ({
+        stage: stageRef.value,
+        installation: installationRef.value,
+      }))
 
       stageRef.value = stage
       await flushPromises()
-      expect(stage.parent).toBe(mounted.scene)
+      expect(stage.parent).toBe(scene)
 
       const installation = markRaw(new WorksInstallation())
       const metalDispose = vi.spyOn(installation.metalMaterial, 'dispose')
@@ -96,7 +81,7 @@ describe('WorksStageOwner declarative attachment', () => {
       expect(stage.parent).toBeNull()
       expect(dispose).not.toHaveBeenCalled()
 
-      wrapper.unmount()
+      unmount()
       stage.dispose()
       expect(dispose).toHaveBeenCalledTimes(1)
       installation.dispose()

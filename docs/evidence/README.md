@@ -20,13 +20,15 @@ The dev-only forced-backend query cannot force production preview.
 
 New evidence must identify UTC time, revision/dirty state, command, browser,
 device, backend, viewport/DPR, failures and skips. Verify the report actually
-contains those fields; gaps in existing scripts are tracked in [NEXT](../../NEXT.md).
-Name missing metrics as unavailable. Runtime destroy is not full Vue unmount.
+contains those fields; the shared producer is `scripts/evidence-meta.ts`, and
+only regeneration of reports on a supported server remains open in
+[NEXT](../../NEXT.md). Name missing metrics as unavailable. Runtime destroy is
+not full Vue unmount.
 
 Keep comparable
 numbers in the report and link it from review notes rather than copying tables
-into documentation. The bundle tool uses a commit-based filename and overwrites
-on repeat: preserve an existing report before rerunning that revision. Its mapped
+into documentation. The bundle tool writes run-unique commit+timestamp
+filenames (no overwrite): rerunning a revision produces a new report. Its mapped
 source bytes do not replace the gzip budget check.
 
 ## Measurement protocol

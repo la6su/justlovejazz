@@ -43,7 +43,8 @@ neither the editor nor the 3D application. Per-page styles are generated during 
 `POST /__jlz-admin/save` uses `{ slug, document }`, validates at most 256 KiB,
 upserts the collection and writes generated theme/component Less to fixed paths.
 It compiles main Less before success and restores snapshots on failure.
-Legacy `page.json`/bare-body compatibility still exists; removal is in NEXT.
+The save body is strictly `{ slug, document }`; legacy `page.json`/bare-body
+compatibility was removed (the handler rejects anything else with a 400).
 The collection is multi-document, while the shared SPA theme outputs use the
 saved document's style. Do not describe this as per-document runtime theming.
 
