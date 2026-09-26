@@ -1,49 +1,32 @@
 import * as THREE from 'three'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { SceneCoordinator, type SceneCoordinatorOwners } from '../Experience/SceneCoordinator'
 import type { SectionGroups } from '../Experience/Scene/SectionGroups'
 import type { ContactCyprusStage } from '../Experience/World/ContactCyprusStage'
 import type { ContactTypographyStage } from '../Experience/World/ContactTypographyStage'
 import type { WorksPlaneStage } from '../Experience/World/WorksPlaneStage'
 
-function makeCoordinator(
-  matches: boolean,
-  update: ReturnType<typeof vi.fn>,
-  particleVisible: boolean = true,
-): SceneCoordinator {
-  Object.defineProperty(window, 'matchMedia', {
-    configurable: true,
-    value: vi.fn().mockReturnValue({ matches } as MediaQueryList),
-  })
-  const group = new THREE.Group()
-  group.userData.particles = { update, visible: particleVisible }
-  const owners = {
-    ground: () => null,
-    sectionGroups: () => ({ groups: [group] }) as unknown as SectionGroups,
-    envSphere: () => null,
-    baku: () => null,
-    particleBurst: () => null,
-    drawTrail: () => null,
-    carousel: () => null,
-    worksPlaneStage: () => null,
-    contactTypographyStage: () => null,
-    contactCyprusStage: () => null,
-    labGamepad: () => null,
-  } satisfies SceneCoordinatorOwners
-  return Object.assign(Object.create(SceneCoordinator.prototype), {
-    owners,
-    page: () => 'home',
-    _reducedMotion: matches,
-  }) as SceneCoordinator
-}
-
+/**
+ * The reduced-motion / demand-frame parity contracts of the coordinator's
+ * frame forwarder, exercised through the real constructor (the former
+ * prototype seeding broke the moment constructor-built owners moved in —
+ * the seam is the real wiring, not a field bag).
+ */
 describe('SceneCoordinator reduced-motion particle parity', () => {
-  it('does not report hidden particle owners as visible activity', () => {
+  const disposers: Array<() => void> = []
+
+  afterEach(() => {
+    while (disposers.length) disposers.pop()!()
+  })
+
+  function makeCoordinator(
+    matches: boolean,
+    update: ReturnType<typeof vi.fn>,
+    particleVisible: boolean = true,
+  ): SceneCoordinator {
     const group = new THREE.Group()
-    const particles = new THREE.Group()
-    particles.visible = false
-    group.userData.particles = particles
-    const owners = {
+    group.userData.particles = { update, visible: particleVisible }
+    const owners: SceneCoordinatorOwners = {
       ground: () => null,
       sectionGroups: () => ({ groups: [group] }) as unknown as SectionGroups,
       envSphere: () => null,
@@ -55,11 +38,33 @@ describe('SceneCoordinator reduced-motion particle parity', () => {
       contactTypographyStage: () => null,
       contactCyprusStage: () => null,
       labGamepad: () => null,
-    } satisfies SceneCoordinatorOwners
-    const coordinator = Object.assign(Object.create(SceneCoordinator.prototype), {
-      owners,
-      page: () => 'contact',
-    }) as SceneCoordinator
+    }
+    const coordinator = new SceneCoordinator(new THREE.Scene(), owners, () => 'home')
+    coordinator.setReducedMotion(matches)
+    disposers.push(() => coordinator.dispose())
+    return coordinator
+  }
+
+  it('does not report hidden particle owners as visible activity', () => {
+    const group = new THREE.Group()
+    const particles = new THREE.Group()
+    particles.visible = false
+    group.userData.particles = particles
+    const owners: SceneCoordinatorOwners = {
+      ground: () => null,
+      sectionGroups: () => ({ groups: [group] }) as unknown as SectionGroups,
+      envSphere: () => null,
+      baku: () => null,
+      particleBurst: () => null,
+      drawTrail: () => null,
+      carousel: () => null,
+      worksPlaneStage: () => null,
+      contactTypographyStage: () => null,
+      contactCyprusStage: () => null,
+      labGamepad: () => null,
+    }
+    const coordinator = new SceneCoordinator(new THREE.Scene(), owners, () => 'contact')
+    disposers.push(() => coordinator.dispose())
 
     expect(coordinator.hasVisibleParticles()).toBe(false)
     particles.visible = true
@@ -99,7 +104,7 @@ describe('SceneCoordinator reduced-motion particle parity', () => {
     const worksUpdate = vi.fn()
     const typographyUpdate = vi.fn()
     const cyprusUpdate = vi.fn()
-    const owners = {
+    const owners: SceneCoordinatorOwners = {
       ground: () => null,
       sectionGroups: () => ({ groups: [] }) as unknown as SectionGroups,
       envSphere: () => null,
@@ -113,12 +118,9 @@ describe('SceneCoordinator reduced-motion particle parity', () => {
         ({ update: typographyUpdate }) as unknown as ContactTypographyStage,
       contactCyprusStage: () => ({ update: cyprusUpdate }) as unknown as ContactCyprusStage,
       labGamepad: () => null,
-    } satisfies SceneCoordinatorOwners
-    const coordinator = Object.assign(Object.create(SceneCoordinator.prototype), {
-      owners,
-      page: () => 'works',
-      worksPlaneStageSection: 0,
-    }) as SceneCoordinator
+    }
+    const coordinator = new SceneCoordinator(new THREE.Scene(), owners, () => 'works')
+    disposers.push(() => coordinator.dispose())
 
     coordinator.update(0.25, false)
 
@@ -131,7 +133,7 @@ describe('SceneCoordinator reduced-motion particle parity', () => {
   it('updates the ambient palette only on a demanded frame', () => {
     const envUpdate = vi.fn()
     const envSphere = { isAnimating: false, update: envUpdate }
-    const owners = {
+    const owners: SceneCoordinatorOwners = {
       ground: () => null,
       sectionGroups: () => ({ groups: [] }) as unknown as SectionGroups,
       envSphere: () => envSphere as never,
@@ -143,12 +145,9 @@ describe('SceneCoordinator reduced-motion particle parity', () => {
       contactTypographyStage: () => null,
       contactCyprusStage: () => null,
       labGamepad: () => null,
-    } satisfies SceneCoordinatorOwners
-    const coordinator = Object.assign(Object.create(SceneCoordinator.prototype), {
-      owners,
-      page: () => 'home',
-      _reducedMotion: false,
-    }) as SceneCoordinator
+    }
+    const coordinator = new SceneCoordinator(new THREE.Scene(), owners, () => 'home')
+    disposers.push(() => coordinator.dispose())
 
     coordinator.update(0.25, false)
     expect(envUpdate).not.toHaveBeenCalled()
@@ -165,7 +164,7 @@ describe('SceneCoordinator reduced-motion particle parity', () => {
     const bakuReader = vi.fn(() => null)
     const cyprusReader = vi.fn(() => null)
     const groupsReader = vi.fn(() => ({ groups: [] }) as unknown as SectionGroups)
-    const owners = {
+    const owners: SceneCoordinatorOwners = {
       ground: () => null,
       sectionGroups: groupsReader,
       envSphere: () => null,
@@ -178,13 +177,9 @@ describe('SceneCoordinator reduced-motion particle parity', () => {
       contactTypographyStage: () => null,
       contactCyprusStage: cyprusReader,
       labGamepad: () => null,
-    } satisfies SceneCoordinatorOwners
-    const coordinator = Object.assign(Object.create(SceneCoordinator.prototype), {
-      owners,
-      page: pageReader,
-      worksPlaneStageSection: 0,
-      _reducedMotion: false,
-    }) as SceneCoordinator
+    }
+    const coordinator = new SceneCoordinator(new THREE.Scene(), owners, pageReader)
+    disposers.push(() => coordinator.dispose())
 
     coordinator.update(0.25)
 

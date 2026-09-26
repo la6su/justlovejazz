@@ -8,15 +8,12 @@
 // caller remains.
 
 import * as THREE from 'three'
-import { Section, SectionState } from '../core/Section'
+import type { Section } from '../core/Section'
 import { prefersReducedMotion } from '../core/motionPolicy'
 import { type CameraTarget, type WorldState, BakuRole } from '../core/types'
 import type { PageId } from '../core/routeManifest'
-import {
-  getWorldConfigForPage,
-  type PhaseConfig,
-  type SceneTransitionEasing,
-} from '../core/WorldConfig'
+import { type PhaseConfig, type SceneTransitionEasing } from '../core/WorldConfig'
+import { SectionStateMachine } from './SectionStateMachine'
 import { ServicesStage } from './World/ServicesStage'
 import { clampStoryProgress, sectionIndexAt } from '../core/storyProgress'
 import type { GroundPlane } from './Scene/GroundPlane'
@@ -61,9 +58,10 @@ export interface SceneCoordinatorOwners {
 }
 
 export class SceneCoordinator {
-  public sections: Section[] = []
-  private configs: readonly PhaseConfig[] = []
-  private _configMap: Map<string, PhaseConfig> | null = null
+  private _story = new SectionStateMachine()
+  private get configs(): readonly PhaseConfig[] {
+    return this._story.configs
+  }
   // A demand frame can be raised by an unrelated owner while story progress
   // remains unchanged. Reuse the pooled transform and skip route reconciliation
   // until an owner-side setter or route/config rebuild invalidates this pass.
@@ -80,14 +78,17 @@ export class SceneCoordinator {
   private owners: SceneCoordinatorOwners
   private page: () => PageId
 
-  private _currentSectionIndex: number = 1 // Intro = index 1 (canonical Lab/Contact finale = 0)
+  /** The scroll story state (Section instances + configs + arrival index). */
+  public get sections(): Section[] {
+    return this._story.sections
+  }
   public get currentSectionIndex(): number {
-    return this._currentSectionIndex
+    return this._story.currentSectionIndex
   }
 
   /** DEV diagnostics: ids currently installed for the active page. */
   public get configIds(): readonly string[] {
-    return this.configs.map((config) => config.id)
+    return this._story.configs.map((config) => config.id)
   }
 
   /** The stable section groups (empty before the SectionGroups owner is built).
@@ -165,35 +166,24 @@ export class SceneCoordinator {
 
   public async init(): Promise<void> {
     const pageKey = this.page()
-    this.configs = getWorldConfigForPage(pageKey)
+    const configs = this._story.beginRoute(pageKey)
     // Route re-entry can reuse the coordinator instance. Invalidate derived
-    // caches before rebuilding page-specific configs so lookups and ranges do
-    // not retain the previous route's scene contract.
-    this._configMap = null
+    // caches around the rebuild so lookups and ranges do not retain the
+    // previous route's scene contract.
     this._rangesCache = null
     this._invalidateTransformCache()
-    this.disposeSections()
-    // Phase 8 slice 10: the route-specific visibility gate runs first (matches
-    // the legacy World ordering) — it toggles the shared cube + Lab object and
-    // is independent of the sections added below.
+    // Phase 8 slice 10: the route-specific visibility gate runs before the
+    // sections are rebuilt below (matches the legacy World ordering) — it
+    // toggles the shared cube + Lab object and is independent of the
+    // sections added below.
     this.syncRouteVisuals()
-
-    this.configs.forEach((config, index) => {
-      const section = new Section(config, index)
-      if (index === 1) {
-        // Intro = index 1 (canonical Lab/Contact finale = 0)
-        section.forceState(SectionState.VIEWING)
-      } else {
-        section.forceState(SectionState.READY)
-      }
-      this.sections.push(section)
-    })
+    this._story.buildSections()
 
     // Phase 8 slice 1: ground init (intro config) + first-section light targets
     // live in Experience (it owns the GroundPlane + CinematicLights owners).
 
     // ── Apply first section's fog + env sphere colors immediately
-    const firstCfg = this.configs[1] // Intro = index 1 (canonical Lab/Contact finale = 0)
+    const firstCfg = configs[1] // Intro = index 1 (canonical Lab/Contact finale = 0)
     if (firstCfg) {
       // Inline WorldAtmosphere.setFog — fog not yet set on init, so create new.
       this.sceneRef.fog = new THREE.FogExp2(firstCfg.fog.color.clone(), firstCfg.fog.density)
@@ -383,7 +373,7 @@ export class SceneCoordinator {
       if (servicesStage.visible && this._camera instanceof THREE.PerspectiveCamera) {
         servicesStage.updateState(
           this._camera,
-          THREE.MathUtils.clamp(this._currentSectionIndex - 1, 0, 3),
+          THREE.MathUtils.clamp(this.currentSectionIndex - 1, 0, 3),
           deltaTime,
           this.isReducedMotion,
         )
@@ -403,7 +393,7 @@ export class SceneCoordinator {
     if (!this.isReducedMotion) {
       if (baku?.visible) baku.update(deltaTime)
       const isStandaloneWorks = page === 'works'
-      const isWorksStoryFrame = this._currentSectionIndex === 3
+      const isWorksStoryFrame = this.currentSectionIndex === 3
       const trail = this.owners.drawTrail()
       if (trail && this._camera && (isStandaloneWorks || isWorksStoryFrame)) {
         trail.update(deltaTime, this._camera)
@@ -523,8 +513,7 @@ export class SceneCoordinator {
     // The midpoint rule itself is the pure storyProgress contract (unit-
     // locked, including the .5 boundary and direction independence).
     const activeIndex = sectionIndexAt(scrollValue, this.sections.length)
-    if (activeIndex !== this._currentSectionIndex) {
-      this._currentSectionIndex = activeIndex
+    if (this._story.arrive(activeIndex)) {
       // Junni changeSection() pattern: lights + fog + env sphere driven by section data
       const activeCfg = this.configs[activeIndex]
       if (activeCfg) {
@@ -651,16 +640,7 @@ export class SceneCoordinator {
     if (!toSec) return this.defaultResult()
 
     // ── State transitions (Junni: trigger on entering/leaving scroll ranges)
-    const reduced = this.isReducedMotion
-    if (fromSec.state === SectionState.READY) {
-      fromSec.switchState(SectionState.VIEWING, 0.8, reduced)
-    }
-    if (toSec.state === SectionState.READY && t > 0.1) {
-      toSec.switchState(SectionState.VIEWING, 0.8, reduced)
-    }
-    if (t > 0.7 && fromSec.state === SectionState.VIEWING) {
-      fromSec.switchState(SectionState.PASSED, 0.5, reduced)
-    }
+    this._story.applyScrollStates(fromSec, toSec, t, this.isReducedMotion)
 
     // ── Lerp transforms from Section transforms (Junni pattern)
     const fromCam = fromSec.cameraTransform
@@ -745,19 +725,10 @@ export class SceneCoordinator {
     // Atmosphere: fog density stays per-section.
   }
 
-  private disposeSections(): void {
-    this.sections.forEach((s) => {
-      s.dispose()
-    })
-    this.sections = []
-  }
-
   /** Advance the sections' pending state deadlines (called from the frame
    *  path where the former StateBus tick used to run). */
   public updateSections(dt: number): void {
-    this.sections.forEach((s) => {
-      s.update(dt)
-    })
+    this._story.updateSections(dt)
   }
 
   // Phase 8 slice 2: the stable section groups (incl. the BakuCarousel dispose
@@ -770,7 +741,7 @@ export class SceneCoordinator {
 
   public dispose(): void {
     this._invalidateTransformCache()
-    this.disposeSections()
+    this._story.disposeSections()
     // Inline WorldAtmosphere.dispose — null out fog only (EnvSphere owns
     // background).
     this.sceneRef.fog = null
@@ -838,10 +809,7 @@ export class SceneCoordinator {
 
   /** Get PhaseConfig for a given phase ID. Uses cached Map for O(1) lookup. */
   public getConfig(phase: string): PhaseConfig | undefined {
-    if (!this._configMap) {
-      this._configMap = new Map(this.configs.map((c) => [c.id, c]))
-    }
-    return this._configMap.get(phase)
+    return this._story.getConfig(phase)
   }
 
   private defaultResult(): WorldTransformResult {
