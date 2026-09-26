@@ -853,3 +853,70 @@ ARCHITECTURE § Delivery decisions as the durable contract.
 Verification: tsc, vue-tsc, eslint (0 errors, 16 pre-existing warnings),
 prettier clean, vitest green, docs:check green, check:stdlib green,
 build + prerender + budgets green, e2e chromium — see the PR's CI run.
+
+## Inspection 11 — 2026-09-27, legacy portfolio cross-check (la6su/portfolio)
+
+Trigger: the user supplied the pre-migration portfolio implementation
+(github.com/la6su/portfolio, last pushed 2024-11-27) as the reference for
+the ongoing refactor. Method: shallow clone, full read of all 27 source
+files (App/TheExpiriense/Scene3D, stateManager/boxesObject stores, 4
+composables, floor GLSL shaders, FakeGlowMaterial, UI components), stack
+and asset census, then a dimension-by-dimension diff against this repo.
+
+### What the legacy app is
+
+A TresJS-starter character-model showcase (15 GLB figures, 309 MB
+public/models) with raycast picking, AR hand-off intents, GSAP tweens and a
+module-scope god-store. Classic WebGL (three 0.169, core 4.3, cientos 4.0).
+
+### Architectural diff — the migration already supersedes every dimension
+
+- Loop: legacy runs `useRenderLoop` 24/7 plus an infinite GSAP yoyo on the
+  glow radius and per-frame mixer updates for all 15 models; this repo's
+  bounded on-demand scheduler idles at zero RAF ticks (ADR 0005).
+- Camera: legacy clamps camera POSITION by hand on every `@change`
+  (`MathUtils.clamp` × 3 — fights the controls, jittery at the bounds);
+  the Lab adoption uses real azimuth/polar/distance limits and the rest of
+  the app keeps the pose-owner contract.
+- State: legacy `stateManager` is one module singleton exporting 20+
+  members including a raw `Raycaster` and pointer Vector2, consumed
+  cross-concern by every component; this repo split route/theme/motion
+  into typed ports (routePage, sectionTheme, motionPolicy, EventBus).
+- Loading: legacy loads all models upfront behind one progress value;
+  this repo keeps route-owned LazyStage contracts with refcounted caches.
+- Boot/bridges: legacy boots through `<Suspense>` + PageLoader fallback,
+  monkey-patches `window.ResizeObserver` with a debounce, depends on
+  `@basitcodeenv/vue3-device-detect`, and mounts DOM into 3D via Cientos
+  `Html`; this repo keeps the pre-Vue splash a11y contract, DeviceCapability,
+  native resize ownership and DOM as the semantic owner. Code hygiene:
+  legacy carries component-name typos, a broken `setTimeout(...), 600 600`
+  leftover and duplicated select logic across useOnClick/useSelectBox.
+
+### Reviewed and deliberately not adopted (code level)
+
+- Cientos `Html`/`RoundedBox`/`useTexture` (legacy usages): all already
+  carry Inspection 10 verdicts — no consumer surface or weaker than the
+  in-repo contracts here.
+- DRACO decoder serving: legacy self-hosts `/draco/`; this repo bundles
+  three's own decoder files through `DRACO_GLTF_CONFIG` (`new URL(…,
+import.meta.url)` asset emission) — equivalent self-hosted outcome.
+- Cache-API model preloading and GSAP-driven per-character room theming:
+  the current equivalents (route-lazy stages, TSL section themes) already
+  cover the capability at a fraction of the runtime cost.
+
+### Product features only the legacy app has (reported to the user, not queued)
+
+1. AR hand-off per model — Android Scene Viewer intents + iOS Quick Look
+   (.reality/.usdz). Meaningful only for standalone viewable character
+   models; the current product's works are 2D case covers + one 60 kB
+   stage GLB, so there is no consumer surface today.
+2. PWA offline — service worker + Cache API for the 309 MB model corpus.
+   The current heaviest asset is a 16.3 MB reel video; offline-first is a
+   product decision, not a refactor target.
+3. Model head/eye look-at tracking toward a glowing pointer — a
+   storytelling detail the current pointer choreography replaces.
+
+If any of these three become wanted, they enter NEXT "Product / input
+needed" with a scoped slice each; none block the architectural refactor.
+
+Verification: docs-only change — prettier clean, docs:check green.
