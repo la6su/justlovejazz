@@ -920,3 +920,71 @@ If any of these three become wanted, they enter NEXT "Product / input
 needed" with a scoped slice each; none block the architectural refactor.
 
 Verification: docs-only change — prettier clean, docs:check green.
+
+## Inspection 12 — 2026-09-27, out-of-box Tres adoption cross-check (TvT.js) + live DPR cap
+
+Trigger: the user set the direction — use Vue/TresJS/Cientos out of the box
+wherever possible, keep WebGPU/TSL the priority (and asked whether the
+WebGL fallback is automatic), continuing optimization with the TvT.js
+ecosystem (hawk86104/three-vue-tres) as the practice reference.
+Method: shallow clone of TvT.js (Fes.js + Tres 5.2/Cientos 5.2, three 0.180,
+WebGL-era); read of its openspec baseline, AGENTS.md, index.vue and the
+TSL plugin pages; three 0.185's WebGPURenderer source read directly for the
+fallback mechanics; @tresjs/core 5.9's useRendererManager dist source read
+for how TresCanvas props reach factory-created renderers.
+
+### The user's fallback question — verified in three's source
+
+Automatic, by construction: `WebGPURenderer`'s constructor keeps
+`WebGPUBackend` unless `forceWebGL` is set, and installs
+`parameters.getFallback = () => new WebGLBackend(parameters)` — when no
+WebGPU device can be acquired, the renderer falls back to WebGL2 and warns
+("WebGPURenderer: WebGPU is not available, running under WebGL2 backend.").
+This repo already owns the post-init half of that story:
+`inspectUnifiedBackend` reads the actual backend + software-adapter flag,
+`planUnifiedBackend` re-creates on SwiftShader adapters, the TSL post graph
+degrades to direct rendering on WebGLBackend (Phase 2 contract), and
+`?force-webgl-backend=1` forces the path in DEV. No change needed.
+
+### Out-of-box adoption state (TvT.js cross-check)
+
+- Already adopted: the official `<TresCanvas :renderer="factory">` setup
+  with the typed `TresRendererSetupContext` (SceneHost) — the same pattern
+  TvT.js's TSL cases use; `render-mode="on-demand"`; the ADR 0005 loop
+  seams (`replaceRenderFunction`, `useLoop` hook, `invalidate` wrap) that
+  let ecosystem components work unmodified; declarative stage owners
+  (lights/camera/ground/env/stages as Vue components with `@ready` ports).
+- Verified and deliberately KEPT hand-rolled: `applySharedSettings`
+  (tone mapping/exposure/color space) — Tres applies these as TresCanvas
+  props to factory renderers, but the rollback construction path
+  (Renderer's direct instance) must share the identical settings, so one
+  function serving both paths beats a props/hand-rolled split. Sizes stays
+  the imperative viewport snapshot for scene-owner layout math (Tres's
+  internal element-size manager equals it — `.jlz-scene-host` is
+  `fixed inset 0` — but scene classes live outside Vue context).
+- TvT.js patterns that do NOT transfer: the plugin/fes micro-frontend
+  architecture (different product class), `@tresjs/post-processing` +
+  `lamina` (raster-era, cannot run on WebGPU/TSL), gallery-style Suspense
+  demos with always-on `@loop`. Its openspec capability baseline duplicates
+  what AGENTS/ARCHITECTURE/NEXT already cover with less ceremony.
+
+### Defect found and fixed — stale DPR cap on the fallback path
+
+Tres core re-applies its `dpr` option inside a `watchEffect` on every
+internal sizes change (window resize, browser zoom), debounced ~10ms AFTER
+this app's own resize write. The SceneHost `:dpr` prop held the BOOT-time
+cap (`DeviceCapability.maxDpr` before backend finalization): on the mobile
+WebGL-fallback path the final cap is 1 while the boot hint is 1.5, so any
+later resize/zoom silently regressed the buffer to 1.5× — extra fill work
+on exactly the weakest devices. Fix: `maxDprForMode` extracted as the pure
+single source (singleton + SceneHost share it); the SceneHost finalizes a
+live `dprCap` ref in `onReady` (the backend-decision owner) and re-publishes
+it on the device-loss renderer swap (recovery may change the backend).
+Unit-tested pure contract + a new e2e pin: mobile fallback context, resize,
+buffer must stay ≤ cssWidth × 1 (the pre-fix behavior produced 750/500 and
+fails this test).
+
+Verification: prettier clean, tsc + vue-tsc green, eslint 0 errors (16
+pre-existing warnings), vitest 116 files / 714 tests green, docs:check
+green, check:stdlib green, build + prerender + budgets identical to
+baseline, e2e chromium serial 27 passed / 1 skipped (new DPR pin).
