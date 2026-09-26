@@ -3,7 +3,7 @@ import vue from '@vitejs/plugin-vue'
 import { templateCompilerOptions } from '@tresjs/core'
 import { resolve } from 'node:path'
 
-import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync } from 'fs'
+import { existsSync, readFileSync } from 'fs'
 import { jlzAdminPlugin } from './admin/vite-plugin'
 import { publishedPages, validateBuilderDocuments } from './src/builder/documents'
 import { BLOG_ARTICLES } from './src/core/blogPages'
@@ -258,21 +258,6 @@ export default defineConfig(() => ({
         const prerenderPath = resolve(__dirname, 'prerender', 'home.html')
         const prerender = existsSync(prerenderPath) ? readFileSync(prerenderPath, 'utf8') : ''
         return html.replace('<div id="app"></div>', `<div id="app">${prerender}</div>`)
-      },
-    },
-    {
-      name: 'copy-projects',
-      closeBundle() {
-        const projects = readdirSync(resolve(__dirname, 'projects'))
-        mkdirSync(resolve(__dirname, 'dist', 'projects'), { recursive: true })
-        projects
-          .filter((f) => f.endsWith('.html'))
-          .forEach((f) =>
-            copyFileSync(
-              resolve(__dirname, 'projects', f),
-              resolve(__dirname, 'dist', 'projects', f),
-            ),
-          )
       },
     },
   ],
