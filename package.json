@@ -12,7 +12,6 @@
     "check:stdlib": "node scripts/check-stdlib-modules.mjs",
     "docs:check": "bun scripts/check-docs.ts",
     "preview": "vite preview",
-    "test": "playwright test",
     "test:serial": "playwright test --workers=1 --reporter=line",
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed",
