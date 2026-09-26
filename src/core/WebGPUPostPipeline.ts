@@ -354,10 +354,6 @@ export class WebGPUPostPipeline {
     }
   }
 
-  resize(): void {
-    // TSL pipeline handles RT resize internally in three r184.
-  }
-
   dispose(): void {
     if (this._pipeline) {
       try {

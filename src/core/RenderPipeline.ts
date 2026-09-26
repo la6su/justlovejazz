@@ -199,7 +199,7 @@ export class RenderPipeline {
           }
           const sceneChanged = this._webgpuPipeline.setScene(scene, camera)
           if (sceneChanged) this._webgpuParamsDirty = true
-          if (this._webgpuParamsDirty !== false) {
+          if (this._webgpuParamsDirty) {
             // PERF-11: mutate the cached params object only on dirty handoff;
             // settled WebGPU frames need neither scalar nor tuple writes.
             const p = this._webgpuParamsCache

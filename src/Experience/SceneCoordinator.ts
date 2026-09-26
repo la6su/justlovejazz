@@ -12,7 +12,11 @@ import { Section, SectionState } from '../core/Section'
 import { prefersReducedMotion } from '../core/motionPolicy'
 import { type CameraTarget, type WorldState, BakuRole } from '../core/types'
 import type { PageId } from '../sections/_shared/constants'
-import { getWorldConfigForPage, type PhaseConfig } from '../core/WorldConfig'
+import {
+  getWorldConfigForPage,
+  type PhaseConfig,
+  type SceneTransitionEasing,
+} from '../core/WorldConfig'
 import { ServicesStage } from './World/ServicesStage'
 import { clampStoryProgress, sectionIndexAt } from '../core/storyProgress'
 import type { GroundPlane } from './Scene/GroundPlane'
@@ -837,44 +841,16 @@ export class SceneCoordinator {
   /** Apply easing function to t (0..1) based on scene.transition.easing config.
    *  'ease-in-out' (default) = smoothstep (S-curve, comfort plateaus)
    *  'ease-out' = fast start, slow end (decelerate into section)
-   *  'linear' = no easing (raw scroll value)
-   *  'cubic-bezier' = custom cubic-bezier(0.65, 0, 0.35, 1) — cinematic */
-  private _applyEasing(t: number, easing: string): number {
+   *  Only these two easings are authored in WorldConfig — the config type is
+   *  narrowed to match, so no other branches exist. */
+  private _applyEasing(t: number, easing: SceneTransitionEasing): number {
     const clamped = THREE.MathUtils.clamp(t, 0, 1)
-    switch (easing) {
-      case 'linear':
-        return clamped
-      case 'ease-out':
-        // ease-out cubic: 1 - (1-t)^3 — fast start, slow settle
-        return 1 - Math.pow(1 - clamped, 3)
-      case 'cubic-bezier':
-        // cubic-bezier(0.65, 0, 0.35, 1) — cinematic, similar to CSS
-        return this._cubicBezier(clamped, 0.65, 0, 0.35, 1)
-      case 'ease-in-out':
-      default:
-        // smoothstep: t² * (3 - 2t) — S-curve with plateaus
-        return clamped * clamped * (3 - 2 * clamped)
+    if (easing === 'ease-out') {
+      // ease-out cubic: 1 - (1-t)^3 — fast start, slow settle
+      return 1 - Math.pow(1 - clamped, 3)
     }
-  }
-
-  /** Cubic bezier easing (approximation via Newton-Raphson).
-   *  Matches CSS cubic-bezier(x1, y1, x2, y2) timing function. */
-  private _cubicBezier(t: number, x1: number, y1: number, x2: number, y2: number): number {
-    // Simple approximation: sample the bezier curve
-    // For most use cases, 20 samples is sufficient
-    if (t <= 0) return 0
-    if (t >= 1) return 1
-    let lo = 0,
-      hi = 1
-    for (let i = 0; i < 20; i++) {
-      const mid = (lo + hi) / 2
-      const x =
-        3 * (1 - mid) * (1 - mid) * mid * x1 + 3 * (1 - mid) * mid * mid * x2 + mid * mid * mid
-      if (x < t) lo = mid
-      else hi = mid
-    }
-    const u = (lo + hi) / 2
-    return 3 * (1 - u) * (1 - u) * u * y1 + 3 * (1 - u) * u * u * y2 + u * u * u
+    // ease-in-out: smoothstep t² * (3 - 2t) — S-curve with plateaus
+    return clamped * clamped * (3 - 2 * clamped)
   }
 
   /** Get PhaseConfig for a given phase ID. Uses cached Map for O(1) lookup. */

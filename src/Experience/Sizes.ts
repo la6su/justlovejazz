@@ -22,11 +22,7 @@ export class Sizes {
   height: number = window.innerHeight
   dpr: number = clampDpr(window.devicePixelRatio)
 
-  get isMobile(): boolean {
-    return this.width < 768
-  }
-
-  // Resize callback — set by Experience to propagate to World.
+  // Resize callback — set by Experience to propagate to scene owners.
   private _resizeCb: (() => void) | null = null
 
   // Bound handler ref so removeEventListener works in destroy().
@@ -47,7 +43,7 @@ export class Sizes {
     this.width = window.innerWidth
     this.height = window.innerHeight
     this.dpr = clampDpr(window.devicePixelRatio)
-    // Notify Experience → World.resize()
+    // Notify Experience → scene-owner resize fan-out.
     this._resizeCb?.()
   }
 

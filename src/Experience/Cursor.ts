@@ -2,7 +2,7 @@
 //
 // Two elements (both small, follow mouse via transform):
 //   1. Inner dot (6px) — follows mouse instantly, centered via translate -50%
-//   2. Outer circle (canvas 100×100px) — follows with smooth lerp(0.12),
+//   2. Outer circle (canvas 120×120px) — follows with smooth lerp(0.12),
 //      noisy distortion on hover, fill on hover, bump on click
 //
 // Features (ported from codrops demo1+demo3+demo4):
@@ -21,6 +21,12 @@ import { brandToken } from '../core/brandTokens'
 const CURSOR_ACCENT = brandToken('jlz-color-accent')!
 const CURSOR_ACCENT_GLOW = brandToken('jlz-color-accent-glow')!
 const CURSOR_TEAL = brandToken('jlz-color-signal-teal')!
+
+/** Elements the cursor snaps/fills on. Shared by the mouseover and mouseout
+ *  handlers — the intra-element transition guard (D-14) must consult the
+ *  exact same selector on both sides. */
+const INTERACTIVE_SEL =
+  '[data-magnetic], a, button, .interactive, [uk-toggle], [uk-slider], [uk-dropdown], [uk-tooltip], [uk-modal], [uk-lightbox]'
 
 function noise2D(x: number, y: number): number {
   const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453
@@ -97,8 +103,9 @@ export class Cursor {
   private readonly springStiffness = 0.18
   private readonly springDamping = 0.7
 
-  // Phase 2: custom cursor states (data-cursor attribute)
-  // 'play' → triangle, 'drag' → hand, 'view' → eye, 'muted'/'unmuted' → speaker
+  // Custom cursor states (data-cursor attribute)
+  // 'play' → triangle, 'drag' → hand, 'view' → eye (the only states drawn;
+  // drawCircle has no speaker glyph — never promise one here).
   private cursorState: string | null = null
 
   // Noisy circle state
@@ -213,8 +220,6 @@ export class Cursor {
       // D-14 fix: skip intra-element transitions (mouseout→mouseover between
       // child elements of the same interactive). Checks relatedTarget — if the
       // mouse is moving TO another element within the same interactive, skip.
-      const INTERACTIVE_SEL =
-        '[data-magnetic], a, button, .interactive, [uk-toggle], [uk-slider], [uk-dropdown], [uk-tooltip], [uk-modal], [uk-lightbox]'
       const related = e.relatedTarget as HTMLElement | null
       if (related && typeof related.closest === 'function' && related.closest(INTERACTIVE_SEL)) {
         // Moving to another interactive (or child of same) — let that mouseover
@@ -267,8 +272,6 @@ export class Cursor {
       if (!target || typeof target.closest !== 'function') return
       // D-14 fix: skip if moving to a related element that's also interactive
       // (intra-element transition). Prevents the isStuck flicker.
-      const INTERACTIVE_SEL =
-        '[data-magnetic], a, button, .interactive, [uk-toggle], [uk-slider], [uk-dropdown], [uk-tooltip], [uk-modal], [uk-lightbox]'
       const related = e.relatedTarget as HTMLElement | null
       if (related && typeof related.closest === 'function' && related.closest(INTERACTIVE_SEL)) {
         return

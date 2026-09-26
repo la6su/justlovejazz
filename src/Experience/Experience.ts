@@ -31,6 +31,7 @@ import {
   type RenderActivity,
 } from '../core/renderDemand'
 import { RenderScheduler, type FrameReason } from '../core/RenderScheduler'
+import { createReadinessGate, type ReadinessGate } from '../core/readinessGate'
 import type { SceneHostReady } from '../app/sceneHost'
 // ContentReveal owns per-section auto/inverse themes and sends this runtime
 // jlz:theme-applied events for 3D synchronisation.
@@ -85,54 +86,11 @@ type ExperienceHost = Omit<SceneHostReady, 'context' | 'backend' | 'renderer'> &
   replaceRenderer(renderer: RenderSurface): void
 }
 
-interface ReadinessGate {
-  promise: Promise<void>
-  cancel(): void
-}
-
-/**
- * Wait for the first successful frame without leaving a fallback timer armed
- * after the gate has settled. Cancellation deliberately leaves the promise
- * pending: a destroyed Experience must never let entry-app publish readiness.
- */
-export function createReadinessGate(firstRender: Promise<void>, timeoutMs: number): ReadinessGate {
-  let settled = false
-  let resolveGate!: () => void
-  let timeout: ReturnType<typeof setTimeout> | null = null
-
-  const clear = () => {
-    if (timeout !== null) {
-      clearTimeout(timeout)
-      timeout = null
-    }
-  }
-  const settle = () => {
-    if (settled) return
-    settled = true
-    clear()
-    resolveGate()
-  }
-
-  const promise = new Promise<void>((resolve) => {
-    resolveGate = resolve
-    timeout = setTimeout(settle, timeoutMs)
-    void firstRender.then(settle, settle)
-  })
-
-  return {
-    promise,
-    cancel: () => {
-      if (settled) return
-      settled = true
-      clear()
-    },
-  }
-}
-
 export class Experience {
   scene!: THREE.Scene
   sizes!: Sizes
-  time!: Time
+  /** Per-frame delta clamp — internal to the loop host. */
+  private time!: Time
   camera!: Camera
   renderer!: Renderer
   private contentReveal!: ContentReveal
@@ -229,7 +187,7 @@ export class Experience {
     return this.features?.portfolio ?? null
   }
   /** The fullscreen overlay (owned by ExperienceUI). */
-  public get overlay() {
+  private get overlay() {
     return this.features?.overlay ?? null
   }
   private currentSectionContext: string | null = null
@@ -292,7 +250,7 @@ export class Experience {
   private _firstRenderPromise: Promise<void> | null = null
   private _readinessGate: ReadinessGate | null = null
   /** Resolved on the first successful rendered frame. */
-  public get firstRender(): Promise<void> {
+  private get firstRender(): Promise<void> {
     if (!this._firstRenderPromise) {
       this._firstRenderPromise = new Promise<void>((resolve) => {
         this._firstRenderResolve = resolve

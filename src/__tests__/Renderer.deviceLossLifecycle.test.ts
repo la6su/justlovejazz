@@ -11,7 +11,6 @@ const mocks = vi.hoisted(() => ({
   deviceLostAction: vi.fn(() => 'recover'),
   pipelineCreate: vi.fn(() => ({
     dispose: vi.fn(),
-    resize: vi.fn(),
     updateParams: vi.fn(),
     render: vi.fn(),
     getResourceInfo: vi.fn(() => ({ renderTargets: 0, passes: 0, webgpuPipeline: false })),
