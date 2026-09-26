@@ -19,7 +19,7 @@ function isUiChromeEvent(e: Event): boolean {
 import { PROJECTS } from '../../Data/Projects'
 import { CasePlane, CLOTH_PARAMS } from './CasePlane'
 import { loadCaseTexture, releaseCaseTexture } from './caseTexture'
-import type { PageId } from '../../sections/_shared/constants'
+import type { PageId } from '../../core/routeManifest'
 import type { StorySide } from '../../core/storyState'
 import { eventBus } from '../../core/EventBus'
 import { prefersReducedMotion } from '../../core/motionPolicy'

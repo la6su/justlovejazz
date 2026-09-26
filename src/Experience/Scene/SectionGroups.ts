@@ -23,7 +23,7 @@ import * as THREE from 'three'
 // adopts its declarative root from SectionGroupRoots.vue.
 import { createWorksSection } from './WorksSection'
 import { disposeMaterialDeep } from '../../Utils/dispose'
-import type { PageId } from '../../sections/_shared/constants'
+import type { PageId } from '../../core/routeManifest'
 import type { StorySide } from '../../core/storyState'
 
 /** Canonical six-slot layout (one group per world slot / cube face). */

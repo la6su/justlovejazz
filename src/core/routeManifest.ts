@@ -1,14 +1,15 @@
 // src/core/routeManifest.ts — Phase 3 pure route contract.
 //
-// The single source of truth for the application's public paths. Vue Router
-// and static publishing resolve against this manifest instead of re-declaring
-// the mapping. Pure by design: no DOM, no window, no
-// globals — unit-testable without a browser.
+// The single source of truth for the application's public paths and the
+// `PageId` vocabulary. Vue Router and static publishing resolve against this
+// manifest instead of re-declaring the mapping. Pure by design: no DOM, no
+// window, no globals — unit-testable without a browser.
 //
 // Adding or renaming a route is a change here plus one line in the router;
 // the mapping must never be duplicated.
 
-import type { PageId } from '../sections/_shared/constants'
+/** The closed page vocabulary the manifest maps every public path to. */
+export type PageId = 'home' | 'services' | 'works' | 'manifesto' | 'lab' | 'contact'
 
 interface RouteEntry {
   readonly path: string

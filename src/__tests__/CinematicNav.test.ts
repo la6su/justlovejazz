@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { CinematicNav } from '../UI/CinematicNav'
 import { eventBus } from '../core/EventBus'
-import type { PageId } from '../sections/_shared/constants'
+import type { PageId } from '../core/routeManifest'
 
 const MAIN_HEIGHT = 1000
 function createNav(): CinematicNav {

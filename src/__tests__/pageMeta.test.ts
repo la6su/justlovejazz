@@ -3,7 +3,7 @@ import { applyMetaTags } from '../core/pageMeta'
 import { initI18n, getLang, toggleLang } from '../core/i18n'
 import { pathForPage, ROUTE_MANIFEST } from '../core/routeManifest'
 import { PAGE_META_DATA } from '../core/pageMetaData'
-import type { PageId } from '../sections/_shared/constants'
+import type { PageId } from '../core/routeManifest'
 
 // pageMeta reads from i18n + writes <title>, <meta>, <link rel=canonical>,
 // and <html lang>. Tests verify that each route produces the expected tags

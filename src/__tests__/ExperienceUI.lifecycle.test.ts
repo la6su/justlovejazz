@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ExperienceUI, type ExperienceUIHost } from '../Experience/ExperienceUI'
 import { eventBus } from '../core/EventBus'
-import type { PageId } from '../sections/_shared/constants'
+import type { PageId } from '../core/routeManifest'
 
 const createHost = (sections: unknown[], carousel: unknown = null): ExperienceUIHost => {
   return {

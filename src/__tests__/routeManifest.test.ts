@@ -8,7 +8,7 @@ import {
   isCaseStudyPath,
   pathForPage,
 } from '../core/routeManifest'
-import type { PageId } from '../sections/_shared/constants'
+import type { PageId } from '../core/routeManifest'
 
 /** The current application surface: every public path and the page it owns. */
 const EXPECTED: Array<{ path: string; page: PageId }> = [

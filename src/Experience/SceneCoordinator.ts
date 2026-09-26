@@ -11,7 +11,7 @@ import * as THREE from 'three'
 import { Section, SectionState } from '../core/Section'
 import { prefersReducedMotion } from '../core/motionPolicy'
 import { type CameraTarget, type WorldState, BakuRole } from '../core/types'
-import type { PageId } from '../sections/_shared/constants'
+import type { PageId } from '../core/routeManifest'
 import {
   getWorldConfigForPage,
   type PhaseConfig,
@@ -414,7 +414,7 @@ export class SceneCoordinator {
     // drive live on Experience) + per-section modules (morph, particles, orbs,
     // …) ──
     // JunniParticles: GPU drift via uTime — only present on Works currently
-    // (see sections/works/scene.ts + intro/scene.ts header comment).
+    // (see Scene/WorksSection.ts header comment).
     const carousel = this.owners.carousel()
     // SectionGroups owns a stable array for the lifetime of this frame; reuse
     // one snapshot for carousel visibility and particle drift below.

@@ -9,7 +9,7 @@
 // `routeManifest.ts` operate on a different namespace and must not be used
 // here.
 
-import type { PageId } from '../sections/_shared/constants'
+import type { PageId } from './routeManifest'
 import { MANIFEST_PAGES } from './routeManifest'
 
 const PAGE_IDS: ReadonlySet<string> = new Set<string>(MANIFEST_PAGES)

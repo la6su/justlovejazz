@@ -1,4 +1,4 @@
-import type { PageId } from '../sections/_shared/constants'
+import type { PageId } from './routeManifest'
 
 /** Whether an async route continuation still belongs to the active route. */
 export function isCurrentRouteContinuation(

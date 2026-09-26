@@ -4,7 +4,7 @@ import { SceneCoordinator, type SceneCoordinatorOwners } from '../Experience/Sce
 import { SplashCube } from '../Experience/World/SplashCube'
 import type { SectionGroups } from '../Experience/Scene/SectionGroups'
 import { getLabExperiment, labExperiments } from '../Experience/Lab/manifest'
-import type { PageId } from '../sections/_shared/constants'
+import type { PageId } from '../core/routeManifest'
 
 const canvasContext = {
   fillStyle: '',

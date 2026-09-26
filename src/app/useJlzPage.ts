@@ -23,7 +23,7 @@ import UIkit from 'uikit'
 import { eventBus } from '../core/EventBus'
 import { applyTranslations } from '../core/i18n'
 import { applyMetaTags } from '../core/pageMeta'
-import type { PageId } from '../sections/_shared/constants'
+import type { PageId } from '../core/routeManifest'
 import { initMenuLifecycle } from './menuLifecycle'
 import { setCurrentPage } from '../core/routePage'
 

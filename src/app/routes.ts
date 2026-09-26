@@ -13,7 +13,7 @@
 import type { RouteRecordRaw, RouteRecordSingleView } from 'vue-router'
 
 import { ROUTE_MANIFEST, isCaseStudyPath, resolvePage } from '../core/routeManifest'
-import type { PageId } from '../sections/_shared/constants'
+import type { PageId } from '../core/routeManifest'
 import HomeView from './views/HomeView.vue'
 import CaseStudyView from './views/CaseStudyView.vue'
 

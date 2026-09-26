@@ -7,7 +7,7 @@
 // Route paths are NOT re-declared here: they come from `routeManifest.ts`
 // via `pathForPage` (adding or renaming a route is a manifest change only).
 
-import type { PageId } from '../sections/_shared/constants'
+import type { PageId } from './routeManifest'
 
 export type Changefreq = 'yearly' | 'monthly' | 'weekly' | 'daily' | 'hourly' | 'never'
 

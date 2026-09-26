@@ -12,7 +12,7 @@ import { BLOG_ARTICLES, BLOG_INDEX, blogArticlePath } from './blogPages'
 import { PAGE_META_DATA } from './pageMetaData'
 import { ROUTE_MANIFEST } from './routeManifest'
 import type { SitemapEntry } from './sitemap'
-import type { PageId } from '../sections/_shared/constants'
+import type { PageId } from './routeManifest'
 
 /** Fixed sitemap policy for approved builder pages. */
 export const BUILDER_PAGE_SITEMAP = {

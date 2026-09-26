@@ -4,7 +4,7 @@ import { Experience } from '../Experience/Experience'
 import { SceneCoordinator, type SceneCoordinatorOwners } from '../Experience/SceneCoordinator'
 import * as manifest from '../Experience/Lab/manifest'
 import type { LabExperimentObject } from '../Experience/Lab/manifest'
-import type { PageId } from '../sections/_shared/constants'
+import type { PageId } from '../core/routeManifest'
 import { seedExperience } from './experienceSeed'
 
 // Phase 8 slice 9: the Lab experiment object lifecycle (lazy creation on the

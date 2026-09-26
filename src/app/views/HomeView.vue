@@ -3,7 +3,7 @@
 // experience face. The four main sections form the native horizontal story
 // track; sections 0/5 enter as Contact/Menu sheets. The
 // section order matches the displayed cube orientation (see
-// src/sections/_shared/constants.ts). The scene sync reads `data-section`
+// src/core/routeManifest.ts). The scene sync reads `data-section`
 // on these nodes — the attributes are the 3D contract.
 import { ref } from 'vue'
 
