@@ -22,13 +22,13 @@ export type LazyStageSlotName =
   | 'manifestoInk'
   | 'labGamepad'
 
-/** Bag keys that route into a lazy-stage slot instead of a plain field. */
+/** Bag keys that route into a lazy-stage slot instead of a plain field.
+ *  Keys exist only where a test seeds the stage through the legacy bag;
+ *  halo/ink stages are always injected via the returned `slots` record. */
 const SLOT_KEY_TO_NAME: Record<string, LazyStageSlotName> = {
   worksPlaneStage: 'worksPlane',
   contactTypographyStage: 'contactTypography',
   contactCyprusStage: 'contactCyprus',
-  contactHaloStage: 'contactHalo',
-  manifestoInkStage: 'manifestoInk',
   labGamepad: 'labGamepad',
 }
 
