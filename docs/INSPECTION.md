@@ -853,3 +853,138 @@ ARCHITECTURE § Delivery decisions as the durable contract.
 Verification: tsc, vue-tsc, eslint (0 errors, 16 pre-existing warnings),
 prettier clean, vitest green, docs:check green, check:stdlib green,
 build + prerender + budgets green, e2e chromium — see the PR's CI run.
+
+## Inspection 11 — 2026-09-27, legacy portfolio cross-check (la6su/portfolio)
+
+Trigger: the user supplied the pre-migration portfolio implementation
+(github.com/la6su/portfolio, last pushed 2024-11-27) as the reference for
+the ongoing refactor. Method: shallow clone, full read of all 27 source
+files (App/TheExpiriense/Scene3D, stateManager/boxesObject stores, 4
+composables, floor GLSL shaders, FakeGlowMaterial, UI components), stack
+and asset census, then a dimension-by-dimension diff against this repo.
+
+### What the legacy app is
+
+A TresJS-starter character-model showcase (15 GLB figures, 309 MB
+public/models) with raycast picking, AR hand-off intents, GSAP tweens and a
+module-scope god-store. Classic WebGL (three 0.169, core 4.3, cientos 4.0).
+
+### Architectural diff — the migration already supersedes every dimension
+
+- Loop: legacy runs `useRenderLoop` 24/7 plus an infinite GSAP yoyo on the
+  glow radius and per-frame mixer updates for all 15 models; this repo's
+  bounded on-demand scheduler idles at zero RAF ticks (ADR 0005).
+- Camera: legacy clamps camera POSITION by hand on every `@change`
+  (`MathUtils.clamp` × 3 — fights the controls, jittery at the bounds);
+  the Lab adoption uses real azimuth/polar/distance limits and the rest of
+  the app keeps the pose-owner contract.
+- State: legacy `stateManager` is one module singleton exporting 20+
+  members including a raw `Raycaster` and pointer Vector2, consumed
+  cross-concern by every component; this repo split route/theme/motion
+  into typed ports (routePage, sectionTheme, motionPolicy, EventBus).
+- Loading: legacy loads all models upfront behind one progress value;
+  this repo keeps route-owned LazyStage contracts with refcounted caches.
+- Boot/bridges: legacy boots through `<Suspense>` + PageLoader fallback,
+  monkey-patches `window.ResizeObserver` with a debounce, depends on
+  `@basitcodeenv/vue3-device-detect`, and mounts DOM into 3D via Cientos
+  `Html`; this repo keeps the pre-Vue splash a11y contract, DeviceCapability,
+  native resize ownership and DOM as the semantic owner. Code hygiene:
+  legacy carries component-name typos, a broken `setTimeout(...), 600 600`
+  leftover and duplicated select logic across useOnClick/useSelectBox.
+
+### Reviewed and deliberately not adopted (code level)
+
+- Cientos `Html`/`RoundedBox`/`useTexture` (legacy usages): all already
+  carry Inspection 10 verdicts — no consumer surface or weaker than the
+  in-repo contracts here.
+- DRACO decoder serving: legacy self-hosts `/draco/`; this repo bundles
+  three's own decoder files through `DRACO_GLTF_CONFIG` (`new URL(…,
+import.meta.url)` asset emission) — equivalent self-hosted outcome.
+- Cache-API model preloading and GSAP-driven per-character room theming:
+  the current equivalents (route-lazy stages, TSL section themes) already
+  cover the capability at a fraction of the runtime cost.
+
+### Product features only the legacy app has (reported to the user, not queued)
+
+1. AR hand-off per model — Android Scene Viewer intents + iOS Quick Look
+   (.reality/.usdz). Meaningful only for standalone viewable character
+   models; the current product's works are 2D case covers + one 60 kB
+   stage GLB, so there is no consumer surface today.
+2. PWA offline — service worker + Cache API for the 309 MB model corpus.
+   The current heaviest asset is a 16.3 MB reel video; offline-first is a
+   product decision, not a refactor target.
+3. Model head/eye look-at tracking toward a glowing pointer — a
+   storytelling detail the current pointer choreography replaces.
+
+If any of these three become wanted, they enter NEXT "Product / input
+needed" with a scoped slice each; none block the architectural refactor.
+
+Verification: docs-only change — prettier clean, docs:check green.
+
+## Inspection 12 — 2026-09-27, out-of-box Tres adoption cross-check (TvT.js) + live DPR cap
+
+Trigger: the user set the direction — use Vue/TresJS/Cientos out of the box
+wherever possible, keep WebGPU/TSL the priority (and asked whether the
+WebGL fallback is automatic), continuing optimization with the TvT.js
+ecosystem (hawk86104/three-vue-tres) as the practice reference.
+Method: shallow clone of TvT.js (Fes.js + Tres 5.2/Cientos 5.2, three 0.180,
+WebGL-era); read of its openspec baseline, AGENTS.md, index.vue and the
+TSL plugin pages; three 0.185's WebGPURenderer source read directly for the
+fallback mechanics; @tresjs/core 5.9's useRendererManager dist source read
+for how TresCanvas props reach factory-created renderers.
+
+### The user's fallback question — verified in three's source
+
+Automatic, by construction: `WebGPURenderer`'s constructor keeps
+`WebGPUBackend` unless `forceWebGL` is set, and installs
+`parameters.getFallback = () => new WebGLBackend(parameters)` — when no
+WebGPU device can be acquired, the renderer falls back to WebGL2 and warns
+("WebGPURenderer: WebGPU is not available, running under WebGL2 backend.").
+This repo already owns the post-init half of that story:
+`inspectUnifiedBackend` reads the actual backend + software-adapter flag,
+`planUnifiedBackend` re-creates on SwiftShader adapters, the TSL post graph
+degrades to direct rendering on WebGLBackend (Phase 2 contract), and
+`?force-webgl-backend=1` forces the path in DEV. No change needed.
+
+### Out-of-box adoption state (TvT.js cross-check)
+
+- Already adopted: the official `<TresCanvas :renderer="factory">` setup
+  with the typed `TresRendererSetupContext` (SceneHost) — the same pattern
+  TvT.js's TSL cases use; `render-mode="on-demand"`; the ADR 0005 loop
+  seams (`replaceRenderFunction`, `useLoop` hook, `invalidate` wrap) that
+  let ecosystem components work unmodified; declarative stage owners
+  (lights/camera/ground/env/stages as Vue components with `@ready` ports).
+- Verified and deliberately KEPT hand-rolled: `applySharedSettings`
+  (tone mapping/exposure/color space) — Tres applies these as TresCanvas
+  props to factory renderers, but the rollback construction path
+  (Renderer's direct instance) must share the identical settings, so one
+  function serving both paths beats a props/hand-rolled split. Sizes stays
+  the imperative viewport snapshot for scene-owner layout math (Tres's
+  internal element-size manager equals it — `.jlz-scene-host` is
+  `fixed inset 0` — but scene classes live outside Vue context).
+- TvT.js patterns that do NOT transfer: the plugin/fes micro-frontend
+  architecture (different product class), `@tresjs/post-processing` +
+  `lamina` (raster-era, cannot run on WebGPU/TSL), gallery-style Suspense
+  demos with always-on `@loop`. Its openspec capability baseline duplicates
+  what AGENTS/ARCHITECTURE/NEXT already cover with less ceremony.
+
+### Defect found and fixed — stale DPR cap on the fallback path
+
+Tres core re-applies its `dpr` option inside a `watchEffect` on every
+internal sizes change (window resize, browser zoom), debounced ~10ms AFTER
+this app's own resize write. The SceneHost `:dpr` prop held the BOOT-time
+cap (`DeviceCapability.maxDpr` before backend finalization): on the mobile
+WebGL-fallback path the final cap is 1 while the boot hint is 1.5, so any
+later resize/zoom silently regressed the buffer to 1.5× — extra fill work
+on exactly the weakest devices. Fix: `maxDprForMode` extracted as the pure
+single source (singleton + SceneHost share it); the SceneHost finalizes a
+live `dprCap` ref in `onReady` (the backend-decision owner) and re-publishes
+it on the device-loss renderer swap (recovery may change the backend).
+Unit-tested pure contract + a new e2e pin: mobile fallback context, resize,
+buffer must stay ≤ cssWidth × 1 (the pre-fix behavior produced 750/500 and
+fails this test).
+
+Verification: prettier clean, tsc + vue-tsc green, eslint 0 errors (16
+pre-existing warnings), vitest 116 files / 714 tests green, docs:check
+green, check:stdlib green, build + prerender + budgets identical to
+baseline, e2e chromium serial 27 passed / 1 skipped (new DPR pin).

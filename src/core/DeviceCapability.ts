@@ -1,6 +1,26 @@
 type RendererMode = 'webgpu' | 'webgl' | 'unsupported'
 export type QualityTier = 'high' | 'medium' | 'low'
 
+/**
+ * Pure per-mode DPR cap — the fill-rate budget. Full-screen TSL post scales
+ * with pixel count: a 2× DPR renders four pixels per CSS pixel and can miss
+ * v-sync on 120/144Hz panels even with light geometry, so 1.5 stays crisp
+ * while cutting ~44% of the fill work. The WebGL fallback renders directly
+ * (no post chain) and drops to 1 on mobile. Single source of truth shared by
+ * the DeviceCapability singleton and the SceneHost's live TresCanvas `:dpr`
+ * cap — Tres re-applies the prop on every internal sizes change, so both
+ * writers must agree or the stale one wins after a resize.
+ */
+export function maxDprForMode(mode: RendererMode, isMobile: boolean): number {
+  if (mode === 'webgpu') {
+    return 1.5
+  }
+  if (mode === 'webgl') {
+    return isMobile ? 1 : 1.5
+  }
+  return 1
+}
+
 interface TierConfig {
   postMultiplier: number
 }
@@ -183,20 +203,7 @@ export class DeviceCapability {
   }
 
   private calculateMaxDpr(): number {
-    // Full-screen TSL post scales with pixel count. A 2× desktop DPR renders
-    // four pixels per CSS pixel and can miss every other v-sync on 120/144Hz
-    // panels even when scene geometry is light. 1.5 preserves a crisp image
-    // while cutting fill work by 44%; quality tier still controls effects.
-    if (this.mode === 'webgpu') {
-      return 1.5
-    }
-    if (this.mode === 'webgl') {
-      // WebGLBackend uses direct rendering without a post chain. DPR 2 still
-      // costs four times the scene pixel area; 1.5 remains crisp on Retina
-      // while restoring animation headroom.
-      return this.isMobile ? 1 : 1.5
-    }
-    return 1
+    return maxDprForMode(this.mode, this.isMobile)
   }
 
   // ── Per-operation helpers ──

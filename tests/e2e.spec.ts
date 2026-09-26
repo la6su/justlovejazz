@@ -625,6 +625,43 @@ test.describe('JustLoveJazz — Phase 7 persistent scene host', () => {
       await context.close()
     }
   })
+
+  test('mobile WebGL fallback keeps the finalized DPR cap after a resize', async ({ browser }) => {
+    // Headless chromium has no WebGPU, so the app runs three's automatic
+    // WebGLBackend fallback. The mobile fallback cap is 1 (maxDprForMode);
+    // the TresCanvas `:dpr` prop must be finalized to it, or Tres's size
+    // manager re-applies the stale boot cap (1.5) on the next internal
+    // sizes change and the fill-rate budget regresses on the weakest path.
+    const context = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      deviceScaleFactor: 3,
+      hasTouch: true,
+    })
+    const page = await context.newPage()
+    try {
+      await page.goto('/')
+      await expect(page.locator('#jlz-splash-enter')).toHaveClass(/is-ready/, { timeout: 90000 })
+      await expect
+        .poll(() => page.evaluate(() => window.__jlzHost?.backend ?? null), { timeout: 5000 })
+        .toBe('WebGLBackend')
+      // Trigger Tres's internal sizes watcher (debounced resize handler).
+      await page.setViewportSize({ width: 500, height: 900 })
+      await page.waitForTimeout(250)
+      const metrics = await page.evaluate(() => {
+        const canvas = document.querySelector('canvas.canvas')
+        return {
+          dpr: window.devicePixelRatio,
+          cssWidth: window.innerWidth,
+          bufferWidth: canvas?.width ?? 0,
+        }
+      })
+      expect(metrics.dpr).toBe(3)
+      expect(metrics.cssWidth).toBe(500)
+      expect(metrics.bufferWidth).toBeLessThanOrEqual(Math.ceil(metrics.cssWidth * 1))
+    } finally {
+      await context.close()
+    }
+  })
 })
 
 test.describe('JustLoveJazz — runtime health', () => {
