@@ -5,7 +5,7 @@ import { Sizes } from './Sizes'
 import { DeviceCapability } from '../core/DeviceCapability'
 import { eventBus } from '../core/EventBus'
 import { PostProcessingManager } from '../core/PostProcessingManager'
-import { RenderPipeline, type RenderPipelineConfig, type PostParams } from '../core/RenderPipeline'
+import { RenderPipeline } from '../core/RenderPipeline'
 import {
   captureRuntimeResourceSnapshot,
   type RendererResourceInfo,
@@ -19,19 +19,6 @@ import {
 } from '../core/unifiedRenderer'
 
 export type RenderSurface = WebGPURenderer
-
-const NEUTRAL_GRADE: [number, number, number] = [1, 1, 1]
-
-function copyTuple(
-  target: [number, number, number] | undefined,
-  from?: [number, number, number],
-): void {
-  if (!target) return
-  const src = from ?? NEUTRAL_GRADE
-  target[0] = src[0]
-  target[1] = src[1]
-  target[2] = src[2]
-}
 
 /**
  * Phase 7 adoption input: the SceneHost custom renderer factory already
@@ -59,21 +46,6 @@ export class Renderer {
 
   // Junni-style multi-pass post-processing pipeline (typed, explicit fallback)
   pipeline: RenderPipeline | null = null
-  // Pipeline config is built after backend initialization, when fallback is known.
-  private _pipelineConfig!: RenderPipelineConfig
-  /** Reused wrapper passed to RenderPipeline on each WebGPU frame. */
-  private _postParams: PostParams = {
-    bloom: 0,
-    vignette: 0,
-    grain: 0,
-    chromatic: 0,
-    bloomRadius: 0,
-    bloomThreshold: 0,
-    refract: 0,
-    border: 0,
-    gradeShadows: [1, 1, 1],
-    gradeHighlights: [1, 1, 1],
-  }
 
   // Phase 6 device-loss recovery state (bounded — see rendererBackend.ts).
   private _deviceLostAttempts = 0
@@ -99,10 +71,6 @@ export class Renderer {
       if (!this._disposed) this.showUnsupportedMessage()
       throw new Error('Neither WebGPU nor WebGL2 is supported by this browser.')
     }
-  }
-
-  private buildPipelineConfig(): RenderPipelineConfig {
-    return { bloomEnabled: this.capabilities.postProcessing }
   }
 
   private showUnsupportedMessage(): void {
@@ -135,7 +103,6 @@ export class Renderer {
     // Capability tier and post settings must reflect the backend selected
     // above, not merely the initial navigator.gpu feature detection.
     this.postManager.refreshQualityTier()
-    this._pipelineConfig = this.buildPipelineConfig()
 
     // ── Diagnostic: log final render path + EnvSphere path ──
     // Helps debug "I don't see the shader background" — the console will show
@@ -151,7 +118,7 @@ export class Renderer {
 
     // Pipeline — the single WebGPURenderer instance (Phase 6 production
     // default; the classic WebGLRenderer path was removed in Phase 10).
-    this.pipeline = RenderPipeline.create(this.instance, this._pipelineConfig)
+    this.pipeline = RenderPipeline.create(this.instance, this.capabilities.postProcessing)
 
     // Transmission is disabled on ALL paths (see SplashCube.ts comment).
     // setTransmissionEnabled() is now a no-op, kept for API compat.
@@ -319,8 +286,7 @@ export class Renderer {
       this.instance.setPixelRatio(Math.min(this.sizes.dpr, this.capabilities.maxDpr))
       this.instance.setSize(this.sizes.width, this.sizes.height)
       this.postManager.refreshQualityTier()
-      this._pipelineConfig = this.buildPipelineConfig()
-      this.pipeline = RenderPipeline.create(this.instance, this._pipelineConfig)
+      this.pipeline = RenderPipeline.create(this.instance, this.capabilities.postProcessing)
       this.attachDeviceLossRecovery(this.instance)
       // Phase 7: sync the persistent Tres context to the replacement so the
       // SceneHost bridge keeps describing the live renderer. The Tres-owned
@@ -364,27 +330,13 @@ export class Renderer {
     // parity path, so skip the otherwise-unused crossfade and uniform writes.
     if (this.capabilities.isRealWebGPU) {
       this.postManager.update(dt)
-      const params = this.postManager.postParams
+      // Quality-tier intensity scaling is applied by PostProcessingManager
+      // (applyPreset — the single scaling owner). This side hands the
+      // crossfaded display values straight to the pipeline; updateParams
+      // remains the single change-detection owner (it diffs against its own
+      // snapshot and force-pushes on a recreated pipeline's first render).
       if (this.pipeline) {
-        // RenderPipeline.updateParams is the single change-detection owner:
-        // it diffs against its own snapshot, and a recreated pipeline
-        // force-pushes on its first render. This side only maps the
-        // capability-driven intensity scaling.
-        const pp = this._postParams
-        pp.bloom = this.capabilities.scaleIntensity(params.bloom)
-        pp.vignette = this.capabilities.scaleIntensity(params.vignette)
-        pp.grain = this.capabilities.scaleIntensity(params.grain)
-        pp.chromatic = this.capabilities.scaleIntensity(params.chromatic)
-        // Track B: per-section bloom shape (NOT intensity-scaled — shape params)
-        pp.bloomRadius = params.bloomRadius
-        pp.bloomThreshold = params.bloomThreshold
-        // Grade channels ride the same crossfade; they are authored look
-        // parameters, so they are not intensity-scaled either.
-        pp.refract = params.refract
-        pp.border = params.border
-        copyTuple(pp.gradeShadows, params.gradeShadows)
-        copyTuple(pp.gradeHighlights, params.gradeHighlights)
-        this.pipeline.updateParams(pp)
+        this.pipeline.updateParams(this.postManager.postParams)
       }
     }
 

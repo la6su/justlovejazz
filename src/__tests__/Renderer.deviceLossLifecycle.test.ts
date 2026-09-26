@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as THREE from 'three'
 import { eventBus } from '../core/EventBus'
-import type { PostParams } from '../core/RenderPipeline'
+import type { PostParams } from '../core/postParams'
 
 const mocks = vi.hoisted(() => ({
   create: vi.fn(),
@@ -303,51 +303,11 @@ describe('Renderer device-loss lifecycle', () => {
     expect(render).toHaveBeenCalledOnce()
   })
 
-  it('maps the settled WebGPU post params through capability scaling every frame', () => {
+  it('hands the settled WebGPU post params straight to the pipeline every frame', () => {
     const postUpdate = vi.fn()
     const updateParams = vi.fn()
     const render = vi.fn()
-    const params = {
-      bloom: 0.4,
-      vignette: 0.5,
-      grain: 0.25,
-      chromatic: 0,
-      bloomRadius: 0.6,
-      bloomThreshold: 0.5,
-      refract: 0.1,
-      border: 0.2,
-      gradeShadows: [0.9, 1, 1.1] as [number, number, number],
-      gradeHighlights: [1, 0.95, 1.05] as [number, number, number],
-    }
-    const renderer = Object.assign(Object.create(Renderer.prototype), {
-      _recovering: false,
-      _recoveryFailed: false,
-      _disposed: false,
-      capabilities: { isRealWebGPU: true, scaleIntensity: vi.fn((value: number) => value) },
-      postManager: { update: postUpdate, postParams: params },
-      pipeline: { updateParams, render },
-      instance: { render },
-      _postParams: {
-        bloom: 0,
-        vignette: 0,
-        grain: 0,
-        chromatic: 0,
-        bloomRadius: 0,
-        bloomThreshold: 0,
-        refract: 0,
-        border: 0,
-        gradeShadows: [1, 1, 1] as [number, number, number],
-        gradeHighlights: [1, 1, 1] as [number, number, number],
-      },
-    }) as unknown as Renderer
-
-    // The Renderer hands the scaled params to the pipeline on every WebGPU
-    // frame; dedup of identical values is RenderPipeline.updateParams' own
-    // snapshot diff (pinned in RenderPipeline.lifecycle.test).
-    renderer.update(new THREE.Scene(), new THREE.PerspectiveCamera(), 1 / 60)
-    const pp = (renderer as unknown as { _postParams: PostParams })._postParams
-    expect(updateParams).toHaveBeenCalledOnce()
-    expect(pp).toMatchObject({
+    const params: PostParams = {
       bloom: 0.4,
       vignette: 0.5,
       grain: 0.25,
@@ -358,19 +318,32 @@ describe('Renderer device-loss lifecycle', () => {
       border: 0.2,
       gradeShadows: [0.9, 1, 1.1],
       gradeHighlights: [1, 0.95, 1.05],
-    })
+    }
+    const renderer = Object.assign(Object.create(Renderer.prototype), {
+      _recovering: false,
+      _recoveryFailed: false,
+      _disposed: false,
+      capabilities: { isRealWebGPU: true },
+      postManager: { update: postUpdate, postParams: params },
+      pipeline: { updateParams, render },
+      instance: { render },
+    }) as unknown as Renderer
+
+    // Quality-tier intensity scaling is owned by PostProcessingManager
+    // (applyPreset); the Renderer hands the crossfaded display values straight
+    // to the pipeline. Dedup of identical values is RenderPipeline.updateParams'
+    // own snapshot diff (pinned in RenderPipeline.lifecycle.test).
+    renderer.update(new THREE.Scene(), new THREE.PerspectiveCamera(), 1 / 60)
+    expect(updateParams).toHaveBeenCalledOnce()
+    expect(updateParams).toHaveBeenCalledWith(params)
 
     renderer.update(new THREE.Scene(), new THREE.PerspectiveCamera(), 1 / 60)
     expect(postUpdate).toHaveBeenCalledTimes(2)
     expect(updateParams).toHaveBeenCalledTimes(2)
-    expect(
-      (renderer as unknown as { capabilities: { scaleIntensity: ReturnType<typeof vi.fn> } })
-        .capabilities.scaleIntensity,
-    ).toHaveBeenCalledTimes(8)
 
     params.bloom = 0.8
     renderer.update(new THREE.Scene(), new THREE.PerspectiveCamera(), 1 / 60)
     expect(updateParams).toHaveBeenCalledTimes(3)
-    expect(pp.bloom).toBe(0.8)
+    expect(updateParams).toHaveBeenLastCalledWith(params)
   })
 })

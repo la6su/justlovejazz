@@ -2,6 +2,7 @@
 
 import * as THREE from 'three'
 import { BakuRole } from './types'
+import type { PostParams } from './postParams'
 import { worldSlotAt, WORLD_SLOT_COUNT } from './worldSlots'
 
 // ── Types ──
@@ -37,20 +38,23 @@ interface FogTransform {
   density: number
 }
 
-interface PostTransform {
-  bloom: number
-  vignette: number
-  grain: number
-  chromatic: number
-  /** Screen-space glass refraction strength (0=off, 0.1=subtle, 0.3=strong). */
-  refract: number
-  /** Screen border intensity (0=off, 0.3=subtle, 1.0=full black border). */
-  border: number
-  /** Shadow tint (RGB 0-1, multiplied into dark areas). */
-  gradeShadows: [number, number, number]
-  /** Highlight tint (RGB 0-1, 1=neutral, pushed into bright areas). */
-  gradeHighlights: [number, number, number]
-}
+/**
+ * The authored per-section post values (WorldConfig remains the single source
+ * of visible post-processing values). Field docs live on the canonical shape
+ * (core/postParams.ts) — this type is its section-authored projection without
+ * the renderer-owned bloom blur shape.
+ */
+type PostTransform = Pick<
+  PostParams,
+  | 'bloom'
+  | 'vignette'
+  | 'grain'
+  | 'chromatic'
+  | 'refract'
+  | 'border'
+  | 'gradeShadows'
+  | 'gradeHighlights'
+>
 
 interface SectionLightDef {
   hexColor: string

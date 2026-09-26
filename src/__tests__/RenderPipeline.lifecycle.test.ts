@@ -17,6 +17,7 @@ describe('RenderPipeline failure lifecycle', () => {
     }
     const pipeline = Object.assign(Object.create(RenderPipeline.prototype), {
       _renderer: renderer,
+      _postProcessingEnabled: true,
       _webgpuPipeline: {
         setScene: vi.fn(),
         updateParams: vi.fn(),
@@ -160,7 +161,18 @@ describe('RenderPipeline failure lifecycle', () => {
     pipeline.render(scene, camera)
     expect(cache.bloom).toBe(99)
 
-    pipeline.updateParams({ bloom: 0.8, vignette: 0.5, grain: 0.25 })
+    pipeline.updateParams({
+      bloom: 0.8,
+      vignette: 0.5,
+      grain: 0.25,
+      chromatic: 0,
+      bloomRadius: 0.6,
+      bloomThreshold: 0.5,
+      refract: 0.05,
+      border: 0,
+      gradeShadows: [1, 1, 1],
+      gradeHighlights: [1, 1, 1],
+    })
     pipeline.render(scene, camera)
     expect(updateParams).toHaveBeenCalledTimes(2)
     expect(cache.bloom).toBe(0.8)
