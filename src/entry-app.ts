@@ -1,17 +1,12 @@
 import { BlurFade } from './Experience/BlurFade'
 import { NoiseText } from './Experience/NoiseText'
 import { eventBus } from './core/EventBus'
+import { contentRoot } from './core/contentRoot'
 import { getSoundMuted, setSoundMutedPreference } from './core/SfxSystem'
 import { prefersReducedMotion } from './core/motionPolicy'
 import { getCurrentPage } from './core/routePage'
 // LANG_KEY handled by i18n.ts
 import { INITIAL_BOOTSTRAP_STATE, tryTransition, type BootstrapState } from './core/bootstrapStates'
-
-function contentRoot(): ParentNode {
-  // Vue owns route content; retain a document fallback only before the route
-  // shell mounts during the bootstrap handoff.
-  return document.getElementById('spa-content') ?? document
-}
 
 // ── Config: sound toggle (splash overlay) ──
 function initSoundToggle(): void {
@@ -507,21 +502,14 @@ async function startAppOnce(): Promise<void> {
         // First title
         if (title) {
           const text = title.textContent?.trim() ?? ''
-
           if (text) {
             splashRevealedTitles.add(title)
-            BlurFade.for(title).show(0.55, text)
+            BlurFade.reveal(title, 0.55, text)
           }
         }
 
         // First eyebrow
-        if (eyebrow) {
-          const text = eyebrow.getAttribute('data-eyebrow-text') ?? eyebrow.textContent ?? ''
-
-          if (text.trim()) {
-            NoiseText.for(eyebrow).show(0.6, text)
-          }
-        }
+        if (eyebrow) NoiseText.revealEyebrow(eyebrow)
 
         // Start normal viewport-based title animation after the first reveal.
         setupTitleObserver()
@@ -557,10 +545,7 @@ async function startAppOnce(): Promise<void> {
       const section = contentRoot().querySelector(`[data-section="${payload.sectionId}"]`)
       if (!section) return
       const title = section.querySelector<HTMLElement>('.studio-title')
-      if (title && title.dataset.blurFade !== 'off') {
-        const text = title.textContent?.trim() || ''
-        if (text) BlurFade.for(title).show(1.5)
-      }
+      if (title) BlurFade.reveal(title, 1.5)
     }),
   )
 
@@ -571,18 +556,10 @@ async function startAppOnce(): Promise<void> {
       const sections = contentRoot().querySelectorAll<HTMLElement>('[data-page-section]')
       const el = sections[index]
       if (!el) return
-      // BlurFade on title
       const title = el.querySelector<HTMLElement>('.studio-title')
-      if (title && title.dataset.blurFade !== 'off') {
-        const text = title.textContent?.trim() || ''
-        if (text) BlurFade.for(title).show(1.5)
-      }
-      // NoiseText on eyebrow
+      if (title) BlurFade.reveal(title, 1.5)
       const eyebrow = el.querySelector<HTMLElement>('[data-eyebrow]')
-      if (eyebrow) {
-        const text = eyebrow.getAttribute('data-eyebrow-text') ?? eyebrow.textContent ?? ''
-        if (text) NoiseText.for(eyebrow).show(0.6, text)
-      }
+      if (eyebrow) NoiseText.revealEyebrow(eyebrow)
     }),
   )
 
@@ -624,8 +601,7 @@ function setupTitleObserver(): void {
           // this one observer entry prevents its slower default reveal from
           // restarting over the splash-specific animation.
           if (splashRevealedTitles.delete(el)) continue
-          const text = el.textContent?.trim() || ''
-          if (text) BlurFade.for(el).show(1.2)
+          BlurFade.reveal(el, 1.2)
         }
       }
     },

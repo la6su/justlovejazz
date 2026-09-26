@@ -62,13 +62,8 @@ import type { ContactCyprusStage } from './World/ContactCyprusStage'
 import { ShowreelTheater } from './World/ShowreelTheater'
 import { getLabExperiment, type LabExperimentObject } from './Lab/manifest'
 import { disposeAllCaseTextures } from './World/caseTexture'
+import { contentRoot } from '../core/contentRoot'
 // DissolveOverlay removed — cover transition in ProjectDetail replaces it.
-
-function contentRoot(): ParentNode {
-  // Vue owns the active route root. Keep the document fallback only for the
-  // short bootstrap window before the route shell mounts.
-  return document.getElementById('spa-content') ?? document
-}
 
 /** The Works story frame — the six-slot contract, not a literal. */
 const WORKS_SLOT_INDEX = worldSlotIndex('works')!
@@ -1056,10 +1051,7 @@ export class Experience {
       if (!payload?.sectionId) return
       const section = contentRoot().querySelector(`[data-section="${payload.sectionId}"]`)
       const eyebrow = section?.querySelector<HTMLElement>('[data-eyebrow]')
-      if (eyebrow) {
-        const text = eyebrow.getAttribute('data-eyebrow-text') ?? eyebrow.textContent ?? ''
-        if (text) NoiseText.for(eyebrow).show(0.6, text)
-      }
+      if (eyebrow) NoiseText.revealEyebrow(eyebrow)
     }
     eventBus.on('jlz:section-change', this._sectionChangeHandler)
 
@@ -1070,11 +1062,7 @@ export class Experience {
       const activeSection =
         (contentRoot().querySelector('.section-active [data-eyebrow]') as HTMLElement | null) ??
         (contentRoot().querySelector('[data-section="intro"] [data-eyebrow]') as HTMLElement | null)
-      if (activeSection) {
-        const text =
-          activeSection.getAttribute('data-eyebrow-text') ?? activeSection.textContent ?? ''
-        if (text) NoiseText.for(activeSection).show(0.8, text)
-      }
+      if (activeSection) NoiseText.revealEyebrow(activeSection, 0.8)
     })
     // Showreel theater commands — DOM chrome (ShowreelConsole) emits over the
     // typed bus; Experience owns the lazy GPU-side stage and the render swap.
