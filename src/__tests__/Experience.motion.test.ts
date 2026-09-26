@@ -8,6 +8,7 @@ function createExperience(reducedMotion: boolean): ReturnType<typeof seedExperie
     _scheduler: { settleNow: vi.fn() },
     _cancelBreath: vi.fn(),
     _raiseRenderDemand: vi.fn(),
+    _showreel: { setReducedMotion: vi.fn() },
   }).exp
 }
 
@@ -36,6 +37,7 @@ describe('Experience reduced-motion synchronization', () => {
       _scheduler: { settleNow: vi.fn() },
       _cancelBreath: vi.fn(),
       _raiseRenderDemand: vi.fn(),
+      _showreel: { setReducedMotion: vi.fn() },
       contactTypographyStage: { setReducedMotion },
     })
     const owner = exp as unknown as {

@@ -54,7 +54,7 @@ function createSeededExperience() {
     _onMouseMoveForTrail: null,
     contentReveal: { destroy: spies.contentReveal },
     cursor: { destroy: spies.cursor },
-    showreelTheater: { dispose: spies.showreelTheater },
+    _showreel: { dispose: spies.showreelTheater },
     features: { destroy: spies.features },
     lights: { dispose: spies.lights },
     ground: { dispose: spies.ground },

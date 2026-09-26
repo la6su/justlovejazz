@@ -21,6 +21,7 @@ import { observeReducedMotion, prefersReducedMotion } from '../core/motionPolicy
 import { FrameTiming } from '../core/FrameTiming'
 import { FpsTracker } from './FpsTracker'
 import { SceneEnvironment } from './SceneEnvironment'
+import { ShowreelController } from './ShowreelController'
 import { WORKS_SLOT_INDEX, WORLD_SLOT_COUNT } from '../core/worldSlots'
 import { DEFAULT_CAMERA_SMOOTHING } from '../core/WorldConfig'
 import {
@@ -62,7 +63,6 @@ import type { ContactTypographyStage } from './World/ContactTypographyStage'
 import type { ContactHaloStage } from './World/ContactHaloStage'
 import type { ManifestoInkStage } from './World/ManifestoInkStage'
 import type { ContactCyprusStage } from './World/ContactCyprusStage'
-import { ShowreelTheater } from './World/ShowreelTheater'
 import { getLabExperiment, type LabExperimentObject } from './Lab/manifest'
 import { disposeAllCaseTextures } from './World/caseTexture'
 import { contentRoot } from '../core/contentRoot'
@@ -160,14 +160,9 @@ export class Experience {
   private get labGamepad(): LabExperimentObject | null {
     return this._labGamepadSlot.getStage()
   }
-  // Showreel theater: a private render mode (own scene + ortho camera) swapped
-  // in at the render call while open. Created lazily on the first
-  // `jlz:showreel-open`, so neither the video element nor its texture exist
-  // before the visitor asks for the showreel.
-  private showreelTheater: ShowreelTheater | null = null
-  private _showreelOpenUnsub: (() => void) | null = null
-  private _showreelCloseUnsub: (() => void) | null = null
-  private _showreelTogglePlayUnsub: (() => void) | null = null
+  // Showreel render mode (ShowreelController.ts): the lazy GPU-side theater,
+  // its typed bus commands, the reduced-motion forwarding and the render swap.
+  private _showreel!: ShowreelController
   // Phase 8 slice 8 (moved from World): the target Cyprus-active state (the
   // Agros frame replaces the shared cube) + the effective text polarity
   // cached so a lazy Contact stage cannot miss it.
@@ -282,6 +277,10 @@ export class Experience {
       renderer: () => this.renderer,
       baku: () => this.baku,
     })
+    this._showreel = new ShowreelController({
+      isDestroyed: () => this._destroyed,
+      reducedMotion: () => this._reducedMotion,
+    })
 
     // Phase 7 slice 4: the former UI features reach the scene through a
     // narrow getter-based port (the scene + owners only exist after init).
@@ -374,15 +373,6 @@ export class Experience {
     this.contactCyprusStage?.resize(this.sizes.width, this.sizes.height)
   }
 
-  private ensureShowreelTheater(): void {
-    if (this.showreelTheater || this._destroyed) return
-    this.showreelTheater = new ShowreelTheater(
-      '/assets/video/coming-soon.mp4',
-      '/assets/video/coming-soon-cover.jpg',
-    )
-    this.showreelTheater.setReducedMotion(this._reducedMotion)
-  }
-
   private lifecycleToken(): number {
     return this._lifecycleGeneration
   }
@@ -419,7 +409,7 @@ export class Experience {
     this.contactTypographyStage?.setReducedMotion(reduced)
     this.contactHaloStage?.setReducedMotion(reduced)
     this.manifestoInkStage?.setReducedMotion(reduced)
-    this.showreelTheater?.setReducedMotion(reduced)
+    this._showreel.setReducedMotion(reduced)
     // Lab object carries authored motion (optional contract) — settle it too.
     this.labGamepad?.setReducedMotion?.(reduced)
     this._storyNav?.setReducedMotion(reduced)
@@ -901,18 +891,8 @@ export class Experience {
       if (activeSection) NoiseText.revealEyebrow(activeSection, 0.8)
     })
     // Showreel theater commands — DOM chrome (ShowreelConsole) emits over the
-    // typed bus; Experience owns the lazy GPU-side stage and the render swap.
-    this._showreelOpenUnsub = eventBus.on('jlz:showreel-open', () => {
-      if (this._destroyed) return
-      this.ensureShowreelTheater()
-      this.showreelTheater?.open()
-    })
-    this._showreelCloseUnsub = eventBus.on('jlz:showreel-close', () => {
-      this.showreelTheater?.close()
-    })
-    this._showreelTogglePlayUnsub = eventBus.on('jlz:showreel-toggle-play', () => {
-      this.showreelTheater?.togglePlay()
-    })
+    // typed bus; the controller owns the lazy GPU-side stage and the render swap.
+    this._showreel.bind()
     await this.renderer.init({
       instance: this._host.renderer,
       canvas: this._host.canvas,
@@ -1279,7 +1259,7 @@ export class Experience {
     activity.camPulsing = camPulsing
     activity.particles = particlesActive
     activity.ambientScene = ambientSceneActive
-    activity.showreel = this.showreelTheater?.isAnimating ?? false
+    activity.showreel = this._showreel.isAnimating
 
     if (anyActivity(activity)) {
       this._needsRender = true
@@ -1451,11 +1431,7 @@ export class Experience {
       // While the showreel theater is open it OWNS the frame: its private
       // scene renders through the same renderer + post pipeline, the world
       // simply skips a beat and resumes unchanged on close.
-      const theater = this.showreelTheater
-      if (theater && theater.currentPhase !== 'closed') {
-        theater.update(dt, this.camera.instance.aspect)
-        this.renderer.update(theater.scene, theater.camera, dt)
-      } else {
+      if (!this._showreel.renderFrame(this.renderer, dt, this.camera.instance.aspect)) {
         this.renderer.update(this.scene, this.camera.instance, dt)
       }
       const rendererDuration = frameTiming ? performance.now() - rendererStart : 0
@@ -1560,22 +1536,9 @@ export class Experience {
       this._splashEnteredUnsub()
       this._splashEnteredUnsub = null
     }
-    if (this._showreelOpenUnsub) {
-      this._showreelOpenUnsub()
-      this._showreelOpenUnsub = null
-    }
-    if (this._showreelCloseUnsub) {
-      this._showreelCloseUnsub()
-      this._showreelCloseUnsub = null
-    }
-    if (this._showreelTogglePlayUnsub) {
-      this._showreelTogglePlayUnsub()
-      this._showreelTogglePlayUnsub = null
-    }
-    // The showreel theater is a private render mode — dispose it with the
-    // render owner so the video element, its texture and the quad die here.
-    this.showreelTheater?.dispose()
-    this.showreelTheater = null
+    // The showreel controller unsubscribes its commands and disposes the
+    // theater with the render owner (video element, texture, quad).
+    this._showreel?.dispose()
     // Phase 7 slice 4: the former UI features (their window listeners, the
     // menu, the overlay and the story nav) tear down through ExperienceUI.
     this.features.destroy()
