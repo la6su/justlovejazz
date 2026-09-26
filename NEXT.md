@@ -59,25 +59,6 @@ retired. `scripts/bundle-breakdown.ts` now selects the shared vendor exactly
    wording in [DEVELOPMENT](docs/DEVELOPMENT.md) (§ Git delivery) and the
    release skill (`skills/justlovejazz-release/SKILL.md` — the "PR against
    `main`" rule is the one that changes).
-4. **Experience.ts / SceneCoordinator.ts split (architectural, largest item).**
-   `src/Experience/SceneCoordinator.ts` (~1k lines) is the remaining
-   god-class; the Experience side is DONE (Inspection 14, 2026-09-27): the
-   split-ready clusters (lazy-stage registry, showreel controller,
-   environment/PMREM, FPS tracker) moved behind existing seams —
-   `StageRegistry.ts`, `ShowreelController.ts`, `SceneEnvironment.ts`,
-   `FpsTracker.ts` — and the test seed attaches a registry built over the
-   seeded instance, so `Experience.destroyOwnership.test.ts` stayed green
-   unrenamed. Remaining (a separate slice, in this order):
-   1. Split `SceneCoordinator.ts` — sections/config state machine,
-      `updateTransform` (pooled-cache contract pinned by
-      `SceneCoordinator.routeVisuals.test.ts`) and the `update()` frame
-      forwarder. Its double-ease is now pinned by
-      `SceneCoordinator.doubleEase.test.ts` (bg fade uses the doubly-eased
-      t, camera/baku the singly-eased one) — do not "fix" it mid-split.
-   2. The entangled state stays with the frame body: `_needsRender`/
-      `_activitySnapshot` writers, the settle policy and the carousel
-      triangle (created by SectionGroups, initialized by Experience, driven
-      by the coordinator) — extraction there has no honest owner yet.
 
 ## Audit cleanup (2026-09-17)
 
@@ -86,7 +67,14 @@ owners or untyped event paths; the bounded slices it listed (dead i18n keys,
 stale owner comments, the dead `Renderer.update` parameter) shipped in #216.
 The `sections/` residue closed 2026-09-27: `PageId` moved into
 `core/routeManifest.ts` (its true owner — the manifest is the path + page
-source of truth) and the directory is gone. The last deferred item is closed:
+source of truth) and the directory is gone. The god-class split closed
+2026-09-27 on both sides (Inspections 14–15): Experience (StageRegistry,
+ShowreelController, SceneEnvironment, FpsTracker) and SceneCoordinator
+(SectionStateMachine, SceneTransformPass, SceneFramePass over the shared
+`sceneOwners` bag) are honest single-concern owners behind the unchanged
+public surfaces; the intentionally-unextracted remainder
+(`_needsRender`/`_activitySnapshot` writers, settle policy, carousel
+triangle) is recorded in Inspection 15. The last deferred item is closed:
 
 1. **Lazy lifecycle consistency (closed 2026-09-25).** The Lab gamepad now
    runs through the shared `ensureLazyStage`/`disposeLazyStage` flow — its

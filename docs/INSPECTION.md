@@ -1157,3 +1157,101 @@ characterization pin), docs:check 18 files / 36 links green, check:stdlib
 byte-identical to baseline (splash 2.82/5, vendor-three 298.65/350, uikit
 53.66/56 — extractions stayed inside `chunk-experience`), e2e chromium
 serial 27 passed / 1 skipped (baseline parity).
+
+## Inspection 15 — 2026-09-27, SceneCoordinator god-class split, phase 2 (NEXT item 4 closed)
+
+Scope: the second half of NEXT item 4 — the `SceneCoordinator.ts` side of
+the god-class split (957 lines), following the user's "продолжай в том же
+духе" continuation cycle: characterization first, then one owner per
+commit, blockers and dead code out along the way.
+
+### Characterization before any move
+
+`SceneCoordinator.scrollStates.test.ts` (5 tests) pins the scroll state
+machine: the from-section's READY → VIEWING promotion (0.8s deadline) and
+its flip via `updateSections(dt)`, the to-section's gated promotion past
+eased t 0.1, the VIEWING → PASSED retirement past t 0.7 (0.5s deadline),
+and the arrival write (`sectionIndexAt` midpoint rule) re-targeting the
+scene fog to the active config while reusing the `FogExp2` instance. The
+pin work surfaced two facts the prose had never recorded: section 1 is
+force-VIEWING by the init intro rule (so the t > 0.1 gate must be pinned
+on the second range transition), and home's per-transition authored
+easings include `ease-out`. Deadline steps in the test use coarse 0.5s
+increments on purpose — exact-deadline steps hit float dust
+(`0.8 - 0.6 - 0.2 = 1.6e-16 > 0`) and would over-pin the flip to IEEE
+semantics.
+
+### Dead code removed
+
+- `SceneCoordinator.changeSection(index)`: zero callers anywhere —
+  production drives section states exclusively through the scroll contract
+  inside `updateTransform` (now pinned by scrollStates), and the only
+  `changeSection` callers left are `EnvSphere`'s and `CinematicLights`' own
+  same-named methods, invoked by Experience directly. The Junni-era
+  imperative index → state fan-out duplicated that policy with a different
+  transition table. The stale `Lights.changeSection` doc comment ("Called
+  by World.changeSection()") was refreshed with the real callers.
+
+### Extractions (all in `src/Experience/`, same `chunk-experience` membership)
+
+- `SectionStateMachine.ts` (110 lines): the scroll story state — Section
+  instances built from the page's PhaseConfig list, the derived config
+  map, the active-section index, the arrival write and the
+  READY/VIEWING/PASSED threshold policy. The coordinator orchestrates
+  `beginRoute → cache invalidation → syncRouteVisuals → buildSections`,
+  preserving the legacy World ordering of the visibility gate.
+- `SceneTransformPass.ts` (450 lines): the pooled scroll→world transform —
+  the GC-free result pool, the revision-keyed reuse cache, the range-bucket
+  mapping with per-section easing (including the parity-locked second
+  ease), the group visibility fade loop with its per-group mesh cache, the
+  arrival fog re-target and the camera/baku/env lerp. Public
+  `invalidate()` / `resetForRoute()` replace the coordinator's private
+  revision bump.
+- `SceneFramePass.ts` (160 lines): the demand-gated owner fan-out — the
+  per-frame forwarder (advances every scene owner on a demanded frame,
+  keeps route ownership state synchronized on idle ones), the camera
+  reference (DrawTrail unprojection, ServicesStage head-tracking) and the
+  Works stage's active chapter index. `setWorksPlaneStageSection` returns
+  the change so the coordinator invalidates the transform cache only on
+  real changes. The baku route-visibility predicate is the shared
+  `bakuVisibleOnRoute()` used by both the frame path and
+  `syncRouteVisuals`.
+- `sceneOwners.ts` (39 lines): the `SceneCoordinatorOwners` bag contract,
+  moved so both passes type owner access without importing the
+  coordinator (no import cycle); SceneCoordinator re-exports the type, so
+  every consumer keeps its import path.
+
+`SceneCoordinator.ts` 957 → 374 lines. The remainder is the frame-facing
+delegate surface, the owner read surface (adapter getters, query
+predicates), route/scene policy (init orchestration, contact chapter
+gating, route visuals, prewarm, resize) and disposal.
+
+### Seam note (test follows the owner, per the phase 1 rule)
+
+The motionParity suite's prototype seeding worked only while `update()`
+read `_currentSectionIndex` as an accidentally-undefined field; the
+machine extraction put that read behind a getter over a constructor-built
+owner, so the seed threw. The suite now constructs the real coordinator
+(and drives reduced motion through `setReducedMotion`) — the real wiring
+is the seam those contracts were pinning; every assertion held unchanged.
+
+### Deliberately kept (NEXT item 4.2 decision record)
+
+- `_needsRender`/`_activitySnapshot` writers and the settle policy stay on
+  Experience — extraction there has no honest owner.
+- The carousel triangle (created by SectionGroups, initialized by
+  Experience, driven by the coordinator/fade pass, disposed by
+  SectionGroups) stays as is — same verdict as Inspection 14.
+- The owner query predicates (`hasVisibleParticles`,
+  `hasVisibleAmbientMotion`, `syncTypographyTheme`) stay on the
+  coordinator: they are its read surface, and moving them would only
+  re-home two-line loops.
+
+Verification: prettier clean, tsc + vue-tsc green, eslint 0 errors (16
+pre-existing warnings), vitest 118 files / 717 tests green (+5
+scrollStates pins), docs:check 18 files / 36 links green, check:stdlib
+28/28 + 5/5 green, build (incl. prerenders + sitemap) green, budgets
+within gate (splash 2.83/5 — a 0.01 kB gzip drift from the new module
+boundaries inside `chunk-experience`; vendor-three 298.65/350 and uikit
+53.66/56 byte-identical), e2e chromium serial 27 passed / 1 skipped
+(baseline parity).
