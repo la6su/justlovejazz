@@ -29,7 +29,7 @@ import { TresCanvas } from '@tresjs/core'
 import type { TresContext, TresRendererSetupContext } from '@tresjs/core'
 import type { PerspectiveCamera } from 'three'
 import { planUnifiedBackend } from '../core/rendererBackend'
-import { DeviceCapability } from '../core/DeviceCapability'
+import { DeviceCapability, maxDprForMode } from '../core/DeviceCapability'
 import { prefersReducedMotion, observeReducedMotion } from '../core/motionPolicy'
 import { setLabCameraActive } from '../core/labCameraPolicy'
 import {
@@ -67,11 +67,13 @@ const noScene = new URLSearchParams(window.location.search).has('no-scene')
 const forceWebGLBackendForTest =
   import.meta.env.DEV && new URLSearchParams(window.location.search).has('force-webgl-backend')
 
-// Tres owns the canvas size manager and reapplies its `dpr` option after
-// renderer readiness. Keep that manager on the same initial cap as the
-// Renderer owner; otherwise Tres can overwrite the capped buffer with the
-// raw devicePixelRatio (for example 3× on a mobile browser).
-const initialDprCap = DeviceCapability.getInstance().maxDpr
+// Tres owns the canvas size manager and re-applies its `dpr` option after
+// renderer readiness AND on every internal sizes change (debounced after the
+// Renderer owner's own resize write). The cap therefore must be LIVE: the
+// boot-time hint (pre-init mode detection) differs from the final cap on the
+// mobile WebGL-fallback path (1 vs 1.5), and a static prop would let Tres
+// re-apply the stale cap over the finalized one on every resize/zoom.
+const dprCap = ref(DeviceCapability.getInstance().maxDpr)
 
 // Single renderer-construction owner (Phase 7): the custom renderer factory.
 // Construction is synchronous (Tres awaits the instance's `init()` itself);
@@ -323,10 +325,21 @@ async function onReady(context: TresContext): Promise<void> {
     disposeRendererOnce(renderer)
     return
   }
+  // The backend decision is final here (SceneHost owns planUnifiedBackend).
+  // Publish the finalized DPR cap into the TresCanvas prop so both DPR
+  // writers (Tres's size manager and the Renderer owner) agree from now on.
+  dprCap.value = maxDprForMode(plan.mode, DeviceCapability.getInstance().isMobile)
   resolved = true
   liveRenderer = renderer
   unbindRendererOwner = sceneHost.bindRendererOwner((replacement) => {
     liveRenderer = replacement
+    // Device-loss recovery may land on a different backend (webgpu → webgl);
+    // re-publish the cap so the Tres size manager keeps agreeing with the
+    // Renderer owner after the swap.
+    dprCap.value = maxDprForMode(
+      planUnifiedBackend(inspectUnifiedBackend(replacement)).mode,
+      DeviceCapability.getInstance().isMobile,
+    )
   })
   sceneHost.resolve({
     scene: context.scene.value,
@@ -379,7 +392,7 @@ onBeforeUnmount(() => {
       ref="tresRef"
       class="canvas jlz-scene-canvas"
       render-mode="on-demand"
-      :dpr="[1, initialDprCap]"
+      :dpr="[1, dprCap]"
       :renderer="rendererFactory"
       :style="{ pointerEvents: labCameraActive ? 'auto' : 'none' }"
       @ready="onReady"
