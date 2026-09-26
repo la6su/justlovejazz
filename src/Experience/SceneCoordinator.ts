@@ -444,32 +444,6 @@ export class SceneCoordinator {
     }
   }
 
-  // ── Junni: changeSection(index) — state machine (ready → viewing → passed)
-  // Returns the newly-active Section
-  public changeSection(index: number): Section | undefined {
-    const section = this.sections[index]
-    if (!section) return undefined
-
-    this._currentSectionIndex = index
-    this._invalidateTransformCache()
-
-    const reduced = this.isReducedMotion
-
-    // All sections switch to appropriate states
-    this.sections.forEach((s, i) => {
-      if (i === index) {
-        // Active section → viewing
-        s.switchState(SectionState.VIEWING, 0.8, reduced)
-      } else if (i < index) {
-        // Previous sections → passed
-        s.switchState(SectionState.PASSED, 0.5, reduced)
-      }
-      // Sections > index stay ready
-    })
-
-    return section
-  }
-
   // ── Range-based scroll mapping: scrollValue → section index + eased t
   // Uses PhaseConfig.range[] for weighted scroll buckets
   // Applies S-curve easing to t so transitions have "comfort zones"
