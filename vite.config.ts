@@ -45,7 +45,7 @@ const publishedBuilderSlugs = (() => {
 export default defineConfig(() => ({
   base: '/',
   resolve: {
-    // TresJS 5.8 statically imports WebGLRenderer from bare `three`. The
+    // TresJS 5.9 statically imports WebGLRenderer from bare `three`. The
     // application supplies WebGPURenderer itself, so use the WebGPU entry and
     // retain only a dead-path WebGLRenderer compatibility symbol. The
     // three-stdlib entry keeps the Cientos barrel resolution to the modules

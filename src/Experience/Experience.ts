@@ -20,7 +20,7 @@ import { SceneCoordinator } from './SceneCoordinator'
 // called). updateWorldDNAAudio set uniforms nobody read. All dead.
 import { observeReducedMotion, prefersReducedMotion } from '../core/motionPolicy'
 import { FrameTiming } from '../core/FrameTiming'
-import { WORLD_SLOT_COUNT, worldSlotIndex } from '../core/worldSlots'
+import { WORKS_SLOT_INDEX, WORLD_SLOT_COUNT } from '../core/worldSlots'
 import { DEFAULT_CAMERA_SMOOTHING } from '../core/WorldConfig'
 import {
   NO_ACTIVITY,
@@ -31,6 +31,7 @@ import {
   type RenderActivity,
 } from '../core/renderDemand'
 import { RenderScheduler, type FrameReason } from '../core/RenderScheduler'
+import { createReadinessGate, type ReadinessGate } from '../core/readinessGate'
 import type { SceneHostReady } from '../app/sceneHost'
 // ContentReveal owns per-section auto/inverse themes and sends this runtime
 // jlz:theme-applied events for 3D synchronisation.
@@ -44,6 +45,7 @@ import { GroundPlane } from './Scene/GroundPlane'
 import { SectionGroups } from './Scene/SectionGroups'
 import {
   createLazyStageSlot,
+  createImportedLazyStage,
   disposeLazyStage,
   ensureLazyStage,
   type LazyStageContract,
@@ -65,9 +67,6 @@ import { disposeAllCaseTextures } from './World/caseTexture'
 import { contentRoot } from '../core/contentRoot'
 // DissolveOverlay removed — cover transition in ProjectDetail replaces it.
 
-/** The Works story frame — the six-slot contract, not a literal. */
-const WORKS_SLOT_INDEX = worldSlotIndex('works')!
-
 /**
  * Phase 7: the persistent SceneHost readiness state handed to Experience by
  * `entry-app.ts`. The scene, camera and renderer instances are the ONES
@@ -85,54 +84,11 @@ type ExperienceHost = Omit<SceneHostReady, 'context' | 'backend' | 'renderer'> &
   replaceRenderer(renderer: RenderSurface): void
 }
 
-interface ReadinessGate {
-  promise: Promise<void>
-  cancel(): void
-}
-
-/**
- * Wait for the first successful frame without leaving a fallback timer armed
- * after the gate has settled. Cancellation deliberately leaves the promise
- * pending: a destroyed Experience must never let entry-app publish readiness.
- */
-export function createReadinessGate(firstRender: Promise<void>, timeoutMs: number): ReadinessGate {
-  let settled = false
-  let resolveGate!: () => void
-  let timeout: ReturnType<typeof setTimeout> | null = null
-
-  const clear = () => {
-    if (timeout !== null) {
-      clearTimeout(timeout)
-      timeout = null
-    }
-  }
-  const settle = () => {
-    if (settled) return
-    settled = true
-    clear()
-    resolveGate()
-  }
-
-  const promise = new Promise<void>((resolve) => {
-    resolveGate = resolve
-    timeout = setTimeout(settle, timeoutMs)
-    void firstRender.then(settle, settle)
-  })
-
-  return {
-    promise,
-    cancel: () => {
-      if (settled) return
-      settled = true
-      clear()
-    },
-  }
-}
-
 export class Experience {
   scene!: THREE.Scene
   sizes!: Sizes
-  time!: Time
+  /** Per-frame delta clamp — internal to the loop host. */
+  private time!: Time
   camera!: Camera
   renderer!: Renderer
   private contentReveal!: ContentReveal
@@ -229,7 +185,7 @@ export class Experience {
     return this.features?.portfolio ?? null
   }
   /** The fullscreen overlay (owned by ExperienceUI). */
-  public get overlay() {
+  private get overlay() {
     return this.features?.overlay ?? null
   }
   private currentSectionContext: string | null = null
@@ -292,7 +248,7 @@ export class Experience {
   private _firstRenderPromise: Promise<void> | null = null
   private _readinessGate: ReadinessGate | null = null
   /** Resolved on the first successful rendered frame. */
-  public get firstRender(): Promise<void> {
+  private get firstRender(): Promise<void> {
     if (!this._firstRenderPromise) {
       this._firstRenderPromise = new Promise<void>((resolve) => {
         this._firstRenderResolve = resolve
@@ -707,10 +663,10 @@ export class Experience {
     return {
       label: 'ContactTypographyStage',
       owner: this._contactTypographySlot.owner,
-      create: (isCurrent) =>
-        import('./World/ContactTypographyStage').then(({ ContactTypographyStage }) =>
-          isCurrent() ? new ContactTypographyStage() : null,
-        ),
+      create: createImportedLazyStage(
+        () => import('./World/ContactTypographyStage'),
+        ({ ContactTypographyStage }) => ContactTypographyStage,
+      ),
       attach: (stage) => {
         this.scene.add(stage)
       },
@@ -739,10 +695,10 @@ export class Experience {
     return {
       label: 'ContactHaloStage',
       owner: this._contactHaloSlot.owner,
-      create: (isCurrent) =>
-        import('./World/ContactHaloStage').then(({ ContactHaloStage }) =>
-          isCurrent() ? new ContactHaloStage() : null,
-        ),
+      create: createImportedLazyStage(
+        () => import('./World/ContactHaloStage'),
+        ({ ContactHaloStage }) => ContactHaloStage,
+      ),
       attach: (stage) => this._host.stages.contactHalo.mount(stage),
       configure: (stage) => {
         stage.setTheme(this._contactIsLight)
@@ -771,10 +727,10 @@ export class Experience {
     return {
       label: 'ManifestoInkStage',
       owner: this._manifestoInkSlot.owner,
-      create: (isCurrent) =>
-        import('./World/ManifestoInkStage').then(({ ManifestoInkStage }) =>
-          isCurrent() ? new ManifestoInkStage() : null,
-        ),
+      create: createImportedLazyStage(
+        () => import('./World/ManifestoInkStage'),
+        ({ ManifestoInkStage }) => ManifestoInkStage,
+      ),
       attach: (stage) => this._host.stages.manifestoInk.mount(stage),
       configure: (stage) => {
         // The effective-polarity cache is refreshed on every theme event
@@ -807,10 +763,10 @@ export class Experience {
     return {
       label: 'ContactCyprusStage',
       owner: this._contactCyprusSlot.owner,
-      create: (isCurrent) =>
-        import('./World/ContactCyprusStage').then(({ ContactCyprusStage }) =>
-          isCurrent() ? new ContactCyprusStage() : null,
-        ),
+      create: createImportedLazyStage(
+        () => import('./World/ContactCyprusStage'),
+        ({ ContactCyprusStage }) => ContactCyprusStage,
+      ),
       attach: (stage) => {
         this.scene.add(stage)
       },

@@ -13,16 +13,14 @@
 import { Experience } from '../Experience/Experience'
 import { createLazyStageSlot, type LazyStageSlot } from '../Experience/LazyStage'
 
-export const LAZY_STAGE_SLOT_NAMES = [
-  'worksPlane',
-  'contactTypography',
-  'contactCyprus',
-  'contactHalo',
-  'manifestoInk',
-  'labGamepad',
-] as const
-
-export type LazyStageSlotName = (typeof LAZY_STAGE_SLOT_NAMES)[number]
+/** The six route-owned lazy-stage keys, mirroring Experience's slot fields. */
+export type LazyStageSlotName =
+  | 'worksPlane'
+  | 'contactTypography'
+  | 'contactCyprus'
+  | 'contactHalo'
+  | 'manifestoInk'
+  | 'labGamepad'
 
 /** Bag keys that route into a lazy-stage slot instead of a plain field. */
 const SLOT_KEY_TO_NAME: Record<string, LazyStageSlotName> = {

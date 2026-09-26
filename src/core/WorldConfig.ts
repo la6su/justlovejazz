@@ -2,6 +2,7 @@
 
 import * as THREE from 'three'
 import { BakuRole } from './types'
+import type { PostParams } from './postParams'
 import { worldSlotAt, WORLD_SLOT_COUNT } from './worldSlots'
 
 // ── Types ──
@@ -37,20 +38,23 @@ interface FogTransform {
   density: number
 }
 
-interface PostTransform {
-  bloom: number
-  vignette: number
-  grain: number
-  chromatic: number
-  /** Screen-space glass refraction strength (0=off, 0.1=subtle, 0.3=strong). */
-  refract: number
-  /** Screen border intensity (0=off, 0.3=subtle, 1.0=full black border). */
-  border: number
-  /** Shadow tint (RGB 0-1, multiplied into dark areas). */
-  gradeShadows: [number, number, number]
-  /** Highlight tint (RGB 0-1, 1=neutral, pushed into bright areas). */
-  gradeHighlights: [number, number, number]
-}
+/**
+ * The authored per-section post values (WorldConfig remains the single source
+ * of visible post-processing values). Field docs live on the canonical shape
+ * (core/postParams.ts) — this type is its section-authored projection without
+ * the renderer-owned bloom blur shape.
+ */
+type PostTransform = Pick<
+  PostParams,
+  | 'bloom'
+  | 'vignette'
+  | 'grain'
+  | 'chromatic'
+  | 'refract'
+  | 'border'
+  | 'gradeShadows'
+  | 'gradeHighlights'
+>
 
 interface SectionLightDef {
   hexColor: string
@@ -58,6 +62,11 @@ interface SectionLightDef {
   distance?: number
   position: [number, number, number]
 }
+
+/** Transition easing authored in WorldConfig. The list is closed: only these
+ *  two curves are used by any section, so SceneCoordinator implements exactly
+ *  them (no dead 'linear'/'cubic-bezier' branches). */
+export type SceneTransitionEasing = 'ease-out' | 'ease-in-out'
 
 /** Per-section 3D scene control. All optional — sections without these
  *  use defaults (objects visible when their scene group is visible,
@@ -68,10 +77,11 @@ export interface SceneControl {
     wireframeText?: boolean
     bakuCarousel?: boolean
   }
-  /** Transition timing for camera + baku morph when entering this section. */
+  /** Transition easing for camera + baku morph when entering this section.
+   *  (The former duration field had zero readers — the crossfade speed and
+   *  switch durations are owned by Section/PostProcessingManager.) */
   transition?: {
-    duration: number
-    easing: 'linear' | 'ease-out' | 'ease-in-out' | 'cubic-bezier'
+    easing: SceneTransitionEasing
   }
 }
 
@@ -170,7 +180,7 @@ const DEFAULTS: Omit<RawScene, 'id' | 'context' | 'domSection' | 'range'> = {
   groundColor: 0x101010,
   groundOpacity: 0,
   sectionTheme: 'dark',
-  sceneTransition: { duration: 0.8, easing: 'ease-out' },
+  sceneTransition: { easing: 'ease-out' },
 }
 
 // 6 sections (4 story frames + Contact finale/Lab=0 + Menu=5)
@@ -189,7 +199,7 @@ const HOME_RAW: Array<Omit<RawScene, 'domSection' | 'range'>> = [
     ...DEFAULTS,
     id: 'sec_intro',
     context: 'Studio — Home',
-    sceneTransition: { duration: 1.0, easing: 'ease-in-out' },
+    sceneTransition: { easing: 'ease-in-out' },
   },
   {
     ...DEFAULTS,
@@ -205,7 +215,7 @@ const HOME_RAW: Array<Omit<RawScene, 'domSection' | 'range'>> = [
     lightColor: 0x050505,
     lightIntensity: 1.2,
     groundOpacity: 0.08,
-    sceneTransition: { duration: 0.6, easing: 'ease-out' },
+    sceneTransition: { easing: 'ease-out' },
   },
   {
     ...DEFAULTS,
@@ -222,7 +232,7 @@ const HOME_RAW: Array<Omit<RawScene, 'domSection' | 'range'>> = [
     lightIntensity: 1.2,
     groundOpacity: 0.1,
     sceneObjects: { bakuCarousel: true },
-    sceneTransition: { duration: 0.8, easing: 'ease-out' },
+    sceneTransition: { easing: 'ease-out' },
   },
   {
     ...DEFAULTS,
@@ -234,7 +244,7 @@ const HOME_RAW: Array<Omit<RawScene, 'domSection' | 'range'>> = [
     groundColor: 0x121212,
     groundOpacity: 0.4,
     sceneObjects: { wireframeText: true },
-    sceneTransition: { duration: 0.6, easing: 'ease-out' },
+    sceneTransition: { easing: 'ease-out' },
   },
   {
     ...DEFAULTS,
@@ -250,7 +260,7 @@ const HOME_RAW: Array<Omit<RawScene, 'domSection' | 'range'>> = [
     lightColor: 0xa6a9d6,
     lightIntensity: 0.72,
     groundOpacity: 0.02,
-    sceneTransition: { duration: 0.9, easing: 'ease-in-out' },
+    sceneTransition: { easing: 'ease-in-out' },
   },
 ]
 

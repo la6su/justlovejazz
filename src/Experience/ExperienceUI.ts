@@ -20,15 +20,12 @@ import type { PageId } from '../sections/_shared/constants'
 import { getSoundMuted } from '../core/SfxSystem'
 import type { SfxSystem } from '../core/SfxSystem'
 import { createWorksPortfolio, type WorksPortfolio } from './WorksPortfolio'
-import { WORLD_SLOT_COUNT, worldSlotIndex } from '../core/worldSlots'
+import { WORKS_SLOT_INDEX, WORLD_SLOT_COUNT } from '../core/worldSlots'
 import { eventBus } from '../core/EventBus'
 import { isCurrentRouteContinuation } from '../core/routeContinuation'
 import type { Camera } from './Camera'
 import type { FrameReason } from '../core/RenderScheduler'
 import { PROJECTS } from '../Data/Projects'
-
-/** The single Works story frame — the six-slot contract, not a literal. */
-const WORKS_SLOT_INDEX = worldSlotIndex('works')!
 
 /**
  * The narrow port ExperienceUI reaches the scene through. Every accessor is
@@ -82,6 +79,17 @@ export class ExperienceUI {
   private readonly _unsubs: Array<() => void> = []
   private _worksPlaneTapHandler: ((e: PointerEvent) => void) | null = null
   private _routeGeneration = 0
+
+  /** Route-continuation guard over this host's live generation + page — the
+   *  shared idiom behind every async continuation in this file. */
+  private _routeContinuationIsCurrent(capturedGeneration: number, capturedPage: PageId): boolean {
+    return isCurrentRouteContinuation(
+      capturedGeneration,
+      this._routeGeneration,
+      capturedPage,
+      this.host.page(),
+    )
+  }
   private _destroyed = false
 
   constructor(private host: ExperienceUIHost) {}
@@ -105,15 +113,7 @@ export class ExperienceUI {
         const routeGeneration = this._routeGeneration
         const page = this.host.page()
         void this.host.ensureCarouselInitialized().then(() => {
-          if (
-            !isCurrentRouteContinuation(
-              routeGeneration,
-              this._routeGeneration,
-              page,
-              this.host.page(),
-            )
-          )
-            return
+          if (!this._routeContinuationIsCurrent(routeGeneration, page)) return
           if (this.storyNav?.getSectionIndex() === WORKS_SLOT_INDEX) this.host.raise('nav')
         })
       }
@@ -160,15 +160,7 @@ export class ExperienceUI {
         const routeGeneration = this._routeGeneration
         const page = this.host.page()
         void this.ensurePortfolio().then(() => {
-          if (
-            !isCurrentRouteContinuation(
-              routeGeneration,
-              this._routeGeneration,
-              page,
-              this.host.page(),
-            )
-          )
-            return
+          if (!this._routeContinuationIsCurrent(routeGeneration, page)) return
           this.onProjectSelect(idx)
         })
       }),
@@ -205,12 +197,7 @@ export class ExperienceUI {
         }
         const newPage = this.host.page()
         const continuationIsCurrent = () =>
-          isCurrentRouteContinuation(
-            routeGeneration,
-            this._routeGeneration,
-            newPage,
-            this.host.page(),
-          )
+          this._routeContinuationIsCurrent(routeGeneration, newPage)
         const coordinator = this.host.coordinator()
         void (async () => {
           // Rebuild page-specific fog/post/section ranges before route owners
@@ -312,15 +299,7 @@ export class ExperienceUI {
       const routeGeneration = this._routeGeneration
       const page = this.host.page()
       void this.ensurePortfolio().then(() => {
-        if (
-          !isCurrentRouteContinuation(
-            routeGeneration,
-            this._routeGeneration,
-            page,
-            this.host.page(),
-          )
-        )
-          return
+        if (!this._routeContinuationIsCurrent(routeGeneration, page)) return
         const stage = this.host.coordinator().worksPlaneStage
         if (!stage) return
         const idx = stage.hitTest(e.clientX, e.clientY)

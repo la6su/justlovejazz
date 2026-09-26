@@ -34,7 +34,7 @@ export function installCanvasPointerShims(): void {
   HTMLCanvasElement.prototype.hasPointerCapture ??= () => false
 }
 
-export interface MountedSceneCanvas {
+interface MountedSceneCanvas {
   wrapper: VueWrapper
   renderer: ReturnType<typeof createRendererMock>
   scene: Scene

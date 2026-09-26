@@ -33,19 +33,7 @@ import * as THREE from 'three'
 import type { Scene, Camera } from 'three'
 import type { Node } from 'three/webgpu'
 import { withNoToneMapping } from './toneMappingGuard'
-
-interface WebGPUPostParams {
-  bloom: number
-  bloomRadius: number
-  bloomThreshold: number
-  vignette: number
-  grain: number
-  chromatic: number
-  border: number
-  refract: number
-  gradeShadows: [number, number, number]
-  gradeHighlights: [number, number, number]
-}
+import type { PostParams } from './postParams'
 
 interface RenderTargetOwner {
   dispose?: () => void
@@ -103,7 +91,7 @@ export class WebGPUPostPipeline {
     return false
   }
 
-  updateParams(params: WebGPUPostParams): void {
+  updateParams(params: Readonly<PostParams>): void {
     this._bloomStrength.value = params.bloom
     this._bloomRadius.value = params.bloomRadius
     this._bloomThreshold.value = params.bloomThreshold
@@ -112,8 +100,16 @@ export class WebGPUPostPipeline {
     this._borderStrength.value = params.border
     this._chromaticStrength.value = params.chromatic
     this._refractStrength.value = params.refract
-    this._gradeShadows.value.set(...params.gradeShadows)
-    this._gradeHighlights.value.set(...params.gradeHighlights)
+    this._gradeShadows.value.set(
+      params.gradeShadows[0],
+      params.gradeShadows[1],
+      params.gradeShadows[2],
+    )
+    this._gradeHighlights.value.set(
+      params.gradeHighlights[0],
+      params.gradeHighlights[1],
+      params.gradeHighlights[2],
+    )
   }
 
   render(): void {
@@ -352,10 +348,6 @@ export class WebGPUPostPipeline {
       // not retain the pass reference or prevent the rest of the owner from
       // releasing its graph and renderer resources.
     }
-  }
-
-  resize(): void {
-    // TSL pipeline handles RT resize internally in three r184.
   }
 
   dispose(): void {

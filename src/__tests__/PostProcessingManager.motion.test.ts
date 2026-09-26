@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import { DeviceCapability } from '../core/DeviceCapability'
 import { PostProcessingManager, type SectionPostParams } from '../core/PostProcessingManager'
 
 describe('PostProcessingManager reduced-motion settlement', () => {
@@ -161,5 +162,36 @@ describe('PostProcessingManager reduced-motion settlement', () => {
     expect(manager.postParams.border).toBe(0.4)
     expect(manager.postParams.gradeShadows).toEqual([1, 1, 1])
     expect(manager.postParams.gradeHighlights).toEqual([1, 1, 1])
+  })
+
+  // The Renderer no longer applies capability scaling per frame — applyPreset
+  // is the single quality-scaling owner (capability budget × feature gates).
+  it('applies the capability intensity budget in applyPreset, unscaled for look channels', () => {
+    const capability = DeviceCapability.getInstance()
+    const previousTier = capability.tier
+    capability.tier = 'high' // no per-channel feature gates — isolates the budget
+    const scale = vi.spyOn(capability, 'scaleIntensity').mockImplementation((v) => v * 0.5)
+    try {
+      const manager = new PostProcessingManager()
+      manager.applyPreset('sec_works', {
+        bloom: 0.4,
+        vignette: 0.2,
+        grain: 0.2,
+        chromatic: 0.3,
+      } satisfies SectionPostParams)
+
+      const state = manager as unknown as {
+        current: { bloom: number; chromatic: number; refract: number; border: number }
+      }
+      expect(state.current.bloom).toBeCloseTo(0.2) // 0.4 × budget 0.5
+      expect(state.current.chromatic).toBeCloseTo(0.15) // 0.3 × budget 0.5
+      // Look channels omitted by the section stay at their neutral defaults.
+      expect(state.current.refract).toBe(0)
+      expect(state.current.border).toBe(0)
+      expect(scale).toHaveBeenCalled()
+    } finally {
+      scale.mockRestore()
+      capability.tier = previousTier
+    }
   })
 })

@@ -19,15 +19,16 @@ function initSoundToggle(): void {
     btn.title = soundOn ? 'Sound: On (click to mute)' : 'Sound: Off (click to enable)'
   }
   update()
-  btn.addEventListener(
-    'click',
-    () => {
-      soundOn = !soundOn
-      setSoundMutedPreference(!soundOn)
-      update()
-    },
-    { signal: _bootstrapAbort.signal },
-  )
+  // Plain listeners: the bootstrap runs exactly once per page (the only retry
+  // is a full page reload) and the splash chrome is never torn down in-page,
+  // so there is no abort controller to bind — one that fired before these
+  // registrations would silently disable the toggles (DOM spec drops
+  // listeners added on an already-aborted signal).
+  btn.addEventListener('click', () => {
+    soundOn = !soundOn
+    setSoundMutedPreference(!soundOn)
+    update()
+  })
 }
 
 // ── Config: language toggle EN/RU ──
@@ -66,14 +67,20 @@ function initLangToggle(): void {
     btn.title = `Language: ${lang} (click to switch)`
   }
   update()
-  btn.addEventListener(
-    'click',
-    () => {
-      toggleLang()
-      update()
-    },
-    { signal: _bootstrapAbort.signal },
-  )
+  btn.addEventListener('click', () => {
+    toggleLang()
+    update()
+  })
+}
+
+/**
+ * Wire both splash config toggles. Exported for the splash-toggles lifecycle
+ * test; the bootstrap calls it before any async work so the toggles work
+ * while the 3D scene is still loading.
+ */
+export function initSplashToggles(): void {
+  initSoundToggle()
+  initLangToggle()
 }
 
 // ── Enter button click is wired by inline script in index.html ──
@@ -94,8 +101,8 @@ function showEnterButton(): void {
 // ── Show a load error when 3D fails to initialize ──
 // Replaces the Enter button with an error message + retry link and flips the
 // splash status row to SIGNAL LOST. This runs if Experience.init() throws
-// (jlz:webgl-failed) or if jlz:webgl-ready doesn't fire within 30s (init
-// hung). The Enter button must NEVER appear when 3D isn't ready — clicking it
+// (jlz:webgl-failed) or if jlz:webgl-ready doesn't fire within 60s (init
+// hung; the watchdog below owns the 60s budget). The Enter button must NEVER appear when 3D isn't ready — clicking it
 // would fade the splash to reveal an
 // uninitialized scene (no carousel, no baku, broken camera).
 function showLoadError(): void {
@@ -147,7 +154,6 @@ export function updateLoaderProgress(pct: number): void {
 
 let _bootstrapState: BootstrapState = INITIAL_BOOTSTRAP_STATE
 let _readyWatchdog: ReturnType<typeof setTimeout> | null = null
-const _bootstrapAbort = new AbortController()
 let _bootstrapUnsubs: Array<() => void> = []
 
 export function createStyleOwner(): {
@@ -181,12 +187,13 @@ function clearHostProbe(): void {
 }
 
 function resetBootstrapBindings(): void {
+  // Idempotence guard for the exactly-once bootstrap (the only retry is a
+  // full page reload — a fresh module graph with fresh module state). The
+  // bus subscriptions are re-registered by the next startAppOnce call, so
+  // they must be dropped here; the splash toggle listeners intentionally
+  // stay plain (see initSoundToggle).
   _bootstrapUnsubs.forEach((unsubscribe) => unsubscribe())
   _bootstrapUnsubs = []
-  // The bootstrap runs exactly once per page (the only retry is a full page
-  // reload), so aborting the controller needs no re-arm — a fresh module
-  // graph comes with a fresh controller.
-  _bootstrapAbort.abort()
   clearReadyWatchdog()
   clearReadyEventTimer()
   clearBootstrapStyle()
@@ -423,8 +430,7 @@ async function startAppOnce(): Promise<void> {
   resetBootstrapBindings()
   // Init splash config toggles FIRST — instant, no dependencies.
   // These work during loading, before three.js finishes.
-  initSoundToggle()
-  initLangToggle()
+  initSplashToggles()
   // (initEnterButton call removed — was a no-op.)
 
   // Use ?inline to prevent Vite from injecting @vite/client (updateStyle/

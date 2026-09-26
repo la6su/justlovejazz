@@ -3,37 +3,17 @@
 
 import { DeviceCapability } from './DeviceCapability'
 import type { QualityTier } from './DeviceCapability'
-
-/** Runtime values shared by the WebGL and WebGPU post-processing paths. */
-interface PostParams {
-  bloom: number // 0–1, bloom intensity multiplier
-  vignette: number // 0–1, vignette radius/darkness
-  grain: number // 0–1, grain amplitude
-  chromatic: number // 0–1, chromatic aberration strength
-  bloomRadius: number // 0–1, bloom blur radius (Track B: per-section)
-  bloomThreshold: number // 0–1, luminance gate for bloom (Track B)
-  refract: number // 0–1, screen-space glass refraction strength
-  border: number // 0–1, screen border intensity
-  gradeShadows: [number, number, number] // shadow tint multipliers
-  gradeHighlights: [number, number, number] // highlight tint multipliers
-}
+import type { PostParams } from './postParams'
+import { NEUTRAL_GRADE } from './postParams'
 
 /**
- * Values authored in WorldConfig. Keeping them separate from bloom shape
- * prevents a second, stale set of visual intensities from overriding a scene.
- * The grade channels default to neutral so legacy callers that author only
- * the four intensity values keep their current look.
+ * The section-authored subset of the canonical PostParams: the four intensity
+ * channels are always authored; the look channels may be omitted (they then
+ * default to neutral/off in applyPreset). Bloom's blur shape is NOT authored
+ * here — it is renderer-specific (see PHASE_BLOOM_SHAPES).
  */
-export interface SectionPostParams {
-  bloom: number
-  vignette: number
-  grain: number
-  chromatic: number
-  refract?: number
-  border?: number
-  gradeShadows?: [number, number, number]
-  gradeHighlights?: [number, number, number]
-}
+export type SectionPostParams = Pick<PostParams, 'bloom' | 'vignette' | 'grain' | 'chromatic'> &
+  Partial<Pick<PostParams, 'refract' | 'border' | 'gradeShadows' | 'gradeHighlights'>>
 
 interface BloomShape {
   bloomRadius: number
@@ -76,9 +56,8 @@ const DEFAULT_SECTION_POST: SectionPostParams = {
   chromatic: 0,
 }
 
-const NEUTRAL_TINT: [number, number, number] = [1, 1, 1]
-
-/** Quality tier scalers */
+/** Per-channel feature gates by quality tier — composed WITH the capability
+ *  intensity budget in applyPreset (single application site). */
 const QUALITY_SCALARS: Record<QualityTier, Partial<PostParams>> = {
   high: {}, // No scaling — full pipeline
   medium: { chromatic: 0, grain: 0.5 }, // Drop chromatic, halve grain
@@ -137,31 +116,30 @@ export class PostProcessingManager {
     this.phase = phase
     this.sectionPost = sectionPost
     const bloomShape = PHASE_BLOOM_SHAPES[phase] ?? PHASE_BLOOM_SHAPES['sec_intro']!
+    // Quality scaling happens HERE and only here: the capability intensity
+    // budget (postMultiplier — fill-rate tier) composed with the per-channel
+    // feature gates below. Linear scaling commutes with the crossfade lerp,
+    // so applying it to the crossfade TARGET is identical to scaling the
+    // display values per frame. Shape/look channels (bloomRadius,
+    // bloomThreshold, refract, border, grades) stay unscaled on purpose:
+    // scaling would distort the authored look, not just the intensity.
+    const scaler = QUALITY_SCALARS[this.tier]
+    const intensity = (value: number, gate: number | undefined): number =>
+      this.capability.scaleIntensity(value) * (gate ?? 1)
     this.current = {
-      bloom: sectionPost.bloom,
-      vignette: sectionPost.vignette,
-      grain: sectionPost.grain,
-      chromatic: sectionPost.chromatic,
+      bloom: intensity(sectionPost.bloom, scaler.bloom),
+      vignette: intensity(sectionPost.vignette, scaler.vignette),
+      grain: intensity(sectionPost.grain, scaler.grain),
+      chromatic: intensity(sectionPost.chromatic, scaler.chromatic),
       ...bloomShape,
       // Grade channels: authored per section, neutral when a caller omits them.
       refract: sectionPost.refract ?? 0,
       border: sectionPost.border ?? 0,
-      gradeShadows: sectionPost.gradeShadows ? [...sectionPost.gradeShadows] : [...NEUTRAL_TINT],
+      gradeShadows: sectionPost.gradeShadows ? [...sectionPost.gradeShadows] : [...NEUTRAL_GRADE],
       gradeHighlights: sectionPost.gradeHighlights
         ? [...sectionPost.gradeHighlights]
-        : [...NEUTRAL_TINT],
+        : [...NEUTRAL_GRADE],
     }
-
-    // Apply quality tier scaling
-    const scaler = QUALITY_SCALARS[this.tier]
-    this.current.bloom *= scaler.bloom ?? 1
-    this.current.vignette *= scaler.vignette ?? 1
-    this.current.grain *= scaler.grain ?? 1
-    this.current.chromatic *= scaler.chromatic ?? 1
-    // bloomRadius + bloomThreshold are NOT scaled by quality tier (they are
-    // shape parameters, not intensity — scaling would distort the look).
-    // The grade channels stay unscaled for the same reason: they are authored
-    // look parameters consumed only by the capability-gated TSL post graph.
     this._crossfadeActive = !this.displayMatchesCurrent()
   }
 

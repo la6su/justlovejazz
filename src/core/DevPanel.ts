@@ -204,12 +204,9 @@ export class DevPanel {
         r.toneMappingExposure = ev.value as number
       },
     )
-    f.addBinding(this.controls, 'forceRender', { label: 'force render' }).on('change', (ev) => {
-      if (ev.value as boolean) {
-        // Set the flag every frame via interval
-        if (!this.refreshInterval) this.startRefresh()
-      }
-    })
+    // forceRender is read by the refresh interval (always running since the
+    // constructor) — no change handler needed here.
+    f.addBinding(this.controls, 'forceRender', { label: 'force render' })
     f.addButton({ title: 'Reload page' }).on('click', () => location.reload())
   }
 

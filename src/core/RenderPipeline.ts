@@ -21,35 +21,10 @@ import * as THREE from 'three'
 import { WebGPURenderer } from 'three/webgpu'
 import { WebGPUPostPipeline } from './WebGPUPostPipeline'
 import { withNoToneMapping } from './toneMappingGuard'
+import type { PostParams } from './postParams'
 
 function tupleIs(a: [number, number, number], b: [number, number, number]): boolean {
   return Object.is(a[0], b[0]) && Object.is(a[1], b[1]) && Object.is(a[2], b[2])
-}
-
-// ─── Configuration ───────────────────────────────────────────────
-
-export interface RenderPipelineConfig {
-  /** WebGPU path: the TSL graph always runs — kept for the config contract. */
-  bloomEnabled?: boolean
-}
-
-export interface PostParams {
-  bloom: number
-  vignette: number
-  grain: number
-  chromatic?: number
-  /** Bloom blur radius (0–1). Track B: per-section. */
-  bloomRadius?: number
-  /** Bloom luminance threshold (0–1). Track B: per-section. */
-  bloomThreshold?: number
-  /** Screen-space glass refraction strength (0–1), crossfaded per section. */
-  refract?: number
-  /** Screen border intensity (0–1), crossfaded per section. */
-  border?: number
-  /** Shadow tint multipliers, crossfaded per section. */
-  gradeShadows?: [number, number, number]
-  /** Highlight tint multipliers, crossfaded per section. */
-  gradeHighlights?: [number, number, number]
 }
 
 // ─── RenderPipeline Class ──────────────────────────────────────
@@ -61,15 +36,7 @@ export interface PostParams {
  * reclaimed when the pipeline (or the renderer) is disposed.
  */
 export class RenderPipeline {
-  private _params!: PostParams & {
-    chromatic: number
-    bloomRadius: number
-    bloomThreshold: number
-    refract: number
-    border: number
-    gradeShadows: [number, number, number]
-    gradeHighlights: [number, number, number]
-  }
+  private _params!: PostParams
 
   private _renderer!: WebGPURenderer
   private _webgpuPipeline: WebGPUPostPipeline | null = null
@@ -81,18 +48,7 @@ export class RenderPipeline {
   // PERF-11: the WebGPU params object + tuple arrays are mutated in place each
   // frame (updateParams copies into the TSL uniform nodes) — no per-frame
   // allocation.
-  private _webgpuParamsCache: {
-    bloom: number
-    bloomRadius: number
-    bloomThreshold: number
-    vignette: number
-    grain: number
-    chromatic: number
-    refract: number
-    border: number
-    gradeShadows: [number, number, number]
-    gradeHighlights: [number, number, number]
-  } = {
+  private _webgpuParamsCache: PostParams = {
     bloom: 0,
     bloomRadius: 0,
     bloomThreshold: 0,
@@ -121,15 +77,14 @@ export class RenderPipeline {
   }
 
   /** Factory: create pipeline for the unified WebGPURenderer.
-   *  The WebGPU TSL graph derives its per-frame parameters from `updateParams`
-   *  (PostProcessingManager); the `config` argument is the capability-tier
-   *  contract produced by `Renderer.buildPipelineConfig()` — the classic
-   *  per-pass fields it once drove were removed with the classic path. */
-  public static create(renderer: WebGPURenderer, config?: RenderPipelineConfig): RenderPipeline {
+   *  `postProcessingEnabled` is the capability decision (real WebGPU backend
+   *  AND tier above low — see supportsPostProcessing); when false the pipeline
+   *  renders directly and never builds the TSL graph. */
+  public static create(renderer: WebGPURenderer, postProcessingEnabled = true): RenderPipeline {
     const pipeline = new RenderPipeline()
 
     pipeline._renderer = renderer
-    pipeline._postProcessingEnabled = config?.bloomEnabled !== false
+    pipeline._postProcessingEnabled = postProcessingEnabled
 
     // WebGPU TSL pipeline is built lazily on first render() — it needs the
     // live scene + camera references to bind into the PassNode.
@@ -142,38 +97,39 @@ export class RenderPipeline {
   /** Update post-processing parameters (cross-faded by PostProcessingManager).
    *  The grade channels ride the same crossfade as the intensity channels, so
    *  section transitions no longer snap refraction, border and color tints. */
-  public updateParams(params: PostParams): void {
-    const nextChromatic = params.chromatic ?? this._params.chromatic
-    const nextBloomRadius = params.bloomRadius ?? this._params.bloomRadius
-    const nextBloomThreshold = params.bloomThreshold ?? this._params.bloomThreshold
-    const nextRefract = params.refract ?? this._params.refract
-    const nextBorder = params.border ?? this._params.border
-    const nextShadows = params.gradeShadows ?? this._params.gradeShadows
-    const nextHighlights = params.gradeHighlights ?? this._params.gradeHighlights
+  public updateParams(params: Readonly<PostParams>): void {
     if (
       Object.is(this._params.bloom, params.bloom) &&
       Object.is(this._params.vignette, params.vignette) &&
       Object.is(this._params.grain, params.grain) &&
-      Object.is(this._params.chromatic, nextChromatic) &&
-      Object.is(this._params.bloomRadius, nextBloomRadius) &&
-      Object.is(this._params.bloomThreshold, nextBloomThreshold) &&
-      Object.is(this._params.refract, nextRefract) &&
-      Object.is(this._params.border, nextBorder) &&
-      tupleIs(this._params.gradeShadows, nextShadows) &&
-      tupleIs(this._params.gradeHighlights, nextHighlights)
+      Object.is(this._params.chromatic, params.chromatic) &&
+      Object.is(this._params.bloomRadius, params.bloomRadius) &&
+      Object.is(this._params.bloomThreshold, params.bloomThreshold) &&
+      Object.is(this._params.refract, params.refract) &&
+      Object.is(this._params.border, params.border) &&
+      tupleIs(this._params.gradeShadows, params.gradeShadows) &&
+      tupleIs(this._params.gradeHighlights, params.gradeHighlights)
     ) {
       return
     }
     this._params.bloom = params.bloom
     this._params.vignette = params.vignette
     this._params.grain = params.grain
-    this._params.chromatic = nextChromatic
-    this._params.bloomRadius = nextBloomRadius
-    this._params.bloomThreshold = nextBloomThreshold
-    this._params.refract = nextRefract
-    this._params.border = nextBorder
-    this._params.gradeShadows = [nextShadows[0], nextShadows[1], nextShadows[2]]
-    this._params.gradeHighlights = [nextHighlights[0], nextHighlights[1], nextHighlights[2]]
+    this._params.chromatic = params.chromatic
+    this._params.bloomRadius = params.bloomRadius
+    this._params.bloomThreshold = params.bloomThreshold
+    this._params.refract = params.refract
+    this._params.border = params.border
+    this._params.gradeShadows = [
+      params.gradeShadows[0],
+      params.gradeShadows[1],
+      params.gradeShadows[2],
+    ]
+    this._params.gradeHighlights = [
+      params.gradeHighlights[0],
+      params.gradeHighlights[1],
+      params.gradeHighlights[2],
+    ]
     this._webgpuParamsDirty = true
   }
 
@@ -189,7 +145,7 @@ export class RenderPipeline {
     const isRealWebGPU =
       backend?.isWebGPUBackend === true || backend?.constructor?.name === 'WebGPUBackend'
 
-    if (isRealWebGPU && this._postProcessingEnabled !== false) {
+    if (isRealWebGPU && this._postProcessingEnabled) {
       // WebGPU native: TSL RenderPipeline + PassNode + BloomNode + vignette/grain Fn.
       if (!this._webgpuPostFailed) {
         try {
@@ -199,7 +155,7 @@ export class RenderPipeline {
           }
           const sceneChanged = this._webgpuPipeline.setScene(scene, camera)
           if (sceneChanged) this._webgpuParamsDirty = true
-          if (this._webgpuParamsDirty !== false) {
+          if (this._webgpuParamsDirty) {
             // PERF-11: mutate the cached params object only on dirty handoff;
             // settled WebGPU frames need neither scalar nor tuple writes.
             const p = this._webgpuParamsCache

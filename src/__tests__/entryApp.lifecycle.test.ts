@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createReadyEventTimer, createStyleOwner, updateLoaderProgress } from '../entry-app'
+import {
+  createReadyEventTimer,
+  createStyleOwner,
+  initSplashToggles,
+  updateLoaderProgress,
+} from '../entry-app'
 
 function mountSplashMeta(): void {
   document.body.innerHTML = `
@@ -7,6 +12,13 @@ function mountSplashMeta(): void {
       <span class="jlz-splash-percent" data-jlz-splash="progress"> 00% </span>
       <span id="jlz-splash-status" data-jlz-splash="state"> INITIALIZING </span>
     </div>
+  `
+}
+
+function mountSplashToggles(): void {
+  document.body.innerHTML = `
+    <button id="cfg-sound" type="button"></button>
+    <button id="cfg-lang" type="button"><span>EN</span></button>
   `
 }
 
@@ -92,5 +104,45 @@ describe('entry-app splash reveal lifecycle', () => {
     document.body.innerHTML = '<main id="spa-content"></main>'
 
     expect(() => updateLoaderProgress(40)).not.toThrow()
+  })
+
+  // Regression: the bootstrap reset used to abort an AbortController BEFORE
+  // the toggles registered their click listeners, and listeners added on an
+  // already-aborted signal are dropped by the DOM spec — both splash toggles
+  // were dead on every page load. The contract: after initSplashToggles(),
+  // clicks must flip state immediately.
+  it('wires working splash toggles (clicks flip state after init)', () => {
+    mountSplashToggles()
+    localStorage.removeItem('jlz:sound')
+    localStorage.removeItem('jlz:lang')
+
+    // Sound: starts unmuted (explicit stored preference), click mutes.
+    localStorage.setItem('jlz:sound', 'on')
+    initSplashToggles()
+
+    const sound = document.getElementById('cfg-sound') as HTMLButtonElement
+    const lang = document.getElementById('cfg-lang') as HTMLButtonElement
+
+    expect(sound.getAttribute('aria-pressed')).toBe('true')
+    sound.click()
+    expect(sound.getAttribute('aria-pressed')).toBe('false')
+    expect(sound.classList.contains('is-off')).toBe(true)
+    expect(localStorage.getItem('jlz:sound')).toBe('off')
+    sound.click()
+    expect(sound.getAttribute('aria-pressed')).toBe('true')
+    expect(sound.classList.contains('is-off')).toBe(false)
+
+    // Language: starts EN, click switches to RU and persists.
+    expect(lang.querySelector('span')?.textContent).toBe('EN')
+    lang.click()
+    expect(lang.querySelector('span')?.textContent).toBe('RU')
+    expect(lang.getAttribute('aria-pressed')).toBe('true')
+    expect(localStorage.getItem('jlz:lang')).toBe('RU')
+  })
+
+  it('tolerates a missing splash toggle without throwing', () => {
+    document.body.innerHTML = '<main id="spa-content"></main>'
+
+    expect(() => initSplashToggles()).not.toThrow()
   })
 })

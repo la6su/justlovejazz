@@ -99,6 +99,19 @@ export interface LazyStageContract<T extends Object3D> {
 }
 
 /**
+ * Build a {@link LazyStageContract.create} that constructs the stage after a
+ * dynamic import. The request guard is applied AFTER the import resolves —
+ * an import continuation must never construct GPU resources for a retired
+ * request. One helper instead of one hand-copied lambda per stage.
+ */
+export function createImportedLazyStage<T extends Object3D, M>(
+  load: () => Promise<M>,
+  pick: (module: M) => new () => T,
+): (isCurrent: () => boolean) => Promise<T | null> {
+  return (isCurrent) => load().then((module) => (isCurrent() ? new (pick(module))() : null))
+}
+
+/**
  * Lazily create, attach, load and wire one stage. The returned promise
  * resolves after configure() (never rejects — failure is contained) and is
  * memoized until the stage settles, fails or is disposed.

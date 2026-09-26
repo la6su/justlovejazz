@@ -64,6 +64,22 @@ retired. `scripts/bundle-breakdown.ts` now selects the shared vendor exactly
    wheel keeps page scroll). Open next, unevaluated: whether any other
    ecosystem helper (`Sparkles`, `Html`, `Environment`) earns its place —
    adopt one only with the same laziness and contract discipline as #228.
+   Evaluated and deliberately not adopted (Inspection 9, 2026-09-26):
+   `renderMode` on-demand scheduling policy, `fpsLimit`, `useProgress` —
+   the documented RenderScheduler/loader contracts cover what they provide.
+5. **Experience.ts / SceneCoordinator.ts split (architectural, largest item).**
+   `src/Experience/Experience.ts` (~1.8k lines) and
+   `src/Experience/SceneCoordinator.ts` (~1k lines) are the last god-classes.
+   Inspection 8 mapped the split-ready clusters (lazy-stage registry,
+   showreel controller, environment/PMREM, FPS tracker) and the entangled
+   state that blocks them (`_needsRender`/`_activitySnapshot` writers,
+   polarity cache, carousel ownership). Sequencing when picked up:
+   migrate the private-state test seeds (14 files seed via
+   `experienceSeed.ts`/`Object.create`) to slot/port seams FIRST, then move
+   clusters; update the ARCHITECTURE.md ownership table + teardown section
+   and the `vite.config.ts` chunk regexes in the same change; keep
+   `Experience.destroyOwnership.test.ts` green or rename it in the same PR.
+   The parity-locked SceneCoordinator double-ease must not be "fixed" mid-split.
 
 ## Audit cleanup (2026-09-17)
 
@@ -89,9 +105,10 @@ parameter) shipped in #216. The last deferred item is closed:
   approved case-specific copy and proof still come from the user.
 - **Media:** replace labelled Porsche 911 Spider, Alise, 19 Lab, Pro193 and reel
   placeholders when approved assets/proof arrive. Prepare posters/sizes/lazy
-  load. The unreferenced placeholder folders under `public/assets/projects/`
-  (`crimson-hours/`, `indigo-drift/`, `velvet-echo/`, `undercurrent/`) stay
-  until that replacement and are removed in the same change.
+  load. The current `public/assets/projects/` folders (`ebb-vibes/`,
+  `mono-sunday/`, `nocturne-blue/`, `till-at-night/`) hold the ACTIVE case
+  covers — each is swapped in the same change that lands its approved
+  replacement, so no unreferenced residue remains in between.
 - **Deployment:** verify SPA deep links, blog/builder HTML, assets and canonical
   URLs locally, then on the actual host; deployment target is needed.
 - **Contact:** connect real delivery once the user chooses/authorizes a provider;

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createReadinessGate } from '../Experience/Experience'
+import { createReadinessGate } from '../core/readinessGate'
 
 describe('Experience readiness gate', () => {
   afterEach(() => {

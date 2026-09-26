@@ -101,6 +101,11 @@ export const WORLD_SLOT_COUNT = WORLD_SLOTS.length
 
 const SLOT_BY_ID = new Map<WorldSlotId, WorldSlotDef>(WORLD_SLOTS.map((slot) => [slot.id, slot]))
 
+/** Stable index of the works slot (home story frame 3 / standalone /works
+ *  route). Exported once here — Experience and ExperienceUI used to declare
+ *  identical module-local copies. */
+export const WORKS_SLOT_INDEX = SLOT_BY_ID.get('works')!.index
+
 /** Lookup by stable index; out-of-range indices are clamped to the ends. */
 export function worldSlotAt(index: number): WorldSlotDef {
   const clamped = Math.max(0, Math.min(WORLD_SLOT_COUNT - 1, Math.trunc(index)))
