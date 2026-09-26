@@ -664,3 +664,108 @@ Verification: tsc, vue-tsc, eslint (0 errors, 16 pre-existing warnings),
 prettier clean, vitest 114 files / 708 tests green, docs:check green
 (18 files / 35 links), check:stdlib green (28/28 shim + 5/5 curated),
 build + prerender + budgets green, e2e chromium 26 passed / 1 skipped.
+
+## Inspection 9 — 2026-09-26, best-practices cross-check + dedup pass (post-#229)
+
+Trigger: continue modernization against the 2026 TresJS/Cientos best-practice
+baseline; remove over-engineering, dead surface and the blockers that keep the
+architectural refactor (the Experience split) out of the declared queue.
+Method: three parallel audits (render/post layer, runtime layer, docs/tests
+truth) with every claim re-verified against the tree before acting; the
+current TresJS/Cientos 5.9 docs read directly (TresCanvas API, Cientos
+useProgress) as the framework-capability baseline.
+
+### Decisions (framework capability vs in-repo contract)
+
+- `renderMode="on-demand"` + `fpsLimit`: NOT adopted as replacements. The app
+  already renders on `render-mode="on-demand"` (SceneHost), but the
+  RenderScheduler owns the policies Tres 5.9 lacks — typed invalidation
+  reasons, hidden-tab folding with exactly-one resume frame, synchronous
+  reduced-motion settle and zero settled draws (ADR 0005). `fpsLimit` caps
+  loop frequency but cannot express the ambient-breath timer or the settle
+  contract. The two-layer stack (Tres demand accounting neutralized beneath
+  the scheduler) stays, documented deliberately.
+- Cientos `useProgress`: NOT adopted. It wraps `THREE.DefaultLoadingManager`
+  and requires `<Suspense>`; the app has no Suspense boundary, the real
+  readiness gates are boot milestones (UIManager init, sceneHost ready +
+  backend inspection, first successful render) rather than loader items, and
+  the loader DOM lives in the pre-Vue splash shell. A hybrid would be a
+  redesign, not a swap — the stepped milestone loader stays.
+- Post-processing: no `@tresjs/post-processing`/pmndrs adoption — they do not
+  target WebGPU/TSL; the hand-built TSL graph remains the justified option.
+
+### Actions
+
+- P0 boot bug: splash sound/language toggles were dead on EVERY page load —
+  `startAppOnce()` called `resetBootstrapBindings()` before registering the
+  toggle listeners, and the reset aborted the bootstrap AbortController;
+  per the DOM spec, listeners added on an already-aborted signal are
+  dropped. The controller had no legitimate role (bootstrap runs exactly
+  once per page; retry = full reload), so it is deleted outright and both
+  toggles register plain listeners. Regression test pins click→state→
+  storage; the stale "30s" comment now matches the 60s watchdog.
+- Dead surface out: `WebGPUPostPipeline.resize()` (documented no-op, zero
+  callers + vestigial mock key), DevPanel forceRender change handler (the
+  refresh interval has run since the constructor), `Sizes.isMobile`,
+  `Time.elapsed`, SceneCoordinator `linear`/`cubic-bezier` easing branches +
+  the 17-line `_cubicBezier` + the zero-reader `sceneTransition.duration`
+  (type narrowed to `SceneTransitionEasing`), `createReadinessGate` moved to
+  `core/readinessGate.ts` (one less export on the god-class path),
+  Experience `firstRender`/`overlay`/`time` de-exported, test-helper dead
+  exports (`LAZY_STAGE_SLOT_NAMES` array, `MountedSceneCanvas` export).
+- Post-param unification: one canonical `PostParams` (core/postParams.ts)
+  replaces four hand-maintained shapes and two hand-copied mapping sites;
+  `copyPostParams` keeps the PERF-11 in-place handoff;
+  `RenderPipelineConfig` (1 field, 1 call site, self-described residue)
+  collapses into a `create(renderer, postProcessingEnabled)` boolean.
+- Single quality-scaling owner: the split-brain (DeviceCapability
+  `postMultiplier` applied per frame in Renderer × `QUALITY_SCALARS` gates
+  per preset in PostProcessingManager) folds into `applyPreset` — one
+  application site. Linear scaling commutes with the crossfade lerp, so the
+  settled and mid-crossfade output is numerically unchanged; only a
+  mid-crossfade tier change (init-time only) would differ.
+- Dedup: `createImportedLazyStage` replaces four hand-copied dynamic-import
+  create lambdas (guard-after-import rule in one place);
+  `ExperienceUI._routeContinuationIsCurrent` collapses the 4× route-guard
+  idiom; `SceneCoordinator._bakuVisibleOnRoute` shares the route-static baku
+  visibility predicate (the frame-path copy silently carried the
+  home/carousel clause — drift risk removed, behavior unchanged);
+  `WORKS_SLOT_INDEX` exported once from the worldSlots contract;
+  Cursor's `INTERACTIVE_SEL` hoisted to one module const.
+- Docs truth: NEXT.md's media item claimed four `public/assets/projects/`
+  placeholder folders that were removed in d41fde4 — rewritten to the real
+  state (the four current folders are the ACTIVE case covers, swapped in the
+  same change as their replacements). The Experience/SceneCoordinator split
+  is now NEXT.md Engineering item 5 with sequencing (test seeds first,
+  docs + chunk regexes in the same change) — previously it lived only in
+  this append-only log. Stale comments fixed: TresJS 5.8 → 5.9 (vite alias),
+  Cursor 100×100 → 120×120 canvas + never-implemented speaker states,
+  `_webgpuParamsDirty !== false` → truthy check.
+
+### Checked and sound (no action)
+
+- The two-layer demand-render stack (ADR 0005) and the stepped milestone
+  loader are deliberate contracts, not reinvented wheels (see Decisions).
+- `EventBus` remains the app's central typed port: all 23 channels carry
+  production traffic (~36 emit / ~44 subscribe sites); only `jlz:navigate`
+  has no in-app emitter (the documented e2e/soak seam).
+- `SceneCoordinator.defaultResult()`/`buildResultFromConfig` are defensive
+  guards on the updateTransform flow — removal would trade a cheap fallback
+  for a new failure mode.
+- `ensureCarouselInitialized` stays hand-rolled (decision recorded on the
+  method in Inspection 5 — LazyStage's release semantics would null the
+  live scene-graph reference).
+- The three dispose-idempotency guards sit at different layers (factory
+  helper / SceneHost Vue-side WeakSet / Renderer terminal flag) — each
+  protects a different owner's contract; consolidating would couple layers.
+- Test suite: no stale imports (tsc green), no duplicated coverage found
+  across 910 describe/it titles; the private-state seeding pattern
+  (14 files) is the real split cost and is now sequenced in NEXT item 5.
+- `FrameGapStats` ≈ `FrameTiming` duplication noted (DevPanel-only
+  consumer); left for the dev-tooling pass to avoid churning the probe
+  surface in the same change as runtime dedup.
+
+Verification: tsc, vue-tsc, eslint (0 errors, 16 pre-existing warnings),
+prettier clean, vitest 114 files / 711 tests green, docs:check green,
+check:stdlib green (28/28 shim + 5/5 curated), build + prerender + budgets
+green, e2e chromium — see the PR's CI run.
