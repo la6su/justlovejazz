@@ -45,25 +45,13 @@ import { eventBus } from '../core/EventBus'
 import { CinematicLights } from './World/Lights'
 import { GroundPlane } from './Scene/GroundPlane'
 import { SectionGroups } from './Scene/SectionGroups'
-import {
-  createLazyStageSlot,
-  createImportedLazyStage,
-  disposeLazyStage,
-  ensureLazyStage,
-  type LazyStageContract,
-} from './LazyStage'
+import { StageRegistry } from './StageRegistry'
 import type { EnvSphere } from './World/EnvSphere'
 import { SplashCube } from './World/SplashCube'
 import { ParticleBurst } from './World/ParticleBurst'
 import { DrawTrail } from './World/DrawTrail'
 import type { BakuCarousel } from './World/BakuCarousel'
-import { WorksPlaneStage } from './World/WorksPlaneStage'
 import type { ServicesStage } from './World/ServicesStage'
-import type { ContactTypographyStage } from './World/ContactTypographyStage'
-import type { ContactHaloStage } from './World/ContactHaloStage'
-import type { ManifestoInkStage } from './World/ManifestoInkStage'
-import type { ContactCyprusStage } from './World/ContactCyprusStage'
-import { getLabExperiment, type LabExperimentObject } from './Lab/manifest'
 import { disposeAllCaseTextures } from './World/caseTexture'
 import { contentRoot } from '../core/contentRoot'
 // DissolveOverlay removed — cover transition in ProjectDetail replaces it.
@@ -131,34 +119,29 @@ export class Experience {
   // attachBakuCarousel adapter + carousel getter.
   private carousel: BakuCarousel | null = null
   private _carouselInitPromise: Promise<void> | null = null
-  // Lazy route-owned stages: each slot owns the stage reference + memoized
-  // init promise + request id (LazyStage.ts); the private getters below keep
-  // the historical read sites unchanged.
-  private readonly _worksPlaneSlot = createLazyStageSlot<WorksPlaneStage>()
-  private readonly _contactTypographySlot = createLazyStageSlot<ContactTypographyStage>()
-  private readonly _contactCyprusSlot = createLazyStageSlot<ContactCyprusStage>()
-  private readonly _contactHaloSlot = createLazyStageSlot<ContactHaloStage>()
-  private readonly _manifestoInkSlot = createLazyStageSlot<ManifestoInkStage>()
-  private readonly _labGamepadSlot = createLazyStageSlot<LabExperimentObject>()
+  // Lazy route-owned stages (StageRegistry.ts): the six slot triples, their
+  // contracts and lifecycle publics live in the registry owner; the private
+  // getters below keep the historical read sites unchanged.
+  private readonly _stages!: StageRegistry
   private servicesStage: ServicesStage | null = null
-  /** Stage references read through their slots (null until created / after dispose). */
-  private get worksPlaneStage(): WorksPlaneStage | null {
-    return this._worksPlaneSlot.getStage()
+  /** Stage references read through the registry slots (null until created / after dispose). */
+  private get worksPlaneStage() {
+    return this._stages.worksPlaneStage
   }
-  private get contactTypographyStage(): ContactTypographyStage | null {
-    return this._contactTypographySlot.getStage()
+  private get contactTypographyStage() {
+    return this._stages.contactTypographyStage
   }
-  private get contactCyprusStage(): ContactCyprusStage | null {
-    return this._contactCyprusSlot.getStage()
+  private get contactCyprusStage() {
+    return this._stages.contactCyprusStage
   }
-  private get contactHaloStage(): ContactHaloStage | null {
-    return this._contactHaloSlot.getStage()
+  private get contactHaloStage() {
+    return this._stages.contactHaloStage
   }
-  private get manifestoInkStage(): ManifestoInkStage | null {
-    return this._manifestoInkSlot.getStage()
+  private get manifestoInkStage() {
+    return this._stages.manifestoInkStage
   }
-  private get labGamepad(): LabExperimentObject | null {
-    return this._labGamepadSlot.getStage()
+  private get labGamepad() {
+    return this._stages.labGamepad
   }
   // Showreel render mode (ShowreelController.ts): the lazy GPU-side theater,
   // its typed bus commands, the reduced-motion forwarding and the render swap.
@@ -281,6 +264,22 @@ export class Experience {
       isDestroyed: () => this._destroyed,
       reducedMotion: () => this._reducedMotion,
     })
+    // The stage registry reads the live route/camera/polarity/motion state at
+    // its own lazy-init time — a stage can be created on any route at any
+    // moment, so every fact crosses as a getter.
+    this._stages = new StageRegistry({
+      scene: host.scene,
+      currentPage: () => this.currentPage(),
+      camera: () => this.camera,
+      host: () => this._host.stages,
+      isContactLight: () => this._contactIsLight,
+      isCyprusActive: () => this._contactCyprusActive,
+      setCyprusActive: (active) => {
+        this._contactCyprusActive = active
+      },
+      reducedMotion: () => this._reducedMotion,
+      syncRouteVisuals: () => this.coordinator.syncRouteVisuals(),
+    })
 
     // Phase 7 slice 4: the former UI features reach the scene through a
     // narrow getter-based port (the scene + owners only exist after init).
@@ -402,16 +401,12 @@ export class Experience {
     this.baku?.setReducedMotion(reduced)
     this.carousel?.setReducedMotion(reduced)
     this.particleBurst?.setReducedMotion(reduced)
-    this.worksPlaneStage?.setReducedMotion(reduced)
+    // The six route stages fan out through their registry owner (the Lab
+    // object's optional setReducedMotion contract included).
+    this._stages?.setReducedMotion(reduced)
     this.drawTrail?.setReducedMotion(reduced)
     this.camera?.setReducedMotion(reduced)
-    this.contactCyprusStage?.setReducedMotion(reduced)
-    this.contactTypographyStage?.setReducedMotion(reduced)
-    this.contactHaloStage?.setReducedMotion(reduced)
-    this.manifestoInkStage?.setReducedMotion(reduced)
     this._showreel.setReducedMotion(reduced)
-    // Lab object carries authored motion (optional contract) — settle it too.
-    this.labGamepad?.setReducedMotion?.(reduced)
     this._storyNav?.setReducedMotion(reduced)
     if (reduced) {
       this._cancelBreath()
@@ -606,244 +601,70 @@ export class Experience {
     return this._carouselInitPromise
   }
 
-  /** Lazily create rich `/works` media only on that route, never on first
-   *  paint. Phase 8 slice 7: moved from World — Experience owns the lazy
-   *  stage (the World frame path reads it through the documented
-   *  `attachWorksPlaneStage` adapter + `worksPlaneStage` getter). The
-   *  lifecycle flow (request guard, memoization, stale release) lives in
-   *  LazyStage.ts; only the stage-specific wiring stays here. */
-  private _worksPlaneStageContract(): LazyStageContract<WorksPlaneStage> {
-    return {
-      label: 'WorksPlaneStage',
-      owner: this._worksPlaneSlot.owner,
-      create: () => new WorksPlaneStage(),
-      // SceneHost/Vue owns attachment. The controller remains the sole lazy
-      // texture, TSL, animation and explicit GPU-disposal owner for now.
-      attach: () => undefined,
-      load: async (stage) => {
-        await this._host.stages.works.mountStage(stage)
-        await stage.init()
-        const installation = stage.installationOwner
-        if (installation) await this._host.stages.works.mountInstallation(stage, installation)
-      },
-      configure: (stage) => {
-        stage.setActive(this.currentPage() === 'works', 0)
-        stage.resize(window.innerWidth, window.innerHeight)
-        stage.setCamera(this.camera.instance)
-      },
-      release: (stage) => {
-        const installation = stage.installationOwner
-        if (installation) void this._host.stages.works.unmountInstallation(stage, installation)
-        void this._host.stages.works.unmountStage(stage)
-        stage.dispose()
-      },
-    }
-  }
+  /**
+   * Lazy-stage lifecycle delegates — the implementation (six slot triples,
+   * contracts and the Cyprus section flip) lives in StageRegistry.ts; these
+   * one-line publics keep the ExperienceUI host port and the buildWorld
+   * entry-route pre-inits unchanged.
+   */
 
+  /** Lazily create rich `/works` media only on that route, never on first paint. */
   public ensureWorksPlaneStageInitialized(): Promise<void> {
-    return ensureLazyStage(this._worksPlaneStageContract())
+    return this._stages.ensureWorksPlaneStageInitialized()
   }
 
-  /** Dispose the /works case-plane stage when leaving /works.
-   *  Frees ~40-50 MB of GPU textures + TSL materials.
-   *  The stage is lazily re-created on the next /works visit via
-   *  ensureWorksPlaneStageInitialized(). Phase 8 slice 7: moved from World. */
+  /** Dispose the /works case-plane stage when leaving /works (frees ~40-50 MB
+   *  of GPU textures + TSL materials); lazily re-created on the next visit. */
   public disposeWorksPlaneStage(): void {
-    disposeLazyStage(this._worksPlaneStageContract())
+    this._stages.disposeWorksPlaneStage()
   }
 
   /** Lazily create the Contact greeting so FontLoader/TextGeometry stay out
-   * of the shared initial scene graph. Lifecycle flow: LazyStage.ts. */
-  private _contactTypographyStageContract(): LazyStageContract<ContactTypographyStage> {
-    return {
-      label: 'ContactTypographyStage',
-      owner: this._contactTypographySlot.owner,
-      create: createImportedLazyStage(
-        () => import('./World/ContactTypographyStage'),
-        ({ ContactTypographyStage }) => ContactTypographyStage,
-      ),
-      attach: (stage) => {
-        this.scene.add(stage)
-      },
-      configure: (stage) => {
-        stage.setActive(this.currentPage() === 'contact')
-        stage.setTheme(this._contactIsLight)
-      },
-      release: (stage) => {
-        // ContactTypographyStage.dispose() detaches itself from the scene.
-        stage.dispose()
-      },
-    }
-  }
-
+   * of the shared initial scene graph. */
   public ensureContactTypographyStageInitialized(): Promise<void> {
-    return ensureLazyStage(this._contactTypographyStageContract())
+    return this._stages.ensureContactTypographyStageInitialized()
   }
 
   public disposeContactTypographyStage(): void {
-    disposeLazyStage(this._contactTypographyStageContract())
+    this._stages.disposeContactTypographyStage()
   }
 
   /** Lazily load the Contact ink halo so the TSL graph stays out of the
-   * shared initial scene graph. Lifecycle flow: LazyStage.ts. */
-  private _contactHaloStageContract(): LazyStageContract<ContactHaloStage> {
-    return {
-      label: 'ContactHaloStage',
-      owner: this._contactHaloSlot.owner,
-      create: createImportedLazyStage(
-        () => import('./World/ContactHaloStage'),
-        ({ ContactHaloStage }) => ContactHaloStage,
-      ),
-      attach: (stage) => this._host.stages.contactHalo.mount(stage),
-      configure: (stage) => {
-        stage.setTheme(this._contactIsLight)
-        stage.setReducedMotion(this._reducedMotion)
-        stage.setActive(this.currentPage() === 'contact')
-      },
-      release: (stage) => {
-        void this._host.stages.contactHalo.unmount(stage)
-        stage.dispose()
-      },
-    }
-  }
-
+   * shared initial scene graph. */
   public ensureContactHaloStageInitialized(): Promise<void> {
-    return ensureLazyStage(this._contactHaloStageContract())
+    return this._stages.ensureContactHaloStageInitialized()
   }
 
   public disposeContactHaloStage(): void {
-    disposeLazyStage(this._contactHaloStageContract())
+    this._stages.disposeContactHaloStage()
   }
 
-  /** Lazily load the /manifesto ink wash so the TSL graph stays out of the
-   *  shared initial scene graph (same contract as the contact halo).
-   *  Lifecycle flow: LazyStage.ts. */
-  private _manifestoInkStageContract(): LazyStageContract<ManifestoInkStage> {
-    return {
-      label: 'ManifestoInkStage',
-      owner: this._manifestoInkSlot.owner,
-      create: createImportedLazyStage(
-        () => import('./World/ManifestoInkStage'),
-        ({ ManifestoInkStage }) => ManifestoInkStage,
-      ),
-      attach: (stage) => this._host.stages.manifestoInk.mount(stage),
-      configure: (stage) => {
-        // The effective-polarity cache is refreshed on every theme event
-        // regardless of route, so a lazy stage cannot miss the current ink.
-        stage.setTheme(this._contactIsLight)
-        stage.setReducedMotion(this._reducedMotion)
-        stage.setActive(this.currentPage() === 'manifesto')
-      },
-      release: (stage) => {
-        void this._host.stages.manifestoInk.unmount(stage)
-        stage.dispose()
-      },
-    }
-  }
-
+  /** Lazily load the /manifesto ink wash (same contract as the contact halo). */
   public ensureManifestoInkStageInitialized(): Promise<void> {
-    return ensureLazyStage(this._manifestoInkStageContract())
+    return this._stages.ensureManifestoInkStageInitialized()
   }
 
   public disposeManifestoInkStage(): void {
-    disposeLazyStage(this._manifestoInkStageContract())
+    this._stages.disposeManifestoInkStage()
   }
 
-  /** Lazily load the Contact location asset instead of keeping it in the home
-   *  scene. Phase 8 slice 8: moved from World — Experience owns the lazy
-   *  stage (the World frame path reads it through the documented
-   *  `attachContactCyprusStage` adapter + `contactCyprusStage` getter).
-   *  Lifecycle flow: LazyStage.ts. */
-  private _contactCyprusStageContract(): LazyStageContract<ContactCyprusStage> {
-    return {
-      label: 'ContactCyprusStage',
-      owner: this._contactCyprusSlot.owner,
-      create: createImportedLazyStage(
-        () => import('./World/ContactCyprusStage'),
-        ({ ContactCyprusStage }) => ContactCyprusStage,
-      ),
-      attach: (stage) => {
-        this.scene.add(stage)
-      },
-      load: (stage) => stage.load(),
-      configure: (stage) => {
-        stage.resize(window.innerWidth, window.innerHeight)
-        stage.setCamera(this.camera.instance)
-        stage.setActive(this.currentPage() === 'contact' && this._contactCyprusActive)
-        stage.prewarm()
-      },
-      release: (stage) => {
-        // ContactCyprusStage.dispose() detaches itself from the scene.
-        stage.dispose()
-      },
-      onDispose: () => {
-        this._contactCyprusActive = false
-      },
-    }
-  }
-
+  /** Lazily load the Contact location asset instead of keeping it in the home scene. */
   public ensureContactCyprusStageInitialized(): Promise<void> {
-    return ensureLazyStage(this._contactCyprusStageContract())
+    return this._stages.ensureContactCyprusStageInitialized()
   }
 
   public disposeContactCyprusStage(): void {
-    disposeLazyStage(this._contactCyprusStageContract())
+    this._stages.disposeContactCyprusStage()
   }
 
   /** Frame 03 replaces the shared cube with the Cyprus asset. */
   public setContactCyprusStageSection(index: number): void {
-    this._contactCyprusActive = this.currentPage() === 'contact' && index === 2
-    this.contactCyprusStage?.setActive(this._contactCyprusActive)
-    if (this._contactCyprusActive && !this.contactCyprusStage) {
-      const initialization = this.ensureContactCyprusStageInitialized()
-      const request = this._contactCyprusSlot.getRequest()
-      void initialization.then(() => {
-        if (request !== this._contactCyprusSlot.getRequest() || !this._contactCyprusActive) return
-        this.coordinator.syncRouteVisuals()
-      })
-    }
-    this.coordinator.syncRouteVisuals()
+    this._stages.setContactCyprusStageSection(index)
   }
 
-  /** Lazily create the Lab experiment object on its first /lab visit.
-   *  Phase 8 slice 9: moved from World — Experience owns the lazy object
-   *  (created once on the first /lab visit, then only toggled visible; the
-   *  World's `syncRouteVisuals` reads the visibility gate off the `labGamepad`
-   *  getter). The object is a static scene object — it is never disposed per
-   *  route leave, only on final destroy. Lifecycle flow: LazyStage.ts (the
-   *  former hand-rolled promise memoization + request counter lived here). */
-  private _labGamepadContract(): LazyStageContract<LabExperimentObject> {
-    return {
-      label: 'LabGamepad',
-      owner: this._labGamepadSlot.owner,
-      create: () => {
-        const experiment = getLabExperiment('lab')
-        // No isCurrent guard on the resolved object: the manifest load may
-        // have already constructed it, so a retired request must fall through
-        // to the LazyStage stale check, which releases the late result
-        // (dispose) instead of silently dropping it.
-        return experiment ? experiment.load() : Promise.resolve(null)
-      },
-      attach: (stage) => {
-        this.scene.add(stage)
-      },
-      configure: (stage) => {
-        stage.visible = this.currentPage() === 'lab'
-      },
-      release: (stage) => {
-        stage.removeFromParent()
-        stage.dispose()
-      },
-    }
-  }
-
+  /** Lazily create the Lab experiment object on its first /lab visit. */
   public ensureLabGamepad(): Promise<void> {
-    return ensureLazyStage(this._labGamepadContract())
-  }
-
-  /** Invalidate any in-flight load and dispose the live object (final teardown). */
-  private disposeLabGamepad(): void {
-    disposeLazyStage(this._labGamepadContract())
+    return this._stages.ensureLabGamepad()
   }
 
   async init() {
@@ -1557,27 +1378,14 @@ export class Experience {
     this.particleBurst?.dispose()
     this.drawTrail?.object.removeFromParent()
     this.drawTrail?.dispose()
-    // Phase 8 slice 7: the /works case-plane stage owner (lazy — only alive
-    // when /works was reached; a direct child of the Tres-owned scene).
-    this.disposeWorksPlaneStage()
+    // The six route-owned lazy stages die through their registry owner, in
+    // the legacy destroy order (works plane → typography → cyprus → halo →
+    // ink → lab). disposeLazyStage retires in-flight import generations
+    // before renderer teardown, so a module resolving after root destruction
+    // can neither attach a stage nor retain its TSL material graph.
+    this._stages?.dispose()
     // ServicesStageOwner owns terminal disposal when the persistent host unmounts.
     this.servicesStage = null
-    // Phase 8 slice 8: the Contact typography + Cyprus stage owners (lazy — only
-    // alive when /contact was reached; direct children of the Tres-owned
-    // scene).
-    this.disposeContactTypographyStage()
-    this.disposeContactCyprusStage()
-    this.disposeContactHaloStage()
-    // The /manifesto ink owner follows the same lazy-stage contract. Retire
-    // its import generation before renderer teardown so a module resolving
-    // after root destruction can neither attach a stage nor retain its TSL
-    // material graph.
-    this.disposeManifestoInkStage()
-    // Phase 8 slice 9: the Lab experiment object (created once on the first
-    // /lab visit; a direct child of the Tres-owned scene, never disposed per
-    // route leave). disposeLazyStage invalidates any in-flight load, releases
-    // the live object and resets the owner state.
-    this.disposeLabGamepad()
     // Phase 8 slice 2: the stable section groups owner (BakuCarousel-first
     // disposal ordering + Works particle texture live in the owner).
     this.sectionGroups?.dispose()

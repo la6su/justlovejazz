@@ -41,7 +41,10 @@ describe('SceneCoordinator updateTransform easing contract', () => {
     // A fully-opaque mesh in group 1 — the fade-in target of the first
     // range transition. baseOpacity is captured on the first pass.
     groups[1]!.add(
-      new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial({ transparent: true })),
+      new THREE.Mesh(
+        new THREE.BufferGeometry(),
+        new THREE.MeshBasicMaterial({ transparent: true }),
+      ),
     )
     const owners: SceneCoordinatorOwners = {
       ground: () => null,
