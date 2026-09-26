@@ -769,3 +769,87 @@ Verification: tsc, vue-tsc, eslint (0 errors, 16 pre-existing warnings),
 prettier clean, vitest 114 files / 711 tests green, docs:check green,
 check:stdlib green (28/28 shim + 5/5 curated), build + prerender + budgets
 green, e2e chromium — see the PR's CI run.
+
+## Inspection 10 — 2026-09-27, Cientos-parity audit + agent-doc blocker sweep (post-#230)
+
+Trigger: continue the refactor — find code that duplicates TresJS/Cientos
+functionality, re-check specs and agent-facing documentation for blockers,
+propose solutions, proceed autonomously.
+Method: three parallel audits (runtime Cientos parity, loading/assets layer,
+docs/specs blockers). The full Cientos 5.9 export surface (113 names) was
+extracted from the installed `dist/trescientos.js` and diffed against the
+hand-rolled surface; every candidate was read at file:line before a verdict.
+
+### Decisions (Cientos parity — zero actionable duplicates)
+
+Every overlap surface is KEEP; the reasons fall into three classes:
+**(a) raster-era Cientos** — components built on classic `shaderMaterial` /
+`WebGLCubeRenderTarget` cannot run on the WebGPU/TSL pipeline
+(JunniParticles vs `Sparkles`/`Precipitation`/`Smoke`; setupEnvironment's
+renderer-native PMREM vs `Environment`/`useEnvironment` HDRI presets;
+ShowreelTheater's TSL fullscreen quad vs `ScreenQuad`); **(b) demand-loop /
+reduced-motion coupling** — Cientos components run unconditional Vue loops
+with no `isAnimating`/`setReducedMotion` surface and would fight the Lab
+`CameraControls` yield (Camera cursor-follow/shake/FOV vs
+`MouseParallax`/`CameraShake`; camera-local stage groups vs `Billboard` —
+the change-gated 3×8-line copies beat per-object Vue wrappers); **(c)
+Vue-setup-context / lifecycle ownership** — `useTexture`/`useGLTF`/
+`useAnimations`/`useVideoTexture` need setup context and cannot express the
+refcounted caseTexture cache (in-flight dedup, `pendingDrop` late-owner
+protection, teardown sweep), the LazyStage stale-guard disposal, or the
+ShowreelTheater manual play/state bridge (Cientos `useVideoTexture`
+autoplays and swallows load errors). Ghosts verified absent: `useCursor` is
+NOT a Cientos export; no projected DOM (`Html`), no 3D audio
+(`GlobalAudio`/`PositionalAudio` — SfxSystem is a procedural oscillator
+synth), no FBO/Reflector plumbing, no mixer sites, no BVH sites.
+`useProgress` gains a fourth blocker: it mutates module-global
+`DefaultLoadingManager` callbacks (cross-boot global state) and cannot
+represent the `?no-scene` zero-asset ready state. The NEXT item-4 open
+question ("whether `Sparkles`, `Html`, `Environment` earn their place") is
+closed: none adopted; the item is removed from the queue (the split item
+renumbers 5 → 4), and the standing adoption rule (#228 model: lazy chunk,
+stdlib-shim entry, eval-safety review, no new eager imports) moves to
+ARCHITECTURE § Delivery decisions as the durable contract.
+
+### Decisions (agent-doc blockers — 4 found, all fixed)
+
+- NEXT.md claimed the last `sections/` file shipped in #216 — false:
+  `src/sections/_shared/constants.ts` survived as the sole `PageId` source
+  with 26 importers, invisible in the ARCHITECTURE ownership table (an
+  ownership inversion exactly where the Experience split would trip).
+  Fixed in code: `PageId` moved into `core/routeManifest.ts` (the manifest
+  is the paths+pages source of truth), `src/sections/` deleted, ARCHITECTURE
+  row + routes section updated, NEXT sentence rewritten.
+- NEXT item 3 pointed the Git-delivery wording edit at AGENTS.md, which
+  contains no such wording; the real sources are DEVELOPMENT § Git delivery
+  and the release skill's "PR against `main`" rule. Pointer rewritten.
+- `package.json` `test` script was an undocumented alias to the parallel
+  Playwright suite that DEVELOPMENT.md flags as flaky — a canonical-looking
+  trap for "package.json owns commands" agents. Removed; `test:unit` /
+  `test:serial` (documented, CI-run) stay, as do the dev conveniences.
+- sceneHost.ts cited AGENTS.md "exactly one canvas, renderer and loop owner
+  during migration" — the doc has no "during migration" qualifier. Citation
+  corrected; a stale `sections/works/scene.ts` pointer in SceneCoordinator
+  and one in HomeView.vue fixed on the same sweep.
+
+### Checked and sound (no action)
+
+- `FrameGapStats` ≈ `FrameTiming` (thread left open by Inspection 9 "for the
+  dev-tooling pass") — CLOSED as evaluated-and-deliberately-kept: different
+  semantics (inter-render gap vs per-frame CPU segments), different
+  lifecycle owners (DevPanel's FPS loop vs Experience's lazy DEV snapshot);
+  a shared ring util for two consumers is the speculative abstraction
+  AGENTS.md forbids, and a merge would couple the owners. No NEXT line —
+  the queue must not re-grow with settled threads.
+- AGENTS.md is clean: all four Preserve rules verified against code, no
+  contradictory rules across AGENTS/CLAUDE/ARCHITECTURE, no rule forces
+  duplicating framework functionality, all links resolve. CLAUDE.md is a
+  4-line pointer. ADR 0005 status "accepted" still matches the code.
+- DEVELOPMENT.md commands/budgets byte-match package.json and
+  check-build-budgets.ts; PAGE_BUILDER/BRAND/evidence paths live; the CI
+  workflow maps only to existing scripts; the three skills are consistent
+  with ADR/ARCHITECTURE and duplicate no AGENTS rule.
+
+Verification: tsc, vue-tsc, eslint (0 errors, 16 pre-existing warnings),
+prettier clean, vitest green, docs:check green, check:stdlib green,
+build + prerender + budgets green, e2e chromium — see the PR's CI run.
