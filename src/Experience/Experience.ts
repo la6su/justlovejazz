@@ -17,7 +17,6 @@ import { BlurFade } from './BlurFade'
 import { SfxSystem } from '../core/SfxSystem'
 import { ExperienceUI } from './ExperienceUI'
 import { SceneCoordinator } from './SceneCoordinator'
-import type { FinalMode } from '../core/rendererBackend'
 // worldDNA.ts removed — TSL node system never attached (attachWorldDNA never
 // called). updateWorldDNAAudio set uniforms nobody read. All dead.
 import { observeReducedMotion, prefersReducedMotion } from '../core/motionPolicy'
@@ -33,7 +32,7 @@ import {
   type RenderActivity,
 } from '../core/renderDemand'
 import { RenderScheduler, type FrameReason } from '../core/RenderScheduler'
-import type { SceneLoopPort } from '../app/sceneHost'
+import type { SceneHostReady } from '../app/sceneHost'
 // ContentReveal owns per-section auto/inverse themes and sends this runtime
 // jlz:theme-applied events for 3D synchronisation.
 import { eventBus } from '../core/EventBus'
@@ -42,9 +41,7 @@ import { eventBus } from '../core/EventBus'
 // stable section groups are owned by the SectionGroups owner (attached to
 // the World before init).
 import { CinematicLights } from './World/Lights'
-import type { CinematicLightsNodes } from './World/Lights'
 import { GroundPlane } from './Scene/GroundPlane'
-import type { GroundPlaneNode } from './Scene/GroundPlane'
 import { SectionGroups } from './Scene/SectionGroups'
 import { disposeLazyStage, ensureLazyStage, type LazyStageContract } from './LazyStage'
 import type { EnvSphere } from './World/EnvSphere'
@@ -53,7 +50,6 @@ import { ParticleBurst } from './World/ParticleBurst'
 import { DrawTrail } from './World/DrawTrail'
 import type { BakuCarousel } from './World/BakuCarousel'
 import { WorksPlaneStage } from './World/WorksPlaneStage'
-import type { WorksInstallation } from './World/WorksInstallation'
 import type { ServicesStage } from './World/ServicesStage'
 import type { ContactTypographyStage } from './World/ContactTypographyStage'
 import type { ContactHaloStage } from './World/ContactHaloStage'
@@ -80,30 +76,14 @@ const WORKS_SLOT_INDEX = worldSlotIndex('works')!
  * slice 10 removed the `attachWorld` primitive slot — the SceneCoordinator
  * adds its section groups + scene owners to the Tres scene directly.
  * `replaceRenderer` syncs the Tres context after a device-loss recovery.
+ *
+ * Derived from the bridge's own `SceneHostReady` so a host capability is
+ * declared once (sceneHost.ts): Experience drops the Tres context/backend
+ * facts it never reads and widens the renderer to its surface contract.
  */
-interface ExperienceHost {
-  scene: THREE.Scene
-  camera: THREE.PerspectiveCamera
+type ExperienceHost = Omit<SceneHostReady, 'context' | 'backend' | 'renderer'> & {
   renderer: RenderSurface
-  canvas: HTMLCanvasElement
-  mode: FinalMode
-  /** Static light objects created declaratively by the persistent Tres host. */
-  lights: CinematicLightsNodes
-  ground: GroundPlaneNode
-  sectionRoots: readonly THREE.Group[]
-  servicesStage: ServicesStage
-  envSphere: EnvSphere
   replaceRenderer(renderer: RenderSurface): void
-  /** The Tres-native loop port (ADR 0005): scheduler edges to the Tres RAF. */
-  loop: SceneLoopPort
-  mountWorksPlaneStage(stage: WorksPlaneStage): Promise<void>
-  unmountWorksPlaneStage(stage: WorksPlaneStage): Promise<void>
-  mountWorksInstallation(stage: WorksPlaneStage, installation: WorksInstallation): Promise<void>
-  unmountWorksInstallation(stage: WorksPlaneStage, installation: WorksInstallation): Promise<void>
-  mountContactHaloStage(stage: ContactHaloStage): Promise<void>
-  unmountContactHaloStage(stage: ContactHaloStage): Promise<void>
-  mountManifestoInkStage(stage: ManifestoInkStage): Promise<void>
-  unmountManifestoInkStage(stage: ManifestoInkStage): Promise<void>
 }
 
 interface ReadinessGate {
@@ -711,10 +691,10 @@ export class Experience {
       // texture, TSL, animation and explicit GPU-disposal owner for now.
       attach: () => undefined,
       load: async (stage) => {
-        await this._host.mountWorksPlaneStage(stage)
+        await this._host.stages.works.mountStage(stage)
         await stage.init()
         const installation = stage.installationOwner
-        if (installation) await this._host.mountWorksInstallation(stage, installation)
+        if (installation) await this._host.stages.works.mountInstallation(stage, installation)
       },
       configure: (stage) => {
         stage.setActive(this.currentPage() === 'works', 0)
@@ -723,8 +703,8 @@ export class Experience {
       },
       release: (stage) => {
         const installation = stage.installationOwner
-        if (installation) void this._host.unmountWorksInstallation(stage, installation)
-        void this._host.unmountWorksPlaneStage(stage)
+        if (installation) void this._host.stages.works.unmountInstallation(stage, installation)
+        void this._host.stages.works.unmountStage(stage)
         stage.dispose()
       },
     }
@@ -806,14 +786,14 @@ export class Experience {
         import('./World/ContactHaloStage').then(({ ContactHaloStage }) =>
           isCurrent() ? new ContactHaloStage() : null,
         ),
-      attach: (stage) => this._host.mountContactHaloStage(stage),
+      attach: (stage) => this._host.stages.contactHalo.mount(stage),
       configure: (stage) => {
         stage.setTheme(this._contactIsLight)
         stage.setReducedMotion(this._reducedMotion)
         stage.setActive(this.currentPage() === 'contact')
       },
       release: (stage) => {
-        void this._host.unmountContactHaloStage(stage)
+        void this._host.stages.contactHalo.unmount(stage)
         stage.dispose()
       },
     }
@@ -849,7 +829,7 @@ export class Experience {
         import('./World/ManifestoInkStage').then(({ ManifestoInkStage }) =>
           isCurrent() ? new ManifestoInkStage() : null,
         ),
-      attach: (stage) => this._host.mountManifestoInkStage(stage),
+      attach: (stage) => this._host.stages.manifestoInk.mount(stage),
       configure: (stage) => {
         // The effective-polarity cache is refreshed on every theme event
         // regardless of route, so a lazy stage cannot miss the current ink.
@@ -858,7 +838,7 @@ export class Experience {
         stage.setActive(this.currentPage() === 'manifesto')
       },
       release: (stage) => {
-        void this._host.unmountManifestoInkStage(stage)
+        void this._host.stages.manifestoInk.unmount(stage)
         stage.dispose()
       },
     }

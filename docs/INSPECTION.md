@@ -227,3 +227,60 @@ concrete need appears — e.g. interactive camera exploration in the Lab
   local idioms, some exported as domain functions with their own tests;
   centralizing them adds import coupling for no gain.
 - No action items produced. Nothing added to the NEXT queue.
+
+## Inspection 4 — 2026-09-26, DX plumbing pass (stage ports)
+
+Trigger: user direction to continue the refactor per the earlier plan and
+remove what the analysis surfaces, with developer experience as the goal
+(visual polish explicitly deferred). Method: fresh read of the post-#224
+app layer (`SceneHost.vue`, `sceneHost.ts`, `readySlot.ts`, the scene SFCs,
+`entry-app.ts`, `Experience.ts` host seam) against the one-question test —
+how many files must a routine change touch?
+
+### Real DX defects found (all fixed in the same PR)
+
+- **Stage plumbing threaded four files.** Adding or renaming one
+  declarative stage required: 8 method signatures on `SceneHostReady`
+  (sceneHost.ts), ~57 lines of hand-written mount/unmount functions in
+  `SceneHost.vue`, 8 mirrored signatures on `ExperienceHost`
+  (Experience.ts) and 11 wrapper lambdas in `entry-app.ts`. Fixed by
+  grouping the boundaries behind `SceneStagePorts` (works / contactHalo /
+  manifestoInk) with a shared `createStageSlot` factory — the
+  mount/unmount sibling of #224's `createReadySlot` (aliveness guard,
+  markRaw store, identity-checked unmount, nextTick template flush). The
+  Works port keeps the documented two-level guard (an installation never
+  attaches to or outlives a retired stage). A routine stage now touches
+  the slot factory's client list and its port entry, not four files.
+- **`ExperienceHost` re-declared `SceneHostReady`.** 24 duplicated lines
+  of host shape in Experience.ts while the file already imported from
+  `app/sceneHost`. Now `Omit<SceneHostReady, 'context' | 'backend' |
+'renderer'> & { renderer: RenderSurface; replaceRenderer }` — a host
+  capability is declared once, in sceneHost.ts. Adding a host capability
+  went from three files (bridge + Experience + entry-app wrappers) to one.
+- **Dead export: `createSplashRevealTimer`** (entry-app.ts). Zero
+  production callers — the curtain/title handoff runs on the
+  ready-event path; only its own two tests consumed it. Function + tests
+  removed (the Inspection 1 dead-API pattern). Suite 692 → 690, then
+  +4 for the new `stageSlot.lifecycle` tests → 694.
+
+### Checked and found sound (no refactor made, deliberately)
+
+- The scene SFCs (`CinematicCamera`, `CinematicLights`, `GroundPlane`,
+  `EnvSphereOwner`, `ServicesStageOwner`, `WorksStageOwner`, `EnvSky`) are
+  18–99 lines with one concern each; their `onMounted` ready-emit pattern
+  is the declarative contract the ready slots consume. Abstracting it
+  would save ~4 lines per SFC behind a composable indirection.
+- `entry-app.ts` (645 lines) is cohesive around the one bootstrap
+  lifecycle: splash config toggles, the loader ring, the state machine and
+  the title reveal observers all share the bootstrap state and its abort
+  controller. A module split would move shared private state without a
+  consumer-facing seam.
+- The stepped loader progress (15/40/55/95/100) is deliberate splash
+  choreography, not a stub for `useProgress`: readiness is the Experience
+  first-render handshake, and asset-level progress would change the
+  splash→Enter contract the e2e suite pins.
+- `contentRoot()` duplication (entry-app + Experience) stays one-line, per
+  the Inspection 2 verdict.
+
+Verification: tsc, vue-tsc, eslint (0 errors; 16 warnings pre-existing),
+prettier clean, vitest 113 files / 694 tests green, docs:check green.

@@ -57,6 +57,33 @@ export interface SceneLoopPort {
   onExternalInvalidate(handler: (() => void) | null): () => void
 }
 
+/**
+ * The mount/unmount boundary one declarative stage exposes to the runtime
+ * (SceneHost slots; see stageSlot.ts for the shared implementation).
+ */
+export interface StagePort<T> {
+  mount(object: T): Promise<void>
+  unmount(object: T): Promise<void>
+}
+
+/**
+ * The Works plane stage is a two-level boundary: the stage is mounted first
+ * and owns its installation child, which never outlives its stage.
+ */
+export interface WorksStagePort {
+  mountStage(stage: WorksPlaneStage): Promise<void>
+  unmountStage(stage: WorksPlaneStage): Promise<void>
+  mountInstallation(stage: WorksPlaneStage, installation: WorksInstallation): Promise<void>
+  unmountInstallation(stage: WorksPlaneStage, installation: WorksInstallation): Promise<void>
+}
+
+/** The declarative stage ports the Vue host exposes to the Experience runtime. */
+export interface SceneStagePorts {
+  works: WorksStagePort
+  contactHalo: StagePort<ContactHaloStage>
+  manifestoInk: StagePort<ManifestoInkStage>
+}
+
 /** The readiness state published once the persistent Tres root is live. */
 export interface SceneHostReady {
   /** The Tres-owned scene (`context.scene.value`) — the one THREE.Scene. */
@@ -83,14 +110,8 @@ export interface SceneHostReady {
   envSphere: EnvSphere
   /** The Tres-native loop port the RenderScheduler drives (ADR 0005). */
   loop: SceneLoopPort
-  mountWorksPlaneStage(stage: WorksPlaneStage): Promise<void>
-  unmountWorksPlaneStage(stage: WorksPlaneStage): Promise<void>
-  mountWorksInstallation(stage: WorksPlaneStage, installation: WorksInstallation): Promise<void>
-  unmountWorksInstallation(stage: WorksPlaneStage, installation: WorksInstallation): Promise<void>
-  mountContactHaloStage(stage: ContactHaloStage): Promise<void>
-  unmountContactHaloStage(stage: ContactHaloStage): Promise<void>
-  mountManifestoInkStage(stage: ManifestoInkStage): Promise<void>
-  unmountManifestoInkStage(stage: ManifestoInkStage): Promise<void>
+  /** Declarative stage mount/unmount boundaries (one port per stage family). */
+  stages: SceneStagePorts
 }
 
 interface SceneHostState {

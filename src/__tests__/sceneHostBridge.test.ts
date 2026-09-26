@@ -42,14 +42,16 @@ function fakeReady(overrides?: Partial<SceneHostReady>): SceneHostReady {
       stop: () => undefined,
       onExternalInvalidate: () => () => undefined,
     },
-    mountWorksPlaneStage: async () => undefined,
-    unmountWorksPlaneStage: async () => undefined,
-    mountWorksInstallation: async () => undefined,
-    unmountWorksInstallation: async () => undefined,
-    mountContactHaloStage: async () => undefined,
-    unmountContactHaloStage: async () => undefined,
-    mountManifestoInkStage: async () => undefined,
-    unmountManifestoInkStage: async () => undefined,
+    stages: {
+      works: {
+        mountStage: async () => undefined,
+        unmountStage: async () => undefined,
+        mountInstallation: async () => undefined,
+        unmountInstallation: async () => undefined,
+      },
+      contactHalo: { mount: async () => undefined, unmount: async () => undefined },
+      manifestoInk: { mount: async () => undefined, unmount: async () => undefined },
+    },
     ...overrides,
   }
 }
