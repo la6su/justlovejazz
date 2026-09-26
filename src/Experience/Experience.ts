@@ -1,5 +1,4 @@
 import * as THREE from 'three'
-import { PMREMGenerator as WebGPUPMREMGenerator } from 'three/webgpu'
 import { Sizes } from './Sizes'
 import { Time } from './Time'
 import { Camera } from './Camera'
@@ -20,6 +19,9 @@ import { SceneCoordinator } from './SceneCoordinator'
 // called). updateWorldDNAAudio set uniforms nobody read. All dead.
 import { observeReducedMotion, prefersReducedMotion } from '../core/motionPolicy'
 import { FrameTiming } from '../core/FrameTiming'
+import { FpsTracker } from './FpsTracker'
+import { SceneEnvironment } from './SceneEnvironment'
+import { ShowreelController } from './ShowreelController'
 import { WORKS_SLOT_INDEX, WORLD_SLOT_COUNT } from '../core/worldSlots'
 import { DEFAULT_CAMERA_SMOOTHING } from '../core/WorldConfig'
 import {
@@ -43,26 +45,13 @@ import { eventBus } from '../core/EventBus'
 import { CinematicLights } from './World/Lights'
 import { GroundPlane } from './Scene/GroundPlane'
 import { SectionGroups } from './Scene/SectionGroups'
-import {
-  createLazyStageSlot,
-  createImportedLazyStage,
-  disposeLazyStage,
-  ensureLazyStage,
-  type LazyStageContract,
-} from './LazyStage'
+import { StageRegistry } from './StageRegistry'
 import type { EnvSphere } from './World/EnvSphere'
 import { SplashCube } from './World/SplashCube'
 import { ParticleBurst } from './World/ParticleBurst'
 import { DrawTrail } from './World/DrawTrail'
 import type { BakuCarousel } from './World/BakuCarousel'
-import { WorksPlaneStage } from './World/WorksPlaneStage'
 import type { ServicesStage } from './World/ServicesStage'
-import type { ContactTypographyStage } from './World/ContactTypographyStage'
-import type { ContactHaloStage } from './World/ContactHaloStage'
-import type { ManifestoInkStage } from './World/ManifestoInkStage'
-import type { ContactCyprusStage } from './World/ContactCyprusStage'
-import { ShowreelTheater } from './World/ShowreelTheater'
-import { getLabExperiment, type LabExperimentObject } from './Lab/manifest'
 import { disposeAllCaseTextures } from './World/caseTexture'
 import { contentRoot } from '../core/contentRoot'
 // DissolveOverlay removed — cover transition in ProjectDetail replaces it.
@@ -130,43 +119,33 @@ export class Experience {
   // attachBakuCarousel adapter + carousel getter.
   private carousel: BakuCarousel | null = null
   private _carouselInitPromise: Promise<void> | null = null
-  // Lazy route-owned stages: each slot owns the stage reference + memoized
-  // init promise + request id (LazyStage.ts); the private getters below keep
-  // the historical read sites unchanged.
-  private readonly _worksPlaneSlot = createLazyStageSlot<WorksPlaneStage>()
-  private readonly _contactTypographySlot = createLazyStageSlot<ContactTypographyStage>()
-  private readonly _contactCyprusSlot = createLazyStageSlot<ContactCyprusStage>()
-  private readonly _contactHaloSlot = createLazyStageSlot<ContactHaloStage>()
-  private readonly _manifestoInkSlot = createLazyStageSlot<ManifestoInkStage>()
-  private readonly _labGamepadSlot = createLazyStageSlot<LabExperimentObject>()
+  // Lazy route-owned stages (StageRegistry.ts): the six slot triples, their
+  // contracts and lifecycle publics live in the registry owner; the private
+  // getters below keep the historical read sites unchanged.
+  private readonly _stages!: StageRegistry
   private servicesStage: ServicesStage | null = null
-  /** Stage references read through their slots (null until created / after dispose). */
-  private get worksPlaneStage(): WorksPlaneStage | null {
-    return this._worksPlaneSlot.getStage()
+  /** Stage references read through the registry slots (null until created / after dispose). */
+  private get worksPlaneStage() {
+    return this._stages.worksPlaneStage
   }
-  private get contactTypographyStage(): ContactTypographyStage | null {
-    return this._contactTypographySlot.getStage()
+  private get contactTypographyStage() {
+    return this._stages.contactTypographyStage
   }
-  private get contactCyprusStage(): ContactCyprusStage | null {
-    return this._contactCyprusSlot.getStage()
+  private get contactCyprusStage() {
+    return this._stages.contactCyprusStage
   }
-  private get contactHaloStage(): ContactHaloStage | null {
-    return this._contactHaloSlot.getStage()
+  private get contactHaloStage() {
+    return this._stages.contactHaloStage
   }
-  private get manifestoInkStage(): ManifestoInkStage | null {
-    return this._manifestoInkSlot.getStage()
+  private get manifestoInkStage() {
+    return this._stages.manifestoInkStage
   }
-  private get labGamepad(): LabExperimentObject | null {
-    return this._labGamepadSlot.getStage()
+  private get labGamepad() {
+    return this._stages.labGamepad
   }
-  // Showreel theater: a private render mode (own scene + ortho camera) swapped
-  // in at the render call while open. Created lazily on the first
-  // `jlz:showreel-open`, so neither the video element nor its texture exist
-  // before the visitor asks for the showreel.
-  private showreelTheater: ShowreelTheater | null = null
-  private _showreelOpenUnsub: (() => void) | null = null
-  private _showreelCloseUnsub: (() => void) | null = null
-  private _showreelTogglePlayUnsub: (() => void) | null = null
+  // Showreel render mode (ShowreelController.ts): the lazy GPU-side theater,
+  // its typed bus commands, the reduced-motion forwarding and the render swap.
+  private _showreel!: ShowreelController
   // Phase 8 slice 8 (moved from World): the target Cyprus-active state (the
   // Agros frame replaces the shared cube) + the effective text polarity
   // cached so a lazy Contact stage cannot miss it.
@@ -226,20 +205,17 @@ export class Experience {
    *  The settle decision reads it after the frame, so a same-frame raise
    *  (section change, breath fire, …) is honored. */
   private _activitySnapshot: RenderActivity = { ...NO_ACTIVITY }
-  // Render-budget FPS tracker — rolling window of frame times. If FPS < 30
-  // sustained over LOW_FPS_WINDOW consecutive frames, _lowFps flips true.
-  // Read by DevPanel (low fps ⚠ indicator). Future: auto-reduce particle count.
-  private _fpsFrameTimes: number[] = []
-  // PERF-7 fix: circular buffer index + running sum for O(1) FPS tracking.
-  private _fpsIdx = 0
-  private _fpsSum = 0
-  private _lowFps = false
-  private static readonly LOW_FPS_THRESHOLD = 30 // FPS below this = low
-  private static readonly LOW_FPS_WINDOW = 60 // frames to sustain before flag
+  // Render-budget FPS tracker (rolling window + low-FPS verdict, FpsTracker.ts).
+  // Read by DevPanel (low fps ⚠ indicator); the auto-reduce policy below is
+  // Experience's because it owns the scene groups.
+  private readonly _fpsTracker = new FpsTracker()
   /** True when FPS < 30 sustained over 60 frames. Read by DevPanel. */
   public get lowFps(): boolean {
-    return this._lowFps
+    return this._fpsTracker.lowFps
   }
+  // Procedural IBL environment owner (SceneEnvironment.ts): applied once
+  // after renderer.init() and re-applied after a device-loss recovery.
+  private _environment!: SceneEnvironment
 
   // Phase 7 readiness contract: `jlz:webgl-ready` may only fire after the
   // initial World's FIRST SUCCESSFUL RENDER — the scheduler 'first-frame'
@@ -277,6 +253,33 @@ export class Experience {
     this.scene = host.scene
     this.camera = new Camera(this.sizes, host.camera)
     this.renderer = new Renderer(this.sizes)
+    // The env owner reads the renderer + glass cube lazily: it is applied
+    // after renderer.init() and again after a device-loss recovery.
+    this._environment = new SceneEnvironment({
+      scene: this.scene,
+      renderer: () => this.renderer,
+      baku: () => this.baku,
+    })
+    this._showreel = new ShowreelController({
+      isDestroyed: () => this._destroyed,
+      reducedMotion: () => this._reducedMotion,
+    })
+    // The stage registry reads the live route/camera/polarity/motion state at
+    // its own lazy-init time — a stage can be created on any route at any
+    // moment, so every fact crosses as a getter.
+    this._stages = new StageRegistry({
+      scene: host.scene,
+      currentPage: () => this.currentPage(),
+      camera: () => this.camera,
+      host: () => this._host.stages,
+      isContactLight: () => this._contactIsLight,
+      isCyprusActive: () => this._contactCyprusActive,
+      setCyprusActive: (active) => {
+        this._contactCyprusActive = active
+      },
+      reducedMotion: () => this._reducedMotion,
+      syncRouteVisuals: () => this.coordinator.syncRouteVisuals(),
+    })
 
     // Phase 7 slice 4: the former UI features reach the scene through a
     // narrow getter-based port (the scene + owners only exist after init).
@@ -369,15 +372,6 @@ export class Experience {
     this.contactCyprusStage?.resize(this.sizes.width, this.sizes.height)
   }
 
-  private ensureShowreelTheater(): void {
-    if (this.showreelTheater || this._destroyed) return
-    this.showreelTheater = new ShowreelTheater(
-      '/assets/video/coming-soon.mp4',
-      '/assets/video/coming-soon-cover.jpg',
-    )
-    this.showreelTheater.setReducedMotion(this._reducedMotion)
-  }
-
   private lifecycleToken(): number {
     return this._lifecycleGeneration
   }
@@ -390,7 +384,7 @@ export class Experience {
     if (this._onRendererRecovered) return
     this._onRendererRecovered = () => {
       if (this._destroyed) return
-      this.setupEnvironment()
+      this._environment.apply()
       if (this._destroyed) return
       this._raiseRenderDemand('recovery')
     }
@@ -407,16 +401,12 @@ export class Experience {
     this.baku?.setReducedMotion(reduced)
     this.carousel?.setReducedMotion(reduced)
     this.particleBurst?.setReducedMotion(reduced)
-    this.worksPlaneStage?.setReducedMotion(reduced)
+    // The six route stages fan out through their registry owner (the Lab
+    // object's optional setReducedMotion contract included).
+    this._stages?.setReducedMotion(reduced)
     this.drawTrail?.setReducedMotion(reduced)
     this.camera?.setReducedMotion(reduced)
-    this.contactCyprusStage?.setReducedMotion(reduced)
-    this.contactTypographyStage?.setReducedMotion(reduced)
-    this.contactHaloStage?.setReducedMotion(reduced)
-    this.manifestoInkStage?.setReducedMotion(reduced)
-    this.showreelTheater?.setReducedMotion(reduced)
-    // Lab object carries authored motion (optional contract) — settle it too.
-    this.labGamepad?.setReducedMotion?.(reduced)
+    this._showreel.setReducedMotion(reduced)
     this._storyNav?.setReducedMotion(reduced)
     if (reduced) {
       this._cancelBreath()
@@ -611,369 +601,70 @@ export class Experience {
     return this._carouselInitPromise
   }
 
-  /** Lazily create rich `/works` media only on that route, never on first
-   *  paint. Phase 8 slice 7: moved from World — Experience owns the lazy
-   *  stage (the World frame path reads it through the documented
-   *  `attachWorksPlaneStage` adapter + `worksPlaneStage` getter). The
-   *  lifecycle flow (request guard, memoization, stale release) lives in
-   *  LazyStage.ts; only the stage-specific wiring stays here. */
-  private _worksPlaneStageContract(): LazyStageContract<WorksPlaneStage> {
-    return {
-      label: 'WorksPlaneStage',
-      owner: this._worksPlaneSlot.owner,
-      create: () => new WorksPlaneStage(),
-      // SceneHost/Vue owns attachment. The controller remains the sole lazy
-      // texture, TSL, animation and explicit GPU-disposal owner for now.
-      attach: () => undefined,
-      load: async (stage) => {
-        await this._host.stages.works.mountStage(stage)
-        await stage.init()
-        const installation = stage.installationOwner
-        if (installation) await this._host.stages.works.mountInstallation(stage, installation)
-      },
-      configure: (stage) => {
-        stage.setActive(this.currentPage() === 'works', 0)
-        stage.resize(window.innerWidth, window.innerHeight)
-        stage.setCamera(this.camera.instance)
-      },
-      release: (stage) => {
-        const installation = stage.installationOwner
-        if (installation) void this._host.stages.works.unmountInstallation(stage, installation)
-        void this._host.stages.works.unmountStage(stage)
-        stage.dispose()
-      },
-    }
-  }
+  /**
+   * Lazy-stage lifecycle delegates — the implementation (six slot triples,
+   * contracts and the Cyprus section flip) lives in StageRegistry.ts; these
+   * one-line publics keep the ExperienceUI host port and the buildWorld
+   * entry-route pre-inits unchanged.
+   */
 
+  /** Lazily create rich `/works` media only on that route, never on first paint. */
   public ensureWorksPlaneStageInitialized(): Promise<void> {
-    return ensureLazyStage(this._worksPlaneStageContract())
+    return this._stages.ensureWorksPlaneStageInitialized()
   }
 
-  /** Dispose the /works case-plane stage when leaving /works.
-   *  Frees ~40-50 MB of GPU textures + TSL materials.
-   *  The stage is lazily re-created on the next /works visit via
-   *  ensureWorksPlaneStageInitialized(). Phase 8 slice 7: moved from World. */
+  /** Dispose the /works case-plane stage when leaving /works (frees ~40-50 MB
+   *  of GPU textures + TSL materials); lazily re-created on the next visit. */
   public disposeWorksPlaneStage(): void {
-    disposeLazyStage(this._worksPlaneStageContract())
+    this._stages.disposeWorksPlaneStage()
   }
 
   /** Lazily create the Contact greeting so FontLoader/TextGeometry stay out
-   * of the shared initial scene graph. Lifecycle flow: LazyStage.ts. */
-  private _contactTypographyStageContract(): LazyStageContract<ContactTypographyStage> {
-    return {
-      label: 'ContactTypographyStage',
-      owner: this._contactTypographySlot.owner,
-      create: createImportedLazyStage(
-        () => import('./World/ContactTypographyStage'),
-        ({ ContactTypographyStage }) => ContactTypographyStage,
-      ),
-      attach: (stage) => {
-        this.scene.add(stage)
-      },
-      configure: (stage) => {
-        stage.setActive(this.currentPage() === 'contact')
-        stage.setTheme(this._contactIsLight)
-      },
-      release: (stage) => {
-        // ContactTypographyStage.dispose() detaches itself from the scene.
-        stage.dispose()
-      },
-    }
-  }
-
+   * of the shared initial scene graph. */
   public ensureContactTypographyStageInitialized(): Promise<void> {
-    return ensureLazyStage(this._contactTypographyStageContract())
+    return this._stages.ensureContactTypographyStageInitialized()
   }
 
   public disposeContactTypographyStage(): void {
-    disposeLazyStage(this._contactTypographyStageContract())
+    this._stages.disposeContactTypographyStage()
   }
 
   /** Lazily load the Contact ink halo so the TSL graph stays out of the
-   * shared initial scene graph. Lifecycle flow: LazyStage.ts. */
-  private _contactHaloStageContract(): LazyStageContract<ContactHaloStage> {
-    return {
-      label: 'ContactHaloStage',
-      owner: this._contactHaloSlot.owner,
-      create: createImportedLazyStage(
-        () => import('./World/ContactHaloStage'),
-        ({ ContactHaloStage }) => ContactHaloStage,
-      ),
-      attach: (stage) => this._host.stages.contactHalo.mount(stage),
-      configure: (stage) => {
-        stage.setTheme(this._contactIsLight)
-        stage.setReducedMotion(this._reducedMotion)
-        stage.setActive(this.currentPage() === 'contact')
-      },
-      release: (stage) => {
-        void this._host.stages.contactHalo.unmount(stage)
-        stage.dispose()
-      },
-    }
-  }
-
+   * shared initial scene graph. */
   public ensureContactHaloStageInitialized(): Promise<void> {
-    return ensureLazyStage(this._contactHaloStageContract())
+    return this._stages.ensureContactHaloStageInitialized()
   }
 
   public disposeContactHaloStage(): void {
-    disposeLazyStage(this._contactHaloStageContract())
+    this._stages.disposeContactHaloStage()
   }
 
-  /** Lazily load the /manifesto ink wash so the TSL graph stays out of the
-   *  shared initial scene graph (same contract as the contact halo).
-   *  Lifecycle flow: LazyStage.ts. */
-  private _manifestoInkStageContract(): LazyStageContract<ManifestoInkStage> {
-    return {
-      label: 'ManifestoInkStage',
-      owner: this._manifestoInkSlot.owner,
-      create: createImportedLazyStage(
-        () => import('./World/ManifestoInkStage'),
-        ({ ManifestoInkStage }) => ManifestoInkStage,
-      ),
-      attach: (stage) => this._host.stages.manifestoInk.mount(stage),
-      configure: (stage) => {
-        // The effective-polarity cache is refreshed on every theme event
-        // regardless of route, so a lazy stage cannot miss the current ink.
-        stage.setTheme(this._contactIsLight)
-        stage.setReducedMotion(this._reducedMotion)
-        stage.setActive(this.currentPage() === 'manifesto')
-      },
-      release: (stage) => {
-        void this._host.stages.manifestoInk.unmount(stage)
-        stage.dispose()
-      },
-    }
-  }
-
+  /** Lazily load the /manifesto ink wash (same contract as the contact halo). */
   public ensureManifestoInkStageInitialized(): Promise<void> {
-    return ensureLazyStage(this._manifestoInkStageContract())
+    return this._stages.ensureManifestoInkStageInitialized()
   }
 
   public disposeManifestoInkStage(): void {
-    disposeLazyStage(this._manifestoInkStageContract())
+    this._stages.disposeManifestoInkStage()
   }
 
-  /** Lazily load the Contact location asset instead of keeping it in the home
-   *  scene. Phase 8 slice 8: moved from World — Experience owns the lazy
-   *  stage (the World frame path reads it through the documented
-   *  `attachContactCyprusStage` adapter + `contactCyprusStage` getter).
-   *  Lifecycle flow: LazyStage.ts. */
-  private _contactCyprusStageContract(): LazyStageContract<ContactCyprusStage> {
-    return {
-      label: 'ContactCyprusStage',
-      owner: this._contactCyprusSlot.owner,
-      create: createImportedLazyStage(
-        () => import('./World/ContactCyprusStage'),
-        ({ ContactCyprusStage }) => ContactCyprusStage,
-      ),
-      attach: (stage) => {
-        this.scene.add(stage)
-      },
-      load: (stage) => stage.load(),
-      configure: (stage) => {
-        stage.resize(window.innerWidth, window.innerHeight)
-        stage.setCamera(this.camera.instance)
-        stage.setActive(this.currentPage() === 'contact' && this._contactCyprusActive)
-        stage.prewarm()
-      },
-      release: (stage) => {
-        // ContactCyprusStage.dispose() detaches itself from the scene.
-        stage.dispose()
-      },
-      onDispose: () => {
-        this._contactCyprusActive = false
-      },
-    }
-  }
-
+  /** Lazily load the Contact location asset instead of keeping it in the home scene. */
   public ensureContactCyprusStageInitialized(): Promise<void> {
-    return ensureLazyStage(this._contactCyprusStageContract())
+    return this._stages.ensureContactCyprusStageInitialized()
   }
 
   public disposeContactCyprusStage(): void {
-    disposeLazyStage(this._contactCyprusStageContract())
+    this._stages.disposeContactCyprusStage()
   }
 
   /** Frame 03 replaces the shared cube with the Cyprus asset. */
   public setContactCyprusStageSection(index: number): void {
-    this._contactCyprusActive = this.currentPage() === 'contact' && index === 2
-    this.contactCyprusStage?.setActive(this._contactCyprusActive)
-    if (this._contactCyprusActive && !this.contactCyprusStage) {
-      const initialization = this.ensureContactCyprusStageInitialized()
-      const request = this._contactCyprusSlot.getRequest()
-      void initialization.then(() => {
-        if (request !== this._contactCyprusSlot.getRequest() || !this._contactCyprusActive) return
-        this.coordinator.syncRouteVisuals()
-      })
-    }
-    this.coordinator.syncRouteVisuals()
+    this._stages.setContactCyprusStageSection(index)
   }
 
-  /** Lazily create the Lab experiment object on its first /lab visit.
-   *  Phase 8 slice 9: moved from World — Experience owns the lazy object
-   *  (created once on the first /lab visit, then only toggled visible; the
-   *  World's `syncRouteVisuals` reads the visibility gate off the `labGamepad`
-   *  getter). The object is a static scene object — it is never disposed per
-   *  route leave, only on final destroy. Lifecycle flow: LazyStage.ts (the
-   *  former hand-rolled promise memoization + request counter lived here). */
-  private _labGamepadContract(): LazyStageContract<LabExperimentObject> {
-    return {
-      label: 'LabGamepad',
-      owner: this._labGamepadSlot.owner,
-      create: () => {
-        const experiment = getLabExperiment('lab')
-        // No isCurrent guard on the resolved object: the manifest load may
-        // have already constructed it, so a retired request must fall through
-        // to the LazyStage stale check, which releases the late result
-        // (dispose) instead of silently dropping it.
-        return experiment ? experiment.load() : Promise.resolve(null)
-      },
-      attach: (stage) => {
-        this.scene.add(stage)
-      },
-      configure: (stage) => {
-        stage.visible = this.currentPage() === 'lab'
-      },
-      release: (stage) => {
-        stage.removeFromParent()
-        stage.dispose()
-      },
-    }
-  }
-
+  /** Lazily create the Lab experiment object on its first /lab visit. */
   public ensureLabGamepad(): Promise<void> {
-    return ensureLazyStage(this._labGamepadContract())
-  }
-
-  /** Invalidate any in-flight load and dispose the live object (final teardown). */
-  private disposeLabGamepad(): void {
-    disposeLazyStage(this._labGamepadContract())
-  }
-
-  /** Create a studio environment map (procedural equirect → PMREM) for glass
-   *  reflections. Called once after world init (and after `renderer.init()`,
-   *  which the TSL generator requires). Sets scene.environment so all PBR
-   *  materials (MeshPhysicalNodeMaterial, MeshStandardMaterial) get
-   *  image-based lighting reflections. Zero per-frame cost.
-   *
-   *  GENERATOR — one owner, no secondary contexts: the renderer-native TSL
-   *  `PMREMGenerator` from `three/webgpu` on the unified `WebGPURenderer`
-   *  (the only renderer class the app constructs). It sets
-   *  `isPMREMTexture` on the result natively, so the common `PMREMNode`
-   *  passes the texture through instead of double-PMREMing it (double
-   *  processing used to render the glass cube darker on WebGPU with a
-   *  concentrated bright-spot artifact). The former classic-generator
-   *  branch (dev-forced `?renderer=webgl` QA path) was removed together
-   *  with that path in Phase 10. The former secondary offscreen WebGL
-   *  context (created solely for PMREM generation on the WebGPU path) was
-   *  removed in the Phase 6 unified-renderer slice. */
-  private setupEnvironment(): void {
-    // Procedural environment map (day34 pattern) — bright sky gradient + 3 sun
-    // spots for visible glass reflections. RoomEnvironment was too dim (soft
-    // architectural studio light) → glass looked dark. This procedural env
-    // gives strong directional highlights like day34 reference.
-    let envTex: THREE.CanvasTexture | null = null
-    let pmrem: WebGPUPMREMGenerator | null = null
-    let nextEnvironment: THREE.Texture | null = null
-    const previousEnvironment = this.scene.environment
-    try {
-      // Procedural grayscale texture (sky-to-ground tonal contrast + soft spots).
-      // 512×256 is sufficient for the deliberately soft PMREM reflections and
-      // quarters the synchronous startup work of the previous 1024×512 source.
-      const envWidth = 512
-      const envHeight = 256
-      const envCanvas = document.createElement('canvas')
-      envCanvas.width = envWidth
-      envCanvas.height = envHeight
-      const ctx = envCanvas.getContext('2d')!
-      // Vertical gradient: neutral horizon → bright sky → graphite ground,
-      // plus one soft bright area for a gentle
-      // reflection point on the glass + darker ground area for contrast.
-      // The contrast between bright sky and dark ground gives the glass rich,
-      // dynamic reflections (you can see the "horizon line" refract through
-      // the cube as it rotates). The palette stays neutral so it does not
-      // introduce a third colour system behind lime and teal UI signals.
-      const grad = ctx.createLinearGradient(0, 0, 0, envHeight)
-      grad.addColorStop(0.0, 'rgb(170,170,170)')
-      grad.addColorStop(0.4, 'rgb(225,225,225)')
-      grad.addColorStop(0.7, 'rgb(205,205,205)')
-      grad.addColorStop(0.71, 'rgb(58,58,58)')
-      grad.addColorStop(1.0, 'rgb(24,24,24)')
-      ctx.fillStyle = grad
-      ctx.fillRect(0, 0, envWidth, envHeight)
-      // Soft bright area (upper-left sky region) — broad, diffused light source
-      // for glass reflections. Broad radius + moderate brightness
-      // = soft highlight, NOT a sharp sun spot.
-      const softSpot = ctx.createRadialGradient(140, 70, 0, 140, 70, 150)
-      softSpot.addColorStop(0.0, 'rgba(255,255,255,0.6)')
-      softSpot.addColorStop(0.5, 'rgba(235,235,235,0.25)')
-      softSpot.addColorStop(1.0, 'rgba(220,220,220,0)')
-      ctx.fillStyle = softSpot
-      ctx.fillRect(0, 0, envWidth, envHeight)
-      // Second soft highlight (lower-right, dimmer) — gives the cube a second
-      // reflection point that appears as it rotates, adding visual interest.
-      const softSpot2 = ctx.createRadialGradient(380, 180, 0, 380, 180, 100)
-      softSpot2.addColorStop(0.0, 'rgba(205,205,205,0.35)')
-      softSpot2.addColorStop(1.0, 'rgba(185,185,185,0)')
-      ctx.fillStyle = softSpot2
-      ctx.fillRect(0, 0, envWidth, envHeight)
-      envTex = new THREE.CanvasTexture(envCanvas)
-      envTex.mapping = THREE.EquirectangularReflectionMapping
-      envTex.colorSpace = THREE.SRGBColorSpace
-
-      // Renderer-native TSL PMREM — runs on the live renderer after init and
-      // sets isPMREMTexture on the result natively (PMREMNode pass-through,
-      // no double processing). The unified WebGPURenderer is the only
-      // instance class (Phase 6 production default; the classic
-      // WebGLRenderer path was removed in Phase 10), so this is the single
-      // generator.
-      pmrem = new WebGPUPMREMGenerator(this.renderer.instance)
-      const envRT = pmrem.fromEquirectangular(envTex)
-      nextEnvironment = envRT.texture
-      // Set environmentIntensity explicitly (day34 pattern). Without this,
-      // WebGPU MeshPhysicalNodeMaterial and WebGL2 MeshPhysicalMaterial can
-      // apply scene.environment at different strengths → parity drift
-      // (WebGPU appeared darker than WebGL2). Explicit 1.0 on both ensures
-      // identical IBL strength; material envMapIntensity controls the rest.
-      ;(this.scene as unknown as { environmentIntensity?: number }).environmentIntensity = 1.0
-      // Bind the PMREM texture directly to the glass cube material's envMap.
-      // On WebGPU, scene.environment may not reach MeshPhysicalNodeMaterial
-      // reliably through the TSL post-pipeline (PassNode RT caching drift).
-      // Explicit mat.envMap guarantees the glass sees the environment on BOTH
-      // paths → parity. Shared texture, no extra VRAM.
-      // Generate completely before replacing the live binding. A recovery
-      // failure must preserve the previous environment rather than leaving
-      // the scene without reflections.
-      this.scene.environment = nextEnvironment
-      try {
-        this.baku?.bindEnvironment(nextEnvironment)
-      } catch (error) {
-        this.scene.environment = previousEnvironment ?? null
-        nextEnvironment.dispose()
-        nextEnvironment = null
-        throw error
-      }
-      if (previousEnvironment && previousEnvironment !== nextEnvironment) {
-        previousEnvironment.dispose()
-      }
-      if (import.meta.env.DEV) {
-        console.info(
-          '[Experience] Procedural env map (gradient + sun spots) set — glass reflections active (PMREM via renderer-native TSL generator)',
-        )
-      }
-    } catch (e) {
-      if (nextEnvironment) {
-        this.scene.environment = previousEnvironment ?? null
-        nextEnvironment.dispose()
-      }
-      if (import.meta.env.DEV) {
-        console.warn('[Experience] Procedural env map generation failed:', e)
-      }
-    } finally {
-      pmrem?.dispose()
-      envTex?.dispose()
-    }
+    return this._stages.ensureLabGamepad()
   }
 
   async init() {
@@ -1021,18 +712,8 @@ export class Experience {
       if (activeSection) NoiseText.revealEyebrow(activeSection, 0.8)
     })
     // Showreel theater commands — DOM chrome (ShowreelConsole) emits over the
-    // typed bus; Experience owns the lazy GPU-side stage and the render swap.
-    this._showreelOpenUnsub = eventBus.on('jlz:showreel-open', () => {
-      if (this._destroyed) return
-      this.ensureShowreelTheater()
-      this.showreelTheater?.open()
-    })
-    this._showreelCloseUnsub = eventBus.on('jlz:showreel-close', () => {
-      this.showreelTheater?.close()
-    })
-    this._showreelTogglePlayUnsub = eventBus.on('jlz:showreel-toggle-play', () => {
-      this.showreelTheater?.togglePlay()
-    })
+    // typed bus; the controller owns the lazy GPU-side stage and the render swap.
+    this._showreel.bind()
     await this.renderer.init({
       instance: this._host.renderer,
       canvas: this._host.canvas,
@@ -1095,14 +776,10 @@ export class Experience {
     this._syncPolaritySurfaces(initialIsLight)
 
     // ── Glassmorphism: studio environment map for realistic glass reflections ──
-    // RoomEnvironment is a procedural studio scene (walls + lights) rendered
-    // ONCE to a PMREM (pre-filtered mipmap radiance environment) texture.
-    // This gives the glass cube its reflections — without it, MeshPhysicalMaterial
-    // has NO reflections and glass looks flat/dead. Generated once at init,
-    // costs ZERO per frame. The PMREM also benefits the ground plane (subtle
-    // reflections). try/catch: PMREMGenerator expects WebGLRenderer; on
-    // WebGPURenderer it may fail (duck-typed), so we fall back gracefully.
-    this.setupEnvironment()
+    // Generated once at init, costs ZERO per frame. The PMREM also benefits
+    // the ground plane (subtle reflections). Failure inside the owner
+    // preserves the previous environment (see SceneEnvironment.apply).
+    this._environment.apply()
 
     // Phase 7 slice 4: the former UI features (CinematicNav, UIMenu,
     // overlay, Works portfolio, UI-facing window handlers) are created and
@@ -1335,29 +1012,7 @@ export class Experience {
     const frameStart = frameTiming ? performance.now() : 0
     this.time.update(time)
     const dt = this.time.delta / 1000
-    // ── Render-budget FPS tracker (rolling 60-frame window) ──
-    // PERF-7 fix: circular buffer + running sum (was array.shift() O(N) +
-    // reduce() O(N) every frame → ~7200 element-touches/sec). Now O(1) per
-    // frame: subtract outgoing, add incoming, advance ring index.
-    const ft = this.time.delta
-    if (this._fpsIdx < Experience.LOW_FPS_WINDOW) {
-      // Fill phase: accumulate
-      this._fpsSum += ft
-      this._fpsFrameTimes[this._fpsIdx] = ft
-      this._fpsIdx++
-      if (this._fpsIdx === Experience.LOW_FPS_WINDOW) {
-        const avgMs = this._fpsSum / Experience.LOW_FPS_WINDOW
-        this._lowFps = 1000 / Math.max(1, avgMs) < Experience.LOW_FPS_THRESHOLD
-      }
-    } else {
-      // Circular phase: subtract outgoing, add incoming
-      const idx = this._fpsIdx % Experience.LOW_FPS_WINDOW
-      this._fpsSum += ft - this._fpsFrameTimes[idx]!
-      this._fpsFrameTimes[idx] = ft
-      this._fpsIdx++
-      const avgMs = this._fpsSum / Experience.LOW_FPS_WINDOW
-      this._lowFps = 1000 / Math.max(1, avgMs) < Experience.LOW_FPS_THRESHOLD
-    }
+    this._fpsTracker.observe(this.time.delta)
     // Section state deadlines (ready → viewing → passed) advance here —
     // the former StateBus tick's only live responsibility.
     this.coordinator?.updateSections(dt)
@@ -1425,7 +1080,7 @@ export class Experience {
     activity.camPulsing = camPulsing
     activity.particles = particlesActive
     activity.ambientScene = ambientSceneActive
-    activity.showreel = this.showreelTheater?.isAnimating ?? false
+    activity.showreel = this._showreel.isAnimating
 
     if (anyActivity(activity)) {
       this._needsRender = true
@@ -1597,11 +1252,7 @@ export class Experience {
       // While the showreel theater is open it OWNS the frame: its private
       // scene renders through the same renderer + post pipeline, the world
       // simply skips a beat and resumes unchanged on close.
-      const theater = this.showreelTheater
-      if (theater && theater.currentPhase !== 'closed') {
-        theater.update(dt, this.camera.instance.aspect)
-        this.renderer.update(theater.scene, theater.camera, dt)
-      } else {
+      if (!this._showreel.renderFrame(this.renderer, dt, this.camera.instance.aspect)) {
         this.renderer.update(this.scene, this.camera.instance, dt)
       }
       const rendererDuration = frameTiming ? performance.now() - rendererStart : 0
@@ -1633,7 +1284,7 @@ export class Experience {
     // One-way: once reduced, never auto-restore (GPU spike would re-trigger).
     // Iterates all scene groups, finds JunniParticles via userData.particles,
     // halves their count. DevPanel shows the reduction (low fps ⚠ indicator).
-    if (this._lowFps && !this._particleReductionApplied && this.coordinator) {
+    if (this._fpsTracker.lowFps && !this._particleReductionApplied && this.coordinator) {
       this._particleReductionApplied = true
       for (const group of this.coordinator.sceneGroups) {
         const particles = group.userData.particles as
@@ -1706,22 +1357,9 @@ export class Experience {
       this._splashEnteredUnsub()
       this._splashEnteredUnsub = null
     }
-    if (this._showreelOpenUnsub) {
-      this._showreelOpenUnsub()
-      this._showreelOpenUnsub = null
-    }
-    if (this._showreelCloseUnsub) {
-      this._showreelCloseUnsub()
-      this._showreelCloseUnsub = null
-    }
-    if (this._showreelTogglePlayUnsub) {
-      this._showreelTogglePlayUnsub()
-      this._showreelTogglePlayUnsub = null
-    }
-    // The showreel theater is a private render mode — dispose it with the
-    // render owner so the video element, its texture and the quad die here.
-    this.showreelTheater?.dispose()
-    this.showreelTheater = null
+    // The showreel controller unsubscribes its commands and disposes the
+    // theater with the render owner (video element, texture, quad).
+    this._showreel?.dispose()
     // Phase 7 slice 4: the former UI features (their window listeners, the
     // menu, the overlay and the story nav) tear down through ExperienceUI.
     this.features.destroy()
@@ -1740,27 +1378,14 @@ export class Experience {
     this.particleBurst?.dispose()
     this.drawTrail?.object.removeFromParent()
     this.drawTrail?.dispose()
-    // Phase 8 slice 7: the /works case-plane stage owner (lazy — only alive
-    // when /works was reached; a direct child of the Tres-owned scene).
-    this.disposeWorksPlaneStage()
+    // The six route-owned lazy stages die through their registry owner, in
+    // the legacy destroy order (works plane → typography → cyprus → halo →
+    // ink → lab). disposeLazyStage retires in-flight import generations
+    // before renderer teardown, so a module resolving after root destruction
+    // can neither attach a stage nor retain its TSL material graph.
+    this._stages?.dispose()
     // ServicesStageOwner owns terminal disposal when the persistent host unmounts.
     this.servicesStage = null
-    // Phase 8 slice 8: the Contact typography + Cyprus stage owners (lazy — only
-    // alive when /contact was reached; direct children of the Tres-owned
-    // scene).
-    this.disposeContactTypographyStage()
-    this.disposeContactCyprusStage()
-    this.disposeContactHaloStage()
-    // The /manifesto ink owner follows the same lazy-stage contract. Retire
-    // its import generation before renderer teardown so a module resolving
-    // after root destruction can neither attach a stage nor retain its TSL
-    // material graph.
-    this.disposeManifestoInkStage()
-    // Phase 8 slice 9: the Lab experiment object (created once on the first
-    // /lab visit; a direct child of the Tres-owned scene, never disposed per
-    // route leave). disposeLazyStage invalidates any in-flight load, releases
-    // the live object and resets the owner state.
-    this.disposeLabGamepad()
     // Phase 8 slice 2: the stable section groups owner (BakuCarousel-first
     // disposal ordering + Works particle texture live in the owner).
     this.sectionGroups?.dispose()
@@ -1780,12 +1405,9 @@ export class Experience {
     this.sizes.destroy()
     input.destroy()
     this.sfx.dispose()
-    // scene.environment PMREM texture — not previously disposed (leak on
-    // HMR teardown). Dispose the texture + clear the reference.
-    if (this.scene.environment) {
-      this.scene.environment.dispose()
-      this.scene.environment = null
-    }
+    // The scene environment PMREM texture — disposed + reference cleared by
+    // its owner (was a leak on HMR teardown before the owner existed).
+    this._environment?.disposeCurrent()
   }
 
   // (ensurePortfolio / getCarousel / onProjectSelect removed — Phase 7

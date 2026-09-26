@@ -753,7 +753,7 @@ useProgress) as the framework-capability baseline.
   guards on the updateTransform flow — removal would trade a cheap fallback
   for a new failure mode.
 - `ensureCarouselInitialized` stays hand-rolled (decision recorded on the
-  method in Inspection 5 — LazyStage's release semantics would null the
+  method in Inspection 2 — LazyStage's release semantics would null the
   live scene-graph reference).
 - The three dispose-idempotency guards sit at different layers (factory
   helper / SceneHost Vue-side WeakSet / Renderer terminal flag) — each
@@ -1086,3 +1086,74 @@ check:stdlib 28/28 + 5/5 green, build (incl. home/blog prerender, builder
 pages, sitemap) green, budgets identical to baseline (splash 2.82/5, vendor
 three 298.65/350, uikit 53.66/56), e2e chromium serial 27 passed / 1 skipped
 (baseline parity).
+
+## Inspection 14 — 2026-09-27, Experience god-class split, phase 1 (TvT implementation alignment)
+
+Scope: the user's "переделывай проект в соответствии с реализацией TvT
+framework" — TvT.js's implementation model is many small self-contained
+owners behind a thin host bridge; this repo's largest deviation was the
+`Experience.ts` god-class (1794 lines). NEXT item 4's documented sequencing
+(seeds to slot seams first, then clusters) was followed; every extraction
+landed behind an existing seam, no new mechanism was invented.
+
+### Extractions (all in `src/Experience/`, same `chunk-experience` membership)
+
+- `FpsTracker.ts` (51 lines): the rolling-window FPS measurement (ring
+  buffer + threshold + verdict). The auto-reduce policy (halve particle
+  counts, one-way) stays on Experience — it owns the scene groups.
+- `SceneEnvironment.ts` (163 lines): the procedural IBL environment owner
+  (equirect canvas + renderer-native TSL PMREM) with `apply()` and
+  `disposeCurrent()` contracts; wired with lazy renderer/baku getters so the
+  recovery callback and destroy path share one owner. The PMREM-failure test
+  now drives the real owner directly.
+- `ShowreelController.ts` (107 lines): the showreel render mode (lazy
+  theater, typed bus commands, reduced-motion forwarding, terminal
+  disposal) plus the frame swap — `renderFrame()` returns false when the
+  world should draw, so Experience keeps a single if in the frame path.
+- `StageRegistry.ts` (336 lines): the six route-owned lazy stages — slot
+  triples, contracts (works plane, contact typography/halo/cyprus, manifesto
+  ink, lab object), the Cyprus section flip, the reduced-motion fan-out and
+  the final teardown in the legacy order — behind a getter context (scene,
+  page, camera, host ports, polarity/motion caches, route reconciliation).
+  Experience keeps one-line delegates: the ExperienceUI host port, the
+  buildWorld entry-route pre-inits, the SceneCoordinator owner getters and
+  the frame-path reads keep their shapes. The polarity cache stays on
+  Experience (theme-listener written); the registry reads it through the
+  context.
+
+### Checked and sound
+
+- `Experience.ts` 1794 → 1416 lines. The remaining body is the split's
+  documented center of mass: `_needsRender`/`_activitySnapshot` writers, the
+  settle policy, the frame body and the pinned destroy ordering.
+- The test seed now attaches a registry built over the seeded instance and
+  routes stage bag keys through its public slots — the seed surface is the
+  seam the clusters moved to, per the NEXT sequencing rule.
+- `Experience.destroyOwnership.test.ts` stayed green unrenamed (registry
+  dispose order preserved; the env-owner fake reproduces the
+  dispose-and-clear contract).
+- The SceneCoordinator side was NOT touched. Its parity-locked double-ease
+  was prose-only protection, so a characterization pin landed first
+  (`SceneCoordinator.doubleEase.test.ts`): `worldState.phaseProgress`
+  carries the singly-eased camera t, the to-group mesh opacity carries the
+  doubly-eased fade, and the test asserts they diverge — a future dedupe
+  fails loudly.
+
+### Deliberately rejected
+
+- Extracting the carousel (created by SectionGroups, initialized by
+  Experience, driven by the coordinator, disposed by SectionGroups) —
+  a four-leg triangle whose legs would all survive the move; no win.
+- Extracting the post-handoff block — it is already two thin call sites
+  around `renderer.update()`; a "pipeline controller" would be ceremony.
+- Auto-generating stage scaffolds (TvT.js's pluginMaker): the registry +
+  slot pattern already reduces a new stage to one contract in one file; a
+  generator adds a maintenance surface for a task that is now small.
+
+Verification: prettier clean, tsc + vue-tsc green, eslint 0 errors (16
+pre-existing warnings), vitest 118 files / 712 tests green (+1
+characterization pin), docs:check 18 files / 36 links green, check:stdlib
+28/28 + 5/5 green, build (incl. prerenders + sitemap) green, budgets
+byte-identical to baseline (splash 2.82/5, vendor-three 298.65/350, uikit
+53.66/56 — extractions stayed inside `chunk-experience`), e2e chromium
+serial 27 passed / 1 skipped (baseline parity).

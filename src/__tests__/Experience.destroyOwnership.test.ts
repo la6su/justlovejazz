@@ -54,7 +54,7 @@ function createSeededExperience() {
     _onMouseMoveForTrail: null,
     contentReveal: { destroy: spies.contentReveal },
     cursor: { destroy: spies.cursor },
-    showreelTheater: { dispose: spies.showreelTheater },
+    _showreel: { dispose: spies.showreelTheater },
     features: { destroy: spies.features },
     lights: { dispose: spies.lights },
     ground: { dispose: spies.ground },
@@ -71,6 +71,14 @@ function createSeededExperience() {
     camera: { destroy: spies.camera },
     sizes: { destroy: spies.sizes },
     sfx: { dispose: spies.sfx },
+    // The env owner's disposeCurrent contract: release the texture AND clear
+    // the scene reference (both are asserted below).
+    _environment: {
+      disposeCurrent: () => {
+        spies.environment()
+        scene.environment = null
+      },
+    },
     scene,
   })
 

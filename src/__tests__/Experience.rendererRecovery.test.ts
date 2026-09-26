@@ -15,6 +15,7 @@ vi.mock('three/webgpu', () => ({
 }))
 
 import { Experience } from '../Experience/Experience'
+import { SceneEnvironment } from '../Experience/SceneEnvironment'
 import { eventBus } from '../core/EventBus'
 import * as THREE from 'three'
 
@@ -35,19 +36,18 @@ describe('Experience renderer recovery handoff', () => {
   })
 
   it('rebinds the environment and wakes demand while the owner is live', () => {
+    const apply = vi.fn()
     const experience = Object.assign(Object.create(Experience.prototype), {
       _destroyed: false,
       _onRendererRecovered: null,
-      setupEnvironment: vi.fn(),
+      _environment: { apply },
       _raiseRenderDemand: vi.fn(),
     }) as Experience
 
     ;(experience as unknown as { installRendererRecovery: () => void }).installRendererRecovery()
     eventBus.emit('jlz:renderer-recovered')
 
-    expect(
-      (experience as unknown as { setupEnvironment: ReturnType<typeof vi.fn> }).setupEnvironment,
-    ).toHaveBeenCalledOnce()
+    expect(apply).toHaveBeenCalledOnce()
     expect(
       (experience as unknown as { _raiseRenderDemand: ReturnType<typeof vi.fn> })
         ._raiseRenderDemand,
@@ -55,10 +55,11 @@ describe('Experience renderer recovery handoff', () => {
   })
 
   it('does not touch renderer state after the owner is destroyed', () => {
+    const apply = vi.fn()
     const experience = Object.assign(Object.create(Experience.prototype), {
       _destroyed: false,
       _onRendererRecovered: null,
-      setupEnvironment: vi.fn(),
+      _environment: { apply },
       _raiseRenderDemand: vi.fn(),
     }) as Experience
     ;(experience as unknown as { installRendererRecovery: () => void }).installRendererRecovery()
@@ -66,9 +67,7 @@ describe('Experience renderer recovery handoff', () => {
     ;(experience as unknown as { _destroyed: boolean })._destroyed = true
     eventBus.emit('jlz:renderer-recovered')
 
-    expect(
-      (experience as unknown as { setupEnvironment: ReturnType<typeof vi.fn> }).setupEnvironment,
-    ).not.toHaveBeenCalled()
+    expect(apply).not.toHaveBeenCalled()
     expect(
       (experience as unknown as { _raiseRenderDemand: ReturnType<typeof vi.fn> })
         ._raiseRenderDemand,
@@ -76,10 +75,11 @@ describe('Experience renderer recovery handoff', () => {
   })
 
   it('does not register duplicate recovery listeners when init is re-entered', () => {
+    const apply = vi.fn()
     const experience = Object.assign(Object.create(Experience.prototype), {
       _destroyed: false,
       _onRendererRecovered: null,
-      setupEnvironment: vi.fn(),
+      _environment: { apply },
       _raiseRenderDemand: vi.fn(),
     }) as Experience
     const owner = experience as unknown as { installRendererRecovery: () => void }
@@ -88,9 +88,7 @@ describe('Experience renderer recovery handoff', () => {
     owner.installRendererRecovery()
     eventBus.emit('jlz:renderer-recovered')
 
-    expect(
-      (experience as unknown as { setupEnvironment: ReturnType<typeof vi.fn> }).setupEnvironment,
-    ).toHaveBeenCalledOnce()
+    expect(apply).toHaveBeenCalledOnce()
     expect(
       (experience as unknown as { _raiseRenderDemand: ReturnType<typeof vi.fn> })
         ._raiseRenderDemand,
@@ -109,21 +107,18 @@ describe('Experience renderer recovery handoff', () => {
     const getContext = vi
       .spyOn(HTMLCanvasElement.prototype, 'getContext')
       .mockReturnValue(context as unknown as CanvasRenderingContext2D)
-    const experience = Object.assign(Object.create(Experience.prototype), {
+    // The real SceneEnvironment owner drives the regeneration.
+    const environment = new SceneEnvironment({
       scene,
-      renderer: { instance: {} },
-      baku: { bindEnvironment: vi.fn() },
-    }) as Experience
+      renderer: () => ({ instance: {} }),
+      baku: () => ({ bindEnvironment: vi.fn() }),
+    })
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
 
-    ;(experience as unknown as { setupEnvironment: () => void }).setupEnvironment()
+    environment.apply()
 
     expect(scene.environment).toBe(previousEnvironment)
     expect(previousDispose).not.toHaveBeenCalled()
-    expect(
-      (experience as unknown as { baku: { bindEnvironment: ReturnType<typeof vi.fn> } }).baku
-        .bindEnvironment,
-    ).not.toHaveBeenCalled()
     expect(warn).toHaveBeenCalledOnce()
     getContext.mockRestore()
     warn.mockRestore()

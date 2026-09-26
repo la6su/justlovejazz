@@ -60,19 +60,24 @@ retired. `scripts/bundle-breakdown.ts` now selects the shared vendor exactly
    release skill (`skills/justlovejazz-release/SKILL.md` — the "PR against
    `main`" rule is the one that changes).
 4. **Experience.ts / SceneCoordinator.ts split (architectural, largest item).**
-   `src/Experience/Experience.ts` (~1.8k lines) and
-   `src/Experience/SceneCoordinator.ts` (~1k lines) are the last god-classes.
-   Inspection 8 mapped the split-ready clusters (lazy-stage registry,
-   showreel controller, environment/PMREM, FPS tracker) and the entangled
-   state that blocks them (`_needsRender`/`_activitySnapshot` writers,
-   polarity cache, carousel ownership). Sequencing when picked up:
-   migrate the private-state test seeds that bypass the Experience
-   constructor (`experienceSeed.ts` / `Object.create` bags) to slot/port
-   seams FIRST, then move clusters; update the ARCHITECTURE.md ownership
-   table + teardown section and the `vite.config.ts` chunk regexes in the
-   same change; keep `Experience.destroyOwnership.test.ts` green or rename
-   it in the same PR.
-   The parity-locked SceneCoordinator double-ease must not be "fixed" mid-split.
+   `src/Experience/SceneCoordinator.ts` (~1k lines) is the remaining
+   god-class; the Experience side is DONE (Inspection 14, 2026-09-27): the
+   split-ready clusters (lazy-stage registry, showreel controller,
+   environment/PMREM, FPS tracker) moved behind existing seams —
+   `StageRegistry.ts`, `ShowreelController.ts`, `SceneEnvironment.ts`,
+   `FpsTracker.ts` — and the test seed attaches a registry built over the
+   seeded instance, so `Experience.destroyOwnership.test.ts` stayed green
+   unrenamed. Remaining (a separate slice, in this order):
+   1. Split `SceneCoordinator.ts` — sections/config state machine,
+      `updateTransform` (pooled-cache contract pinned by
+      `SceneCoordinator.routeVisuals.test.ts`) and the `update()` frame
+      forwarder. Its double-ease is now pinned by
+      `SceneCoordinator.doubleEase.test.ts` (bg fade uses the doubly-eased
+      t, camera/baku the singly-eased one) — do not "fix" it mid-split.
+   2. The entangled state stays with the frame body: `_needsRender`/
+      `_activitySnapshot` writers, the settle policy and the carousel
+      triangle (created by SectionGroups, initialized by Experience, driven
+      by the coordinator) — extraction there has no honest owner yet.
 
 ## Audit cleanup (2026-09-17)
 

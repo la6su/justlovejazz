@@ -29,23 +29,24 @@ All paths below are relative to `src/`. Framework-neutral `core/` contracts
 sit below Vue views, DOM controllers and scene owners. Typed ports connect
 these layers; scene state must not be inferred from DOM datasets.
 
-| Concern                             | Source owners                                                                                                                                               |
-| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Route paths and views               | `core/routeManifest.ts` (paths + the `PageId` vocabulary), `app/routes.ts`, `app/index.ts` (router mount), `app/views/`                                     |
-| Route state and deferred navigation | `core/routePage.ts`, `core/routeContinuation.ts`                                                                                                            |
-| Locale and route metadata           | `core/i18n.ts`, `core/pageMeta.ts`, `core/pageMetaData.ts`                                                                                                  |
-| Blog and sitemap                    | `core/blogPages.ts`, `blogContent.ts`, `blogMeta.ts`, `sitemap.ts`, `sitemapEntries.ts`; `content/blog/` at repository root                                 |
-| Project data and case resolution    | `Data/Projects.ts`, `Data/CaseStudies.ts`, `core/caseStudies.ts`, `core/worksExperience.ts`                                                                 |
-| Theme, sound and motion             | `core/ThemeManager.ts`, `brandTokens.ts`, `SfxSystem.ts`, `motionPolicy.ts`                                                                                 |
-| Typed app events                    | `core/EventBus.ts` (`AppEvents`); `window.__jlzEmit` for non-module producers                                                                               |
-| Semantic route lifecycle / UIkit    | `app/useJlzPage.ts`, `app/menuLifecycle.ts`, `UI/UIMenu.ts`                                                                                                 |
-| Story navigation and snapshots      | `UI/CinematicNav.ts`, `core/storyState.ts`, `core/storyProgress.ts`                                                                                         |
-| Renderer factory, policy, recovery  | `core/unifiedRenderer.ts`, `core/rendererBackend.ts`, `Experience/Renderer.ts`, `app/sceneHost.ts`                                                          |
-| Demand and timing                   | `core/RenderScheduler.ts`, `renderDemand.ts`, `FrameTiming.ts`, `FrameGapStats.ts`                                                                          |
-| Device quality and diagnostics      | `core/DeviceCapability.ts`, `RuntimeResourceSnapshot.ts`, `DevPanel.ts`                                                                                     |
-| Scene coordination and slots        | `Experience/SceneCoordinator.ts`, `Experience/Scene/SectionGroups.ts`, `core/WorldConfig.ts`, `worldSlots.ts`                                               |
-| Post graph and tone mapping         | `core/RenderPipeline.ts`, `WebGPUPostPipeline.ts`, `PostProcessingManager.ts`, `toneMappingGuard.ts`                                                        |
-| Async stages and disposal helpers   | `Experience/LazyStage.ts` (runtime-constructed stages), `app/stageSlot.ts` + `app/sceneHost.ts` ports (declarative stage mount surface), `Utils/dispose.ts` |
+| Concern                             | Source owners                                                                                                                                                                                                                      |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Route paths and views               | `core/routeManifest.ts` (paths + the `PageId` vocabulary), `app/routes.ts`, `app/index.ts` (router mount), `app/views/`                                                                                                            |
+| Route state and deferred navigation | `core/routePage.ts`, `core/routeContinuation.ts`                                                                                                                                                                                   |
+| Locale and route metadata           | `core/i18n.ts`, `core/pageMeta.ts`, `core/pageMetaData.ts`                                                                                                                                                                         |
+| Blog and sitemap                    | `core/blogPages.ts`, `blogContent.ts`, `blogMeta.ts`, `sitemap.ts`, `sitemapEntries.ts`; `content/blog/` at repository root                                                                                                        |
+| Project data and case resolution    | `Data/Projects.ts`, `Data/CaseStudies.ts`, `core/caseStudies.ts`, `core/worksExperience.ts`                                                                                                                                        |
+| Theme, sound and motion             | `core/ThemeManager.ts`, `brandTokens.ts`, `SfxSystem.ts`, `motionPolicy.ts`                                                                                                                                                        |
+| Typed app events                    | `core/EventBus.ts` (`AppEvents`); `window.__jlzEmit` for non-module producers                                                                                                                                                      |
+| Semantic route lifecycle / UIkit    | `app/useJlzPage.ts`, `app/menuLifecycle.ts`, `UI/UIMenu.ts`                                                                                                                                                                        |
+| Story navigation and snapshots      | `UI/CinematicNav.ts`, `core/storyState.ts`, `core/storyProgress.ts`                                                                                                                                                                |
+| Renderer factory, policy, recovery  | `core/unifiedRenderer.ts`, `core/rendererBackend.ts`, `Experience/Renderer.ts`, `app/sceneHost.ts`                                                                                                                                 |
+| Demand and timing                   | `core/RenderScheduler.ts`, `renderDemand.ts`, `FrameTiming.ts`, `FrameGapStats.ts`, `Experience/FpsTracker.ts`                                                                                                                     |
+| Device quality and diagnostics      | `core/DeviceCapability.ts`, `RuntimeResourceSnapshot.ts`, `DevPanel.ts`                                                                                                                                                            |
+| Scene coordination and slots        | `Experience/SceneCoordinator.ts`, `Experience/Scene/SectionGroups.ts`, `core/WorldConfig.ts`, `worldSlots.ts`                                                                                                                      |
+| Scene render modes and IBL          | `Experience/ShowreelController.ts` (showreel render swap over `World/ShowreelTheater.ts`), `Experience/SceneEnvironment.ts` (procedural PMREM owner)                                                                               |
+| Post graph and tone mapping         | `core/RenderPipeline.ts`, `WebGPUPostPipeline.ts`, `PostProcessingManager.ts`, `toneMappingGuard.ts`                                                                                                                               |
+| Async stages and disposal helpers   | `Experience/LazyStage.ts` (lifecycle core), `Experience/StageRegistry.ts` (the six route stages' contracts + lifecycle owner), `app/stageSlot.ts` + `app/sceneHost.ts` ports (declarative stage mount surface), `Utils/dispose.ts` |
 
 The table maps boundaries, not every implementation detail. Owner-specific
 regressions belong in `src/__tests__/`, not a second prose inventory.
@@ -179,6 +180,7 @@ Typed route/preference/story ports feed both DOM controllers and scene code.
 
 `WorksPlaneStage` and `WorksInstallation` present the active work;
 `UI/FullscreenOverlay.ts` owns fullscreen presentation and Escape.
+`Experience/ShowreelController.ts` owns the showreel render mode — the lazy
 `Experience/World/ShowreelTheater.ts` swaps a private video-quad scene
 at the shared render call; it loads the film on first open. `ShowreelConsole`
 provides DOM controls over typed events. The shared case/showreel contract is part
