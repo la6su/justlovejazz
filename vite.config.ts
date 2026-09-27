@@ -50,6 +50,13 @@ export default defineConfig(() => ({
     // retain only a dead-path WebGLRenderer compatibility symbol. The
     // three-stdlib entry keeps the Cientos barrel resolution to the modules
     // Cientos actually references (see src/three-stdlib-compat.ts).
+    //
+    // This alias is also the dev dedup seam: pre-bundled dependencies share
+    // the optimizer's single three.core chunk automatically, while raw-served
+    // modules importing bare `three` (the application graph and the
+    // three-stdlib deep files) resolve here instead of the classic entry —
+    // the only evaluated core is the optimizer's shared three/webgpu chunk
+    // (see src/three-webgpu-compat.ts for the matching UniformsUtils seam).
     alias: [
       { find: /^three$/, replacement: resolve(__dirname, 'src/three-webgpu-compat.ts') },
       { find: /^three-stdlib$/, replacement: resolve(__dirname, 'src/three-stdlib-compat.ts') },
