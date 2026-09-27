@@ -9,11 +9,13 @@
 // (its own methods are one-line delegates, so the ExperienceUI host port
 // and the SceneCoordinator owner getters keep their shapes).
 //
-// The polarity cache (contactIsLight / cyprusActive) stays on Experience —
-// the theme listener writes it per event; the contracts read it through the
-// context so a lazy stage cannot miss the current polarity.
+// Every stage mounts through the declarative host ports (SceneStagePorts) —
+// no runtime `scene.add`. The polarity cache (contactIsLight / cyprusActive)
+// stays on Experience — the theme listener writes it per event; the
+// contracts read it through the context so a lazy stage cannot miss the
+// current polarity.
 
-import * as THREE from 'three'
+import type { Camera } from 'three'
 import type { PageId } from '../core/routeManifest'
 import type { SceneStagePorts } from '../app/sceneHost'
 import {
@@ -34,9 +36,8 @@ import { getLabExperiment, type LabExperimentObject } from './Lab/manifest'
  *  values: every lazy stage can appear on any route and must observe the
  *  live route, camera, polarity and reduced-motion state at its own init. */
 interface StageRegistryContext {
-  scene: THREE.Scene
   currentPage: () => PageId
-  camera: () => { instance: THREE.Camera }
+  camera: () => { instance: Camera }
   host: () => SceneStagePorts
   /** The effective text polarity (theme-listener cache on Experience). */
   isContactLight: () => boolean
@@ -90,8 +91,7 @@ export class StageRegistry {
       label: 'WorksPlaneStage',
       owner: this.slots.worksPlane.owner,
       create: () => new WorksPlaneStage(),
-      // SceneHost/Vue owns attachment. The controller remains the sole lazy
-      // texture, TSL, animation and explicit GPU-disposal owner for now.
+      // SceneHost/Vue owns attachment, like every route-owned lazy stage.
       attach: () => undefined,
       load: async (stage) => {
         await this._ctx.host().works.mountStage(stage)
@@ -134,15 +134,15 @@ export class StageRegistry {
         () => import('./World/ContactTypographyStage'),
         ({ ContactTypographyStage }) => ContactTypographyStage,
       ),
-      attach: (stage) => {
-        this._ctx.scene.add(stage)
-      },
+      attach: (stage) => this._ctx.host().contactTypography.mount(stage),
       configure: (stage) => {
         stage.setActive(this._ctx.currentPage() === 'contact')
         stage.setTheme(this._ctx.isContactLight())
       },
       release: (stage) => {
-        // ContactTypographyStage.dispose() detaches itself from the scene.
+        void this._ctx.host().contactTypography.unmount(stage)
+        // The stage's dispose() also self-detaches (a harmless no-op after
+        // the Vue-host unmount flush).
         stage.dispose()
       },
     }
@@ -231,9 +231,7 @@ export class StageRegistry {
         () => import('./World/ContactCyprusStage'),
         ({ ContactCyprusStage }) => ContactCyprusStage,
       ),
-      attach: (stage) => {
-        this._ctx.scene.add(stage)
-      },
+      attach: (stage) => this._ctx.host().contactCyprus.mount(stage),
       load: (stage) => stage.load(),
       configure: (stage) => {
         stage.resize(window.innerWidth, window.innerHeight)
@@ -242,7 +240,9 @@ export class StageRegistry {
         stage.prewarm()
       },
       release: (stage) => {
-        // ContactCyprusStage.dispose() detaches itself from the scene.
+        void this._ctx.host().contactCyprus.unmount(stage)
+        // The stage's dispose() also self-detaches (a harmless no-op after
+        // the Vue-host unmount flush).
         stage.dispose()
       },
       onDispose: () => {
@@ -290,14 +290,12 @@ export class StageRegistry {
         // (dispose) instead of silently dropping it.
         return experiment ? experiment.load() : Promise.resolve(null)
       },
-      attach: (stage) => {
-        this._ctx.scene.add(stage)
-      },
+      attach: (stage) => this._ctx.host().labGamepad.mount(stage),
       configure: (stage) => {
         stage.visible = this._ctx.currentPage() === 'lab'
       },
       release: (stage) => {
-        stage.removeFromParent()
+        void this._ctx.host().labGamepad.unmount(stage)
         stage.dispose()
       },
     }

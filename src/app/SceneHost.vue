@@ -57,7 +57,10 @@ import type { EnvSphere } from '../Experience/World/EnvSphere'
 import type { WorksPlaneStage } from '../Experience/World/WorksPlaneStage'
 import type { WorksInstallation } from '../Experience/World/WorksInstallation'
 import type { ContactHaloStage } from '../Experience/World/ContactHaloStage'
+import type { ContactTypographyStage } from '../Experience/World/ContactTypographyStage'
 import type { ManifestoInkStage } from '../Experience/World/ManifestoInkStage'
+import type { ContactCyprusStage } from '../Experience/World/ContactCyprusStage'
+import type { LabExperimentObject } from '../Experience/Lab/manifest'
 
 const noScene = new URLSearchParams(window.location.search).has('no-scene')
 // Dev-only physical recovery seam. It preserves the shipped single-renderer
@@ -206,6 +209,11 @@ const worksStageSlot = createStageSlot<WorksPlaneStage>({ isAlive: () => !dispos
 const worksInstallationSlot = createStageSlot<WorksInstallation>({ isAlive: () => !disposed })
 const contactHaloSlot = createStageSlot<ContactHaloStage>({ isAlive: () => !disposed })
 const manifestoInkSlot = createStageSlot<ManifestoInkStage>({ isAlive: () => !disposed })
+const contactTypographySlot = createStageSlot<ContactTypographyStage>({
+  isAlive: () => !disposed,
+})
+const contactCyprusSlot = createStageSlot<ContactCyprusStage>({ isAlive: () => !disposed })
+const labGamepadSlot = createStageSlot<LabExperimentObject>({ isAlive: () => !disposed })
 
 // Top-level aliases keep the template's declarative bindings unchanged
 // (setup-scope refs auto-unwrap, so `:object` receives the raw object).
@@ -213,6 +221,9 @@ const declarativeWorksStage = worksStageSlot.object
 const declarativeWorksInstallation = worksInstallationSlot.object
 const declarativeContactHalo = contactHaloSlot.object
 const declarativeManifestoInk = manifestoInkSlot.object
+const declarativeContactTypography = contactTypographySlot.object
+const declarativeContactCyprus = contactCyprusSlot.object
+const declarativeLabGamepad = labGamepadSlot.object
 
 const stages: SceneStagePorts = {
   works: {
@@ -235,6 +246,9 @@ const stages: SceneStagePorts = {
   },
   contactHalo: contactHaloSlot,
   manifestoInk: manifestoInkSlot,
+  contactTypography: contactTypographySlot,
+  contactCyprus: contactCyprusSlot,
+  labGamepad: labGamepadSlot,
 }
 
 const disposedRenderers = new WeakSet<object>()
@@ -416,6 +430,17 @@ onBeforeUnmount(() => {
       />
       <primitive v-if="declarativeContactHalo" :object="declarativeContactHalo" :dispose="null" />
       <primitive v-if="declarativeManifestoInk" :object="declarativeManifestoInk" :dispose="null" />
+      <primitive
+        v-if="declarativeContactTypography"
+        :object="declarativeContactTypography"
+        :dispose="null"
+      />
+      <primitive
+        v-if="declarativeContactCyprus"
+        :object="declarativeContactCyprus"
+        :dispose="null"
+      />
+      <primitive v-if="declarativeLabGamepad" :object="declarativeLabGamepad" :dispose="null" />
       <WorksStageOwner
         :stage="declarativeWorksStage"
         :installation="declarativeWorksInstallation"

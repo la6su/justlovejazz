@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { markRaw, onBeforeUnmount, onMounted, shallowRef } from 'vue'
+import { markRaw, onMounted, shallowRef } from 'vue'
 import {
   Vector3,
   type DirectionalLight,
@@ -19,7 +19,6 @@ const intro = CINEMATIC_INTRO_PRESET
 
 const emit = defineEmits<{
   ready: [lights: DeclarativeCinematicLights]
-  dispose: []
 }>()
 
 const group = shallowRef<Group | null>(null)
@@ -52,8 +51,6 @@ onMounted(() => {
     hemisphere: hemisphere.value,
   })
 })
-
-onBeforeUnmount(() => emit('dispose'))
 </script>
 
 <template>

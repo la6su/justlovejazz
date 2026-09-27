@@ -153,6 +153,10 @@ export class Experience {
   private _contactCyprusActive = false
   private _contactIsLight = false
 
+  // The frame path's one-time Works-gallery preload gate (read + written only
+  // here, so the flag lives on Experience — not on the ExperienceUI host).
+  private _portfolioInitialized = false
+
   // Phase 7 slice 4: the former UI features (cinematic nav, menu, overlay,
   // Works portfolio, UI-facing window handlers) live in ExperienceUI.
   private features!: ExperienceUI
@@ -269,7 +273,6 @@ export class Experience {
     // its own lazy-init time — a stage can be created on any route at any
     // moment, so every fact crosses as a getter.
     this._stages = new StageRegistry({
-      scene: host.scene,
       currentPage: () => this.currentPage(),
       camera: () => this.camera,
       host: () => this._host.stages,
@@ -537,8 +540,9 @@ export class Experience {
     // route leave, only on final destroy.
     if (this.currentPage() === 'lab') void this.ensureLabGamepad()
     // Phase 8 slice 10: the World's TresJS primitive slot goes away with the
-    // legacy World — the coordinator's sections enter the Tres scene
-    // directly (init() adds them), so no host primitive adapter remains.
+    // legacy World — the coordinator's sections enter the Tres scene directly
+    // (init() adds them); every route-owned lazy stage reaches the scene
+    // through its own declarative host port (StageRegistry contracts).
     await this.coordinator.prewarmHomeMedia(this.renderer.instance, this.camera.instance)
     if (!this.isLifecycleCurrent(token)) return
     // Phase 8 slice 1: the lights + ground scene owners. They enter the
@@ -1102,7 +1106,8 @@ export class Experience {
     const { cameraTarget, worldState } = this.coordinator.updateTransform(ns)
     this.coordinator.update(dt, this._needsRender)
     const sceneDuration = frameTiming ? performance.now() - sceneStart : 0
-    // Drive worldDNA section blend — from→to colors + phaseProgress (scroll t).
+    // Drive the baku material blend — from→to slot colors + phaseProgress
+    // (scroll t) through SplashCube.updateWorldBlend.
     if (this.baku) {
       const fromCfg = this.coordinator.getConfig(
         this.coordinator.sections[this.coordinator.currentSectionIndex]?.phaseConfig?.id ??
@@ -1217,8 +1222,8 @@ export class Experience {
     // (above, in the activity snapshot) — was a race condition where stale
     // value caused carousel.update() to never run, morph stalled at ~0.35.
     // Sync FullscreenOverlay (DOM UI layer) — fullscreen opens on card click.
-    if (this.overlay && showGallery && !this.features.portfolioInitialized) {
-      this.features.portfolioInitialized = true
+    if (this.overlay && showGallery && !this._portfolioInitialized) {
+      this._portfolioInitialized = true
       // Preload the first project into the overlay (hidden until card click).
       // Uses preload() NOT open() — open() calls UIkit.modal().show() which
       // adds the uk-open class (making the overlay visible). preload() only

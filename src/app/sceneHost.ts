@@ -10,9 +10,10 @@
 // scene's first successful render — the factory return alone never satisfies
 // readiness).
 //
-// Phase 8 slice 10 removed the legacy `worldObject` primitive slot: the
-// SceneCoordinator adds its sections + scene owners to the Tres-owned scene
-// directly, so no explicit `<primitive>` adapter remains.
+// Phase 8 slice 10 removed the legacy `worldObject` primitive slot; the
+// scene owners and every route-owned lazy stage now enter the Tres-owned
+// scene through declarative adapters (`<primitive>` stage slots + the
+// declarative components).
 //
 // ADR 0005 (Tres-native demand loop): the persistent Tres loop is the one RAF
 // host. The RenderScheduler opens/closes activity windows on it through the
@@ -34,7 +35,10 @@ import type { EnvSphere } from '../Experience/World/EnvSphere'
 import type { WorksPlaneStage } from '../Experience/World/WorksPlaneStage'
 import type { WorksInstallation } from '../Experience/World/WorksInstallation'
 import type { ContactHaloStage } from '../Experience/World/ContactHaloStage'
+import type { ContactTypographyStage } from '../Experience/World/ContactTypographyStage'
 import type { ManifestoInkStage } from '../Experience/World/ManifestoInkStage'
+import type { ContactCyprusStage } from '../Experience/World/ContactCyprusStage'
+import type { LabExperimentObject } from '../Experience/Lab/manifest'
 
 /**
  * The Tres-native loop port (ADR 0005). The RenderScheduler is still the
@@ -77,11 +81,16 @@ interface WorksStagePort {
   unmountInstallation(stage: WorksPlaneStage, installation: WorksInstallation): Promise<void>
 }
 
-/** The declarative stage ports the Vue host exposes to the Experience runtime. */
+/** The declarative stage ports the Vue host exposes to the Experience runtime.
+ *  Every route-owned lazy stage mounts through one of these (the uniform
+ *  declarative boundary — no runtime `scene.add`). */
 export interface SceneStagePorts {
   works: WorksStagePort
   contactHalo: StagePort<ContactHaloStage>
   manifestoInk: StagePort<ManifestoInkStage>
+  contactTypography: StagePort<ContactTypographyStage>
+  contactCyprus: StagePort<ContactCyprusStage>
+  labGamepad: StagePort<LabExperimentObject>
 }
 
 /** The readiness state published once the persistent Tres root is live. */

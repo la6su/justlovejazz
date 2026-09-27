@@ -70,7 +70,6 @@ export class ExperienceUI {
   /** The fullscreen overlay (UIManager may own one; adopt or create). */
   overlay: FullscreenOverlay | null = null
   private ownsOverlay = false
-  portfolioInitialized = false
   private activeProjectIndex = 0
   private _portfolioPromise: Promise<void> | null = null
   private _portfolioReadyRaf: number | null = null
