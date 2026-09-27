@@ -1373,3 +1373,61 @@ docs:check 18 files / 36 links green, check:stdlib 28/28 + 5/5 green, build
 vendor-three 298.65/350 and uikit 53.66/56 unchanged), e2e chromium serial
 27 passed / 1 skipped (baseline parity; playwright chromium reinstalled
 after the environment reset).
+
+## Inspection 17 — 2026-09-27, uniform declarative stage boundary: the last three runtime `scene.add` sites go through host ports
+
+Scope: the renewed declarative-transition direction (user directive: keep
+moving the project toward declarative TresJS/Cientos on the TSL/WebGPU stack).
+Two parallel audits preceded any edit: (A) an imperative/declarative seam map
+of the whole `src/` tree (every remaining runtime `scene.add`, every
+Cientos/core import, every Owner wrapper classification), and (B) the TvT
+reference (`hawk86104/three-vue-tres`) pattern inventory under the
+"ecosystem adoption is audited, not assumed" rule. Every agent claim was
+re-verified against the code before acting.
+
+### Declarative stage boundary (this PR)
+
+- `ContactTypographyStage`, `ContactCyprusStage` and `LabGamepad` were the
+  last route-owned lazy stages attached with a runtime `scene.add`
+  (`StageRegistry` contracts). They join the works plane, contact halo and
+  manifesto ink: all six lazy stages now mount through `SceneStagePorts`
+  (one `createStageSlot` + one `<primitive :dispose="null">` per port) —
+  the uniform declarative boundary, no runtime `scene.add` left in the
+  lazy-stage path. `StageRegistryContext` loses its `THREE.Scene`.
+- The Experience seed's fallback ports now attach to the seeded scene, so
+  "stage joins the scene" behavior and the `Experience.labStage` scene
+  assertions hold unchanged under the constructor-bypass seed.
+
+### Cleanup found during the same sweep
+
+- `CinematicLights.vue`: the `dispose` emit had zero production listeners
+  (SceneHost binds `@ready` only; the declarative subtree release is the
+  Vue unmount's own job) — emit and its test-only spy removed.
+- `ExperienceUI.portfolioInitialized` was read+written only by the
+  Experience frame path (an ownership smell, never read by the UI host):
+  moved onto Experience as `_portfolioInitialized`.
+- Comment truth: the slice-10 "no host primitive adapter remains" claims
+  (`sceneHost.ts`, `Experience.ts` — five primitive adapters exist today)
+  and the last `worldDNA` tombstone naming the removed system over
+  `SplashCube.updateWorldBlend`.
+
+### TvT reference verdict (audited, not assumed)
+
+The reference is a fes.js plugin gallery (always-on RAF, per-page canvas
+teardown, zero tests) — its scaffolding is outgrown here. Four candidate
+patterns assessed: the `replaceRenderFunction` TSL post-processing bridge
+(already ours — ADR 0005 ships the same seam in SceneHost), the init-guarded
+`:renderer` factory (already ours — `createUnifiedWebGPUInstance` + the
+SceneHost backend re-creation path), a `useTresExperience` vanilla-experience
+adapter contract (superseded by our `StagePort`/`stageSlot`/`readySlot`
+adapters), and the Resource preloader / `DefaultLoadingManager` progress
+gating (rejected — Inspection 10's useProgress blockers stand: module-global
+manager mutation, no `?no-scene` ready state; our readySlot contract is the
+production-safe equivalent). Nothing adopted wholesale; the declarative
+declaratization backlog comes from our own seam audit, not from the
+reference.
+
+### Verification
+
+tsc + vue-tsc fully green, eslint 0 errors, prettier clean, vitest 119
+files / 717 tests green.

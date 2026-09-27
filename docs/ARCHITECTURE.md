@@ -122,9 +122,11 @@ the loop and emits `jlz:webgl-failed`.
   declarative; EnvSky borrows the pavilion material.
 - Works installation geometry is declarative; its controller owns shared
   NodeMaterials and authored state. Works cards/textures remain imperative.
-- ContactHalo and ManifestoInk use primitive attachment with class-owned
-  materials and disposal. Other authored/asset owners remain imperative where
-  that is the current boundary; a Vue wrapper does not imply declarative geometry.
+- All six route-owned lazy stages (works plane, contact typography/cyprus/
+  halo, manifesto ink, the Lab object) mount through `<primitive>` stage
+  slots with class-owned materials and disposal. Other authored/asset owners
+  remain imperative where that is the current boundary; a Vue wrapper does
+  not imply declarative geometry.
 - `LazyStage` guards requests before construction, attachment and loading.
   Route exit invalidates pending work; late results release their resources.
   Shared textures and planes release through their refcount owners.
@@ -167,10 +169,12 @@ the bounded-window policy: `@tresjs/core` 5.9.0 exposes the public
 scheduler owns start/stop, and the ecosystem (`useLoop`, Cientos) works
 unmodified. The renderer's `setAnimationLoop` boundary is deleted; terminal
 device-loss failure closes the loop window through `jlz:webgl-failed`.
-Hybrid scene ownership is intentional: declarative leaves coexist with
-imperative animation/resource controllers. There is no open migration or
-reason to replace these owners without a concrete product/runtime need.
-Budget values and checks live in [Development](DEVELOPMENT.md).
+Hybrid scene ownership is deliberate: declarative leaves coexist with
+imperative animation/resource controllers. The mount boundary keeps moving
+toward the declarative side (all six lazy stages now enter through host
+ports; the boot-static owners are queued in NEXT), while TSL material
+graphs, the demand loop and animation controllers stay imperative by
+design. Budget values and checks live in [Development](DEVELOPMENT.md).
 
 ## Media and semantic UI
 
