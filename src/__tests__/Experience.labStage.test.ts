@@ -91,7 +91,9 @@ describe('Experience lab object lifecycle', () => {
     // The registry slot feeds the coordinator's owners bag with the object.
     expect(slotStage()).toBe(object)
     expect(object.visible).toBe(true)
-    // The object entered the Tres-owned scene directly under Experience.
+    // The object joined the Tres-owned scene through the declarative stage
+    // port (SceneHost's Vue `<primitive>` slot; the seed double attaches to
+    // the seeded scene the same way).
     expect(exp.scene.children).toContain(object)
 
     // Leaving /lab hides it via the coordinator's `syncRouteVisuals`.

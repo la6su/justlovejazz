@@ -51,6 +51,9 @@ function fakeReady(overrides?: Partial<SceneHostReady>): SceneHostReady {
       },
       contactHalo: { mount: async () => undefined, unmount: async () => undefined },
       manifestoInk: { mount: async () => undefined, unmount: async () => undefined },
+      contactTypography: { mount: async () => undefined, unmount: async () => undefined },
+      contactCyprus: { mount: async () => undefined, unmount: async () => undefined },
+      labGamepad: { mount: async () => undefined, unmount: async () => undefined },
     },
     ...overrides,
   }

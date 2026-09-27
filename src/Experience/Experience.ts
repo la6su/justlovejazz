@@ -269,7 +269,6 @@ export class Experience {
     // its own lazy-init time — a stage can be created on any route at any
     // moment, so every fact crosses as a getter.
     this._stages = new StageRegistry({
-      scene: host.scene,
       currentPage: () => this.currentPage(),
       camera: () => this.camera,
       host: () => this._host.stages,

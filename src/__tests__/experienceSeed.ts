@@ -27,20 +27,43 @@ export type LazyStageSlotName =
   | 'manifestoInk'
   | 'labGamepad'
 
+/** The no-op `works` two-level port (the tests that exercise it seed their
+ *  own `_host`); the plain stage ports attach to the seed scene so the
+ *  port-backed contracts keep their "stage joins the scene" behavior under
+ *  the constructor-bypass seed (production realizes the same boundary via
+ *  SceneHost's Vue `<primitive>` slots). */
+function makeEmptyPorts(scene: THREE.Scene): SceneStagePorts {
+  // Method parameter bivariance lets one Object3D-typed double satisfy every
+  // `StagePort<StageType>` field without per-stage type imports here.
+  const slotPort = (): {
+    mount(object: THREE.Object3D): Promise<void>
+    unmount(object: THREE.Object3D): Promise<void>
+  } => ({
+    mount: async (object) => {
+      scene.add(object)
+    },
+    unmount: async (object) => {
+      object.removeFromParent()
+    },
+  })
+  return {
+    works: {
+      mountStage: async () => undefined,
+      unmountStage: async () => undefined,
+      mountInstallation: async () => undefined,
+      unmountInstallation: async () => undefined,
+    },
+    contactHalo: slotPort(),
+    manifestoInk: slotPort(),
+    contactTypography: slotPort(),
+    contactCyprus: slotPort(),
+    labGamepad: slotPort(),
+  }
+}
+
 /** Bag keys that route into a registry slot instead of a plain field.
  *  Keys exist only where a test seeds the stage through the legacy bag;
  *  halo/ink stages are always injected via the returned `slots` record. */
-const emptyPorts: SceneStagePorts = {
-  works: {
-    mountStage: async () => undefined,
-    unmountStage: async () => undefined,
-    mountInstallation: async () => undefined,
-    unmountInstallation: async () => undefined,
-  },
-  contactHalo: { mount: async () => undefined, unmount: async () => undefined },
-  manifestoInk: { mount: async () => undefined, unmount: async () => undefined },
-}
-
 const SLOT_KEY_TO_NAME: Record<string, LazyStageSlotName> = {
   worksPlaneStage: 'worksPlane',
   contactTypographyStage: 'contactTypography',
@@ -78,13 +101,14 @@ export function seedExperience(bag: Record<string, unknown> = {}): SeededExperie
     _reducedMotion?: boolean
     coordinator?: { syncRouteVisuals(): void }
   }
+  const scene = (rest.scene as THREE.Scene | undefined) ?? new THREE.Scene()
   const registry = new StageRegistry({
-    scene: (rest.scene as THREE.Scene | undefined) ?? new THREE.Scene(),
     // The bag may override currentPage with a field (shadowing the prototype
     // method) — the property read resolves the override first.
     currentPage: () => (typeof seeded.currentPage === 'function' ? seeded.currentPage() : 'home'),
     camera: () => seeded.camera ?? { instance: new THREE.PerspectiveCamera() },
-    host: () => (seeded._host as { stages?: SceneStagePorts } | undefined)?.stages ?? emptyPorts,
+    host: () =>
+      (seeded._host as { stages?: SceneStagePorts } | undefined)?.stages ?? makeEmptyPorts(scene),
     isContactLight: () => Boolean(seeded._contactIsLight),
     isCyprusActive: () => Boolean(seeded._contactCyprusActive),
     setCyprusActive: (active) => {
