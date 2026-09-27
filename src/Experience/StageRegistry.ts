@@ -33,7 +33,7 @@ import { getLabExperiment, type LabExperimentObject } from './Lab/manifest'
 /** The world facts the contracts read at create/configure time. Getters, not
  *  values: every lazy stage can appear on any route and must observe the
  *  live route, camera, polarity and reduced-motion state at its own init. */
-export interface StageRegistryContext {
+interface StageRegistryContext {
   scene: THREE.Scene
   currentPage: () => PageId
   camera: () => { instance: THREE.Camera }

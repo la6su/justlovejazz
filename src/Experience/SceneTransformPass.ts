@@ -24,7 +24,7 @@ export interface WorldTransformResult {
 /** The facts the pass reads per call. Getters, not values: the route, the
  *  reduced-motion policy and the lazy owner identity can change between
  *  frames; the story machine and the scene are stable peers. */
-export interface SceneTransformPassContext {
+interface SceneTransformPassContext {
   scene: THREE.Scene
   story: SectionStateMachine
   owners: SceneCoordinatorOwners

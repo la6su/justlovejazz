@@ -15,7 +15,7 @@ import type { SceneCoordinatorOwners } from './sceneOwners'
 
 /** The facts the pass reads per frame. Getters, not values: the route, the
  *  active section and the reduced-motion policy can change between frames. */
-export interface SceneFramePassContext {
+interface SceneFramePassContext {
   owners: SceneCoordinatorOwners
   page: () => PageId
   currentSectionIndex: () => number

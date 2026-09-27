@@ -24,7 +24,7 @@
 import * as THREE from 'three'
 import { PMREMGenerator as WebGPUPMREMGenerator } from 'three/webgpu'
 
-export interface SceneEnvironmentOwners {
+interface SceneEnvironmentOwners {
   scene: THREE.Scene
   renderer: () => { instance: object }
   /** The glass cube binds the PMREM texture directly (see apply()). */

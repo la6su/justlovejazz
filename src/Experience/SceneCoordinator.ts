@@ -16,18 +16,13 @@ import { SectionStateMachine } from './SectionStateMachine'
 import { SceneTransformPass, type WorldTransformResult } from './SceneTransformPass'
 import { SceneFramePass, bakuVisibleOnRoute } from './SceneFramePass'
 import type { SceneCoordinatorOwners } from './sceneOwners'
-import type { DrawTrail } from './World/DrawTrail'
 import type { SplashCube } from './World/SplashCube'
 import type { ParticleBurst } from './World/ParticleBurst'
 import type { BakuCarousel } from './World/BakuCarousel'
 import type { WorksPlaneStage } from './World/WorksPlaneStage'
 import type { ContactTypographyStage } from './World/ContactTypographyStage'
-import type { ContactCyprusStage } from './World/ContactCyprusStage'
 import type { ContactHaloStage } from './World/ContactHaloStage'
 import type { ManifestoInkStage } from './World/ManifestoInkStage'
-import type { LabExperimentObject } from './Lab/manifest'
-
-export type { SceneCoordinatorOwners } from './sceneOwners'
 
 export class SceneCoordinator {
   private _story = new SectionStateMachine()
@@ -71,26 +66,17 @@ export class SceneCoordinator {
   public get carousel(): BakuCarousel | null {
     return this.owners.carousel()
   }
-  public get drawTrail(): DrawTrail | null {
-    return this.owners.drawTrail()
-  }
   public get worksPlaneStage(): WorksPlaneStage | null {
     return this.owners.worksPlaneStage()
   }
   public get contactTypographyStage(): ContactTypographyStage | null {
     return this.owners.contactTypographyStage?.() ?? null
   }
-  public get contactCyprusStage(): ContactCyprusStage | null {
-    return this.owners.contactCyprusStage()
-  }
   public get contactHaloStage(): ContactHaloStage | null {
     return this.owners.contactHaloStage?.() ?? null
   }
   public get manifestoInkStage(): ManifestoInkStage | null {
     return this.owners.manifestoInkStage?.() ?? null
-  }
-  public get labGamepad(): LabExperimentObject | null {
-    return this.owners.labGamepad()
   }
 
   constructor(scene: THREE.Scene, owners: SceneCoordinatorOwners, page: () => PageId) {
@@ -356,8 +342,8 @@ export class SceneCoordinator {
     this._transform.invalidate()
   }
 
-  /** Check whether reduced motion is active */
-  public get isReducedMotion(): boolean {
+  /** Reduced-motion policy read for the coordinator's own visibility gates. */
+  private get isReducedMotion(): boolean {
     return this._reducedMotion
   }
 

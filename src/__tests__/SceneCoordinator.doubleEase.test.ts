@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { SceneCoordinator, type SceneCoordinatorOwners } from '../Experience/SceneCoordinator'
+import { SceneCoordinator } from '../Experience/SceneCoordinator'
+import type { SceneCoordinatorOwners } from '../Experience/sceneOwners'
 import type { SectionGroups } from '../Experience/Scene/SectionGroups'
 import type { SceneTransitionEasing } from '../core/WorldConfig'
 
