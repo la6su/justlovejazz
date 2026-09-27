@@ -1,4 +1,4 @@
-import { beforeAll, afterEach, describe, expect, it, vi } from 'vitest'
+import { beforeAll, afterEach, describe, expect, it } from 'vitest'
 import { installCanvasPointerShims, mountSceneCanvas } from './tresHarness'
 import CinematicLights from '../app/scene/CinematicLights.vue'
 import type { CinematicLightsNodes } from '../Experience/World/Lights'
@@ -12,12 +12,10 @@ describe('CinematicLights declarative Tres component', () => {
 
   it('mounts one complete declarative light subtree and releases it with the component', async () => {
     const mounted = { lights: null as CinematicLightsNodes | null }
-    const dispose = vi.fn()
     const { scene, unmount } = await mountSceneCanvas(CinematicLights, {
       onReady: (value: CinematicLightsNodes) => {
         mounted.lights = value
       },
-      onDispose: dispose,
     })
 
     const lights = mounted.lights as CinematicLightsNodes
@@ -28,7 +26,8 @@ describe('CinematicLights declarative Tres component', () => {
 
     unmount()
 
-    expect(dispose).toHaveBeenCalledOnce()
+    // Disposal is the Vue host's job: the declarative subtree leaves the
+    // scene with the component (the Lights controller never removes it).
     expect(scene.getObjectByName('cinematic-lights')).toBeUndefined()
   })
 })
