@@ -150,7 +150,7 @@ export class CinematicLights {
   /**
    * Junni changeSection() pattern — set targets from PhaseConfig.
    * Lights will lerp smoothly toward the new values in update().
-   * Called by World.changeSection() / updateTransform() on index change.
+   * Called from Experience on init and on the frame path's section arrival.
    */
   public changeSection(config: PhaseConfig): void {
     if (this._disposed) return

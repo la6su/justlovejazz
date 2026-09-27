@@ -8,22 +8,16 @@
 // caller remains.
 
 import * as THREE from 'three'
-import { Section, SectionState } from '../core/Section'
+import type { Section } from '../core/Section'
 import { prefersReducedMotion } from '../core/motionPolicy'
-import { type CameraTarget, type WorldState, BakuRole } from '../core/types'
 import type { PageId } from '../core/routeManifest'
-import {
-  getWorldConfigForPage,
-  type PhaseConfig,
-  type SceneTransitionEasing,
-} from '../core/WorldConfig'
-import { ServicesStage } from './World/ServicesStage'
-import { clampStoryProgress, sectionIndexAt } from '../core/storyProgress'
-import type { GroundPlane } from './Scene/GroundPlane'
-import type { SectionGroups } from './Scene/SectionGroups'
+import { type PhaseConfig } from '../core/WorldConfig'
+import { SectionStateMachine } from './SectionStateMachine'
+import { SceneTransformPass, type WorldTransformResult } from './SceneTransformPass'
+import { SceneFramePass, bakuVisibleOnRoute } from './SceneFramePass'
+import type { SceneCoordinatorOwners } from './sceneOwners'
 import type { DrawTrail } from './World/DrawTrail'
 import type { SplashCube } from './World/SplashCube'
-import type { EnvSphere } from './World/EnvSphere'
 import type { ParticleBurst } from './World/ParticleBurst'
 import type { BakuCarousel } from './World/BakuCarousel'
 import type { WorksPlaneStage } from './World/WorksPlaneStage'
@@ -33,61 +27,28 @@ import type { ContactHaloStage } from './World/ContactHaloStage'
 import type { ManifestoInkStage } from './World/ManifestoInkStage'
 import type { LabExperimentObject } from './Lab/manifest'
 
-interface WorldTransformResult {
-  cameraTarget: CameraTarget
-  worldState: WorldState
-}
-
-/**
- * The scene owners the coordinator drives. Experience injects getters over its
- * own fields — the lazy route owners (Works / Contact stages, Lab object) change
- * identity per route, so only a getter stays current.
- */
-export interface SceneCoordinatorOwners {
-  ground: () => GroundPlane | null
-  sectionGroups: () => SectionGroups | null
-  envSphere: () => EnvSphere | null
-  baku: () => SplashCube | null
-  particleBurst: () => ParticleBurst | null
-  drawTrail: () => DrawTrail | null
-  carousel: () => BakuCarousel | null
-  worksPlaneStage: () => WorksPlaneStage | null
-  contactTypographyStage?: () => ContactTypographyStage | null
-  contactCyprusStage: () => ContactCyprusStage | null
-  contactHaloStage?: () => ContactHaloStage | null
-  manifestoInkStage?: () => ManifestoInkStage | null
-  labGamepad: () => LabExperimentObject | null
-  servicesStage?: () => ServicesStage | null
-}
+export type { SceneCoordinatorOwners } from './sceneOwners'
 
 export class SceneCoordinator {
-  public sections: Section[] = []
-  private configs: readonly PhaseConfig[] = []
-  private _configMap: Map<string, PhaseConfig> | null = null
-  // A demand frame can be raised by an unrelated owner while story progress
-  // remains unchanged. Reuse the pooled transform and skip route reconciliation
-  // until an owner-side setter or route/config rebuild invalidates this pass.
-  private _transformRevision = 0
-  private _transformCacheRevision = -1
-  private _transformCacheScroll = Number.NaN
-  private _transformCachePage: PageId | null = null
-  // Ranges are cached: configs.map(c => c.range) used to run every frame in
-  // updateTransform (~360 array allocs/sec at 60 fps). Ranges are immutable
-  // after init(), so they are built once.
-  private _rangesCache: [number, number][] | null = null
+  private _story = new SectionStateMachine()
+  private _transform: SceneTransformPass
+  private _frame: SceneFramePass
   private _reducedMotion = prefersReducedMotion()
   private sceneRef: THREE.Scene
   private owners: SceneCoordinatorOwners
   private page: () => PageId
 
-  private _currentSectionIndex: number = 1 // Intro = index 1 (canonical Lab/Contact finale = 0)
+  /** The scroll story state (Section instances + configs + arrival index). */
+  public get sections(): Section[] {
+    return this._story.sections
+  }
   public get currentSectionIndex(): number {
-    return this._currentSectionIndex
+    return this._story.currentSectionIndex
   }
 
   /** DEV diagnostics: ids currently installed for the active page. */
   public get configIds(): readonly string[] {
-    return this.configs.map((config) => config.id)
+    return this._story.configs.map((config) => config.id)
   }
 
   /** The stable section groups (empty before the SectionGroups owner is built).
@@ -132,68 +93,44 @@ export class SceneCoordinator {
     return this.owners.labGamepad()
   }
 
-  // ── GC-free object pool for per-frame transforms (avoids allocs/frame)
-  private _poolPos = new THREE.Vector3()
-  private _poolLookAt = new THREE.Vector3()
-  private _poolBakuColor = new THREE.Color()
-  private _poolBakuEmissive = new THREE.Color()
-  private _poolEnvColor = new THREE.Color()
-  // The transform result is consumed synchronously by Experience.update().
-  // Pool its nested metadata too; otherwise the vectors/colors above still
-  // sat inside a fresh object graph on every demand-driven frame.
-  private _poolResult: WorldTransformResult = {
-    cameraTarget: { position: this._poolPos, lookAt: this._poolLookAt, fov: 0 },
-    worldState: {
-      currentPhase: '',
-      phaseProgress: 0,
-      bakuMaterial: {
-        role: BakuRole.NORMAL,
-        color: this._poolBakuColor,
-        emissive: this._poolBakuEmissive,
-        roughness: 0,
-        metalness: 0,
-      },
-      envColor: this._poolEnvColor,
-    },
-  }
-
   constructor(scene: THREE.Scene, owners: SceneCoordinatorOwners, page: () => PageId) {
     this.sceneRef = scene
     this.owners = owners
     this.page = page
+    this._transform = new SceneTransformPass({
+      scene,
+      story: this._story,
+      owners,
+      page,
+      isReducedMotion: () => this._reducedMotion,
+    })
+    this._frame = new SceneFramePass({
+      owners,
+      page,
+      currentSectionIndex: () => this._story.currentSectionIndex,
+      isReducedMotion: () => this._reducedMotion,
+    })
   }
 
   public async init(): Promise<void> {
     const pageKey = this.page()
-    this.configs = getWorldConfigForPage(pageKey)
+    const configs = this._story.beginRoute(pageKey)
     // Route re-entry can reuse the coordinator instance. Invalidate derived
-    // caches before rebuilding page-specific configs so lookups and ranges do
-    // not retain the previous route's scene contract.
-    this._configMap = null
-    this._rangesCache = null
-    this._invalidateTransformCache()
-    this.disposeSections()
-    // Phase 8 slice 10: the route-specific visibility gate runs first (matches
-    // the legacy World ordering) — it toggles the shared cube + Lab object and
-    // is independent of the sections added below.
+    // caches around the rebuild so lookups and ranges do not retain the
+    // previous route's scene contract.
+    this._transform.resetForRoute()
+    // Phase 8 slice 10: the route-specific visibility gate runs before the
+    // sections are rebuilt below (matches the legacy World ordering) — it
+    // toggles the shared cube + Lab object and is independent of the
+    // sections added below.
     this.syncRouteVisuals()
-
-    this.configs.forEach((config, index) => {
-      const section = new Section(config, index)
-      if (index === 1) {
-        // Intro = index 1 (canonical Lab/Contact finale = 0)
-        section.forceState(SectionState.VIEWING)
-      } else {
-        section.forceState(SectionState.READY)
-      }
-      this.sections.push(section)
-    })
+    this._story.buildSections()
 
     // Phase 8 slice 1: ground init (intro config) + first-section light targets
     // live in Experience (it owns the GroundPlane + CinematicLights owners).
 
     // ── Apply first section's fog + env sphere colors immediately
-    const firstCfg = this.configs[1] // Intro = index 1 (canonical Lab/Contact finale = 0)
+    const firstCfg = configs[1] // Intro = index 1 (canonical Lab/Contact finale = 0)
     if (firstCfg) {
       // Inline WorldAtmosphere.setFog — fog not yet set on init, so create new.
       this.sceneRef.fog = new THREE.FogExp2(firstCfg.fog.color.clone(), firstCfg.fog.density)
@@ -270,10 +207,7 @@ export class SceneCoordinator {
 
   /** Sync the 3D Works composition with CinematicNav's active DOM chapter. */
   public setWorksPlaneStageSection(index: number): void {
-    if (this.worksPlaneStageSection === index) return
-    this.worksPlaneStageSection = index
-    this.owners.worksPlaneStage()?.setActive(this.page() === 'works', index)
-    this._invalidateTransformCache()
+    if (this._frame.setWorksPlaneStageSection(index)) this._transform.invalidate()
   }
 
   /**
@@ -292,7 +226,7 @@ export class SceneCoordinator {
     this.contactTypographyStage?.setActive(isContact && !isFinal)
     // The halo backs the greeting — it shares the flock's chapter gating.
     this.contactHaloStage?.setActive(isContact && !isFinal)
-    this._invalidateTransformCache()
+    this._transform.invalidate()
   }
 
   /**
@@ -341,417 +275,18 @@ export class SceneCoordinator {
     this.manifestoInkStage?.setTheme(isLight)
   }
 
+  /** The demand-gated owner frame fan-out. On an idle frame it keeps
+   *  route ownership state synchronized without advancing any animation
+   *  clock (parity pinned by SceneCoordinator.motionParity). */
   public update(deltaTime: number, needsRender: boolean = true): void {
-    // Route identity is stable for this synchronous frame. Snapshot it once
-    // so the owner path does not repeat the live page getter at each branch;
-    // the getter remains authoritative on the next frame after navigation.
-    const page = this.page()
-    // The splash handoff owns its short render window, independent of ambient
-    // scene animation. Experience keeps `_needsRender` raised while active.
-    const burst = this.owners.particleBurst()
-    if (burst?.isActive) burst.update(deltaTime)
-
-    // ── On-demand: decorative 3D animations only run when rendering ──
-    // When idle (settled on a section, no transition, no cursor movement),
-    // skip baku rotation, cursor light, draw trail, particle drift, and
-    // BakuCarousel updates — the last rendered frame stays on screen.
-    // Exception: Experience forces needsRender while hasVisibleParticles().
-    if (!needsRender) {
-      // Keep route ownership state synchronized, but do not advance any
-      // animation clock without a frame. Otherwise a reveal can complete in
-      // invisible time and the next demand frame jumps to its end state.
-      const worksStage = this.owners.worksPlaneStage()
-      if (worksStage && page === 'works') {
-        worksStage.setActive(true, this.worksPlaneStageSection)
-      }
-      return
-    }
-
-    // EnvSphere is a demand-driven owner too: its palette crossfade advertises
-    // `isAnimating` through hasVisibleAmbientMotion(), so this update remains
-    // on the rendered path until the target weights settle.
-    this.owners.envSphere()?.update(deltaTime)
-
-    const worksStage = this.owners.worksPlaneStage()
-    if (worksStage) {
-      worksStage.setActive(page === 'works', this.worksPlaneStageSection)
-      worksStage.update(deltaTime)
-    }
-    const servicesStage = this.owners.servicesStage?.()
-    if (servicesStage) {
-      servicesStage.visible = page === 'services'
-      if (servicesStage.visible && this._camera instanceof THREE.PerspectiveCamera) {
-        servicesStage.updateState(
-          this._camera,
-          THREE.MathUtils.clamp(this._currentSectionIndex - 1, 0, 3),
-          deltaTime,
-          this.isReducedMotion,
-        )
-      }
-    }
-    this.contactTypographyStage?.update(deltaTime)
-    this.contactHaloStage?.update(deltaTime)
-    this.manifestoInkStage?.update(deltaTime)
-    const contactCyprusStage = this.owners.contactCyprusStage()
-    contactCyprusStage?.update(deltaTime)
-    // Lab object: authored idle motion advances only on rendered frames; the
-    // object itself guards visibility and reduced motion (motion contract in
-    // Lab/manifest.ts). Optional calls keep inert experiments legal.
-    this.labGamepad?.update?.(deltaTime)
-    const baku = this.owners.baku()
-
-    if (!this.isReducedMotion) {
-      if (baku?.visible) baku.update(deltaTime)
-      const isStandaloneWorks = page === 'works'
-      const isWorksStoryFrame = this._currentSectionIndex === 3
-      const trail = this.owners.drawTrail()
-      if (trail && this._camera && (isStandaloneWorks || isWorksStoryFrame)) {
-        trail.update(deltaTime, this._camera)
-      }
-    }
-
-    // ── BakuCarousel (a child of the Works group — its reference + per-frame
-    // drive live on Experience) + per-section modules (morph, particles, orbs,
-    // …) ──
-    // JunniParticles: GPU drift via uTime — only present on Works currently
-    // (see Scene/WorksSection.ts header comment).
-    const carousel = this.owners.carousel()
-    // SectionGroups owns a stable array for the lifetime of this frame; reuse
-    // one snapshot for carousel visibility and particle drift below.
-    const groups = this.sceneGroups
-    const carouselGroup = groups[3]
-    // Let a departing slider settle its morph even after the section group
-    // falls below the visual fade threshold. Otherwise on-demand rendering
-    // can freeze the planes half-folded and keep a persistent render reason.
-    if (carousel && (carouselGroup?.visible || carousel.isAnimating)) carousel.update(deltaTime)
-    if (carousel) {
-      if (baku) {
-        // Works becomes a pure media field once the cube-face handoff settles:
-        // only the planes and the existing particle field remain visible.
-        baku.visible =
-          this._bakuVisibleOnRoute(page, contactCyprusStage?.isActive ?? false) &&
-          (page !== 'home' || !(carousel.isActive && carousel.morphProgress > 0.82))
-      }
-    }
-    if (!this.isReducedMotion) {
-      for (const group of groups) {
-        if (!group.visible) continue
-        // Update JunniParticles — GPU-side drift (Works section).
-        const particles = group.userData.particles as
-          import('./World/JunniParticles').JunniParticles | undefined
-        if (particles && particles.visible !== false) particles.update(deltaTime)
-      }
-    }
+    this._frame.update(deltaTime, needsRender)
   }
 
-  // ── Junni: changeSection(index) — state machine (ready → viewing → passed)
-  // Returns the newly-active Section
-  public changeSection(index: number): Section | undefined {
-    const section = this.sections[index]
-    if (!section) return undefined
-
-    this._currentSectionIndex = index
-    this._invalidateTransformCache()
-
-    const reduced = this.isReducedMotion
-
-    // All sections switch to appropriate states
-    this.sections.forEach((s, i) => {
-      if (i === index) {
-        // Active section → viewing
-        s.switchState(SectionState.VIEWING, 0.8, reduced)
-      } else if (i < index) {
-        // Previous sections → passed
-        s.switchState(SectionState.PASSED, 0.5, reduced)
-      }
-      // Sections > index stay ready
-    })
-
-    return section
-  }
-
-  // ── Range-based scroll mapping: scrollValue → section index + eased t
-  // Uses PhaseConfig.range[] for weighted scroll buckets
-  // Applies S-curve easing to t so transitions have "comfort zones"
+  /** The pooled scroll→world transform pass (range mapping, easing,
+   *  group fades, arrival fog, camera/baku/env lerp). The contract is
+   *  pinned by SceneCoordinator.routeVisuals/doubleEase/scrollStates. */
   public updateTransform(scrollValue: number): WorldTransformResult {
-    // Story progress contract: non-finite settles to 0, clamp to [0, 1].
-    scrollValue = clampStoryProgress(scrollValue)
-    if (this.sections.length === 0) return this.defaultResult()
-    // Route and carousel ownership are stable for this synchronous transform
-    // pass. Snapshot them once so the six-group visibility loop cannot repeat
-    // owner lookups on every group while preserving the live getter boundary
-    // across subsequent route transitions.
-    const page = this.page()
-    if (
-      this._transformCacheRevision === this._transformRevision &&
-      this._transformCachePage === page &&
-      Object.is(this._transformCacheScroll, scrollValue)
-    ) {
-      return this._poolResult
-    }
-    this._transformCacheRevision = this._transformRevision
-    this._transformCachePage = page
-    this._transformCacheScroll = scrollValue
-    const carouselOwner = this.owners.carousel()
-
-    // ── Find from/to indices from range config
-    // Use the cached ranges (built once in init) instead of map() every frame
-    const ranges = this._rangesCache ?? this.configs.map((c) => c.range)
-    if (!this._rangesCache) this._rangesCache = ranges
-    let fromIndex = 0
-    let toIndex = 1
-    let t = 0
-
-    // Map scrollValue to range index
-    for (let i = 0; i < ranges.length; i++) {
-      const [rStart, rEnd] = ranges[i]!
-      if (scrollValue >= rStart && scrollValue < rEnd) {
-        // scrollValue is inside this section's range
-        fromIndex = i
-        toIndex = Math.min(i + 1, this.sections.length - 1)
-        const rangeWidth = rEnd - rStart
-        t = (scrollValue - rStart) / rangeWidth
-      } else if (scrollValue >= rEnd && i < ranges.length - 1) {
-        // scrollValue is past this range, check next
-        continue
-      }
-    }
-
-    // Clamp edge case: scrollValue at exactly 1.0 → last section
-    if (scrollValue >= 1.0) {
-      fromIndex = this.sections.length - 1
-      toIndex = fromIndex
-      t = 0 // at the last section, no transition (was t=1)
-    }
-
-    // ── Ease t through per-section easing (from scene.transition config)
-    // Default: smoothstep (S-curve, comfort plateaus at section centers).
-    // Per-section: can use 'linear', 'ease-out', 'ease-in-out' for different feels.
-    const fromCfg = this.configs[fromIndex]!
-    const toCfg = this.configs[toIndex]!
-    const easing =
-      toCfg?.scene?.transition?.easing ?? fromCfg?.scene?.transition?.easing ?? 'ease-in-out'
-    t = this._applyEasing(t, easing)
-
-    // Deliberate second ease (parity-locked): bg + group fade use the doubly-
-    // eased t so each section's color holds until mid-transition, then quickly
-    // flips. Prevents the about section's dark bg from bleeding into
-    // flexible's light bg too early (white text contrast loss). Camera/baku
-    // still use the single-eased t.
-    const bgT = this._applyEasing(t, easing)
-
-    // ── Update current section index + fire per-section systems ──
-    // CinematicNav changes its active DOM chapter at the midpoint between two
-    // native scroll frames. Keep the 3D arrival in that same neutral point.
-    // Using `fromIndex` here made down-scroll arrivals happen at the *end* of
-    // a frame while up-scroll arrivals happened immediately after leaving it,
-    // creating a visible direction-dependent second beat.
-    // The midpoint rule itself is the pure storyProgress contract (unit-
-    // locked, including the .5 boundary and direction independence).
-    const activeIndex = sectionIndexAt(scrollValue, this.sections.length)
-    if (activeIndex !== this._currentSectionIndex) {
-      this._currentSectionIndex = activeIndex
-      // Junni changeSection() pattern: lights + fog + env sphere driven by section data
-      const activeCfg = this.configs[activeIndex]
-      if (activeCfg) {
-        // Phase 8 slice 1: section-arrival light targets moved to Experience
-        // (same frame, same config — only the lerp start moves a few lines
-        // later in the frame path).
-        // Inline WorldAtmosphere.setFog — fog exists from init(), reuse instance.
-        const existingFog = this.sceneRef.fog
-        if (existingFog instanceof THREE.FogExp2) {
-          existingFog.color.copy(activeCfg.fog.color)
-          existingFog.density = activeCfg.fog.density
-        } else {
-          this.sceneRef.fog = new THREE.FogExp2(activeCfg.fog.color.clone(), activeCfg.fog.density)
-        }
-        // EnvSphere follows the active theme through the jlz:theme-applied
-        // listener in Experience.ts. Per-section pattern overrides were
-        // removed because they could break theme contrast.
-      }
-    }
-
-    // The cursor signal belongs to the standalone Works route. On home it
-    // remains outside the large media stream, where it would cut across the
-    // case artwork instead of supporting it. Route replacement can retain the
-    // same section index, so this must run outside the arrival-only branch.
-    const trail = this.owners.drawTrail()
-    if (trail) {
-      const isStandaloneWorks = page === 'works'
-      trail.object.visible = isStandaloneWorks || (activeIndex === 3 && !carouselOwner?.isActive)
-    }
-
-    // ── BG sphere section switch (junni pattern: lerp BG color continuously)
-    // setProgress() lerps between fromIndex and toIndex colors using eased t,
-    // (BG.setProgress removed — bg.color was never read by anyone.)
-    // EnvSphere follows the active theme via jlz:theme-applied.
-
-    // ── Scene group visibility with opacity fade (junni switchVisibility pattern)
-    // From group fades out as t→1, to group fades in. Both visible during
-    // transition. NON-DESTRUCTIVE: cache baseOpacity in userData, apply fade
-    // multiplicatively. Keep factory opacity values as the base and apply the
-    // transition fade multiplicatively.
-    const groups = this.sceneGroups
-    for (let i = 0; i < groups.length; i++) {
-      const g = groups[i]!
-      const isFrom = i === fromIndex
-      const isTo = i === toIndex
-      let fade = 0
-      if (isFrom) fade = 1 - bgT
-      if (isTo) fade = bgT
-      if (isFrom && isTo) fade = 1
-
-      const shouldShow = isFrom || isTo
-      // The carousel is only on the Works group (index 3) — read it from the
-      // Experience-owned reference.
-      const carousel = i === 3 ? carouselOwner : undefined
-      const cfg = this.configs[i]
-      const showCarousel = page === 'home' && cfg?.scene?.objects?.bakuCarousel === true
-
-      if (shouldShow) {
-        g.visible = fade > 0.001
-        // A-006: Use cached mesh list instead of traverse every frame.
-        // Cache stored in group.userData._meshCache (lazy-init).
-        let meshCache = g.userData._meshCache as THREE.Mesh[] | undefined
-        if (!meshCache) {
-          meshCache = []
-          g.traverse((obj) => {
-            if (obj instanceof THREE.Mesh) {
-              const mat = obj.material
-              if (!Array.isArray(mat) && 'opacity' in mat) {
-                const m = mat as THREE.Material & {
-                  opacity: number
-                  userData: { baseOpacity?: number; lastFade?: number }
-                }
-                if (m.userData.baseOpacity === undefined) {
-                  m.userData.baseOpacity = m.opacity
-                }
-                m.userData.lastFade = undefined
-                meshCache!.push(obj)
-              }
-            }
-          })
-          g.userData._meshCache = meshCache
-        }
-        for (const mesh of meshCache) {
-          const m = mesh.material as THREE.Material & {
-            opacity: number
-            userData: { baseOpacity?: number; lastFade?: number }
-          }
-          if (m.userData.lastFade !== fade) {
-            m.opacity = (m.userData.baseOpacity ?? 1) * fade
-            m.userData.lastFade = fade
-          }
-        }
-
-        // BakuCarousel visibility — only on the home Works phase. Its state is
-        // also reset below when this group is outside the active transition;
-        // otherwise a content-route visit can leave an already-open carousel
-        // suspended and make a later /#section-works return non-deterministic.
-        if (carousel) {
-          carousel.visible = showCarousel && fade > 0.01
-          carousel.setActive(showCarousel && fade > 0.5)
-        }
-
-        // ── Per-section 3D object visibility (SceneControl) ──
-        // Toggle section-specific 3D content based on config.
-        // objects undefined = defaults (visible if present in scene group).
-        const sceneObjects = cfg?.scene?.objects
-        if (sceneObjects && i === 4) {
-          const visible = sceneObjects.wireframeText !== false && fade > 0.01
-          this.contactTypographyStage?.setActive(visible && fade > 0.5)
-        }
-      } else {
-        g.visible = false
-        // Keep route transitions authoritative even while the owning group is
-        // hidden. This ensures the next arrival in Works starts from a known
-        // inactive slider state rather than a stale home-frame state.
-        carousel?.setActive(false)
-        if (carousel) carousel.visible = false
-      }
-    }
-
-    const fromSec = this.sections[fromIndex]
-    const toSec = this.sections[toIndex] ?? this.sections[fromIndex]
-    if (!fromSec) return this.defaultResult()
-    if (!toSec) return this.defaultResult()
-
-    // ── State transitions (Junni: trigger on entering/leaving scroll ranges)
-    const reduced = this.isReducedMotion
-    if (fromSec.state === SectionState.READY) {
-      fromSec.switchState(SectionState.VIEWING, 0.8, reduced)
-    }
-    if (toSec.state === SectionState.READY && t > 0.1) {
-      toSec.switchState(SectionState.VIEWING, 0.8, reduced)
-    }
-    if (t > 0.7 && fromSec.state === SectionState.VIEWING) {
-      fromSec.switchState(SectionState.PASSED, 0.5, reduced)
-    }
-
-    // ── Lerp transforms from Section transforms (Junni pattern)
-    const fromCam = fromSec.cameraTransform
-    const toCam = toSec.cameraTransform
-    const fromBaku = fromSec.bakuTransform
-    const toBaku = toSec.bakuTransform
-    const fromLight = fromSec.lightData
-    const toLight = toSec.lightData
-
-    // fromCfg/toCfg already declared above (for easing selection)
-    // Use the config from section's phaseConfig for ground/post/lighting
-
-    // ── Ground plane update (junni pattern: lerp color + opacity per section)
-    // The GroundPlane owner owns the theme-override/lerp state (syncTheme flips
-    // it to a contrasting tone per theme); the coordinator forwards its eased
-    // `t` (the lerp needs the per-section eased t from here).
-    this.owners.ground()?.applyTransform(fromCfg.ground, toCfg.ground, t)
-
-    // Scroll-driven parallax: subtle camera depth drift within a section.
-    // sin(t * PI) peaks at mid-transition (t=0.5) — camera nudges forward,
-    // giving a "breathing" depth feel as user scrolls between sections.
-    const parallaxZ = Math.sin(t * Math.PI) * 0.4
-    const parallaxY = Math.cos(t * Math.PI) * 0.15
-
-    this._poolPos.lerpVectors(fromCam.position, toCam.position, t)
-    this._poolPos.y += parallaxY
-    this._poolPos.z += parallaxZ
-
-    const result = this._poolResult
-    const cameraTarget = result.cameraTarget
-    const worldState = result.worldState
-    const bakuMaterial = worldState.bakuMaterial
-    cameraTarget.lookAt = this._poolLookAt.lerpVectors(fromCam.target, toCam.target, t)
-    cameraTarget.fov = THREE.MathUtils.lerp(fromCam.fov, toCam.fov, t)
-    // Arrival metadata drives discrete systems (theme, post, cube) while the
-    // transform/material values remain a continuous from→to blend.
-    worldState.currentPhase = this.configs[activeIndex]!.id
-    worldState.phaseProgress = t
-    bakuMaterial.role = toBaku.role
-    bakuMaterial.color = this._poolBakuColor.lerpColors(
-      fromBaku.material.color,
-      toBaku.material.color,
-      t,
-    )
-    bakuMaterial.emissive = this._poolBakuEmissive.lerpColors(
-      fromBaku.material.emissive,
-      toBaku.material.emissive,
-      t,
-    )
-    bakuMaterial.roughness = THREE.MathUtils.lerp(
-      fromBaku.material.roughness,
-      toBaku.material.roughness,
-      t,
-    )
-    bakuMaterial.metalness = THREE.MathUtils.lerp(
-      fromBaku.material.metalness,
-      toBaku.material.metalness,
-      t,
-    )
-    worldState.envColor = this._poolEnvColor.lerpColors(
-      fromLight.ambientColor,
-      toLight.ambientColor,
-      t,
-    )
-    return result
+    return this._transform.updateTransform(scrollValue)
   }
 
   public resize(width: number, height: number): void {
@@ -771,19 +306,10 @@ export class SceneCoordinator {
     // Atmosphere: fog density stays per-section.
   }
 
-  private disposeSections(): void {
-    this.sections.forEach((s) => {
-      s.dispose()
-    })
-    this.sections = []
-  }
-
   /** Advance the sections' pending state deadlines (called from the frame
    *  path where the former StateBus tick used to run). */
   public updateSections(dt: number): void {
-    this.sections.forEach((s) => {
-      s.update(dt)
-    })
+    this._story.updateSections(dt)
   }
 
   // Phase 8 slice 2: the stable section groups (incl. the BakuCarousel dispose
@@ -795,8 +321,8 @@ export class SceneCoordinator {
   // unmount, so dispose() must not reach it through the owners bag.
 
   public dispose(): void {
-    this._invalidateTransformCache()
-    this.disposeSections()
+    this._transform.invalidate()
+    this._story.disposeSections()
     // Inline WorldAtmosphere.dispose — null out fog only (EnvSphere owns
     // background).
     this.sceneRef.fog = null
@@ -808,7 +334,7 @@ export class SceneCoordinator {
    *  Phase 8 slice 8: the Contact typography + Cyprus stage cameras are forwarded
    *  directly by Experience (it owns both stages). */
   public setCamera(cam: THREE.Camera): void {
-    this._camera = cam
+    this._frame.setCamera(cam)
   }
 
   /** Keep route-specific hero objects isolated from the shared home cube.
@@ -819,10 +345,7 @@ export class SceneCoordinator {
     const isLab = page === 'lab'
     const baku = this.owners.baku()
     if (baku)
-      baku.visible = this._bakuVisibleOnRoute(
-        page,
-        this.owners.contactCyprusStage()?.isActive ?? false,
-      )
+      baku.visible = bakuVisibleOnRoute(page, this.owners.contactCyprusStage()?.isActive ?? false)
     const labGamepad = this.owners.labGamepad()
     if (labGamepad) {
       labGamepad.visible = isLab
@@ -830,114 +353,7 @@ export class SceneCoordinator {
       // a mid-hover tilt or crank angle would persist across visits.
       if (isLab) labGamepad.resetMotion?.()
     }
-    this._invalidateTransformCache()
-  }
-
-  private _camera: THREE.Camera | undefined
-  private worksPlaneStageSection = 0
-
-  /**
-   * The route-static half of the baku visibility contract, shared by the
-   * frame path and syncRouteVisuals: baku is a home/manifesto resident —
-   * never visible on the Lab or standalone Works route, and it yields while
-   * the Contact Cyprus stage owns the scene. The frame path additionally
-   * folds the home carousel-morph clause on top of this predicate.
-   */
-  private _bakuVisibleOnRoute(page: PageId, contactCyprusActive: boolean): boolean {
-    return page !== 'lab' && page !== 'works' && !(page === 'contact' && contactCyprusActive)
-  }
-
-  /** Apply easing function to t (0..1) based on scene.transition.easing config.
-   *  'ease-in-out' (default) = smoothstep (S-curve, comfort plateaus)
-   *  'ease-out' = fast start, slow end (decelerate into section)
-   *  Only these two easings are authored in WorldConfig — the config type is
-   *  narrowed to match, so no other branches exist. */
-  private _applyEasing(t: number, easing: SceneTransitionEasing): number {
-    const clamped = THREE.MathUtils.clamp(t, 0, 1)
-    if (easing === 'ease-out') {
-      // ease-out cubic: 1 - (1-t)^3 — fast start, slow settle
-      return 1 - Math.pow(1 - clamped, 3)
-    }
-    // ease-in-out: smoothstep t² * (3 - 2t) — S-curve with plateaus
-    return clamped * clamped * (3 - 2 * clamped)
-  }
-
-  /** Get PhaseConfig for a given phase ID. Uses cached Map for O(1) lookup. */
-  public getConfig(phase: string): PhaseConfig | undefined {
-    if (!this._configMap) {
-      this._configMap = new Map(this.configs.map((c) => [c.id, c]))
-    }
-    return this._configMap.get(phase)
-  }
-
-  private defaultResult(): WorldTransformResult {
-    const cfg: PhaseConfig = {
-      id: 'step01',
-      context: 'phase_step01',
-      domSection: 'hero',
-      range: [0, 1],
-      camera: { position: new THREE.Vector3(0, 0, 8), target: new THREE.Vector3(0, 0, 0), fov: 55 },
-      baku: {
-        position: new THREE.Vector3(),
-        rotation: new THREE.Quaternion(),
-        scale: new THREE.Vector3(0.4),
-        opacity: 1,
-        role: BakuRole.NORMAL,
-        displace: 0.05,
-        material: {
-          color: new THREE.Color(),
-          emissive: new THREE.Color(),
-          roughness: 0.2,
-          metalness: 0.8,
-        },
-      },
-      lighting: { ambientColor: new THREE.Color(), intensity: 1 },
-      fog: { color: new THREE.Color(), density: 0.03 },
-      // This fallback must preserve cross-backend visual parity too.
-      post: {
-        bloom: 0.2,
-        vignette: 0.5,
-        grain: 0.03,
-        chromatic: 0,
-        refract: 0,
-        border: 0.0,
-        gradeShadows: [1, 1, 1],
-        gradeHighlights: [1, 1, 1],
-      },
-      ui: { showGallery: false },
-      ground: { color: new THREE.Color(0x000000), opacity: 0 },
-      camFovOffset: 0.3,
-      camFovDuration: 0.8,
-      camSmoothing: 5,
-      theme: 'dark',
-    }
-    return this.buildResultFromConfig(cfg)
-  }
-
-  private buildResultFromConfig(cfg: PhaseConfig): WorldTransformResult {
-    const cam = cfg.camera
-    const baku = cfg.baku
-    const light = cfg.lighting
-
-    return {
-      cameraTarget: {
-        position: cam.position.clone(),
-        lookAt: cam.target.clone(),
-        fov: cam.fov,
-      },
-      worldState: {
-        currentPhase: cfg.id,
-        phaseProgress: 0,
-        bakuMaterial: {
-          role: baku.role,
-          color: baku.material.color.clone(),
-          emissive: baku.material.emissive.clone(),
-          roughness: baku.material.roughness,
-          metalness: baku.material.metalness,
-        },
-        envColor: light.ambientColor.clone(),
-      },
-    }
+    this._transform.invalidate()
   }
 
   /** Check whether reduced motion is active */
@@ -948,10 +364,11 @@ export class SceneCoordinator {
   /** Keep frame-path policy synchronized by the Experience owner. */
   public setReducedMotion(reduced: boolean): void {
     this._reducedMotion = reduced
-    this._invalidateTransformCache()
+    this._transform.invalidate()
   }
 
-  private _invalidateTransformCache(): void {
-    this._transformRevision += 1
+  /** Get PhaseConfig for a given phase ID. Cached Map lookup on the story. */
+  public getConfig(phase: string): PhaseConfig | undefined {
+    return this._story.getConfig(phase)
   }
 }
