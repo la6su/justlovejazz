@@ -15,7 +15,7 @@ import { type PhaseConfig } from '../core/WorldConfig'
 import { SectionStateMachine } from './SectionStateMachine'
 import { SceneTransformPass, type WorldTransformResult } from './SceneTransformPass'
 import { SceneFramePass, bakuVisibleOnRoute } from './SceneFramePass'
-import type { SceneCoordinatorOwners } from './sceneOwners'
+import { particlesOf, type SceneCoordinatorOwners } from './sceneOwners'
 import type { SplashCube } from './World/SplashCube'
 import type { ParticleBurst } from './World/ParticleBurst'
 import type { BakuCarousel } from './World/BakuCarousel'
@@ -206,7 +206,7 @@ export class SceneCoordinator {
     const isFinal = isContact && index === 3
 
     for (const group of this.sceneGroups) {
-      const particles = group.userData.particles as THREE.Object3D | undefined
+      const particles = particlesOf(group)
       if (particles) particles.visible = !isAgros
     }
     this.contactTypographyStage?.setActive(isContact && !isFinal)
@@ -226,7 +226,7 @@ export class SceneCoordinator {
   public hasVisibleParticles(): boolean {
     for (const group of this.sceneGroups) {
       if (!group.visible) continue
-      const particles = group.userData.particles as THREE.Object3D | undefined
+      const particles = particlesOf(group)
       if (particles?.visible) return true
     }
     return false

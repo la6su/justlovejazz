@@ -5,6 +5,7 @@ import { DeviceCapability } from './DeviceCapability'
 import type { QualityTier } from './DeviceCapability'
 import type { PostParams } from './postParams'
 import { NEUTRAL_GRADE } from './postParams'
+import { lerp } from '../Utils/easing'
 
 /**
  * The section-authored subset of the canonical PostParams: the four intensity
@@ -229,10 +230,6 @@ export class PostProcessingManager {
   get postParams(): Readonly<PostParams> {
     return this.display
   }
-}
-
-function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t
 }
 
 function tupleMatches(

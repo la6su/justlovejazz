@@ -10,8 +10,7 @@
 
 import * as THREE from 'three'
 import type { PageId } from '../core/routeManifest'
-import type { JunniParticles } from './World/JunniParticles'
-import type { SceneCoordinatorOwners } from './sceneOwners'
+import { particlesOf, type SceneCoordinatorOwners } from './sceneOwners'
 
 /** The facts the pass reads per frame. Getters, not values: the route, the
  *  active section and the reduced-motion policy can change between frames. */
@@ -152,7 +151,7 @@ export class SceneFramePass {
       for (const group of groups) {
         if (!group.visible) continue
         // Update JunniParticles — GPU-side drift (Works section).
-        const particles = group.userData.particles as JunniParticles | undefined
+        const particles = particlesOf(group)
         if (particles && particles.visible !== false) particles.update(deltaTime)
       }
     }

@@ -12,6 +12,7 @@ import { MeshBasicNodeMaterial } from 'three/webgpu'
 import { Fn, vec3, float, uniform, uv, sin, mix, smoothstep } from 'three/tsl'
 import { input } from '../Input'
 import { prefersReducedMotion } from '../../core/motionPolicy'
+import { smoothstep01 } from '../../Utils/easing'
 
 const TRAIL_LENGTH = 36
 const RIBBON_WIDTH = 0.115
@@ -283,7 +284,7 @@ export class DrawTrail {
       const p = this.trailPositions[i]!
       const i6 = i * 6
       const taperT = i / (TRAIL_LENGTH - 1)
-      const taper = taperT * taperT * (3 - 2 * taperT)
+      const taper = smoothstep01(taperT)
       const width = headWidth * (1 - taper) + tailWidth * taper
       const before = this.trailPositions[Math.max(0, i - 1)]!
       const after = this.trailPositions[Math.min(TRAIL_LENGTH - 1, i + 1)]!

@@ -14,6 +14,7 @@
 // per-character DOM rendering lives here.
 
 import { TextReveal } from './textReveal'
+import { easeOutCubic } from '../Utils/easing'
 
 export class BlurFade extends TextReveal {
   /** Per-class registry: one instance per DOM element, prevents overlap. */
@@ -84,9 +85,8 @@ export class BlurFade extends TextReveal {
     for (let i = 0; i < n; i++) {
       const span = spans[i] as HTMLElement
       const charDelay = (i / n) * staggerDelay
-      const charT = Math.max(0, Math.min(1, (t - charDelay) / (1 - staggerDelay)))
-      // Ease out cubic
-      const eased = 1 - Math.pow(1 - charT, 3)
+      // Ease out cubic (the helper clamps the raw staggered t)
+      const eased = easeOutCubic((t - charDelay) / (1 - staggerDelay))
       const opacity = eased
       const translateY = 20 * (1 - eased)
       const rotate = (this.rotations[i] ?? 0) * (1 - eased)

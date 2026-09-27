@@ -15,6 +15,7 @@ import { BlurFade } from './BlurFade'
 
 import { ExperienceUI } from './ExperienceUI'
 import { SceneCoordinator } from './SceneCoordinator'
+import { particlesOf } from './sceneOwners'
 // worldDNA.ts removed — TSL node system never attached (attachWorldDNA never
 // called). updateWorldDNAAudio set uniforms nobody read. All dead.
 import { observeReducedMotion, prefersReducedMotion } from '../core/motionPolicy'
@@ -758,8 +759,7 @@ export class Experience {
         if (detail.themeChanged !== false) {
           this._syncPolaritySurfaces(detail.isLight)
           for (const group of this.coordinator.sceneGroups) {
-            const particles = group.userData.particles as
-              import('../Experience/World/JunniParticles').JunniParticles | undefined
+            const particles = particlesOf(group)
             if (particles) particles.setBlending(!detail.isLight)
           }
         }
@@ -1287,8 +1287,7 @@ export class Experience {
     if (this._fpsTracker.lowFps && !this._particleReductionApplied && this.coordinator) {
       this._particleReductionApplied = true
       for (const group of this.coordinator.sceneGroups) {
-        const particles = group.userData.particles as
-          import('../Experience/World/JunniParticles').JunniParticles | undefined
+        const particles = particlesOf(group)
         if (particles && !particles.isReduced) {
           particles.setCount(Math.floor(particles.baseCount / 2))
         }
