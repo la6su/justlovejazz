@@ -1,7 +1,8 @@
 import * as THREE from 'three'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Experience } from '../Experience/Experience'
-import { SceneCoordinator, type SceneCoordinatorOwners } from '../Experience/SceneCoordinator'
+import { SceneCoordinator } from '../Experience/SceneCoordinator'
+import type { SceneCoordinatorOwners } from '../Experience/sceneOwners'
 import * as manifest from '../Experience/Lab/manifest'
 import type { LabExperimentObject } from '../Experience/Lab/manifest'
 import type { PageId } from '../core/routeManifest'
@@ -9,9 +10,9 @@ import { seedExperience } from './experienceSeed'
 
 // Phase 8 slice 9: the Lab experiment object lifecycle (lazy creation on the
 // first /lab visit + final disposal) moved from World to Experience. Phase 8
-// slice 10: the `World` class leaves production — the object is read through
-// the SceneCoordinator's `labGamepad` owner getter and the coordinator's
-// `syncRouteVisuals` drives the visibility gate. 2026-09-25: the lifecycle
+// slice 10: the `World` class leaves production — the object reaches the
+// coordinator through the owners bag built over the StageRegistry slot, and
+// the coordinator's `syncRouteVisuals` drives the visibility gate. 2026-09-25: the lifecycle
 // flow itself moved onto the shared LazyStage contract (`ensureLazyStage` /
 // `disposeLazyStage`) — the hand-rolled promise memoization + request counter
 // left with it. The object is a static scene object (no per-frame update,
@@ -23,14 +24,22 @@ import { seedExperience } from './experienceSeed'
 describe('Experience lab object lifecycle', () => {
   let exp: Experience
   let coordinator: SceneCoordinator
+  let slots: ReturnType<typeof seedExperience>['slots']
   let manifestSpy: ReturnType<typeof vi.spyOn>
+
+  /** The ensured Lab object as the coordinator's owners bag sees it. */
+  function slotStage(): LabExperimentObject | null {
+    return slots.labGamepad.getStage() as LabExperimentObject | null
+  }
 
   /** Minimal state the lifecycle method touches (constructor bypassed). */
   function makeExperience(scene: THREE.Scene): Experience {
-    const { exp, slots } = seedExperience({
+    const seeded = seedExperience({
       scene,
       page: () => (document.body.dataset.page ?? 'home') as PageId,
     })
+    const { exp, slots: registrySlots } = seeded
+    slots = registrySlots
     const owners: SceneCoordinatorOwners = {
       ground: () => null,
       sectionGroups: () => null,
@@ -79,8 +88,8 @@ describe('Experience lab object lifecycle', () => {
     document.body.dataset.page = 'lab'
     await exp.ensureLabGamepad()
 
-    // The coordinator getter exposes the Experience-owned object.
-    expect(coordinator.labGamepad).toBe(object)
+    // The registry slot feeds the coordinator's owners bag with the object.
+    expect(slotStage()).toBe(object)
     expect(object.visible).toBe(true)
     // The object entered the Tres-owned scene directly under Experience.
     expect(exp.scene.children).toContain(object)
@@ -93,7 +102,7 @@ describe('Experience lab object lifecycle', () => {
     // Idempotent: a second visit does not re-create the object.
     document.body.dataset.page = 'lab'
     await exp.ensureLabGamepad()
-    expect(coordinator.labGamepad).toBe(object)
+    expect(slotStage()).toBe(object)
   })
 
   it('is a no-op when the manifest has no experiment for the Lab route', async () => {
@@ -102,7 +111,7 @@ describe('Experience lab object lifecycle', () => {
     document.body.dataset.page = 'lab'
     await exp.ensureLabGamepad()
 
-    expect(coordinator.labGamepad).toBeNull()
+    expect(slotStage()).toBeNull()
     expect(exp.scene.children).toHaveLength(0)
   })
 
@@ -121,11 +130,11 @@ describe('Experience lab object lifecycle', () => {
     } as never)
 
     await expect(exp.ensureLabGamepad()).resolves.toBeUndefined()
-    expect(coordinator.labGamepad).toBeNull()
+    expect(slotStage()).toBeNull()
     expect(exp.scene.children).not.toContain(object)
 
     await exp.ensureLabGamepad()
-    expect(coordinator.labGamepad).toBe(object)
+    expect(slotStage()).toBe(object)
     expect(attempts).toBe(2)
   })
 
@@ -150,7 +159,7 @@ describe('Experience lab object lifecycle', () => {
     await loadPromise
 
     expect(object.dispose).toHaveBeenCalledTimes(1)
-    expect(coordinator.labGamepad).toBeNull()
+    expect(slotStage()).toBeNull()
     expect(exp.scene.children).not.toContain(object)
   })
 })

@@ -20,6 +20,8 @@ import type { ContactHaloStage } from './World/ContactHaloStage'
 import type { ManifestoInkStage } from './World/ManifestoInkStage'
 import type { LabExperimentObject } from './Lab/manifest'
 import type { ServicesStage } from './World/ServicesStage'
+import type { JunniParticles } from './World/JunniParticles'
+import type { Group } from 'three'
 
 export interface SceneCoordinatorOwners {
   ground: () => GroundPlane | null
@@ -36,4 +38,16 @@ export interface SceneCoordinatorOwners {
   manifestoInkStage?: () => ManifestoInkStage | null
   labGamepad: () => LabExperimentObject | null
   servicesStage?: () => ServicesStage | null
+}
+
+/**
+ * The informal group ↔ particles contract written by WorksSection
+ * (`g.userData.particles = particles`) — one typed read for every consumer
+ * (the frame pass, the coordinator's visibility gates, the Experience theme
+ * and low-fps sweeps). SectionGroups' disposal sweep deliberately keeps its
+ * own structural `Object3D & { dispose? }` read: it must not assume the
+ * concrete class while releasing resources.
+ */
+export function particlesOf(group: Group): JunniParticles | undefined {
+  return group.userData.particles as JunniParticles | undefined
 }

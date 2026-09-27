@@ -5,6 +5,7 @@ import { DRACOLoader, DRACO_GLTF_CONFIG } from 'three/addons/loaders/DRACOLoader
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { disposeMaterialDeep } from '../../Utils/dispose'
 import { prefersReducedMotion } from '../../core/motionPolicy'
+import { smoothstep01 } from '../../Utils/easing'
 
 const FADE_DURATION_SECONDS = 0.52
 const SCALE_IN_FROM = 0.96
@@ -182,8 +183,8 @@ export class ContactCyprusStage extends THREE.Group {
 
   /**
    * The target (not fade-progress) active state — set immediately by
-   * `setActive`. Phase 8 slice 8: the World's cube-visibility gate reads this
-   * off the attached stage instead of a separate World flag.
+   * `setActive`. Phase 8 slice 8: the frame pass's cube-visibility gate reads
+   * this off the stage (via `bakuVisibleOnRoute`) instead of a separate flag.
    */
   get isActive(): boolean {
     return !this._disposed && this._active
@@ -212,7 +213,7 @@ export class ContactCyprusStage extends THREE.Group {
     } else if (this.isAnimating) {
       this._fadeElapsed = Math.min(FADE_DURATION_SECONDS, this._fadeElapsed + dt)
       const progress = this._fadeElapsed / FADE_DURATION_SECONDS
-      const eased = progress * progress * (3 - 2 * progress)
+      const eased = smoothstep01(progress)
       this.setPresentation(
         THREE.MathUtils.lerp(this._fadeFrom, this._targetOpacity, eased),
         THREE.MathUtils.lerp(this._scaleFrom, this._targetScale, eased),

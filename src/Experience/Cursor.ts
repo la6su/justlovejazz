@@ -17,6 +17,7 @@
 // (DeviceCapability import removed — mobile detection now handled by CSS
 //  @media (pointer: coarse) in main.less, which is more reliable than JS.)
 import { brandToken } from '../core/brandTokens'
+import { lerp } from '../Utils/easing'
 
 const CURSOR_ACCENT = brandToken('jlz-color-accent')!
 const CURSOR_ACCENT_GLOW = brandToken('jlz-color-accent-glow')!
@@ -31,10 +32,6 @@ const INTERACTIVE_SEL =
 function noise2D(x: number, y: number): number {
   const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453
   return (n - Math.floor(n)) * 2 - 1
-}
-
-function lerp(a: number, b: number, n: number): number {
-  return (1 - n) * a + n * b
 }
 
 // Phase 2: canvas 100→120 for larger cursor (baseRadius 28 + targetRadius 44)

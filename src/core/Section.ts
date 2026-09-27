@@ -65,7 +65,6 @@ export class Section {
       scale: config.baku.scale.clone(),
       opacity: config.baku.opacity,
       role: config.baku.role,
-      displace: config.baku.displace,
       material: {
         color: config.baku.material.color.clone(),
         emissive: config.baku.material.emissive.clone(),

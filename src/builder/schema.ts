@@ -24,8 +24,6 @@ export interface BuilderNode {
   children: BuilderNode[]
 }
 
-export type { BuilderTheme } from './style'
-
 export interface BuilderDocument {
   version: typeof BUILDER_DOCUMENT_VERSION
   slug: string

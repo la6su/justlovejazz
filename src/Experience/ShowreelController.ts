@@ -15,11 +15,11 @@ import { eventBus } from '../core/EventBus'
 import { ShowreelTheater } from './World/ShowreelTheater'
 
 /** The frame-path render handoff (the Renderer wrapper's draw entry). */
-export interface ShowreelRenderer {
+interface ShowreelRenderer {
   update(scene: THREE.Scene, camera: THREE.Camera, dt: number): void
 }
 
-export interface ShowreelControllerContext {
+interface ShowreelControllerContext {
   /** Open requests after root teardown are ignored. */
   isDestroyed: () => boolean
   /** A theater created after a reduced-motion flip must match the state. */
@@ -51,18 +51,13 @@ export class ShowreelController {
   }
 
   /** Lazily create the theater on the first open request. */
-  public ensure(): void {
+  private ensure(): void {
     if (this._theater || this._ctx.isDestroyed()) return
     this._theater = new ShowreelTheater(
       '/assets/video/coming-soon.mp4',
       '/assets/video/coming-soon-cover.jpg',
     )
     this._theater.setReducedMotion(this._ctx.reducedMotion())
-  }
-
-  /** The live theater (null until the first open; exposed for tests). */
-  public get theater(): ShowreelTheater | null {
-    return this._theater
   }
 
   /** Per-frame activity flag for the demand snapshot. */

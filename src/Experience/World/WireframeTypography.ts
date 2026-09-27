@@ -8,6 +8,7 @@ import * as THREE from 'three'
 import { FontLoader } from 'three/addons/loaders/FontLoader.js'
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js'
 import fontJson from '../../assets/fonts/comfortaa_bold_subset.typeface.json'
+import { easeOutCubic } from '../../Utils/easing'
 
 const bubbleFont = new FontLoader().parse(fontJson as never)
 
@@ -125,8 +126,7 @@ export class WireframeTypography extends THREE.Group {
     this.revealElapsed += dt
     const revealDelay = this.userData.reducedMotion === true ? 0 : 0.72
     const revealDuration = 0.72
-    const revealT = Math.min(1, Math.max(0, (this.revealElapsed - revealDelay) / revealDuration))
-    this.revealProgress = 1 - Math.pow(1 - revealT, 3)
+    this.revealProgress = easeOutCubic((this.revealElapsed - revealDelay) / revealDuration)
     for (const { mesh, x, phase } of this.glyphs) {
       const bob = Math.sin(this.time * 1.05 + phase)
       const sway = Math.sin(this.time * 0.62 + phase * 1.3)

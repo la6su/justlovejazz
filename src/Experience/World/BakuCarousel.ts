@@ -23,6 +23,7 @@ import type { PageId } from '../../core/routeManifest'
 import type { StorySide } from '../../core/storyState'
 import { eventBus } from '../../core/EventBus'
 import { prefersReducedMotion } from '../../core/motionPolicy'
+import { smoothstep01 } from '../../Utils/easing'
 // PlaneTransition removed — unified animation uses direct overlay open.
 
 // A dozen plane instances preserve the infinite wrap while the framing exposes
@@ -295,8 +296,8 @@ export class BakuCarousel extends THREE.Group {
       }
     }
     // (keyboard handler removed — story arrows are owned by CinematicNav.
-    //  BakuCarousel navigation is via horizontal pointer drag. Enter/Space to
-    //  open the front card is handled by Experience.ts click raycaster.)
+    //  BakuCarousel navigation is via horizontal pointer drag; card taps are
+    //  raycast by handleTap() and the open is wired by ExperienceUI.)
     window.addEventListener('pointerdown', this.pointerDownHandler)
     window.addEventListener('pointermove', this.pointerMoveHandler, { passive: false })
     window.addEventListener('pointerup', this.pointerUpHandler)
@@ -397,12 +398,6 @@ export class BakuCarousel extends THREE.Group {
     return ((((value + count / 2) % count) + count) % count) - count / 2
   }
 
-  /** Smoothstep easing: S-curve for organic ease-in/ease-out. */
-  private smoothstep(t: number): number {
-    const c = THREE.MathUtils.clamp(t, 0, 1)
-    return c * c * (3 - 2 * c)
-  }
-
   update(dt: number): void {
     if (this._disposed) return
     if (!this._layoutDirty && !this.isAnimating) return
@@ -413,7 +408,7 @@ export class BakuCarousel extends THREE.Group {
     }
 
     // Eased morph for animations (smoothstep gives ease-in/ease-out)
-    const easedT = this.smoothstep(this._morphT)
+    const easedT = smoothstep01(this._morphT)
 
     // Phase 4: momentum — apply velocity after drag release
     if (!this.isDown && Math.abs(this.velocity) > MOMENTUM_THRESHOLD) {
@@ -459,7 +454,7 @@ export class BakuCarousel extends THREE.Group {
           : slot > 0
             ? 0.2 + Math.min(distance - 1, 2) * 0.055
             : 0.4 + Math.min(distance - 1, 2) * 0.04
-      const localReveal = this.smoothstep(THREE.MathUtils.clamp((easedT - delay) / 0.55, 0, 1))
+      const localReveal = smoothstep01((easedT - delay) / 0.55)
       card.position.copy(this._tmpStreamPos)
       const entranceDirection = distance < 0.5 ? 0 : Math.sign(slot)
       card.position.x += entranceDirection * (1 - localReveal) * 0.28

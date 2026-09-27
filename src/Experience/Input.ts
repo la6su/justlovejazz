@@ -1,7 +1,9 @@
 // src/Experience/Input.ts
 import * as THREE from 'three'
 
-export class Input {
+// Module-private: every consumer takes the `input` singleton below — keeping
+// the class unexported makes a second instance unrepresentable.
+class Input {
   static instance: Input | undefined
 
   mouse: THREE.Vector2 = new THREE.Vector2()
