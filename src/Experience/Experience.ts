@@ -89,35 +89,35 @@ export class Experience {
   private _splashEnteredUnsub: (() => void) | null = null
   private devPanel: DevPanel | null = null
   private _frameTiming: FrameTiming | null = null
-  // Phase 8 slice 10: the scene-coordination engine (six-section state machine,
-  // scroll transform, per-frame coordination) left the legacy `World` into the
-  // SceneCoordinator owner. Experience creates it (buildWorld) and is the
-  // single disposal owner; it injects the scene owners as getters over its own
-  // fields. The legacy `World` class + `SectionSceneFactory` leave production.
+  // Phase 8 slice 10: the scene-coordination engine left the legacy `World`
+  // into the SceneCoordinator owner (since split into SectionStateMachine /
+  // SceneTransformPass / SceneFramePass — NEXT item 4.1). Experience creates
+  // it (buildWorld) and is the single disposal owner; it injects the scene
+  // owners as getters over its own fields. The legacy `World` class +
+  // `SectionSceneFactory` leave production.
   public coordinator!: SceneCoordinator
   // Phase 8 slice 1: the lights + ground scene owners (created in buildWorld,
   // entering the Tres-owned scene; Experience is the single disposal owner).
   private lights!: CinematicLights
   private ground!: GroundPlane
-  // Phase 8 slice 2: the six stable section groups owner (attached to the
-  // World before init — World's frame path reads them via the getter).
+  // Phase 8 slice 2: the six stable section groups owner (the coordinator's
+  // frame pass reads them via the owner getter).
   private sectionGroups!: SectionGroups
   // Phase 8 slice 3: the ambient pavilion owner. Vue owns its construction
   // and terminal disposal; the coordinator forwards its per-frame update.
   private envSphere!: EnvSphere
-  // Phase 8 slice 4: the glass cube owner (World's frame path reads/writes
-  // it through the attachBaku adapter + baku getter).
+  // Phase 8 slice 4: the glass cube owner (the frame pass reads/writes it
+  // through the owners bag's baku getter).
   private baku!: SplashCube
-  // Phase 8 slice 5: the intro light frames + cursor trail owners (World's
-  // frame path reads/writes them through the attachParticleBurst /
-  // attachDrawTrail adapters + getters).
+  // Phase 8 slice 5: the intro light frames + cursor trail owners (the frame
+  // pass reads/writes them through the owners bag's getters).
   private particleBurst!: ParticleBurst
   private drawTrail!: DrawTrail
   // Phase 8 slice 6: the project stream owner. The carousel is created by the
   // works section factory as a child of the Works group (its disposal lives in
   // the SectionGroups owner's BakuCarousel-first ordering); Experience owns
-  // the reference + init, and the World frame path drives it through the
-  // attachBakuCarousel adapter + carousel getter.
+  // the reference + init, and the frame pass drives it through the owners
+  // bag's carousel getter.
   private carousel: BakuCarousel | null = null
   private _carouselInitPromise: Promise<void> | null = null
   // Lazy route-owned stages (StageRegistry.ts): the six slot triples, their
@@ -219,7 +219,7 @@ export class Experience {
   private _environment!: SceneEnvironment
 
   // Phase 7 readiness contract: `jlz:webgl-ready` may only fire after the
-  // initial World's FIRST SUCCESSFUL RENDER — the scheduler 'first-frame'
+  // initial scene's FIRST SUCCESSFUL RENDER — the scheduler 'first-frame'
   // invalidation guarantees a frame; the frame resolves this exactly once.
   private _firstRenderResolve: (() => void) | null = null
   private _firstRenderPromise: Promise<void> | null = null
@@ -740,7 +740,7 @@ export class Experience {
       // ContentReveal dispatches on every section change / theme toggle.
       const sectionIdx = detail.sectionIndex
       // Phase 8 slice 3: the EnvSphere is the Experience-owned scene owner —
-      // the world gate below still guards the world-bound syncs.
+      // the coordinator gate below still guards the coordinator-bound syncs.
       if (this.envSphere) {
         if (detail.snap) {
           this.envSphere.snapToSection(sectionIdx, detail.isLight)
@@ -896,7 +896,7 @@ export class Experience {
     // handlers, CinematicNav + UIMenu) are wired by ExperienceUI at this
     // legacy init timing — see ExperienceUI.init().
 
-    // Phase 7 readiness contract: await the initial World's FIRST SUCCESSFUL
+    // Phase 7 readiness contract: await the initial scene's FIRST SUCCESSFUL
     // RENDER. The 'first-frame' invalidation above guarantees a frame (a
     // hidden tab resumes with exactly one invalidation); the bounded timeout
     // keeps the splash from hanging on a path that never renders. The factory
@@ -1014,7 +1014,7 @@ export class Experience {
     const dt = this.time.delta / 1000
     this._fpsTracker.observe(this.time.delta)
     // Section state deadlines (ready → viewing → passed) advance here —
-    // the former StateBus tick's only live responsibility.
+    // the machine owns the policy, the frame path just advances the clock.
     this.coordinator?.updateSections(dt)
     // Cursor always updates (DOM, cheap — not GPU rendering)
     this.cursor.update()
@@ -1022,8 +1022,8 @@ export class Experience {
     // Navigation: read the native vertical story track.
     this._storyNav?.update()
 
-    // World reads continuous story progress directly; section arrivals still
-    // trigger the cube face rotation below.
+    // The transform pass reads continuous story progress directly; section
+    // arrivals still trigger the cube face rotation below.
 
     // ── On-demand rendering ──
     // Only render when something is actually changing. When idle (settled
@@ -1031,8 +1031,8 @@ export class Experience {
     // stays on screen and GPU is idle.
     const navActive = this._storyNav?.isActive() ?? false
     // Compute carousel active state NOW (not from previous frame) — the
-    // carousel may have started morphing this frame via setActive() in
-    // world.updateTransform(). If we use stale _bakuCarouselActive from
+    // carousel may have started morphing this frame via setActive() in the
+    // transform pass's updateTransform(). If we use stale _bakuCarouselActive from
     // last frame, _needsRender stays false and carousel.update() never
     // runs → morph stalls at ~0.35. See BakuCarousel.ts §update.
     const carousel = this.features.getCarousel()
@@ -1086,7 +1086,7 @@ export class Experience {
       this._needsRender = true
     }
 
-    // ── A4: Ambient breathing (IMPROVEMENT_PLAN) ──
+    // ── A4: Ambient breathing ──
     // When fully idle (no particles/nav/carousel/…), one refresh frame every
     // ~2.5 s so the scene doesn't look frozen. Phase 7: the loop stops when
     // settled, so a per-frame dt accumulator can never advance — the breath
@@ -1120,8 +1120,6 @@ export class Experience {
           fromCfg.baku.material.emissive,
           toCfg.baku.material.emissive,
           worldState.phaseProgress,
-          fromCfg.baku.displace,
-          toCfg.baku.displace,
         )
       }
     }
@@ -1132,7 +1130,8 @@ export class Experience {
     // ContentReveal applies the active section's auto/inverse theme and the
     // jlz:theme-applied listener above keeps the 3D layer in sync.
     const idx = this.coordinator.currentSectionIndex
-    // Give World the camera ref for DrawTrail (once, after init).
+    // Give the frame pass the camera ref for DrawTrail unprojection + the
+    // ServicesStage head-tracking (every frame — the pass re-reads it).
     this.coordinator.setCamera(this.camera.instance)
     // Phase 8 slice 7: the /works stage camera moved out of World.setCamera —
     // forwarded directly (the stage is lazy; null until /works is reached).
@@ -1147,8 +1146,8 @@ export class Experience {
       const isInitialSectionSync = this._prevSectionIndex === -1
       this._prevSectionIndex = idx
       const cfgForSection = this.coordinator.getConfig(worldState.currentPhase)
-      // Phase 8 slice 1: section-arrival light targets (was the
-      // World.updateTransform internal call — same frame, same config).
+      // Phase 8 slice 1: section-arrival light targets (was the legacy
+      // transform's arrival step — same frame, same config).
       // Initial sync excluded: buildWorld's intro step already set the target
       // (exactly what the legacy World.init did).
       if (!isInitialSectionSync && cfgForSection) {
@@ -1191,7 +1190,7 @@ export class Experience {
     // Context switch (post-processing preset)
     const cfg = this.coordinator.getConfig(worldState.currentPhase)
     if (cfg && cfg.context !== this.currentSectionContext) {
-      // Fog is now managed by World.updateTransform() on section index change —
+      // Fog is re-targeted by the transform pass on section arrival —
       // no need to set it here. PostProcessing + FOV still triggered on context change.
       // applyPreset also targets the section grade channels (refraction, border,
       // shadow/highlight tints) — Renderer.update() crossfades them into the
@@ -1263,7 +1262,7 @@ export class Experience {
         renderer: rendererDuration,
         total: performance.now() - frameStart,
       })
-      // Phase 7 readiness: the initial World's FIRST SUCCESSFUL RENDER — a
+      // Phase 7 readiness: the initial scene's FIRST SUCCESSFUL RENDER — a
       // frame that threw in renderer.update() never resolves the gate
       // (update() catches and keeps booting), so `jlz:webgl-ready` can only
       // fire after a real draw. Resolves exactly once.
@@ -1370,9 +1369,8 @@ export class Experience {
     // Phase 8 slice 4: the glass cube owner (6 face geos+mats + 6 edge geos+mats).
     this.baku?.dispose()
     // Phase 8 slice 5: the intro light frames + cursor trail owners. Both are
-    // direct children of the Tres-owned scene (not of World), so detaching
-    // World does not cascade their removal — remove them from the scene
-    // explicitly, mirroring the legacy World disposal.
+    // direct children of the Tres-owned scene and Experience is their single
+    // disposal owner — remove them from the scene explicitly before disposal.
     this.particleBurst?.removeFromParent()
     this.particleBurst?.dispose()
     this.drawTrail?.object.removeFromParent()

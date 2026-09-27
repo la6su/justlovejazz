@@ -78,7 +78,7 @@ export class DeviceCapability {
    * `false` on WebGL2 path and on WebGPU→WebGL fallback.
    *
    * This flag gates the "premium" visual path (TSL node overrides, real
-   * glass transmission) — see IMPROVEMENT_PLAN A1/A2. On non-premium paths
+   * glass transmission). On non-premium paths
    * the project falls back to the parity path (JS-driven material props,
    * opacity-based glass) that already works.
    */

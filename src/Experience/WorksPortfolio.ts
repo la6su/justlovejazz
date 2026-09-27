@@ -1,7 +1,8 @@
 // WorksPortfolio — project metadata container for the works section.
 //
 // Tracks the active project index and delegates navigation to BakuCarousel
-// via the onCardClick callback. Experience wires this to BakuCarousel.
+// via the onCardClick callback. ExperienceUI wires this to BakuCarousel
+// (initializePortfolio).
 
 import { type Project } from '../core/types'
 

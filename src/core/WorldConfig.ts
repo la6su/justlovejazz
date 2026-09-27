@@ -18,8 +18,6 @@ export interface BakuTransform {
   scale: THREE.Vector3
   opacity: number
   role: BakuRole
-  /** worldDNA vertex displacement amplitude (0=static, 0.3=strong fluid). */
-  displace: number
   material: {
     color: THREE.Color
     emissive: THREE.Color
@@ -124,7 +122,6 @@ type RawScene = {
   camSmoothing?: number
   bakuRole?: BakuRole
   bakuOpacity?: number
-  bakuDisplace?: number
   bakuColor?: number
   bakuEmissive?: number
   postBloom?: number
@@ -160,7 +157,6 @@ const DEFAULTS: Omit<RawScene, 'id' | 'context' | 'domSection' | 'range'> = {
   camSmoothing: DEFAULT_CAMERA_SMOOTHING,
   bakuRole: BakuRole.GLASS,
   bakuOpacity: 0.4,
-  bakuDisplace: 0.06,
   bakuColor: 0xb8b8b8,
   bakuEmissive: 0x050505,
   postBloom: 0,
@@ -209,7 +205,6 @@ const HOME_RAW: Array<Omit<RawScene, 'domSection' | 'range'>> = [
     camFovDuration: 0.9,
     camSmoothing: 6,
     bakuOpacity: 0.35,
-    bakuDisplace: 0.15,
     bakuColor: 0xc0c0c0,
     postBloom: 0.4,
     lightColor: 0x050505,
@@ -225,7 +220,6 @@ const HOME_RAW: Array<Omit<RawScene, 'domSection' | 'range'>> = [
     camFovDuration: 1.0,
     camSmoothing: 6,
     bakuOpacity: 0.4,
-    bakuDisplace: 0.05,
     bakuColor: 0xc0c0c0,
     showGallery: true,
     lightColor: 0x050505,
@@ -251,7 +245,6 @@ const HOME_RAW: Array<Omit<RawScene, 'domSection' | 'range'>> = [
     id: 'sec_menu',
     context: 'MENU — Navigation',
     bakuOpacity: 0.14,
-    bakuDisplace: 0.025,
     bakuColor: 0xc7c9e6,
     postBloom: 0.08,
     postRefract: 0.012,
@@ -291,7 +284,6 @@ function toPhaseConfig(r: RawScene): PhaseConfig {
       scale: new THREE.Vector3(0.4, 0.4, 0.4),
       opacity: r.bakuOpacity!,
       role: r.bakuRole!,
-      displace: r.bakuDisplace!,
       material: {
         // GLASS cube: metalness MUST be 0 (glass is a dielectric, not metal).
         // roughness=0.05 matches SplashCube.buildCube (mirror-smooth glass).

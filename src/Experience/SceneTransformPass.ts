@@ -386,7 +386,6 @@ export class SceneTransformPass {
         scale: new THREE.Vector3(0.4),
         opacity: 1,
         role: BakuRole.NORMAL,
-        displace: 0.05,
         material: {
           color: new THREE.Color(),
           emissive: new THREE.Color(),

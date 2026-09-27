@@ -5,7 +5,11 @@
 // fields (the lazy route owners change identity per route, so a direct reference
 // would go stale). With this slice the legacy `World` class and
 // `SectionSceneFactory` leave production (Phase 8 completion) — no production
-// caller remains.
+// caller remains. NEXT item 4.1 later split the three extracted bodies into
+// their own owners: SectionStateMachine (scroll story state),
+// SceneTransformPass (pooled scroll transform) and SceneFramePass (demand-gated
+// owner fan-out) — this file keeps the delegates, the owner read surface and
+// route/scene policy.
 
 import * as THREE from 'three'
 import type { Section } from '../core/Section'
@@ -292,8 +296,7 @@ export class SceneCoordinator {
     // Atmosphere: fog density stays per-section.
   }
 
-  /** Advance the sections' pending state deadlines (called from the frame
-   *  path where the former StateBus tick used to run). */
+  /** Frame-path delegate: the machine owns the deadline policy. */
   public updateSections(dt: number): void {
     this._story.updateSections(dt)
   }

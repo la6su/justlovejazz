@@ -1255,3 +1255,121 @@ within gate (splash 2.83/5 — a 0.01 kB gzip drift from the new module
 boundaries inside `chunk-experience`; vendor-three 298.65/350 and uikit
 53.66/56 byte-identical), e2e chromium serial 27 passed / 1 skipped
 (baseline parity).
+
+## Inspection 16 — 2026-09-27, post-split residue sweep: dead read surface, shared math, comment truth
+
+Scope: the continuation cycle after Inspections 14–15 closed NEXT item 4 — a
+fresh sweep of the post-split tree for dead surface, duplication and stale
+claims (two parallel audits: a symbol-level dead-surface trace of every
+export/public member on the new modules, and a comment-truth pass over the
+whole `src/` tree; every candidate re-verified against call sites before
+acting — one agent claim, "`baku` has zero production readers", was refuted
+by `ExperienceUI.ts`'s `coordinator.baku?.triggerOpener()` and the getter
+kept).
+
+### Dead read surface out
+
+- `SceneCoordinator`: dropped the `drawTrail`, `contactCyprusStage` and
+  `labGamepad` owner getters (zero production reads — the frame pass and the
+  coordinator's own gates read the owners bag directly) and demoted
+  `isReducedMotion` to private (sole reader is the coordinator's own
+  visibility gate; the passes receive the policy as context functions). The
+  public owner read surface now holds only production-exercised members.
+- `SceneCoordinator`: dropped the `SceneCoordinatorOwners` re-export — the
+  type's home is `sceneOwners.ts`, every production importer already uses it;
+  the six test files retarget to the source module (completing the migration
+  the re-export shim had kept open).
+- `ShowreelController`: dropped the `theater` getter — its "exposed for
+  tests" comment was stale (no test imports the controller; the theater is
+  covered through `ShowreelTheater`'s own suite) — and demoted `ensure()` to
+  private (sole caller is `bind()`).
+- `builder/schema`: dropped the `BuilderTheme` re-export (all consumers
+  import from `./style` directly).
+- `Input`: the class is no longer exported — every consumer takes the
+  `input` singleton, so an unexported class makes a second instance
+  unrepresentable.
+- Unexported the six split-internal context interfaces
+  (`SceneEnvironmentOwners`, `ShowreelRenderer`, `ShowreelControllerContext`,
+  `StageRegistryContext`, `SceneTransformPassContext`, `SceneFramePassContext`)
+  — consumed only as their own constructor param types; callers pass
+  structurally.
+- `Experience.labStage.test` reads the ensured object through the registry
+  slot (the documented test seam) instead of the deleted getter; the
+  slot-feeds-owners-bag wiring is what those assertions pin.
+
+### Dead data chain out — the worldDNA `displace` residue
+
+`SplashCube.updateWorldBlend` accepted `_fromDisplace` / `_toDisplace`
+(underscore-ignored) from `Experience`'s section-blend call site; the values
+flowed from authored `bakuDisplace` config through `BakuTransform.displace`
+and `Section`'s frozen copy — all plumbing for the removed worldDNA vertex
+displacement. Removed end to end: the `BakuTransform` field, the
+`bakuDisplace?` raw-config key, its four authored values, the
+`resolveConfig` mapping, `Section`'s copy, `SceneTransformPass.defaultResult`'s
+hardcoded literal, the `Experience` call-site arguments and the `SplashCube`
+parameters. The stale "worldDNA vertex displacement amplitude" comment left
+with the field it described.
+
+### Shared math in (`src/Utils/easing.ts`)
+
+Ten hand-rolled copies of two curves and an interpolation, now one pure
+dependency-free module each: `smoothstep01` (BakuCarousel's private method,
+SceneTransformPass's `_applyEasing` ease-in-out branch, SplashCube face lerp,
+ContactCyprusStage fade, DrawTrail taper), `easeOutCubic` (SceneTransformPass
+ease-out branch, BlurFade stagger, WireframeTypography reveal) and `lerp`
+(Cursor, PostProcessingManager — the latter had no three import, so the
+module stays dependency-free for any chunk). Numerics are identical; the
+double-ease characterization pin (`SceneCoordinator.doubleEase`) guards the
+transform pass.
+
+### `sceneOwners.particlesOf(group)`
+
+The informal `group.userData.particles` contract (written by WorksSection)
+was read through five divergent casts — two inline `import(...)` type casts
+in Experience, a `JunniParticles` cast in the frame pass and two
+`THREE.Object3D` casts in the coordinator's gates. One typed read now serves
+all five. `SectionGroups`' disposal sweep deliberately keeps its structural
+`Object3D & { dispose? }` read: it must not assume the concrete class while
+releasing resources.
+
+### Comment truth (post-split stale claims)
+
+Seventeen confirmed stale claims fixed in place — the highest-value ones:
+the fog comment still crediting `World.updateTransform()` (the transform
+pass owns the arrival re-target since Inspection 15); four field comments
+describing the removed `attach*` adapters and "World's frame path" as the
+live mechanism (the frame pass reads the owners bag); the SceneCoordinator
+header not mentioning its own three extractions; `BakuCarousel` claiming
+"Enter/Space to open the front card is handled by Experience.ts click
+raycaster" (no such handler exists — taps are raycast by `handleTap()`, the
+open is wired by ExperienceUI); `ContentReveal` citing a `router.ts`
+`renderView` that left production (the emitter is
+`useJlzPage.postRender → jlz:route-change`); `setCamera` documented as
+"once, after init" (it re-publishes every frame); two dangling
+`IMPROVEMENT_PLAN` references (the plan doc was removed; README documents
+the snapshot policy); the triple-copied "former StateBus tick" sentence
+collapsed to the machine that owns the policy; the worldDNA/`WorksPortfolio`
+wiring and "detaching World" disposal rationales reworded to the current
+owners. Deliberate past-tense migration markers (`GroundPlane`'s
+"legacy `World.syncGroundTheme`" family, tombstone comments) are kept —
+they document provenance, not live claims.
+
+### Checked and sound
+
+- `StageRegistry.slots` + `disposeLabGamepad` stay public (documented test
+  seams); `labExperiments` keeps its export (admission-contract pin).
+- `three-stdlib-compat` / `three-webgpu-compat` re-export barrels are
+  load-bearing through the vite aliases and guarded by `check:stdlib`.
+- `esbuild` has no direct import but is vite's minify peer — keeping it.
+- The remaining `World.*` mentions in `src/` are past-tense provenance, not
+  live claims.
+
+Verification: prettier clean, tsc + vue-tsc green (the 28 pre-existing
+TS2307s in this environment were stale `node_modules` materialization —
+`bun install` restored the tree and both checks are fully clean), eslint
+0 errors (16 pre-existing warnings), vitest 119 files / 717 tests green,
+docs:check 18 files / 36 links green, check:stdlib 28/28 + 5/5 green, build
+(incl. prerenders + sitemap) green, budgets within gate (splash 2.83/5,
+vendor-three 298.65/350 and uikit 53.66/56 unchanged), e2e chromium serial
+27 passed / 1 skipped (baseline parity; playwright chromium reinstalled
+after the environment reset).

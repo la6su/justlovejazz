@@ -183,8 +183,8 @@ export class ContactCyprusStage extends THREE.Group {
 
   /**
    * The target (not fade-progress) active state — set immediately by
-   * `setActive`. Phase 8 slice 8: the World's cube-visibility gate reads this
-   * off the attached stage instead of a separate World flag.
+   * `setActive`. Phase 8 slice 8: the frame pass's cube-visibility gate reads
+   * this off the stage (via `bakuVisibleOnRoute`) instead of a separate flag.
    */
   get isActive(): boolean {
     return !this._disposed && this._active

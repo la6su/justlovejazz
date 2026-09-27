@@ -246,7 +246,7 @@ export class ExperienceUI {
           }
           // Phase 8 slice 9: the Lab object's lazy creation moved to Experience
           // (created once on the first /lab visit; never disposed per route leave —
-          // the World's `syncRouteVisuals` already hides it off-route).
+          // the coordinator's `syncRouteVisuals` already hides it off-route).
           if (newPage === 'lab') void this.host.ensureLabGamepad()
           this.host.raise('nav')
         })()

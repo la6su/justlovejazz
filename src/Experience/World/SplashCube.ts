@@ -367,8 +367,6 @@ export class SplashCube extends THREE.Mesh {
     fromEmissive: THREE.Color,
     toEmissive: THREE.Color,
     t: number,
-    _fromDisplace: number = 0.05,
-    _toDisplace: number = 0.05,
   ): void {
     if (this._disposed) return
     this._blendFromColor.copy(fromColor)

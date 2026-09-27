@@ -296,8 +296,8 @@ export class BakuCarousel extends THREE.Group {
       }
     }
     // (keyboard handler removed — story arrows are owned by CinematicNav.
-    //  BakuCarousel navigation is via horizontal pointer drag. Enter/Space to
-    //  open the front card is handled by Experience.ts click raycaster.)
+    //  BakuCarousel navigation is via horizontal pointer drag; card taps are
+    //  raycast by handleTap() and the open is wired by ExperienceUI.)
     window.addEventListener('pointerdown', this.pointerDownHandler)
     window.addEventListener('pointermove', this.pointerMoveHandler, { passive: false })
     window.addEventListener('pointerup', this.pointerUpHandler)

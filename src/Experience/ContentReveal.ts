@@ -38,12 +38,12 @@ export class ContentReveal {
     this._initialBodyLight = document.body.classList.contains('uk-light')
     this.setupSectionSync()
     this.setupThemeSync()
-    // Apply theme for the already-active section on init. router.ts runs
-    // renderView (→ jlz:route-change) BEFORE Experience.init() creates this
-    // ContentReveal, so the route-change listener above misses the initial
-    // render. Without this, uk-light from index.html's default stays on
-    // <body> until the first section nav → wrong theme on boot (especially
-    // visible when inverse mode is persisted in localStorage).
+    // Apply theme for the already-active section on init. The Vue route mount
+    // (useJlzPage.postRender → jlz:route-change) runs BEFORE Experience.init()
+    // creates this ContentReveal, so the route-change listener above misses
+    // the initial render. Without this, uk-light from index.html's default
+    // stays on <body> until the first section nav → wrong theme on boot
+    // (especially visible when inverse mode is persisted in localStorage).
     this.applyInitialTheme()
   }
 

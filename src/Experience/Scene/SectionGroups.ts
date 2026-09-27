@@ -5,7 +5,7 @@
 // stable section groups (one per canonical slot, created by
 // `SectionSceneFactory` and geometry-hidden until bespoke visuals are ready)
 // now enter the Tres-owned scene directly under this owner. Experience
-// creates the owner (fresh per World instance) and is the single disposal
+// creates the owner (fresh per buildWorld) and is the single disposal
 // owner.
 //
 // `SceneCoordinator`, `Experience` and `ExperienceUI` read this owner through
