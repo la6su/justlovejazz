@@ -1,6 +1,18 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as THREE from 'three'
-import { SplashCube } from '../Experience/World/SplashCube'
+import {
+  SplashCube,
+  buildBakuShellGeometry,
+  createBakuShellMaterial,
+  type BakuCubeNodes,
+} from '../Experience/World/SplashCube'
+
+function makeBakuNodes(): BakuCubeNodes {
+  const shell = new THREE.Mesh(buildBakuShellGeometry(), createBakuShellMaterial())
+  const root = new THREE.Group()
+  root.add(shell)
+  return { root, shell }
+}
 
 describe('SplashCube reduced-motion transitions', () => {
   afterEach(() => {
@@ -9,31 +21,29 @@ describe('SplashCube reduced-motion transitions', () => {
 
   it('snaps face rotation so reduced motion cannot retain render demand', () => {
     vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: true }))
-    const cube = new SplashCube()
+    const cube = new SplashCube(makeBakuNodes())
 
     cube.rotateToFace(3)
 
     expect(cube.isRotating).toBe(false)
     cube.dispose()
-    expect(cube.parent).toBeNull()
   })
 
   it('keeps the authored face transition when reduced motion is disabled', () => {
     vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))
-    const cube = new SplashCube()
+    const cube = new SplashCube(makeBakuNodes())
 
     cube.rotateToFace(3)
 
     expect(cube.isRotating).toBe(true)
     cube.dispose()
-    expect(cube.parent).toBeNull()
   })
 
   it('uses the synchronized motion snapshot for later reactions', () => {
     const media = { matches: false }
     const matchMedia = vi.fn().mockReturnValue(media)
     vi.stubGlobal('matchMedia', matchMedia)
-    const cube = new SplashCube()
+    const cube = new SplashCube(makeBakuNodes())
 
     cube.setReducedMotion(true)
     media.matches = false
@@ -48,8 +58,9 @@ describe('SplashCube reduced-motion transitions', () => {
 
   it('settles face and opener reactions on a live preference change', () => {
     vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))
-    const cube = new SplashCube()
-    const mesh = cube.children[0]
+    const nodes = makeBakuNodes()
+    const cube = new SplashCube(nodes)
+    const mesh = nodes.shell
 
     cube.rotateToFace(3)
     cube.triggerOpener()
@@ -61,15 +72,15 @@ describe('SplashCube reduced-motion transitions', () => {
 
     expect(cube.isRotating).toBe(false)
     expect(cube.isOpenerActive).toBe(false)
-    expect(mesh?.scale.toArray()).toEqual([1, 1, 1])
+    expect(mesh.scale.toArray()).toEqual([1, 1, 1])
     cube.dispose()
-    expect(cube.parent).toBeNull()
   })
 
   it('applies the pending world blend when reduced motion settles the owner', () => {
     vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))
-    const cube = new SplashCube()
-    const material = (cube.children[0] as THREE.Mesh).material as THREE.MeshPhysicalMaterial
+    const nodes = makeBakuNodes()
+    const cube = new SplashCube(nodes)
+    const material = nodes.shell.material as THREE.MeshPhysicalMaterial
     const from = new THREE.Color(0x000000)
     const to = new THREE.Color(0xffffff)
     const tint = new THREE.Color(0xd0c5dc)
@@ -87,8 +98,9 @@ describe('SplashCube reduced-motion transitions', () => {
 
   it('skips identical blend material writes while applying changed blend state', () => {
     vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))
-    const cube = new SplashCube()
-    const material = (cube.children[0] as THREE.Mesh).material as THREE.MeshPhysicalMaterial
+    const nodes = makeBakuNodes()
+    const cube = new SplashCube(nodes)
+    const material = nodes.shell.material as THREE.MeshPhysicalMaterial
     const copy = vi.spyOn(material.color, 'copy')
     const from = new THREE.Color(0x000000)
     const to = new THREE.Color(0xffffff)
@@ -110,21 +122,21 @@ describe('SplashCube reduced-motion transitions', () => {
 
   it('does not advance an unowned idle mesh rotation on demand frames', () => {
     vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))
-    const cube = new SplashCube()
-    const mesh = cube.children[0]
+    const nodes = makeBakuNodes()
+    const cube = new SplashCube(nodes)
+    const mesh = nodes.shell
 
     cube.update(1)
 
-    expect(mesh?.rotation.x).toBe(0)
-    expect(mesh?.rotation.y).toBe(0)
-    expect(mesh?.rotation.z).toBe(0)
+    expect(mesh.rotation.x).toBe(0)
+    expect(mesh.rotation.y).toBe(0)
+    expect(mesh.rotation.z).toBe(0)
     cube.dispose()
-    expect(cube.parent).toBeNull()
   })
 
   it('skips settled update work when another owner raises demand', () => {
     vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))
-    const cube = new SplashCube()
+    const cube = new SplashCube(makeBakuNodes())
     const applyBlend = vi.spyOn(
       cube as unknown as { applyMaterialBlend: () => void },
       'applyMaterialBlend',
@@ -143,9 +155,10 @@ describe('SplashCube reduced-motion transitions', () => {
 
   it('ignores late public calls after terminal teardown', () => {
     vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))
-    const cube = new SplashCube()
-    const mesh = cube.children[0]
-    const before = mesh?.scale.toArray()
+    const nodes = makeBakuNodes()
+    const cube = new SplashCube(nodes)
+    const mesh = nodes.shell
+    const before = mesh.scale.toArray()
 
     cube.dispose()
     cube.dispose()
@@ -168,6 +181,6 @@ describe('SplashCube reduced-motion transitions', () => {
 
     expect(cube.isRotating).toBe(false)
     expect(cube.isOpenerActive).toBe(false)
-    expect(mesh?.scale.toArray()).toEqual(before)
+    expect(mesh.scale.toArray()).toEqual(before)
   })
 })

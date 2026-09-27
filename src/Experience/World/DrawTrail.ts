@@ -4,6 +4,12 @@
 // history. The material uses the Studio Console's lime/teal signals, and the
 // whole trace decays after the pointer stops so it never leaves a frozen line.
 //
+// Declarative boundary: the owner structure (root group + ribbon mesh) is
+// declared by `app/scene/CursorTrailOwner.vue` and reaches this controller
+// through the `CursorTrailNodes` bag. The pointer history, the hand-built
+// ribbon geometry and the TSL signal material are behavior — they stay here
+// and are assigned onto the adopted mesh.
+//
 // HERMES §1: TSL NodeMaterial only.
 // HERMES §35: works section (idx=3) ONLY.
 
@@ -63,10 +69,19 @@ const createTrailOpacityNode = (trailUniforms: TrailUniforms) =>
     return fadeInt.add(headBoost).mul(acrossSoft).mul(velocity).mul(trailUniforms.uEnergy)
   })()
 
+/** The declarative nodes `CursorTrailOwner.vue` hands to this controller. */
+export interface CursorTrailNodes {
+  /** The owner root — hidden until the Works route gates it on. */
+  root: THREE.Group
+  /** The ribbon leaf (geometry + TSL signal material assigned by the
+   *  controller below). */
+  ribbon: THREE.Mesh
+}
+
 export class DrawTrail {
+  private readonly _root: THREE.Group
+  private readonly _ribbon: THREE.Mesh
   private readonly _uniforms = createTrailUniforms()
-  private group: THREE.Group
-  private mesh: THREE.Mesh
   private geometry: THREE.BufferGeometry
   private positions: Float32Array // ribbon vertex positions (TRAIL_LENGTH * 2 * 3)
   private uvs: Float32Array // UVs (TRAIL_LENGTH * 2 * 2)
@@ -109,9 +124,9 @@ export class DrawTrail {
     this._hasCameraWorld = false
   }
 
-  constructor() {
-    this.group = new THREE.Group()
-    this.group.name = 'draw-trail'
+  constructor(nodes: CursorTrailNodes) {
+    this._root = nodes.root
+    this._ribbon = nodes.ribbon
 
     for (let i = 0; i < TRAIL_LENGTH; i++) {
       this.trailPositions.push(new THREE.Vector3())
@@ -144,11 +159,6 @@ export class DrawTrail {
       this.indices[idx + 5] = vi + 2 // left-next
     }
 
-    this.geometry = new THREE.BufferGeometry()
-    this.geometry.setAttribute('position', new THREE.BufferAttribute(this.positions, 3))
-    this.geometry.setAttribute('uv', new THREE.BufferAttribute(this.uvs, 2))
-    this.geometry.setIndex(new THREE.BufferAttribute(this.indices, 1))
-
     const material = new MeshBasicNodeMaterial({
       transparent: true,
       depthWrite: false,
@@ -164,15 +174,19 @@ export class DrawTrail {
       this._uniforms,
     )
 
-    this.mesh = new THREE.Mesh(this.geometry, material)
-    this.mesh.frustumCulled = false
-    this.mesh.renderOrder = 7
-    this.mesh.name = 'trail-ribbon'
-    this.group.add(this.mesh)
+    // The Tres-mounted leaf carries placeholder default resources until the
+    // behavior owns the ribbon graph; neither placeholder ever rendered, so
+    // they hold no GPU resources and are reclaimed by the GC.
+    this.geometry = new THREE.BufferGeometry()
+    this.geometry.setAttribute('position', new THREE.BufferAttribute(this.positions, 3))
+    this.geometry.setAttribute('uv', new THREE.BufferAttribute(this.uvs, 2))
+    this.geometry.setIndex(new THREE.BufferAttribute(this.indices, 1))
+    this._ribbon.geometry = this.geometry
+    this._ribbon.material = material
   }
 
   get object(): THREE.Group {
-    return this.group
+    return this._root
   }
 
   update(_dt: number, camera: THREE.Camera): void {
@@ -307,7 +321,7 @@ export class DrawTrail {
   }
 
   setVisible(visible: boolean): void {
-    this.group.visible = visible
+    this._root.visible = visible
     if (!visible) {
       this._energy = 0
       this._uniforms.uEnergy.value = 0
@@ -325,8 +339,10 @@ export class DrawTrail {
     this._geometryDirty = false
     this._hasCameraBasis = false
     this._hasCameraWorld = false
-    this.group.clear()
+    // The ribbon geometry + TSL signal material are controller-created —
+    // they die here. The declarative root/ribbon nodes stay with the Vue
+    // host (they leave the scene with CursorTrailOwner's unmount).
     this.geometry.dispose()
-    ;(this.mesh.material as THREE.Material).dispose()
+    ;(this._ribbon.material as THREE.Material).dispose()
   }
 }

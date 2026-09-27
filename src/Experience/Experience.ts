@@ -106,11 +106,13 @@ export class Experience {
   // Phase 8 slice 3: the ambient pavilion owner. Vue owns its construction
   // and terminal disposal; the coordinator forwards its per-frame update.
   private envSphere!: EnvSphere
-  // Phase 8 slice 4: the glass cube owner (the frame pass reads/writes it
-  // through the owners bag's baku getter).
+  // Phase 8 slice 4 → declarative boot-static boundary: the glass cube
+  // behavior controller around the BakuCubeOwner node (the frame pass
+  // reads/writes it through the owners bag's baku getter).
   private baku!: SplashCube
-  // Phase 8 slice 5: the intro light frames + cursor trail owners (the frame
-  // pass reads/writes them through the owners bag's getters).
+  // Phase 8 slice 5 → declarative boot-static boundary: the intro light
+  // frames + cursor trail behavior controllers around their host nodes (the
+  // frame pass reads/writes them through the owners bag's getters).
   private particleBurst!: ParticleBurst
   private drawTrail!: DrawTrail
   // Phase 8 slice 6: the project stream owner. The carousel is created by the
@@ -474,26 +476,16 @@ export class Experience {
     // forwards its per-frame colour-lerp update.
     const envSphere = this._host.envSphere
     this.envSphere = envSphere
-    // Phase 8 slice 4: the glass cube (SplashCube) enters the Tres-owned
-    // scene under its own owner; the coordinator frame path gates its
-    // visibility, forwards its per-frame update and reads the ambient-motion
-    // signal. init() needs it (its syncRouteVisuals sets the visibility).
-    this.baku = new SplashCube()
-    this.baku.name = 'baku'
-    this.baku.visible = true
-    this.scene.add(this.baku)
-    // Phase 8 slice 5: the intro light frames (ParticleBurst) enter the
-    // Tres-owned scene under their own owner; the coordinator frame path
-    // forwards their per-frame update and gates their prewarm visibility.
-    this.particleBurst = new ParticleBurst()
-    this.scene.add(this.particleBurst)
-    // Phase 8 slice 5: the cursor trail (DrawTrail) enters the Tres-owned
-    // scene under its own owner (its object is hidden until the Works route);
-    // the coordinator frame path forwards its per-frame update and gates its
-    // route visibility.
-    this.drawTrail = new DrawTrail()
-    this.scene.add(this.drawTrail.object)
-    this.drawTrail.object.visible = false
+    // Declarative boot-static boundary: the glass cube, the intro light
+    // frames and the cursor trail reach the scene through their host nodes
+    // (BakuCubeOwner / IntroLightFramesOwner / CursorTrailOwner) — Experience
+    // only wraps the behavior controllers around them, so no runtime
+    // `scene.add` remains in the boot path. The coordinator frame path gates
+    // their visibility and forwards their per-frame updates; init() needs the
+    // cube (its syncRouteVisuals sets the visibility).
+    this.baku = new SplashCube(this._host.baku)
+    this.particleBurst = new ParticleBurst(this._host.introFrames)
+    this.drawTrail = new DrawTrail(this._host.cursorTrail)
     // These owners are read by the demand-driven frame path. Construct them
     // before the first async coordinator/prewarm step so an early resize or
     // invalidation can never enter `update()` with an undefined ground/light
@@ -1371,14 +1363,11 @@ export class Experience {
     this.lights?.dispose()
     this.ground?.dispose()
     // Vue owns the ambient pavilion and its borrowed EnvSky material.
-    // Phase 8 slice 4: the glass cube owner (6 face geos+mats + 6 edge geos+mats).
+    // Declarative boot-static boundary: the baku/intro-frames/trail nodes
+    // stay with the Vue host too — the controllers release only their own
+    // state + created resources.
     this.baku?.dispose()
-    // Phase 8 slice 5: the intro light frames + cursor trail owners. Both are
-    // direct children of the Tres-owned scene and Experience is their single
-    // disposal owner — remove them from the scene explicitly before disposal.
-    this.particleBurst?.removeFromParent()
     this.particleBurst?.dispose()
-    this.drawTrail?.object.removeFromParent()
     this.drawTrail?.dispose()
     // The six route-owned lazy stages die through their registry owner, in
     // the legacy destroy order (works plane → typography → cyprus → halo →

@@ -60,22 +60,6 @@ retired. `scripts/bundle-breakdown.ts` now selects the shared vendor exactly
    wording in [DEVELOPMENT](docs/DEVELOPMENT.md) (§ Git delivery) and the
    release skill (`skills/justlovejazz-release/SKILL.md` — the "PR against
    `main`" rule is the one that changes).
-4. **Declarative transition — boot-static owners (closed 2026-09-27: the six
-   route-owned lazy stages).** All six lazy stages now mount through
-   `SceneStagePorts` (one `createStageSlot` + one `<primitive>` per port;
-   Inspection 17) — no runtime `scene.add` is left in the lazy-stage path.
-   The next seam from the same audit: `SplashCube`, `ParticleBurst` and
-   `DrawTrail` are still constructed + `scene.add`-ed imperatively in
-   `Experience.buildWorld`. Following the CinematicLights/GroundPlane
-   pattern, the declarative object (mesh/instanced-mesh leaves + readySlot)
-   moves into `app/scene/` while the behavior (jelly/opener, TSL trace
-   material, pointer history) stays an imperative controller that adopts the
-   nodes. Scope it as its own slice: SplashCube alone is a ~535-line
-   object+controller fusion that needs the split. The TvT reference
-   (`hawk86104/three-vue-tres`) was audited under the "adoption is audited,
-   not assumed" rule (Inspection 17): nothing adopted wholesale — the four
-   candidate patterns are already present or rejected on Inspection 10
-   grounds; this queue item comes from our own seam audit.
 
 ## Audit cleanup (2026-09-17)
 
@@ -102,6 +86,18 @@ triangle) is recorded in Inspection 15. The last deferred item is closed:
    would null the live scene-graph reference, and a home-only owner that is
    never disposed per route does not fit the stage contract — converting it
    would add the second abstraction layer this item was gated against.
+
+The declarative transition closed 2026-09-27 on both boundaries
+(Inspections 17–18): the six route-owned lazy stages mount through
+`SceneStagePorts`, and the three boot-static owners
+(`SplashCube` / `ParticleBurst` / `DrawTrail`) had their scene-graph nodes
+moved into declarative `app/scene/` components whose nodes the behavior
+controllers adopt — `Experience.buildWorld` has no runtime `scene.add` left.
+The one remaining imperative scene-graph insertion is the works section group
+the factory creates (its BakuCarousel/JunniParticles wiring is the documented
+exception inside SectionGroups). The TvT reference was audited under the
+"adoption is audited, not assumed" rule (Inspection 17): nothing adopted
+wholesale.
 
 ## Product / input needed
 
