@@ -16,20 +16,24 @@ export class WebGLRenderer {
 // Classic-shader surface the three-stdlib deep modules (via the Cientos
 // barrel shim) still import from `three`:
 //
-// - UniformsUtils is the REAL implementation — re-exported from the same
-//   physical build/three.core.js the WebGPU build imports (one bundle copy;
-//   the relative path bypasses the three package exports map).
+// - UniformsUtils is the REAL implementation, taken from three's src tree —
+//   NOT from a physical build/three.core.js import. The WebGPU build does not
+//   re-export UniformsUtils (a classic-shader helper), and a physical build
+//   import evaluates the entire classic core a second time: production
+//   rolldown merges it with the WebGPU graph's copy (same absolute module),
+//   but the dev server serves it as a distinct URL — a second evaluated core,
+//   "THREE.WARNING: Multiple instances of Three.js being imported." at dev
+//   boot. The src-tree file is a relative-import leaf (ColorManagement,
+//   utils) that evaluates nothing else; production tree-shakes it to the same
+//   pure functions at a ~1 KB cost. Invariant: no application-graph module may
+//   import a three build entry directly.
 // - UniformsLib (fog/lights/common uniform chunks) exists only in the
 //   classic renderer split. The two stdlib modules that read it (Water,
 //   LineMaterial) merge it into shader uniforms at module evaluation; the
 //   for...in merge treats the missing entries as empty and neither module is
 //   instantiated in this app, so an empty library is eval-safe without
 //   pulling the classic renderer into the graph.
-// build/three.core.js ships no .d.ts (three's type surface lives in
-// @types/three's 'three' entry, of which UniformsUtils is part) — the
-// re-export below is intentionally typed as any at this single seam.
-// @ts-expect-error -- no declaration file for the physical core build
-export { UniformsUtils } from '../node_modules/three/build/three.core.js'
+export { UniformsUtils } from 'three/src/renderers/shaders/UniformsUtils.js'
 
 // Two more classic-only symbols the Cientos bundle imports for components
 // this app does not mount (eval-safe stubs, same reasoning as UniformsLib):

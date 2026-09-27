@@ -1504,3 +1504,80 @@ contracts: BakuCubeOwner, IntroLightFramesOwner, CursorTrailOwner; the unit
 suites construct the controllers over real builder-built nodes), budgets
 unchanged (splash 2.82/5, vendor-three 298.65/350, uikit 53.66/56), e2e
 chromium serial 27 passed / 1 skipped (baseline 26/1).
+
+## Inspection 19 — 2026-09-28, single Three.js instance at dev boot: the physical build-entry seam out
+
+User-reported console warning at dev boot:
+`THREE.WARNING: Multiple instances of Three.js being imported.` (Firefox,
+WebGPU path otherwise healthy — real adapter, TSL env sphere, WebGPUBackend).
+The warning is three's `window.__THREE__` guard: two evaluated copies of
+`three.core.js` in one runtime — the classic source of silent `instanceof`
+drift, duplicated module state and double-size bundles.
+
+### Diagnosis chain
+
+1. Install duplication ruled out first: `npm ls three` shows exactly one
+   `three@0.185.1`, deduped across the whole tree.
+2. The dev pre-bundled graph was audited via `node_modules/.vite/deps/
+_metadata.json`: rolldown's chunk splitting already yields ONE shared
+   `three.core` chunk consumed by every dep bundle (`@tresjs/core`,
+   `@tresjs/cientos`, `camera-controls`, `three/webgpu`, `three/tsl`, seven
+   `three/addons/*` entries). Dependencies' bare `three` imports never
+   duplicate — `resolve.alias` does not reach into dep pre-bundling, and it
+   does not need to.
+3. The real second instance was raw-served on the application graph:
+   `src/three-webgpu-compat.ts` re-exported `UniformsUtils` from the
+   physical `../node_modules/three/build/three.core.js`. In production
+   rolldown merges that with the WebGPU graph's copy (same absolute module —
+   why budgets and prod never showed it), but the dev server serves it as a
+   distinct URL: a second evaluated core, warning at boot.
+4. `three/build/three.webgpu.js` re-exports core through an explicit list
+   that does NOT include `UniformsUtils` (a classic-shader helper), so the
+   symbol cannot come from the `three/webgpu` entry.
+
+### Fix
+
+`UniformsUtils` is now re-exported from `three/src/renderers/shaders/
+UniformsUtils.js` (the package exports map allows `./src/*`). The file is a
+relative-import leaf (`ColorManagement`, `utils`) that evaluates nothing
+else, so dev serves a third-of-a-kilobyte of pure functions instead of a
+whole second core; the real implementation is preserved (not stubbed), and
+TS now resolves types through the JSDoc — the old `@ts-expect-error`
+"typed as any" seam is gone. The invariant is documented at the seam: no
+application-graph module may import a three build entry directly. The
+`resolve.alias` comment in `vite.config.ts` now states the matching dev
+contract (the alias is what keeps raw-served bare-`three` importers on the
+WebGPU graph). A rolldown record-alias experiment inside
+`optimizeDeps.rolldownOptions.resolve.alias` was tried and rejected: inert
+for dep-internal imports here and unnecessary given optimizer splitting —
+the config carries no new API surface.
+
+### Checked and sound
+
+- The Firefox devtools note about `featureLevel: "compatibility"` not being
+  supported (bugzilla 1905951) is informational, not a blocker: three
+  requests the compatibility level itself and falls back to a core-defaulting
+  adapter; the app log confirms `isRealWebGPU=true` on the affected machine.
+- The production graph is byte-for-byte the same seam set as before plus the
+  ~1 KB src-tree leaf (pure functions, no state, no `__THREE__` guard);
+  `dist` audit: exactly one `__THREE__` site, in `vendor-three`.
+- The dev probe used for this inspection (headless chromium against
+  `vite --port 5199`, console capture, asserts the absence of the warning)
+  lives outside the repo (`~/scripts/check-dev-console.mjs`) — the repo
+  gains no one-off test harness; the e2e runtime-health guards already pin
+  "no fatal JS errors on home load".
+- Environment: `node_modules` was stale against `bun.lock`
+  (`@tresjs/core@5.8.3` installed vs 5.9.0 required); `bun install
+--frozen-lockfile` synced it — worth re-checking after any environment
+  reset before chasing phantom dependency bugs.
+
+### Verification
+
+tsc + vue-tsc fully green, eslint 0 errors (16 pre-existing warnings),
+prettier clean, check:stdlib 28/28 + 5/5 (the curated-symbol check now also
+guards the src-tree re-export), docs:check 18 files / 36 links, vitest 122
+files / 720 tests green, build + prerender green, budgets splash 2.82/5,
+vendor-three 299.02/350 (+0.37 from the leaf), uikit 53.66/56, e2e chromium
+serial 27 passed / 1 skipped. Dev probe: two consecutive boots with zero
+"Multiple instances" warnings, app bootstrap healthy (headless falls back
+to WebGL2Backend as designed; the module graph is renderer-agnostic).
