@@ -171,10 +171,10 @@ unmodified. The renderer's `setAnimationLoop` boundary is deleted; terminal
 device-loss failure closes the loop window through `jlz:webgl-failed`.
 Hybrid scene ownership is deliberate: declarative leaves coexist with
 imperative animation/resource controllers. The mount boundary keeps moving
-toward the declarative side (all six lazy stages now enter through host
-ports; the boot-static owners are queued in NEXT), while TSL material
-graphs, the demand loop and animation controllers stay imperative by
-design. Budget values and checks live in [Development](DEVELOPMENT.md).
+toward the declarative side (all six lazy stages enter through host ports
+and the three boot-static owners through their declarative `app/scene/`
+components), while TSL material graphs, the demand loop and animation
+controllers stay imperative by design. Budget values and checks live in [Development](DEVELOPMENT.md).
 
 ## Media and semantic UI
 

@@ -1431,3 +1431,76 @@ reference.
 
 tsc + vue-tsc fully green, eslint 0 errors, prettier clean, vitest 119
 files / 717 tests green.
+
+## Inspection 18 — 2026-09-27, declarative boot-static boundary: the last three runtime `scene.add` sites leave the boot path
+
+Scope: the NEXT Engineering 4 remainder from the Inspection 17 seam audit —
+`SplashCube`, `ParticleBurst` and `DrawTrail` were the last owners still
+constructed + `scene.add`-ed imperatively in `Experience.buildWorld`. The
+same two-pattern rule as the previous declarative slices applied: the
+scene-graph object moves into `app/scene/`, the behavior stays an imperative
+controller that adopts the nodes.
+
+### The boundary
+
+- `BakuCubeOwner.vue` declares the baku root group + rounded jelly shell
+  (geometry/material bound from the controller module's exported
+  `buildBakuShellGeometry()` / `createBakuShellMaterial()` — the authored
+  day34 recipe and glass params keep one source of truth, no duplicate
+  numbers in the template). `SplashCube` stopped extending `THREE.Mesh`: it
+  is now a plain controller around the `BakuCubeNodes` bag, which also
+  retires the attribute-less root-mesh hack that existed only for the Tres
+  devtools sampler (a Group root has no geometry).
+- `IntroLightFramesOwner.vue` declares the instanced leaf
+  (`<TresInstancedMesh>` + `<TresPlaneGeometry>`, count exported as
+  `INTRO_TRACE_COUNT`); the TSL trace material is behavior and stays in
+  `ParticleBurst`, which assigns it onto the adopted mesh. `CursorTrailOwner.vue`
+  declares the trail structure (`draw-trail` group + `trail-ribbon` mesh,
+  hidden + renderOrder 7); the hand-built ribbon geometry + TSL signal
+  material stay in `DrawTrail`.
+- Disposal contract follows the GroundPlane precedent with the honest
+  extension for controller-created resources: Vue owns attachment and the
+  Tres-mounted resources; the controllers release only their own state plus
+  what they themselves created (ParticleBurst's TSL material, DrawTrail's
+  geometry + material). `Experience.destroy` lost its `removeFromParent`
+  calls; `SceneHostReady` carries the three node bags (`baku`,
+  `introFrames`, `cursorTrail`).
+- `SceneCoordinator`'s prewarm writes (`burst.visible = …`) needed the
+  `visible` setter parity on the adopted-controller surface; the baku root
+  rotation/visibility writes moved from `this.rotation` to the adopted root
+  internally — every public owner surface (`sceneOwners` getters, frame pass
+  gates, ExperienceUI triggers) is unchanged.
+
+### Checked and sound
+
+- The declarative-`InstancedMesh` shape (constructor `args` + declarative
+  geometry child) is the documented Tres pattern for `<TresInstancedMesh>`;
+  the placeholder default geometry/material never render (visible=false from
+  mount until the controller assigns the trace graph), so they hold no GPU
+  resources.
+- `SectionGroups`' one remaining runtime `scene.add` (the imperatively
+  created works group) is the documented exception, not a regression: five of
+  six section groups adopt their declarative roots, and the works group's
+  BakuCarousel/JunniParticles wiring is why the factory creates it.
+- DrawTrail deliberately keeps a re-runnable `dispose` (no terminal flag —
+  the reduced-motion proxy already neutralizes every behavior path); the
+  lifecycle test now pins resources-released + group-untouched instead of
+  the old child-clearing semantics.
+- Tres's scene memory sampler (`calculateMemoryUsage`) crashes on any
+  attribute-less mesh (`geometry.attributes.position.count`) — in production
+  too, from a mount-time watcher. The old SplashCube root-mesh hack existed
+  for exactly this; with the root now a Group, the invariant moved to the
+  declarative ribbon leaf: `CursorTrailOwner.vue` binds a placeholder
+  geometry carrying the empty position attribute the sampler expects (the
+  controller swaps in the hand-built ribbon at adoption, before the mesh is
+  visible or rendered). Caught by the e2e runtime-health guards, fixed, and
+  the invariant is now documented where the leaf is declared.
+
+### Verification
+
+tsc + vue-tsc fully green, eslint 0 errors (16 pre-existing warnings),
+prettier clean, vitest 122 files / 720 tests green (3 new declarative-mount
+contracts: BakuCubeOwner, IntroLightFramesOwner, CursorTrailOwner; the unit
+suites construct the controllers over real builder-built nodes), budgets
+unchanged (splash 2.82/5, vendor-three 298.65/350, uikit 53.66/56), e2e
+chromium serial 27 passed / 1 skipped (baseline 26/1).
