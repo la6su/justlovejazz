@@ -13,6 +13,13 @@
 // Glass shader: a physical transmission volume on WebGPU and WebGL2. The
 // Contact typography mesh is rendered behind it, so the cube can refract and
 // softly magnify that real scene content instead of merely fading over it.
+//
+// Declarative boundary: the scene-graph object (root group + rounded jelly
+// shell, built from the two builders below) is declared by
+// `app/scene/BakuCubeOwner.vue` and reaches this controller through the
+// `BakuCubeNodes` bag. This class stays the imperative behavior owner
+// (jelly/opener, face rotation, theme blend) and never touches the scene
+// graph — Vue owns attachment and disposal.
 
 import * as THREE from 'three'
 import { BakuRole, type BakuMaterialState } from '../../core/types'
@@ -29,6 +36,89 @@ interface BakuMaterialParams {
   role: BakuRole
 }
 
+/** The declarative nodes `BakuCubeOwner.vue` hands to this controller. */
+export interface BakuCubeNodes {
+  /** The owner root: the motion below rotates it per section and the frame
+   *  pass gates its visibility. */
+  root: THREE.Group
+  /** The rounded jelly shell — the only rendered leaf. */
+  shell: THREE.Mesh
+}
+
+/**
+ * The day34 rounding recipe: BoxGeometry + manual vertex rounding +
+ * mergeVertices. 24 segments (perf-optimized from 32): 576 verts/face × 6 =
+ * 3456 verts total (was 6144 with 32 segs — 44% reduction), still smooth
+ * enough for 2 noise periods/face. RoundedBoxGeometry was causing normals to
+ * bleed from edges into face interiors, producing flat-plane shift instead of
+ * jelly bulge; mergeVertices + computeVertexNormals ensures perpendicular
+ * normals → correct displacement.
+ */
+export function buildBakuShellGeometry(): THREE.BufferGeometry {
+  const size = 0.8
+  let geo: THREE.BufferGeometry = new THREE.BoxGeometry(size, size, size, 24, 24, 24)
+  const pos = geo.getAttribute('position')
+  const r = 0.175 // 3.5 * 0.05 (day34 rounding radius scaled for cube 0.8)
+  const h = size / 2 // 0.4
+  for (let i = 0; i < pos.count; i++) {
+    let x = pos.getX(i),
+      y = pos.getY(i),
+      z = pos.getZ(i)
+    const ix = Math.min(Math.abs(x), h - r) * Math.sign(x)
+    const iy = Math.min(Math.abs(y), h - r) * Math.sign(y)
+    const iz = Math.min(Math.abs(z), h - r) * Math.sign(z)
+    const dx = x - ix,
+      dy = y - iy,
+      dz = z - iz
+    const dl = Math.sqrt(dx * dx + dy * dy + dz * dz)
+    if (dl > 0.001) {
+      x = ix + dx * (r / dl)
+      y = iy + dy * (r / dl)
+      z = iz + dz * (r / dl)
+    }
+    pos.setXYZ(i, x, y, z)
+  }
+  pos.needsUpdate = true
+  // MeshPhysicalMaterial uses the procedural environment only: this cube
+  // has no texture map, so UVs are dead data. Keeping BoxGeometry's six
+  // independent UV islands prevents mergeVertices() from welding the
+  // rounded face edges, which exposes hairline normal seams while it moves.
+  geo.deleteAttribute('uv')
+  geo.deleteAttribute('normal')
+  geo = mergeVertices(geo, 0.01) as THREE.BufferGeometry
+  geo.computeVertexNormals()
+  return geo
+}
+
+/** The authored glass shell params (single source — the SFC binds this). */
+export function createBakuShellMaterial(): THREE.MeshPhysicalMaterial {
+  return new THREE.MeshPhysicalMaterial({
+    color: new THREE.Color(0.94, 0.91, 1.0),
+    emissive: new THREE.Color(0x000000),
+    emissiveIntensity: 0.02,
+    // Transmission is the essential distinction from alpha transparency:
+    // it samples geometry rendered behind the cube. A higher IOR and real
+    // volume thickness make the rounded silhouette read as a soft lens;
+    // restrained roughness turns the result into frosted glass, not a mirror.
+    transmission: 0.9,
+    thickness: 2.6,
+    ior: 1.34,
+    roughness: 0.14,
+    dispersion: 0.035,
+    attenuationColor: new THREE.Color(0xd9cfe8),
+    attenuationDistance: 1.8,
+    side: THREE.FrontSide,
+    depthWrite: false,
+    metalness: 0,
+    envMapIntensity: 2.05,
+    clearcoat: 0.85,
+    clearcoatRoughness: 0.07,
+    iridescence: 0.48,
+    iridescenceIOR: 1.3,
+    iridescenceThicknessRange: [120, 360],
+  })
+}
+
 // (setTransmissionEnabled removed — dead export, zero callers.)
 
 /**
@@ -41,19 +131,14 @@ const JELLY_UPDATE_INTERVAL = 1 / 30
 
 // (GRADIENT_COLORS removed — was Apple Fifth Avenue port. Now using JLZ palette.)
 
-export class SplashCube extends THREE.Mesh {
+export class SplashCube {
   private _disposed = false
-  private cubeMesh!: THREE.Mesh
-  private cubeMaterial!: THREE.MeshPhysicalMaterial
-  private cubePositions!: THREE.BufferAttribute
-  private cubeBasePositions!: Float32Array
-  private cubeNormals!: Float32Array
-  // (PlayButton3D field removed — dead render path deleted)
-  // (CubeCamera + contentScene + contentTextures REMOVED — glass now uses
-  //  scene.environment (PMREM RoomEnvironment) for reflections. This removed
-  //  ~30% GPU cost (6-face cubemap render every 3rd frame) and eliminated the
-  //  'blob' artifacts caused by high-contrast content planes refracting
-  //  through wobble-deformed glass.)
+  private readonly _root: THREE.Group
+  private readonly _shell: THREE.Mesh
+  private readonly _material: THREE.MeshPhysicalMaterial
+  private readonly _positions: THREE.BufferAttribute
+  private readonly _basePositions: Float32Array
+  private readonly _normals: Float32Array
   private time = 0
   private jellyEnergy = 0
   private jellyTarget = 0
@@ -110,9 +195,22 @@ export class SplashCube extends THREE.Mesh {
   private _startFaceRotY = 0
   private _startFaceDelta = 0
 
+  /** Owner scene visibility (the frame pass gates it per route/carousel). */
+  get visible(): boolean {
+    return this._root.visible
+  }
+
+  set visible(value: boolean) {
+    this._root.visible = value
+  }
+
   /** True only while an authored cube reaction still needs animation frames. */
   get isAmbientlyAnimated(): boolean {
-    return !this._disposed && this.visible && (this.jellyEnergy > 0.001 || this.jellyTarget > 0.001)
+    return (
+      !this._disposed &&
+      this._root.visible &&
+      (this.jellyEnergy > 0.001 || this.jellyTarget > 0.001)
+    )
   }
 
   /** True while the opener scale-pulse is animating (opening or closing). */
@@ -125,117 +223,23 @@ export class SplashCube extends THREE.Mesh {
     return !this._disposed && this._faceLerp < 1
   }
 
-  // Scratch
-
-  constructor() {
-    // Root geometry keeps an empty `position` attribute so the @tresjs/core devtools
-    // performance sampler (calculateMemoryUsage → geometry.attributes.position.count)
-    // does not throw on this attribute-less root mesh. The root is never drawn: its
-    // material is `visible: false` and all visible content lives in child meshes.
-    const rootGeometry = new THREE.BufferGeometry()
-    rootGeometry.setAttribute('position', new THREE.Float32BufferAttribute([], 3))
-    super(rootGeometry, new THREE.MeshBasicMaterial({ visible: false }))
-    this.name = 'baku-cube'
-    this.visible = true
-    // (buildContentScene() REMOVED — CubeCamera + content scene deleted.
-    //  Glass uses scene.environment PMREM for reflections, zero per-frame cost.)
-    this.buildCube()
-  }
-
-  // ════════════════════════════════════════════════════════════════════
-  // CUBE MESH — pride-worthy chromatic glass cube (day34-accurate wobble)
-  // ════════════════════════════════════════════════════════════════════
-  private buildCube(): void {
-    const size = 0.8
-
-    // ── Geometry: day34 pattern (BoxGeometry + manual rounding + mergeVertices) ──
-    // day34: BoxGeometry(16,16,16, 64,64,64) + manual vertex rounding + mergeVertices
-    // Our: BoxGeometry(0.8,0.8,0.8, 24,24,24) — 24 segments (perf-optimized from 32).
-    // 24² = 576 verts/face × 6 = 3456 verts total (was 6144 with 32 segs — 44% reduction).
-    // Still smooth enough for 2 noise periods/face (12 verts/period vs day34's 32).
-    // RoundedBoxGeometry was causing normals to bleed from edges into face interiors,
-    // producing flat-plane shift instead of jelly bulge. day34's mergeVertices +
-    // computeVertexNormals ensures perpendicular normals → correct displacement.
-    let geo: THREE.BufferGeometry = new THREE.BoxGeometry(size, size, size, 24, 24, 24)
-    {
-      const pos = geo.getAttribute('position')
-      const r = 0.175 // 3.5 * 0.05 (day34 rounding radius scaled for cube 0.8)
-      const h = size / 2 // 0.4
-      for (let i = 0; i < pos.count; i++) {
-        let x = pos.getX(i),
-          y = pos.getY(i),
-          z = pos.getZ(i)
-        const ix = Math.min(Math.abs(x), h - r) * Math.sign(x)
-        const iy = Math.min(Math.abs(y), h - r) * Math.sign(y)
-        const iz = Math.min(Math.abs(z), h - r) * Math.sign(z)
-        const dx = x - ix,
-          dy = y - iy,
-          dz = z - iz
-        const dl = Math.sqrt(dx * dx + dy * dy + dz * dz)
-        if (dl > 0.001) {
-          x = ix + dx * (r / dl)
-          y = iy + dy * (r / dl)
-          z = iz + dz * (r / dl)
-        }
-        pos.setXYZ(i, x, y, z)
-      }
-      pos.needsUpdate = true
-      // MeshPhysicalMaterial uses the procedural environment only: this cube
-      // has no texture map, so UVs are dead data. Keeping BoxGeometry's six
-      // independent UV islands prevents mergeVertices() from welding the
-      // rounded face edges, which exposes hairline normal seams while it moves.
-      geo.deleteAttribute('uv')
-      geo.deleteAttribute('normal')
-      geo = mergeVertices(geo, 0.01) as THREE.BufferGeometry
-      geo.computeVertexNormals()
+  constructor(nodes: BakuCubeNodes) {
+    this._root = nodes.root
+    this._shell = nodes.shell
+    const material = nodes.shell.material
+    if (!(material instanceof THREE.MeshPhysicalMaterial)) {
+      throw new Error('The declarative baku shell must carry the authored physical glass material.')
     }
-
-    this.cubePositions = geo.getAttribute('position') as THREE.BufferAttribute
-    this.cubeBasePositions = new Float32Array(this.cubePositions.array)
-    this.cubeNormals = new Float32Array(geo.getAttribute('normal').array)
-
-    // ── One lit, refractive jelly shell ──
-    // A recessed second mesh created a visible echo when the shell wobbled.
-    // One continuous physical surface keeps silhouette, highlights and motion
-    // inseparable — like silicone glass rather than several nested objects.
-    const mat = new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color(0.94, 0.91, 1.0),
-      emissive: new THREE.Color(0x000000),
-      emissiveIntensity: 0.02,
-      // Transmission is the essential distinction from alpha transparency:
-      // it samples geometry rendered behind the cube. A higher IOR and real
-      // volume thickness make the rounded silhouette read as a soft lens;
-      // restrained roughness turns the result into frosted glass, not a mirror.
-      transmission: 0.9,
-      thickness: 2.6,
-      ior: 1.34,
-      roughness: 0.14,
-      dispersion: 0.035,
-      attenuationColor: new THREE.Color(0xd9cfe8),
-      attenuationDistance: 1.8,
-      side: THREE.FrontSide,
-      depthWrite: false,
-      metalness: 0,
-      envMapIntensity: 2.05,
-      clearcoat: 0.85,
-      clearcoatRoughness: 0.07,
-      iridescence: 0.48,
-      iridescenceIOR: 1.3,
-      iridescenceThicknessRange: [120, 360],
-    })
-    this.cubeMaterial = mat
-
-    this.cubeMesh = new THREE.Mesh(geo, this.cubeMaterial)
-    this.cubeMesh.renderOrder = 2
-    this.add(this.cubeMesh)
-
-    // (cubeMaterial.envMap binding REMOVED — was CubeCamera render target.
-    //  Glass now uses scene.environment (PMREM RoomEnvironment) automatically
-    //  via three.js PBR — no explicit envMap needed on the material.)
-
-    // (PlayButton3D removed — was fully dead render path: created, immediately
-    //  hidden, never shown, update() ran every frame on invisible mesh.
-    //  The old prototype is intentionally not retained as an active path.)
+    this._material = material
+    const positions = this._shell.geometry.getAttribute('position')
+    if (!(positions instanceof THREE.BufferAttribute)) {
+      throw new Error(
+        'The declarative baku shell geometry must expose a position attribute for the jelly deformation.',
+      )
+    }
+    this._positions = positions
+    this._basePositions = new Float32Array(this._positions.array)
+    this._normals = new Float32Array(this._shell.geometry.getAttribute('normal').array)
   }
 
   // ════════════════════════════════════════════════════════════════════
@@ -272,10 +276,8 @@ export class SplashCube extends THREE.Mesh {
    *  Called by Experience.setupEnvironment() after PMREM is generated. */
   bindEnvironment(envTexture: THREE.Texture): void {
     if (this._disposed) return
-    if (this.cubeMaterial) {
-      this.cubeMaterial.envMap = envTexture
-      this.cubeMaterial.needsUpdate = true
-    }
+    this._material.envMap = envTexture
+    this._material.needsUpdate = true
   }
 
   /** Keep the transparent shell legible when UI theme flips light ↔ dark. */
@@ -330,7 +332,7 @@ export class SplashCube extends THREE.Mesh {
     this._startFaceDelta = 0
     this._idleRotY = rotation
     this._faceLerp = 1
-    this.rotation.set(0, rotation, 0)
+    this._root.rotation.set(0, rotation, 0)
   }
 
   /** Settle all decorative cube reactions when motion policy changes live. */
@@ -343,7 +345,7 @@ export class SplashCube extends THREE.Mesh {
     this._startFaceRotY = this._targetFaceRotY
     this._startFaceDelta = 0
     this._faceLerp = 1
-    this.rotation.set(0, this._idleRotY, 0)
+    this._root.rotation.set(0, this._idleRotY, 0)
 
     this.jellyTarget = 0
     this.jellyEnergy = 0
@@ -354,7 +356,7 @@ export class SplashCube extends THREE.Mesh {
     this.openerPhase = 'done'
     this.openerTarget = 0
     this.openerProgress = 0
-    this.cubeMesh.scale.setScalar(1)
+    this._shell.scale.setScalar(1)
     this.applyMaterialBlend()
   }
 
@@ -417,7 +419,7 @@ export class SplashCube extends THREE.Mesh {
         this._idleRotY = this._targetFaceRotY
       }
     }
-    this.rotation.y = this._idleRotY
+    this._root.rotation.y = this._idleRotY
 
     // ── Opener (scale pulse, not face separation) ──
     if (this.openerPhase !== 'done' || this.openerProgress > 0.01) {
@@ -434,7 +436,7 @@ export class SplashCube extends THREE.Mesh {
     // Apply opener scale to cube mesh — scale pulse from 1.0 → 1.4 → 1.0
     // Boosted scale pulse for clearer click feedback.
     const openerScale = 1 + this.openerProgress * 0.4
-    this.cubeMesh.scale.setScalar(openerScale)
+    this._shell.scale.setScalar(openerScale)
 
     // (PlayButton3D update removed — dead render path deleted)
     // ── Material color blend ──
@@ -455,12 +457,12 @@ export class SplashCube extends THREE.Mesh {
 
   private applyRoleAndParams(): void {
     const { color, emissive, roughness } = this.targetParams
-    this.cubeMaterial.color.copy(color)
-    this.cubeMaterial.emissive.copy(emissive)
+    this._material.color.copy(color)
+    this._material.emissive.copy(emissive)
     // Preserve an authored material response without losing the frosted lens
     // effect. Glass is a dielectric: it stays non-metallic in every phase.
-    this.cubeMaterial.roughness = Math.max(roughness, 0.14)
-    this.cubeMaterial.metalness = 0
+    this._material.roughness = Math.max(roughness, 0.14)
+    this._material.metalness = 0
   }
 
   /** Apply the latest world blend without requiring a scheduler frame. */
@@ -470,8 +472,8 @@ export class SplashCube extends THREE.Mesh {
     // debug-looking outline. The visible shape is a real PBR surface: PMREM,
     // transmission, clearcoat and iridescence create the moving highlights.
     this._blendColor.lerp(this._themeTint, this._isLightTheme ? 0.9 : 0.3)
-    if (!this.cubeMaterial.color.equals(this._blendColor)) {
-      this.cubeMaterial.color.copy(this._blendColor)
+    if (!this._material.color.equals(this._blendColor)) {
+      this._material.color.copy(this._blendColor)
     }
   }
 
@@ -488,15 +490,15 @@ export class SplashCube extends THREE.Mesh {
    * ~3.5K vertices and uses no allocations in the frame loop.
    */
   private updateJellyGeometry(amplitude: number): void {
-    const out = this.cubePositions.array as Float32Array
+    const out = this._positions.array as Float32Array
     const t = this.time
     for (let i = 0; i < out.length; i += 3) {
-      const x = this.cubeBasePositions[i] ?? 0
-      const y = this.cubeBasePositions[i + 1] ?? 0
-      const z = this.cubeBasePositions[i + 2] ?? 0
-      const nx = this.cubeNormals[i] ?? 0
-      const ny = this.cubeNormals[i + 1] ?? 0
-      const nz = this.cubeNormals[i + 2] ?? 0
+      const x = this._basePositions[i] ?? 0
+      const y = this._basePositions[i + 1] ?? 0
+      const z = this._basePositions[i + 2] ?? 0
+      const nx = this._normals[i] ?? 0
+      const ny = this._normals[i + 1] ?? 0
+      const nz = this._normals[i + 2] ?? 0
       // Long, low-frequency waves read as one soft silicone body. The old
       // high-frequency pair created several competing rims in the silhouette.
       const ripple =
@@ -506,12 +508,12 @@ export class SplashCube extends THREE.Mesh {
       out[i + 1] = y + ny * ripple * amplitude
       out[i + 2] = z + nz * ripple * amplitude
     }
-    this.cubePositions.needsUpdate = true
+    this._positions.needsUpdate = true
   }
 
   private resetJellyGeometry(): void {
-    ;(this.cubePositions.array as Float32Array).set(this.cubeBasePositions)
-    this.cubePositions.needsUpdate = true
+    ;(this._positions.array as Float32Array).set(this._basePositions)
+    this._positions.needsUpdate = true
   }
 
   // (_createJLZTexture REMOVED — was only used by buildContentScene which is
@@ -520,15 +522,9 @@ export class SplashCube extends THREE.Mesh {
   dispose(): void {
     if (this._disposed) return
     this._disposed = true
-    this.removeFromParent()
-    // (Pulse timers removed — triggerWobblePulse now uses animated sin-envelope
-    //  in update() instead of setTimeout, so there are no timers to clear.)
-    // (PlayButton3D dispose removed — dead render path deleted)
-    // (CubeCamera + contentScene dispose REMOVED — deleted with the feature.)
-    this.cubeMesh.geometry.dispose()
-    this.cubeMaterial.dispose()
-    ;(this.geometry as THREE.BufferGeometry).dispose()
-    ;(this.material as THREE.Material).dispose()
-    this.clear()
+    // Node + resource disposal stays with the Vue host: the declarative root
+    // and its shell leave the scene with BakuCubeOwner's unmount (Tres owns
+    // the geometry/material it mounted). The controller only retires its
+    // motion state — the _disposed guard blocks every late public call.
   }
 }

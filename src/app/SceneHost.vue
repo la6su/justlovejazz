@@ -47,6 +47,9 @@ import GroundPlane from './scene/GroundPlane.vue'
 import SectionGroupRoots from './scene/SectionGroupRoots.vue'
 import ServicesStageOwner from './scene/ServicesStageOwner.vue'
 import EnvSphereOwner from './scene/EnvSphereOwner.vue'
+import BakuCubeOwner from './scene/BakuCubeOwner.vue'
+import IntroLightFramesOwner from './scene/IntroLightFramesOwner.vue'
+import CursorTrailOwner from './scene/CursorTrailOwner.vue'
 import EnvSky from './scene/EnvSky.vue'
 import WorksStageOwner from './scene/WorksStageOwner.vue'
 import type { CinematicLightsNodes } from '../Experience/World/Lights'
@@ -54,6 +57,9 @@ import type { GroundPlaneNode } from '../Experience/Scene/GroundPlane'
 import type { Group } from 'three'
 import type { ServicesStage } from '../Experience/World/ServicesStage'
 import type { EnvSphere } from '../Experience/World/EnvSphere'
+import type { BakuCubeNodes } from '../Experience/World/SplashCube'
+import type { IntroLightFramesNodes } from '../Experience/World/ParticleBurst'
+import type { CursorTrailNodes } from '../Experience/World/DrawTrail'
 import type { WorksPlaneStage } from '../Experience/World/WorksPlaneStage'
 import type { WorksInstallation } from '../Experience/World/WorksInstallation'
 import type { ContactHaloStage } from '../Experience/World/ContactHaloStage'
@@ -136,6 +142,9 @@ const groundSlot = createReadySlot<GroundPlaneNode>()
 const sectionRootsSlot = createReadySlot<readonly Group[]>()
 const servicesStageSlot = createReadySlot<ServicesStage>()
 const envSphereSlot = createReadySlot<EnvSphere>()
+const bakuSlot = createReadySlot<BakuCubeNodes>()
+const introFramesSlot = createReadySlot<IntroLightFramesNodes>()
+const cursorTrailSlot = createReadySlot<CursorTrailNodes>()
 const envSkySlot = createReadySlot<unknown>()
 /** Template-facing alias: the env sphere must mount before the sky plane. */
 const envSphereNode = envSphereSlot.value
@@ -298,6 +307,9 @@ async function onReady(context: TresContext): Promise<void> {
   const sectionRoots = await readyNode(sectionRootsSlot)
   const servicesStage = await readyNode(servicesStageSlot)
   const envSphere = await readyNode(envSphereSlot)
+  const baku = await readyNode(bakuSlot)
+  const introFrames = await readyNode(introFramesSlot)
+  const cursorTrail = await readyNode(cursorTrailSlot)
   if (!envSkySlot.value.value) await envSkySlot.promise
   if (!isCurrent()) return
   const canvas =
@@ -368,6 +380,9 @@ async function onReady(context: TresContext): Promise<void> {
     sectionRoots,
     servicesStage,
     envSphere,
+    baku,
+    introFrames,
+    cursorTrail,
     loop: loopPort,
     stages,
   })
@@ -423,6 +438,9 @@ onBeforeUnmount(() => {
       <SectionGroupRoots @ready="sectionRootsSlot.resolve" />
       <ServicesStageOwner @ready="servicesStageSlot.resolve" />
       <EnvSphereOwner @ready="envSphereSlot.resolve" />
+      <BakuCubeOwner @ready="bakuSlot.resolve" />
+      <IntroLightFramesOwner @ready="introFramesSlot.resolve" />
+      <CursorTrailOwner @ready="cursorTrailSlot.resolve" />
       <EnvSky
         v-if="envSphereNode"
         :material="envSphereNode.skyMaterial"

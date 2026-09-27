@@ -2,7 +2,11 @@ import * as THREE from 'three'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { SceneCoordinator } from '../Experience/SceneCoordinator'
 import type { SceneCoordinatorOwners } from '../Experience/sceneOwners'
-import { SplashCube } from '../Experience/World/SplashCube'
+import {
+  SplashCube,
+  buildBakuShellGeometry,
+  createBakuShellMaterial,
+} from '../Experience/World/SplashCube'
 import type { SectionGroups } from '../Experience/Scene/SectionGroups'
 import { getLabExperiment, labExperiments } from '../Experience/Lab/manifest'
 import type { PageId } from '../core/routeManifest'
@@ -34,15 +38,20 @@ describe('SceneCoordinator route visuals (Phase 8 slice 10: the gate left `World
     }
   }
 
+  function makeBakuNodes() {
+    const shell = new THREE.Mesh(buildBakuShellGeometry(), createBakuShellMaterial())
+    const root = new THREE.Group()
+    root.add(shell)
+    return { root, shell }
+  }
+
   beforeEach(() => {
     page = 'home'
     document.body.dataset.page = 'home'
     getContext = vi
       .spyOn(HTMLCanvasElement.prototype, 'getContext')
       .mockReturnValue(canvasContext as unknown as CanvasRenderingContext2D)
-    cube = new SplashCube()
-    cube.name = 'baku'
-    cube.visible = true
+    cube = new SplashCube(makeBakuNodes())
     coordinator = new SceneCoordinator(new THREE.Scene(), makeOwners(cube), () => page)
   })
 

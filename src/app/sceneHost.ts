@@ -39,6 +39,9 @@ import type { ContactTypographyStage } from '../Experience/World/ContactTypograp
 import type { ManifestoInkStage } from '../Experience/World/ManifestoInkStage'
 import type { ContactCyprusStage } from '../Experience/World/ContactCyprusStage'
 import type { LabExperimentObject } from '../Experience/Lab/manifest'
+import type { BakuCubeNodes } from '../Experience/World/SplashCube'
+import type { IntroLightFramesNodes } from '../Experience/World/ParticleBurst'
+import type { CursorTrailNodes } from '../Experience/World/DrawTrail'
 
 /**
  * The Tres-native loop port (ADR 0005). The RenderScheduler is still the
@@ -117,6 +120,12 @@ export interface SceneHostReady {
   servicesStage: ServicesStage
   /** The Vue lifecycle owns construction and teardown of this ambient owner. */
   envSphere: EnvSphere
+  /** Declarative boot-static nodes: the behavior controllers Experience
+   *  constructs around them never touch the scene graph (no runtime
+   *  `scene.add` in the boot path). */
+  baku: BakuCubeNodes
+  introFrames: IntroLightFramesNodes
+  cursorTrail: CursorTrailNodes
   /** The Tres-native loop port the RenderScheduler drives (ADR 0005). */
   loop: SceneLoopPort
   /** Declarative stage mount/unmount boundaries (one port per stage family). */

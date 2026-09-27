@@ -36,6 +36,9 @@ function fakeReady(overrides?: Partial<SceneHostReady>): SceneHostReady {
     sectionRoots: [],
     servicesStage: {} as SceneHostReady['servicesStage'],
     envSphere: {} as SceneHostReady['envSphere'],
+    baku: {} as SceneHostReady['baku'],
+    introFrames: {} as SceneHostReady['introFrames'],
+    cursorTrail: {} as SceneHostReady['cursorTrail'],
     loop: {
       onFrame: () => undefined,
       start: () => undefined,
