@@ -24,6 +24,7 @@ import type { StorySide } from '../../core/storyState'
 import { eventBus } from '../../core/EventBus'
 import { prefersReducedMotion } from '../../core/motionPolicy'
 import { smoothstep01 } from '../../Utils/easing'
+import { keepSceneObjectVisible } from '../sceneRuntimeState'
 // PlaneTransition removed — unified animation uses direct overlay open.
 
 // A dozen plane instances preserve the infinite wrap while the framing exposes
@@ -223,7 +224,7 @@ export class BakuCarousel extends THREE.Group {
         plane.userData.cardIndex = i % PROJECTS.length
         // keepVisible = true so the SectionGroups owner's geometry-hiding step
         // doesn't hide the carousel cards (it hides all non-Points, non-keepVisible meshes)
-        plane.userData.keepVisible = true
+        keepSceneObjectVisible(plane)
         stagedCards.push(plane)
         this.add(plane)
       })

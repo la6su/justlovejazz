@@ -5,6 +5,7 @@
 import * as THREE from 'three'
 import { WireframeTypography } from './WireframeTypography'
 import { prefersReducedMotion } from '../../core/motionPolicy'
+import { keepSceneObjectVisible } from '../sceneRuntimeState'
 
 export class ContactTypographyStage extends THREE.Group {
   private readonly typography = new WireframeTypography('HELLO', 0.34)
@@ -15,7 +16,7 @@ export class ContactTypographyStage extends THREE.Group {
   constructor() {
     super()
     this.name = 'contact-typography-stage'
-    this.typography.userData.keepVisible = true
+    keepSceneObjectVisible(this.typography)
     this.typography.position.set(-0.15, 0.35, -2.4)
     this.add(this.typography)
     this.visible = false

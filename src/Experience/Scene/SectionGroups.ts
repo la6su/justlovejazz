@@ -24,6 +24,7 @@ import type { PageId } from '../../core/routeManifest'
 import type { StorySide } from '../../core/storyState'
 import { WORKS_SLOT_INDEX } from '../../core/worldSlots'
 import { clearSectionGroupAttachments, sectionGroupAttachmentsOf } from '../sceneOwners'
+import { isSceneObjectKeptVisible } from '../sceneRuntimeState'
 
 /** Canonical six-slot layout (one group per world slot / cube face). */
 const SECTION_GROUP_COUNT = 6
@@ -50,7 +51,7 @@ export function disposeSceneObjectResources(
 
 /**
  * Hide non-particle geometry until bespoke visuals are ready (T-070..T-074).
- * Particles (THREE.Points / InstancedMesh) + `userData.keepVisible` objects
+ * Particles (THREE.Points / InstancedMesh) + explicitly retained objects
  * remain for atmospheric depth.
  */
 function hideSectionGeometry(group: THREE.Group): void {
@@ -58,7 +59,7 @@ function hideSectionGeometry(group: THREE.Group): void {
     if (obj === group) return
     if (obj instanceof THREE.Points) return
     if (obj instanceof THREE.InstancedMesh) return
-    if (obj.userData?.keepVisible) return
+    if (isSceneObjectKeptVisible(obj)) return
     obj.visible = false
   })
 }
