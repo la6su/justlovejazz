@@ -226,17 +226,30 @@ describe('BakuCarousel texture lifecycle', () => {
     expect(() => carousel.dispose()).not.toThrow()
   })
 
-  it('does not let a retired UI owner remove a newer click callback', () => {
+  it('keeps a newer click callback when a retired UI owner releases its handler', async () => {
+    mocks.loadCaseTexture.mockImplementation(async () => new THREE.Texture())
     const carousel = new BakuCarousel()
     const first = vi.fn()
     const second = vi.fn()
     const releaseFirst = carousel.onCardClick(first)
-    const releaseSecond = carousel.onCardClick(second)
+    carousel.onCardClick(second)
 
     releaseFirst()
-    expect((carousel as unknown as { _onCardClick: unknown })._onCardClick).toBe(second)
-    releaseSecond()
-    expect((carousel as unknown as { _onCardClick: unknown })._onCardClick).toBeNull()
+    await carousel.init()
+    carousel.setActive(true)
+    for (let frame = 0; frame < 20 && carousel.isAnimating; frame++) {
+      carousel.update(0.1)
+    }
+
+    document.body.dispatchEvent(
+      new PointerEvent('pointerdown', { bubbles: true, clientX: 0, clientY: 0 }),
+    )
+    document.body.dispatchEvent(
+      new PointerEvent('pointerup', { bubbles: true, clientX: 0, clientY: 0 }),
+    )
+
+    expect(first).not.toHaveBeenCalled()
+    expect(second).toHaveBeenCalledOnce()
     carousel.dispose()
   })
 
