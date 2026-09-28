@@ -127,8 +127,8 @@ export class Renderer {
     // default; the classic WebGLRenderer path was removed in Phase 10).
     this.pipeline = RenderPipeline.create(this.instance, this.capabilities.postProcessing)
 
-    // Transmission is disabled on ALL paths (see SplashCube.ts comment).
-    // setTransmissionEnabled() is now a no-op, kept for API compat.
+    // Transmission policy belongs to SplashCube's material contract; this
+    // wrapper does not expose a renderer-level toggle.
     //
     // Bounded WebGPU device-loss recovery: a lost device (driver/GPU reset,
     // system memory pressure) re-creates the renderer on the same canvas and

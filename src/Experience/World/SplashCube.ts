@@ -119,8 +119,6 @@ export function createBakuShellMaterial(): THREE.MeshPhysicalMaterial {
   })
 }
 
-// (setTransmissionEnabled removed — dead export, zero callers.)
-
 /**
  * The glass shell is CPU-deformed. Updating it every display frame makes the
  * first visible scene compete with renderer and post-pipeline warm-up. The
@@ -243,10 +241,8 @@ export class SplashCube {
   }
 
   // ════════════════════════════════════════════════════════════════════
-  // API (kept for Experience compatibility)
+  // Runtime controls
   // ════════════════════════════════════════════════════════════════════
-
-  // (setProgress removed — dead no-op, zero callers.)
 
   triggerOpener(): void {
     if (this._disposed) return
