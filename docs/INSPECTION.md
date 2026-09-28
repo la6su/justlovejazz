@@ -1321,15 +1321,13 @@ module stays dependency-free for any chunk). Numerics are identical; the
 double-ease characterization pin (`SceneCoordinator.doubleEase`) guards the
 transform pass.
 
-### `sceneOwners.particlesOf(group)`
+### Typed section owner attachments
 
-The informal `group.userData.particles` contract (written by WorksSection)
-was read through five divergent casts — two inline `import(...)` type casts
-in Experience, a `JunniParticles` cast in the frame pass and two
-`THREE.Object3D` casts in the coordinator's gates. One typed read now serves
-all five. `SectionGroups`' disposal sweep deliberately keeps its structural
-`Object3D & { dispose? }` read: it must not assume the concrete class while
-releasing resources.
+The informal `group.userData.particles`, `group.userData.carousel` and
+`group.userData.ownedTextures` contracts are now a typed `WeakMap` attachment
+bag shared by the frame pass, coordinator gates and disposal owner. Runtime
+owners no longer leak through `Object3D.userData`; only local hit-test
+metadata remains on carousel card objects.
 
 ### Comment truth (post-split stale claims)
 

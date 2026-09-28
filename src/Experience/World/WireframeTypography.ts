@@ -9,6 +9,7 @@ import { FontLoader } from 'three/addons/loaders/FontLoader.js'
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js'
 import fontJson from '../../assets/fonts/comfortaa_bold_subset.typeface.json'
 import { easeOutCubic } from '../../Utils/easing'
+import { keepSceneObjectVisible } from '../sceneRuntimeState'
 
 const bubbleFont = new FontLoader().parse(fontJson as never)
 
@@ -59,7 +60,7 @@ export class WireframeTypography extends THREE.Group {
       const width = widths[index] ?? 0
       geometry.center()
       const mesh = new THREE.Mesh(geometry, this.material)
-      mesh.userData.keepVisible = true
+      keepSceneObjectVisible(mesh)
       mesh.frustumCulled = false
       const x = cursor + width / 2
       this.glyphs.push({ mesh, x, phase: index * 1.71 })

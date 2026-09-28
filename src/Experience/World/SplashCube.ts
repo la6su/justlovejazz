@@ -243,10 +243,8 @@ export class SplashCube {
   }
 
   // ════════════════════════════════════════════════════════════════════
-  // API (kept for Experience compatibility)
+  // Runtime controls
   // ════════════════════════════════════════════════════════════════════
-
-  // (setProgress removed — dead no-op, zero callers.)
 
   triggerOpener(): void {
     if (this._disposed) return

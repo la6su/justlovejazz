@@ -49,7 +49,8 @@ these layers; scene state must not be inferred from DOM datasets.
 | Async stages and disposal helpers   | `Experience/LazyStage.ts` (lifecycle core), `Experience/StageRegistry.ts` (the six route stages' contracts + lifecycle owner), `app/stageSlot.ts` + `app/sceneHost.ts` ports (declarative stage mount surface), `Utils/dispose.ts`                                                                                                                                                    |
 
 The table maps boundaries, not every implementation detail. Owner-specific
-regressions belong in `src/__tests__/`, not a second prose inventory.
+regressions belong in `src/__tests__/`, not a second prose inventory. The test
+inventory and removal criteria are maintained in [Test audit](TEST_AUDIT.md).
 
 ### TvT/Tres adoption boundary
 

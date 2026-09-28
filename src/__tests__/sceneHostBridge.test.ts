@@ -73,6 +73,21 @@ describe('sceneHost bridge (Phase 7 persistent Tres root)', () => {
     expect(bridge.ready instanceof Promise).toBe(true)
   })
 
+  it('recreates an isolated pending promise when the test reset runs', async () => {
+    const { mod, bridge } = await freshBridge()
+    const firstReady = bridge.ready
+    bridge.resolve(fakeReady())
+    await expect(firstReady).resolves.toBeDefined()
+
+    mod.__resetSceneHostForTests()
+
+    expect(bridge.isSettled).toBe(false)
+    expect(bridge.ready).not.toBe(firstReady)
+    const pending = bridge.ready
+    bridge.resolve(fakeReady({ mode: 'webgl' }))
+    await expect(pending).resolves.toMatchObject({ mode: 'webgl' })
+  })
+
   it('settles exactly once — a second resolve is a no-op', async () => {
     const { bridge } = await freshBridge()
     const first = fakeReady()

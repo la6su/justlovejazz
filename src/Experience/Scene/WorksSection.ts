@@ -10,6 +10,7 @@ import { BakuCarousel } from '../World/BakuCarousel'
 import type { PageId } from '../../core/routeManifest'
 import type { StorySide } from '../../core/storyState'
 import { sectionGroupAttachmentsOf, setSectionGroupAttachments } from '../sceneOwners'
+import { keepSceneObjectVisible } from '../sceneRuntimeState'
 
 /** Attach the Works content to its declarative scene root. */
 export function attachWorksSection(
@@ -35,7 +36,7 @@ export function attachWorksSection(
   // Once revealed (morphT > 0.5) the stream can be scrolled/dragged,
   // and clicking a card opens the fullscreen FullscreenOverlay.
   const carousel = new BakuCarousel(page, storySide)
-  carousel.userData.keepVisible = true
+  keepSceneObjectVisible(carousel)
   g.add(carousel)
   setSectionGroupAttachments(g, { carousel, ownedTextures })
 
@@ -52,7 +53,7 @@ export function attachWorksSection(
     texture: particleTexture,
     textureTiles: [6, 1],
   })
-  particles.userData.keepVisible = true
+  keepSceneObjectVisible(particles)
   g.add(particles)
   setSectionGroupAttachments(g, {
     ...sectionGroupAttachmentsOf(g),

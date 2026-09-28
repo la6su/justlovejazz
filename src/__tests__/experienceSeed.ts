@@ -3,14 +3,11 @@
 // The Experience constructor is heavy (renderer capability detection, UI
 // construction), so lifecycle-method tests build a bare instance via
 // Object.create(Experience.prototype) and seed exactly the state the tested
-// methods touch. The six route-owned lazy stages live in the StageRegistry
-// owner (StageRegistry.ts), so this helper attaches a registry built over the
-// seeded instance and routes the legacy stage bag keys (`worksPlaneStage`,
-// `contactCyprusStage`, …) into its public slots: a truthy bag value pre-sets
-// the slot's stage reference (fake stage objects), a null/undefined value
-// just leaves the fresh slot empty. The registry context reads the seeded
-// instance lazily, so bag-driven fields (page, camera, host, polarity,
-// reduced motion, coordinator) are observed at contract time.
+// methods touch. The six route-owned lazy stages live in StageRegistry; this
+// harness installs that real owner and maps the fixture's stage properties to
+// its slots. The registry context reads the seeded instance lazily, so page,
+// camera, host, polarity, reduced motion and coordinator remain live at the
+// contract boundary.
 
 import * as THREE from 'three'
 import { Experience } from '../Experience/Experience'
@@ -61,14 +58,18 @@ function makeEmptyPorts(scene: THREE.Scene): SceneStagePorts {
   }
 }
 
-/** Bag keys that route into a registry slot instead of a plain field.
- *  Keys exist only where a test seeds the stage through the legacy bag;
- *  halo/ink stages are always injected via the returned `slots` record. */
-const SLOT_KEY_TO_NAME: Record<string, LazyStageSlotName> = {
+/** Fixture property names that seed a registry slot. */
+const SLOT_KEY_TO_NAME = {
   worksPlaneStage: 'worksPlane',
   contactTypographyStage: 'contactTypography',
   contactCyprusStage: 'contactCyprus',
   labGamepad: 'labGamepad',
+} as const satisfies Record<string, LazyStageSlotName>
+
+type StageSeedKey = keyof typeof SLOT_KEY_TO_NAME
+
+function stageSlotName(key: string): LazyStageSlotName | undefined {
+  return key in SLOT_KEY_TO_NAME ? SLOT_KEY_TO_NAME[key as StageSeedKey] : undefined
 }
 
 export interface SeededExperience {
@@ -80,14 +81,12 @@ export interface SeededExperience {
   slots: Record<LazyStageSlotName, LazyStageSlot<unknown>>
 }
 
-/** Bare Experience for lifecycle-method tests: the heavy constructor is
- *  bypassed and `bag` seeds exactly the state the tested methods touch.
- *  Stage bag keys are routed into the attached registry (see module header). */
+/** Bare Experience harness for lifecycle-method tests. */
 export function seedExperience(bag: Record<string, unknown> = {}): SeededExperience {
   const slotValues: Record<string, unknown> = {}
   const rest: Record<string, unknown> = {}
   for (const [key, value] of Object.entries(bag)) {
-    const slotName = SLOT_KEY_TO_NAME[key]
+    const slotName = stageSlotName(key)
     if (slotName) slotValues[key] = value
     else rest[key] = value
   }
@@ -120,8 +119,9 @@ export function seedExperience(bag: Record<string, unknown> = {}): SeededExperie
   })
   seeded._stages = registry
   for (const [key, value] of Object.entries(slotValues)) {
-    if (value != null) {
-      ;(registry.slots[SLOT_KEY_TO_NAME[key]!] as LazyStageSlot<unknown>).setStage(value)
+    const slotName = stageSlotName(key)
+    if (value != null && slotName) {
+      ;(registry.slots[slotName] as LazyStageSlot<unknown>).setStage(value)
     }
   }
   return {

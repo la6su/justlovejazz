@@ -1,7 +1,7 @@
 // ParticleBurst — geometric splash handoff for the intro opener.
 //
-// The historical class name is retained for lifecycle compatibility, but this
-// is not a particle simulation. Three deterministic broken-square light frames
+// This is not a particle simulation. Three deterministic broken-square light
+// frames
 // contract toward the cube and dissolve into the first scene. All twelve
 // strokes share one instanced draw call and one TSL material.
 //

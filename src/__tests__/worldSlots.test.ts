@@ -80,15 +80,6 @@ describe('world slot contract', () => {
     expect(worldSlotIndex('')).toBeUndefined()
   })
 
-  it('the CinematicNav-derived constants keep the former 0/1/4/5 values', () => {
-    // Regression baseline: the navigation constants that CinematicNav now
-    // derives from this tuple must equal the former inline literals, so the
-    // slot-index single-source change is behavior-identical.
-    expect(worldSlotIndex('lab')).toBe(0) // CONTACT_FOOTER_INDEX
-    expect(worldSlotIndex('intro')).toBe(1) // FIRST_MAIN
-    expect(worldSlotIndex('contact')).toBe(4) // LAST_MAIN
-    expect(worldSlotIndex('menu')).toBe(5) // MENU_INDEX
-  })
 })
 
 describe('world slot consumers', () => {
