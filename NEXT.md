@@ -29,8 +29,11 @@ contract. Keep this queue as the single plan and retire completed slices.
    retain TSL uniforms, pooled resources and async GLTF ownership where needed.
 3. **Review static delivery and stale contracts.** Check source reachability
    from Vite and SSG entries, generated inputs, metadata/canonical URLs and
-   documentation claims. Remove obsolete tests and compatibility code only
-   after verifying the currently installed package imports.
+   documentation claims. The current audit confirms the split is intentional:
+   `/services`, `/works`, `/manifesto`, `/lab` and `/contact` are SPA fallback
+   routes, while `/blog/*` and approved `/p/*` pages are concrete Vite/SSG
+   inputs. Remove obsolete tests and compatibility code only after verifying
+   the currently installed package imports.
 4. **Release inputs.** Resolve the media, proof, contact provider and target
    host decisions under Product / input needed below. The 16.35 MB
    `coming-soon.mp4` is a labelled placeholder; optimize its approved
