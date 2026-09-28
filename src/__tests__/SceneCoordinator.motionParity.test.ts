@@ -1,11 +1,12 @@
 import * as THREE from 'three'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { SceneCoordinator } from '../Experience/SceneCoordinator'
-import type { SceneCoordinatorOwners } from '../Experience/sceneOwners'
+import { setSectionGroupAttachments, type SceneCoordinatorOwners } from '../Experience/sceneOwners'
 import type { SectionGroups } from '../Experience/Scene/SectionGroups'
 import type { ContactCyprusStage } from '../Experience/World/ContactCyprusStage'
 import type { ContactTypographyStage } from '../Experience/World/ContactTypographyStage'
 import type { WorksPlaneStage } from '../Experience/World/WorksPlaneStage'
+import type { JunniParticles } from '../Experience/World/JunniParticles'
 
 /**
  * The reduced-motion / demand-frame parity contracts of the coordinator's
@@ -26,7 +27,9 @@ describe('SceneCoordinator reduced-motion particle parity', () => {
     particleVisible: boolean = true,
   ): SceneCoordinator {
     const group = new THREE.Group()
-    group.userData.particles = { update, visible: particleVisible }
+    setSectionGroupAttachments(group, {
+      particles: { update, visible: particleVisible } as unknown as JunniParticles,
+    })
     const owners: SceneCoordinatorOwners = {
       ground: () => null,
       sectionGroups: () => ({ groups: [group] }) as unknown as SectionGroups,
@@ -50,7 +53,7 @@ describe('SceneCoordinator reduced-motion particle parity', () => {
     const group = new THREE.Group()
     const particles = new THREE.Group()
     particles.visible = false
-    group.userData.particles = particles
+    setSectionGroupAttachments(group, { particles: particles as unknown as JunniParticles })
     const owners: SceneCoordinatorOwners = {
       ground: () => null,
       sectionGroups: () => ({ groups: [group] }) as unknown as SectionGroups,

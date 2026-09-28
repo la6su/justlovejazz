@@ -23,6 +23,7 @@ import { disposeMaterialDeep } from '../../Utils/dispose'
 import type { PageId } from '../../core/routeManifest'
 import type { StorySide } from '../../core/storyState'
 import { WORKS_SLOT_INDEX } from '../../core/worldSlots'
+import { clearSectionGroupAttachments, sectionGroupAttachmentsOf } from '../sceneOwners'
 
 /** Canonical six-slot layout (one group per world slot / cube face). */
 const SECTION_GROUP_COUNT = 6
@@ -100,16 +101,15 @@ export class SectionGroups {
     if (this._disposed) return
     this._disposed = true
     this.groups.forEach((group) => {
-      const ownedTextures = group.userData.ownedTextures as THREE.Texture[] | undefined
+      const attachments = sectionGroupAttachmentsOf(group)
+      const ownedTextures = attachments?.ownedTextures
       ownedTextures?.forEach((texture) => texture.dispose())
-      if (ownedTextures) delete group.userData.ownedTextures
-      // If the group hosts a BakuCarousel (userData.carousel), call its
+      // If the group hosts a BakuCarousel, call its
       // dispose() FIRST — it removes 6 window listeners + clears snapTimer
       // + disposes card materials/textures/geometry. The traverse below
       // SKIPS the gallery's descendants (already disposed) to avoid a
       // fragile double-dispose on the same materials/geometries.
-      const gallery = group.userData.carousel as
-        ({ dispose?: () => void } & THREE.Object3D) | undefined
+      const gallery = attachments?.carousel
       // Collect gallery + all its descendants so the traverse can skip them.
       const galleryDescendants = new Set<THREE.Object3D>()
       if (gallery) {
@@ -120,9 +120,7 @@ export class SectionGroups {
       // JunniParticles owns a terminal lifecycle flag and removes itself from
       // the graph. Dispose it before the generic sweep and skip its subtree so
       // geometry/material resources are not released twice.
-      const particles = group.userData.particles as THREE.Object3D & {
-        dispose?: () => void
-      }
+      const particles = attachments?.particles
       const particleDescendants = new Set<THREE.Object3D>()
       if (particles instanceof THREE.Object3D) {
         particleDescendants.add(particles)
@@ -131,6 +129,7 @@ export class SectionGroups {
       }
       const ownedSubtrees = new Set([...galleryDescendants, ...particleDescendants])
       disposeSceneObjectResources(group, ownedSubtrees)
+      clearSectionGroupAttachments(group)
       if (!this.adopted.has(group)) group.parent?.remove(group)
     })
     this.groups.length = 0
