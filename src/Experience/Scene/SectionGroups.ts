@@ -2,8 +2,7 @@
 // section groups owner.
 //
 // Migrates the legacy `World.sceneGroups` creation + disposal: the six
-// stable section groups (one per canonical slot, created by
-// `SectionSceneFactory` and geometry-hidden until bespoke visuals are ready)
+// stable section groups (one per canonical slot, geometry-hidden until bespoke visuals are ready)
 // now enter the Tres-owned scene directly under this owner. Experience
 // creates the owner (fresh per buildWorld) and is the single disposal
 // owner.
@@ -12,19 +11,18 @@
 // their typed coordination boundary for visibility, particle activity and the
 // Works-group reference. No legacy World adapter remains.
 //
-// Phase 8 slice 6: the BakuCarousel (created by the works section factory as
-// a child of the Works group) keeps its scene-graph position here — its
+// Phase 8 slice 6: the BakuCarousel (attached to the declarative Works root)
+// keeps its scene-graph position here — its
 // disposal (BakuCarousel-first ordering) stays in this owner, while its
 // reference + init live on Experience.
 
 import * as THREE from 'three'
-// The Works back face is the only imperatively-created section group (its
-// creator owns the live BakuCarousel + JunniParticles); every other slot
-// adopts its declarative root from SectionGroupRoots.vue.
-import { createWorksSection } from './WorksSection'
+// Works attaches its live BakuCarousel + JunniParticles to a declarative root.
+import { attachWorksSection } from './WorksSection'
 import { disposeMaterialDeep } from '../../Utils/dispose'
 import type { PageId } from '../../core/routeManifest'
 import type { StorySide } from '../../core/storyState'
+import { WORKS_SLOT_INDEX } from '../../core/worldSlots'
 
 /** Canonical six-slot layout (one group per world slot / cube face). */
 const SECTION_GROUP_COUNT = 6
@@ -77,9 +75,12 @@ export class SectionGroups {
     sectionRoots?: readonly THREE.Group[],
   ) {
     for (let i = 0; i < count; i++) {
-      const adoptedIndex = i === 0 ? 0 : i === 1 ? 1 : i === 2 ? 2 : i === 4 ? 3 : i === 5 ? 4 : -1
-      const group = sectionRoots?.[adoptedIndex] ?? createWorksSection(page, storySide)
-      if (adoptedIndex >= 0) this.adopted.add(group)
+      const root = sectionRoots?.[i]
+      const group =
+        i === WORKS_SLOT_INDEX
+          ? attachWorksSection(root ?? new THREE.Group(), page, storySide)
+          : (root ?? new THREE.Group())
+      if (root) this.adopted.add(group)
       // Hide non-particle geometry until bespoke visuals are ready (T-070..T-074).
       // Particles remain for atmospheric depth. Remove this call section by section
       // as real visuals are added.

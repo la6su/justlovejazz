@@ -9,8 +9,8 @@ import {
 
 // The lazy-stage lifecycle core behind Experience's route-owned stages:
 // memoization, stale-guard release, failure containment and retry. The
-// Experience wiring keeps the flat owner fields; these tests drive the same
-// flow on a plain owner bag.
+// Experience wiring uses owner-backed slots; these tests drive the same flow
+// on a plain owner bag.
 
 interface FakeStage extends THREE.Object3D {
   init: () => Promise<void>
@@ -100,6 +100,26 @@ describe('ensureLazyStage (synchronous creation)', () => {
     expect(owner.getPromise()).toBeNull()
   })
 
+  it('does not load a synchronously created stage after its mount is retired', async () => {
+    const owner = makeOwner<FakeStage>()
+    let finishAttach!: () => void
+    const load = vi.fn(async () => undefined)
+    const contract = makeContract(owner, {
+      attach: () => new Promise<void>((resolve) => (finishAttach = resolve)),
+      load,
+    })
+
+    const pending = ensureLazyStage(contract)
+    expect(owner.getStage()).not.toBeNull()
+    disposeLazyStage(contract)
+    finishAttach()
+    await pending
+
+    expect(load).not.toHaveBeenCalled()
+    expect(contract.configure).not.toHaveBeenCalled()
+    expect(contract.release).toHaveBeenCalledTimes(2)
+  })
+
   it('contains an init failure and permits a later retry', async () => {
     const owner = makeOwner<FakeStage>()
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
@@ -113,6 +133,27 @@ describe('ensureLazyStage (synchronous creation)', () => {
       expect(owner.getPromise()).toBeNull()
       expect(contract.release).toHaveBeenCalledTimes(1)
 
+      await ensureLazyStage(contract)
+      expect(contract.configure).toHaveBeenCalledTimes(1)
+    } finally {
+      errorSpy.mockRestore()
+    }
+  })
+
+  it('contains a synchronous construction failure and permits retry', async () => {
+    const owner = makeOwner<FakeStage>()
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const create = vi
+      .fn<() => FakeStage>()
+      .mockImplementationOnce(() => {
+        throw new Error('fixture construction failure')
+      })
+      .mockImplementationOnce(makeStage)
+    const contract = makeContract(owner, { create })
+
+    try {
+      await expect(ensureLazyStage(contract)).resolves.toBeUndefined()
+      expect(owner.getPromise()).toBeNull()
       await ensureLazyStage(contract)
       expect(contract.configure).toHaveBeenCalledTimes(1)
     } finally {
@@ -140,6 +181,21 @@ describe('ensureLazyStage (synchronous creation)', () => {
 })
 
 describe('ensureLazyStage (asynchronous creation)', () => {
+  it('allows a later attempt when a current factory has no stage', async () => {
+    const owner = makeOwner<FakeStage>()
+    const create = vi
+      .fn<() => Promise<FakeStage | null>>()
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(makeStage())
+    const contract = makeContract(owner, { create })
+
+    await ensureLazyStage(contract)
+    expect(owner.getPromise()).toBeNull()
+    await ensureLazyStage(contract)
+    expect(create).toHaveBeenCalledTimes(2)
+    expect(contract.configure).toHaveBeenCalledTimes(1)
+  })
+
   it('discards a late construction after the owner was disposed', async () => {
     const owner = makeOwner<FakeStage>()
     let releaseImport!: () => void

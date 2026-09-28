@@ -227,6 +227,20 @@ describe('BakuCarousel texture lifecycle', () => {
     expect(() => carousel.dispose()).not.toThrow()
   })
 
+  it('does not let a retired UI owner remove a newer click callback', () => {
+    const carousel = new BakuCarousel()
+    const first = vi.fn()
+    const second = vi.fn()
+    const releaseFirst = carousel.onCardClick(first)
+    const releaseSecond = carousel.onCardClick(second)
+
+    releaseFirst()
+    expect((carousel as unknown as { _onCardClick: unknown })._onCardClick).toBe(second)
+    releaseSecond()
+    expect((carousel as unknown as { _onCardClick: unknown })._onCardClick).toBeNull()
+    carousel.dispose()
+  })
+
   it('ignores late public calls after terminal teardown', () => {
     const carousel = new BakuCarousel()
     const state = carousel as unknown as { scroll: { target: number }; _morphTarget: number }

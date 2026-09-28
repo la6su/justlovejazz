@@ -24,14 +24,14 @@ export class ContactTypographyStage extends THREE.Group {
   get isAnimating(): boolean {
     // The authored glyphs keep bobbing after the reveal settles, so this
     // remains an ambient-motion signal rather than only a reveal signal.
-    return this.active
+    return !this.disposed && this.active && !this.reducedMotion
   }
 
   setActive(active: boolean): void {
     if (this.disposed) return
     this.active = active
     this.visible = active
-    this.typography.userData.reducedMotion = this.reducedMotion
+    this.typography.setReducedMotion(this.reducedMotion)
     this.typography.setActive(active)
   }
 

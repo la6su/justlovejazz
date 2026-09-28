@@ -125,6 +125,22 @@ describe('Experience destroy ownership boundary', () => {
     // The PMREM scene environment is released and its reference cleared.
     expect(spies.environment).toHaveBeenCalledOnce()
     expect(scene.environment).toBeNull()
+
+    // Teardown order is part of the ownership contract: no frame may enter
+    // disposed owners, and the PMREM reference is released only after the
+    // renderer-facing owners have stopped using it.
+    expect(spies.scheduler.mock.invocationCallOrder[0]).toBeLessThan(
+      spies.features.mock.invocationCallOrder[0]!,
+    )
+    expect(spies.features.mock.invocationCallOrder[0]).toBeLessThan(
+      spies.sectionGroups.mock.invocationCallOrder[0]!,
+    )
+    expect(spies.sectionGroups.mock.invocationCallOrder[0]).toBeLessThan(
+      spies.renderer.mock.invocationCallOrder[0]!,
+    )
+    expect(spies.renderer.mock.invocationCallOrder[0]).toBeLessThan(
+      spies.environment.mock.invocationCallOrder[0]!,
+    )
   })
 
   it('is idempotent across repeated destroy calls', () => {

@@ -12,6 +12,8 @@ import { INITIAL_BOOTSTRAP_STATE, tryTransition, type BootstrapState } from './c
 function initSoundToggle(): void {
   const btn = document.getElementById('cfg-sound') as HTMLButtonElement | null
   if (!btn) return
+  if (btn.dataset.jlzToggleBound === 'sound') return
+  btn.dataset.jlzToggleBound = 'sound'
   let soundOn = !getSoundMuted()
   const update = () => {
     btn.setAttribute('aria-pressed', String(soundOn))
@@ -59,10 +61,14 @@ import { initI18n, toggleLang, getLang } from './core/i18n'
 function initLangToggle(): void {
   const btn = document.getElementById('cfg-lang') as HTMLButtonElement | null
   if (!btn) return
+  if (btn.dataset.jlzToggleBound === 'lang') return
+  const value = btn.querySelector<HTMLElement>('[data-jlz-lang-value], span')
+  if (!value) return
+  btn.dataset.jlzToggleBound = 'lang'
   initI18n()
   const update = () => {
     const lang = getLang()
-    btn.querySelector('span')!.textContent = lang
+    value.textContent = lang
     btn.setAttribute('aria-pressed', String(lang === 'RU'))
     btn.title = `Language: ${lang} (click to switch)`
   }

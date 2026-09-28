@@ -73,6 +73,7 @@ const SLOT_KEY_TO_NAME: Record<string, LazyStageSlotName> = {
 
 export interface SeededExperience {
   exp: Experience
+  registry: StageRegistry
   /** Per-stage registry slots, for live stage reads and request-id
    *  assertions. Stages are `unknown` — tests narrow with the assertions
    *  they need. */
@@ -125,6 +126,7 @@ export function seedExperience(bag: Record<string, unknown> = {}): SeededExperie
   }
   return {
     exp,
+    registry,
     slots: registry.slots as unknown as Record<LazyStageSlotName, LazyStageSlot<unknown>>,
   }
 }

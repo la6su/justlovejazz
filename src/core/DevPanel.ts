@@ -14,6 +14,7 @@ import { Pane } from 'tweakpane'
 import type { Experience } from '../Experience/Experience'
 import { getLang } from './i18n'
 import { FrameGapStats } from './FrameGapStats'
+import { inspectUnifiedBackend } from './unifiedRenderer'
 import type { RuntimeResourceSnapshot } from './RuntimeResourceSnapshot'
 
 const STORAGE_KEY = 'jlz:devpanel'
@@ -155,10 +156,10 @@ export class DevPanel {
   private buildCarouselFolder(): void {
     const f = this.pane.addFolder({ title: 'BakuCarousel', expanded: false })
     f.addButton({ title: '← Prev card' }).on('click', () => {
-      this.exp.portfolio?.prev()
+      this.exp.navigateProject(-1)
     })
     f.addButton({ title: 'Next card →' }).on('click', () => {
-      this.exp.portfolio?.next()
+      this.exp.navigateProject(1)
     })
     f.addButton({ title: 'Trigger morph' }).on('click', () => {
       const carousel = (
@@ -212,13 +213,18 @@ export class DevPanel {
     this.refreshInterval = setInterval(() => {
       // Update stats from renderer info
       const r = this.exp.renderer.instance as unknown as {
-        isWebGPURenderer?: boolean
         info?: {
           render?: { drawCalls?: number; frameCalls?: number; calls?: number; triangles?: number }
           memory?: { geometries?: number; textures?: number }
         }
       }
-      this.stats.backend = r?.isWebGPURenderer ? 'WebGPU' : 'WebGL2'
+      const backend = inspectUnifiedBackend(r)
+      this.stats.backend =
+        backend.backendName === 'WebGPUBackend'
+          ? 'WebGPU'
+          : backend.backendName === 'WebGLBackend'
+            ? 'WebGL2'
+            : 'Unknown'
       const renderInfo = r?.info?.render
       this.stats.drawCalls = renderInfo?.drawCalls ?? renderInfo?.frameCalls ?? 0
       this.stats.triangles = renderInfo?.triangles ?? 0

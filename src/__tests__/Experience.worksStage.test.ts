@@ -27,11 +27,16 @@ const canvasContext = {
 describe('Experience works stage lifecycle', () => {
   let exp: Experience
   let coordinator: SceneCoordinator
+  let registry: ReturnType<typeof seedExperience>['registry']
   let getContext: ReturnType<typeof vi.spyOn>
 
   /** Minimal state the two lifecycle methods touch (constructor bypassed). */
   function makeExperience(scene: THREE.Scene): Experience {
-    const { exp, slots } = seedExperience({
+    const {
+      exp,
+      slots,
+      registry: seededRegistry,
+    } = seedExperience({
       scene,
       camera: { instance: new THREE.PerspectiveCamera() },
       _host: {
@@ -45,6 +50,7 @@ describe('Experience works stage lifecycle', () => {
         },
       },
     })
+    registry = seededRegistry
     // The coordinator reads the stage through an owner getter over the lazy
     // slot (the lazy stage changes identity per route — a stored reference
     // would go stale). Production wires this from within the constructor (the
@@ -88,15 +94,48 @@ describe('Experience works stage lifecycle', () => {
     const disposeSpy = vi.spyOn(WorksPlaneStage.prototype, 'dispose')
 
     try {
-      const pending = exp.ensureWorksPlaneStageInitialized()
+      const pending = registry.ensureWorksPlaneStageInitialized()
       expect(coordinator.worksPlaneStage).toBeInstanceOf(WorksPlaneStage)
 
-      exp.disposeWorksPlaneStage()
+      // Let the Vue mount settle so this test exercises late init cleanup.
+      await Promise.resolve()
+
+      registry.disposeWorksPlaneStage()
       resolveInit()
       await pending
 
       // The first dispose detaches the field immediately; the second
       // catches textures/cards created by the in-flight init before it settled.
+      expect(coordinator.worksPlaneStage).toBeNull()
+      expect(disposeSpy).toHaveBeenCalledTimes(2)
+    } finally {
+      initSpy.mockRestore()
+      disposeSpy.mockRestore()
+    }
+  })
+
+  it('does not initialize a Works stage retired during its Vue mount', async () => {
+    let finishMount!: () => void
+    const stage = new THREE.Scene()
+    exp = makeExperience(stage)
+    const host = (
+      exp as unknown as {
+        _host: { stages: { works: { mountStage: ReturnType<typeof vi.fn> } } }
+      }
+    )._host.stages.works
+    host.mountStage.mockImplementation(
+      () => new Promise<void>((resolve) => (finishMount = resolve)),
+    )
+    const initSpy = vi.spyOn(WorksPlaneStage.prototype, 'init')
+    const disposeSpy = vi.spyOn(WorksPlaneStage.prototype, 'dispose')
+
+    try {
+      const pending = registry.ensureWorksPlaneStageInitialized()
+      expect(coordinator.worksPlaneStage).toBeInstanceOf(WorksPlaneStage)
+      registry.disposeWorksPlaneStage()
+      finishMount()
+      await pending
+      expect(initSpy).not.toHaveBeenCalled()
       expect(coordinator.worksPlaneStage).toBeNull()
       expect(disposeSpy).toHaveBeenCalledTimes(2)
     } finally {
@@ -115,7 +154,7 @@ describe('Experience works stage lifecycle', () => {
     const disposeSpy = vi.spyOn(WorksPlaneStage.prototype, 'dispose')
 
     try {
-      const pending = exp.ensureWorksPlaneStageInitialized()
+      const pending = registry.ensureWorksPlaneStageInitialized()
       await pending
       const stage = coordinator.worksPlaneStage
       expect(stage).toBeInstanceOf(WorksPlaneStage)
@@ -140,7 +179,7 @@ describe('Experience works stage lifecycle', () => {
 
       // Leaving /works disposes the owner and clears the field.
       setCurrentPage('home')
-      exp.disposeWorksPlaneStage()
+      registry.disposeWorksPlaneStage()
       expect(coordinator.worksPlaneStage).toBeNull()
       expect(host.unmountStage).toHaveBeenCalledWith(stage)
       expect(host.unmountInstallation).toHaveBeenCalledWith(stage, installation)

@@ -14,8 +14,9 @@ describe('ContactTypographyStage motion policy', () => {
     const stage = new ContactTypographyStage()
     try {
       stage.setActive(true)
-      stage.update(1)
       const glyphs = stage.children[0]?.children ?? []
+      expect(stage.isAnimating).toBe(false)
+      expect(glyphs.every((glyph) => glyph.scale.x === 1 && glyph.scale.y === 1)).toBe(true)
       const settled = glyphs.map((glyph) => glyph.matrix.elements.slice())
 
       stage.update(1)
@@ -49,6 +50,7 @@ describe('ContactTypographyStage motion policy', () => {
       stage.setActive(true)
       stage.update(1)
       stage.setReducedMotion(true)
+      expect(stage.isAnimating).toBe(false)
       const settled = stage.children[0]?.children.map((glyph) => glyph.matrix.elements.slice())
       stage.update(1)
       expect(stage.children[0]?.children.map((glyph) => glyph.matrix.elements.slice())).toEqual(

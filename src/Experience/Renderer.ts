@@ -20,6 +20,13 @@ import {
 
 export type RenderSurface = WebGPURenderer
 
+/** WebGPURenderer's device-loss hook is runtime-supported but not declared
+ * by the Three type surface used by this project. Keep that narrow extension
+ * at the integration boundary instead of weakening the whole renderer. */
+type DeviceLossCapableRenderer = WebGPURenderer & {
+  onDeviceLost?: (info: unknown) => void
+}
+
 /**
  * Phase 7 adoption input: the SceneHost custom renderer factory already
  * created + init'd the instance and inspected the actual backend. The
@@ -139,7 +146,7 @@ export class Renderer {
    * answers by closing the scheduler window.
    */
   private attachDeviceLossRecovery(renderer: WebGPURenderer): void {
-    const wg = renderer as any
+    const wg = renderer as DeviceLossCapableRenderer
     if (typeof wg.onDeviceLost !== 'function') return
     const orig = wg.onDeviceLost.bind(wg)
     wg.onDeviceLost = (info: unknown) => {

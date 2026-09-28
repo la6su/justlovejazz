@@ -1,5 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { initI18n, getLang, toggleLang, t, applyTranslations, type Lang } from '../core/i18n'
+import {
+  TRANSLATIONS,
+  initI18n,
+  getLang,
+  toggleLang,
+  t,
+  applyTranslations,
+  type Lang,
+} from '../core/i18n'
 import { eventBus } from '../core/EventBus'
 
 // i18n module holds mutable `currentLang` state at module scope. Tests must
@@ -36,8 +44,10 @@ describe('i18n', () => {
     })
 
     it('ignores invalid localStorage value (falls back to EN)', () => {
-      // initI18n only switches to RU if the stored value is exactly 'RU'.
-      // 'FR' is ignored — currentLang stays at whatever it was (EN here).
+      // Invalid values reset the complete locale state to EN, even if a
+      // previous initialization left the module-scoped value at RU.
+      localStorage.setItem('jlz:lang', 'RU')
+      initI18n()
       localStorage.setItem('jlz:lang', 'FR')
       initI18n()
       expect(getLang()).toBe<Lang>('EN')
@@ -184,51 +194,7 @@ describe('i18n', () => {
     // If a key is added to EN but forgotten in RU (or vice versa), the UI
     // silently shows the wrong language. This test catches that.
     it('EN and RU dictionaries have the same set of keys', () => {
-      // Re-import the raw dictionary by reading translations through t():
-      // we can't import TRANSLATIONS directly (not exported), so we probe
-      // a known set of critical keys + count via a side channel.
-      // Instead, compare key counts by switching languages and checking
-      // that every EN key resolves to a non-key value in RU.
-      const probeKeys = [
-        'nav.studio',
-        'nav.services',
-        'nav.works',
-        'nav.manifesto',
-        'nav.lab',
-        'nav.contact',
-        'nav.blog',
-        'common.explore',
-        'home.studio.title',
-        'home.about.title',
-        'home.works.title',
-        'home.manifesto.title',
-        'meta.home.title',
-        'meta.home.description',
-        'meta.services.title',
-        'meta.works.title',
-        'meta.manifesto.title',
-        'meta.lab.title',
-        'meta.contact.title',
-        'works.section1.title',
-        'works.room1.premise',
-        'manifesto.purpose.title',
-        'lab.shaderLab.title',
-        'contact.email.title',
-        'contact.social.title',
-      ]
-
-      // For each key: EN value should not equal the key (key exists in EN),
-      // AND toggling to RU should give a value that's either the RU translation
-      // or — for proper nouns — the same as EN.
-      for (const key of probeKeys) {
-        const enValue = t(key)
-        expect(enValue, `EN key "${key}" should exist (not equal to key)`).not.toBe(key)
-        toggleLang() // → RU
-        const ruValue = t(key)
-        // RU value should not be the raw key (means it's missing from RU dict)
-        expect(ruValue, `RU key "${key}" should exist (not fall back to key string)`).not.toBe(key)
-        toggleLang() // → EN back
-      }
+      expect(Object.keys(TRANSLATIONS.EN).sort()).toEqual(Object.keys(TRANSLATIONS.RU).sort())
     })
   })
 })

@@ -23,6 +23,7 @@ export class WireframeTypography extends THREE.Group {
   private revealElapsed = 0
   private revealProgress = 0
   private active = false
+  private reducedMotion = false
   private disposed = false
   private glyphs: FloatingGlyph[] = []
   private material = new THREE.MeshPhysicalMaterial({
@@ -96,16 +97,18 @@ export class WireframeTypography extends THREE.Group {
     if (this.active === active) return
     this.active = active
     this.revealElapsed = 0
-    this.revealProgress = active && this.userData.reducedMotion === true ? 1 : 0
+    this.revealProgress = 0
     if (!active) {
       for (const { mesh } of this.glyphs) mesh.scale.setScalar(0)
+    } else if (this.reducedMotion) {
+      this.settleReducedMotion()
     }
   }
 
   /** Apply a live preference change without requiring a route reactivation. */
   setReducedMotion(reduced: boolean): void {
     if (this.disposed) return
-    this.userData.reducedMotion = reduced
+    this.reducedMotion = reduced
     if (reduced && this.active) this.settleReducedMotion()
   }
 
@@ -118,13 +121,13 @@ export class WireframeTypography extends THREE.Group {
     this.time += dt
     if (!this.active) return
 
-    if (this.userData.reducedMotion === true) {
+    if (this.reducedMotion) {
       this.settleReducedMotion()
       return
     }
 
     this.revealElapsed += dt
-    const revealDelay = this.userData.reducedMotion === true ? 0 : 0.72
+    const revealDelay = 0.72
     const revealDuration = 0.72
     this.revealProgress = easeOutCubic((this.revealElapsed - revealDelay) / revealDuration)
     for (const { mesh, x, phase } of this.glyphs) {

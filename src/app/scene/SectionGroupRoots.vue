@@ -4,11 +4,19 @@ import type { Group } from 'three'
 
 const emit = defineEmits<{ ready: [groups: Group[]] }>()
 const groups = shallowRef<Group[]>([])
-const names = ['section-lab', 'section-intro', 'section-about', 'section-contact', 'section-menu']
+const names = [
+  'section-lab',
+  'section-intro',
+  'section-about',
+  'section-works',
+  'section-contact',
+  'section-menu',
+]
 
 onMounted(() => {
   const mounted = groups.value
-  if (mounted.length !== 5) throw new Error('Declarative section roots did not mount completely.')
+  if (mounted.length !== names.length)
+    throw new Error('Declarative section roots did not mount completely.')
   emit('ready', mounted)
 })
 </script>

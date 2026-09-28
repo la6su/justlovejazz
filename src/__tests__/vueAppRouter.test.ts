@@ -226,18 +226,20 @@ describe('mountVueApp prerender adoption', () => {
     anchor.href = '/services#section-services-aiSystems'
     document.body.appendChild(anchor)
     anchor.click()
-    for (let i = 0; i < 8; i++) {
-      await new Promise((resolve) => requestAnimationFrame(resolve))
-      await flushPromises()
-    }
-
-    expect(document.getElementById('section-services-aiSystems')).toBeTruthy()
-    expect(
-      emitSpy.mock.calls.some(
-        ([name, detail]) =>
-          name === 'jlz:goto-section-by-hash' &&
-          (detail as { hash?: string }).hash === '#section-services-aiSystems',
-      ),
-    ).toBe(true)
+    // Dynamic imports can take longer under a full parallel suite. Wait for
+    // the observable contract instead of assuming a fixed number of frames.
+    await vi.waitFor(
+      () => {
+        expect(document.getElementById('section-services-aiSystems')).toBeTruthy()
+        expect(
+          emitSpy.mock.calls.some(
+            ([name, detail]) =>
+              name === 'jlz:goto-section-by-hash' &&
+              (detail as { hash?: string }).hash === '#section-services-aiSystems',
+          ),
+        ).toBe(true)
+      },
+      { timeout: 3000 },
+    )
   })
 })

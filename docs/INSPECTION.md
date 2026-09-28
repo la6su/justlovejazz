@@ -1115,11 +1115,10 @@ landed behind an existing seam, no new mechanism was invented.
   ink, lab object), the Cyprus section flip, the reduced-motion fan-out and
   the final teardown in the legacy order — behind a getter context (scene,
   page, camera, host ports, polarity/motion caches, route reconciliation).
-  Experience keeps one-line delegates: the ExperienceUI host port, the
-  buildWorld entry-route pre-inits, the SceneCoordinator owner getters and
-  the frame-path reads keep their shapes. The polarity cache stays on
-  Experience (theme-listener written); the registry reads it through the
-  context.
+  `Experience` and `ExperienceUI` now read this owner directly through their
+  typed boundaries; the registry remains the single stage lifecycle owner.
+  The polarity cache stays on Experience (theme-listener written); the
+  registry reads it through the context.
 
 ### Checked and sound
 
@@ -1354,6 +1353,10 @@ owners. Deliberate past-tense migration markers (`GroundPlane`'s
 "legacy `World.syncGroundTheme`" family, tombstone comments) are kept —
 they document provenance, not live claims.
 
+`WorksPortfolio` itself was removed on 2026-09-28: it duplicated the static
+project list and active index already owned by `ExperienceUI`. Project controls
+now use that owner directly.
+
 ### Checked and sound
 
 - `StageRegistry.slots` + `disposeLabGamepad` stay public (documented test
@@ -1482,6 +1485,9 @@ controller that adopts the nodes.
   created works group) is the documented exception, not a regression: five of
   six section groups adopt their declarative roots, and the works group's
   BakuCarousel/JunniParticles wiring is why the factory creates it.
+- Superseded on 2026-09-28: all six roots, including Works, now mount through
+  `SectionGroupRoots.vue`; `SectionGroups` attaches the carousel and particles
+  to the adopted Works root and remains their disposal owner.
 - DrawTrail deliberately keeps a re-runnable `dispose` (no terminal flag —
   the reduced-motion proxy already neutralizes every behavior path); the
   lifecycle test now pins resources-released + group-untouched instead of

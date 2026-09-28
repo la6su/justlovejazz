@@ -15,7 +15,7 @@ import { BlurFade } from './BlurFade'
 
 import { ExperienceUI } from './ExperienceUI'
 import { SceneCoordinator } from './SceneCoordinator'
-import { particlesOf } from './sceneOwners'
+import { carouselOf, particlesOf } from './sceneOwners'
 // worldDNA.ts removed — TSL node system never attached (attachWorldDNA never
 // called). updateWorldDNAAudio set uniforms nobody read. All dead.
 import { observeReducedMotion, prefersReducedMotion } from '../core/motionPolicy'
@@ -115,37 +115,16 @@ export class Experience {
   // frame pass reads/writes them through the owners bag's getters).
   private particleBurst!: ParticleBurst
   private drawTrail!: DrawTrail
-  // Phase 8 slice 6: the project stream owner. The carousel is created by the
-  // works section factory as a child of the Works group (its disposal lives in
+  // Phase 8 slice 6: the project stream owner. The carousel is attached to the
+  // declarative Works root (its disposal lives in
   // the SectionGroups owner's BakuCarousel-first ordering); Experience owns
   // the reference + init, and the frame pass drives it through the owners
   // bag's carousel getter.
   private carousel: BakuCarousel | null = null
   private _carouselInitPromise: Promise<void> | null = null
-  // Lazy route-owned stages (StageRegistry.ts): the six slot triples, their
-  // contracts and lifecycle publics live in the registry owner; the private
-  // getters below keep the historical read sites unchanged.
+  // StageRegistry owns the six route stages and their lifecycle.
   private readonly _stages!: StageRegistry
   private servicesStage: ServicesStage | null = null
-  /** Stage references read through the registry slots (null until created / after dispose). */
-  private get worksPlaneStage() {
-    return this._stages.worksPlaneStage
-  }
-  private get contactTypographyStage() {
-    return this._stages.contactTypographyStage
-  }
-  private get contactCyprusStage() {
-    return this._stages.contactCyprusStage
-  }
-  private get contactHaloStage() {
-    return this._stages.contactHaloStage
-  }
-  private get manifestoInkStage() {
-    return this._stages.manifestoInkStage
-  }
-  private get labGamepad() {
-    return this._stages.labGamepad
-  }
   // Showreel render mode (ShowreelController.ts): the lazy GPU-side theater,
   // its typed bus commands, the reduced-motion forwarding and the render swap.
   private _showreel!: ShowreelController
@@ -157,18 +136,18 @@ export class Experience {
 
   // The frame path's one-time Works-gallery preload gate (read + written only
   // here, so the flag lives on Experience — not on the ExperienceUI host).
-  private _portfolioInitialized = false
+  private _projectOverlayPreloaded = false
 
   // Phase 7 slice 4: the former UI features (cinematic nav, menu, overlay,
-  // Works portfolio, UI-facing window handlers) live in ExperienceUI.
+  // project controls, UI-facing window handlers) live in ExperienceUI.
   private features!: ExperienceUI
   private readonly _host: ExperienceHost
   private _destroyed = false
   private _lifecycleGeneration = 0
 
-  /** Works portfolio (public for DevPanel access — owned by ExperienceUI). */
-  public get portfolio() {
-    return this.features?.portfolio ?? null
+  /** Development-only project navigation delegates to the UI owner. */
+  public navigateProject(direction: -1 | 1): void {
+    this.features?.navigateProject(direction)
   }
   /** The fullscreen overlay (owned by ExperienceUI). */
   private get overlay() {
@@ -300,25 +279,7 @@ export class Experience {
       // Phase 8 slice 6: the carousel init moved to Experience (World no
       // longer owns scene object init); the UI reaches it through the port.
       ensureCarouselInitialized: () => this.ensureCarouselInitialized(),
-      // Phase 8 slice 7: the lazy /works stage lifecycle moved to Experience;
-      // the UI reaches it through the port.
-      ensureWorksPlaneStageInitialized: () => this.ensureWorksPlaneStageInitialized(),
-      disposeWorksPlaneStage: () => this.disposeWorksPlaneStage(),
-      // Phase 8 slice 8: the lazy Contact stage lifecycle moved to Experience;
-      // the UI reaches it through the port.
-      ensureContactTypographyStageInitialized: () => this.ensureContactTypographyStageInitialized(),
-      ensureContactCyprusStageInitialized: () => this.ensureContactCyprusStageInitialized(),
-      ensureContactHaloStageInitialized: () => this.ensureContactHaloStageInitialized(),
-      disposeContactTypographyStage: () => this.disposeContactTypographyStage(),
-      disposeContactCyprusStage: () => this.disposeContactCyprusStage(),
-      disposeContactHaloStage: () => this.disposeContactHaloStage(),
-      // The lazy /manifesto ink-wash stage lifecycle (same contract as the halo).
-      ensureManifestoInkStageInitialized: () => this.ensureManifestoInkStageInitialized(),
-      disposeManifestoInkStage: () => this.disposeManifestoInkStage(),
-      setContactCyprusStageSection: (index: number) => this.setContactCyprusStageSection(index),
-      // Phase 8 slice 9: the lazy Lab object lifecycle moved to Experience;
-      // the UI reaches it through the port.
-      ensureLabGamepad: () => this.ensureLabGamepad(),
+      stages: () => this._stages,
     })
 
     // Phase 7 (ADR 0004) / ADR 0005: construct the single loop policy. The
@@ -369,13 +330,13 @@ export class Experience {
     this.coordinator?.resize(this.sizes.width, this.sizes.height)
     // Phase 8 slice 7: the /works stage resize moved out of World.resize —
     // forwarded directly (the stage is lazy; null until /works is reached).
-    this.worksPlaneStage?.resize(this.sizes.width, this.sizes.height)
+    this._stages.worksPlaneStage?.resize(this.sizes.width, this.sizes.height)
     // Phase 8 slice 8: the Contact typography resize moved out of
     // World.resize — forwarded directly (lazy; null until /contact is
     // reached).
     // The lazy Cyprus stage owns a viewport-dependent map scale and must
     // follow later orientation/address-bar viewport changes too.
-    this.contactCyprusStage?.resize(this.sizes.width, this.sizes.height)
+    this._stages.contactCyprusStage?.resize(this.sizes.width, this.sizes.height)
   }
 
   private lifecycleToken(): number {
@@ -440,12 +401,12 @@ export class Experience {
         particleBurst: () => this.particleBurst,
         drawTrail: () => this.drawTrail,
         carousel: () => this.carousel,
-        worksPlaneStage: () => this.worksPlaneStage,
-        contactTypographyStage: () => this.contactTypographyStage,
-        contactCyprusStage: () => this.contactCyprusStage,
-        contactHaloStage: () => this.contactHaloStage,
-        manifestoInkStage: () => this.manifestoInkStage,
-        labGamepad: () => this.labGamepad,
+        worksPlaneStage: () => this._stages.worksPlaneStage,
+        contactTypographyStage: () => this._stages.contactTypographyStage,
+        contactCyprusStage: () => this._stages.contactCyprusStage,
+        contactHaloStage: () => this._stages.contactHaloStage,
+        manifestoInkStage: () => this._stages.manifestoInkStage,
+        labGamepad: () => this._stages.labGamepad,
         servicesStage: () => this.servicesStage,
       },
       () => this.currentPage(),
@@ -463,13 +424,12 @@ export class Experience {
     )
     const servicesStage = this._host.servicesStage
     this.servicesStage = servicesStage
-    // Phase 8 slice 6: the project stream (BakuCarousel) is created by the
-    // works section factory as a child of the Works group — it enters the
-    // scene graph with the group, but its reference + init + per-frame drive
+    // Phase 8 slice 6: the project stream (BakuCarousel) attaches to the
+    // declarative Works root; its reference + init + per-frame drive
     // belong to Experience. The coordinator frame path reads it through the
     // carousel owner getter.
-    const worksGroup = this.sectionGroups.at(3)
-    this.carousel = (worksGroup?.userData.carousel as BakuCarousel | undefined) ?? null
+    const worksGroup = this.sectionGroups.at(WORKS_SLOT_INDEX)
+    this.carousel = carouselOf(worksGroup) ?? null
     if (this.carousel) this.carousel.onActivity = () => this._raiseRenderDemand('dirty')
     // Phase 8 slice 3: the ambient pavilion (EnvSphere) enters the
     // Tres-owned scene under its own owner; the coordinator frame path
@@ -505,7 +465,7 @@ export class Experience {
     // Phase 8 slice 7: the /works stage init moved out of World.init() to this
     // same boundary (lazy — created only when /works is the entry route; the
     // route can dispose it while its texture decode is still pending).
-    if (this.currentPage() === 'works') void this.ensureWorksPlaneStageInitialized()
+    if (this.currentPage() === 'works') void this._stages.ensureWorksPlaneStageInitialized()
     // Phase 8 slice 8: the Contact typography + Cyprus stage inits moved out of
     // World.init() to this same boundary (lazy — created only when /contact
     // is the entry route; the route can dispose them while their inits are
@@ -513,24 +473,24 @@ export class Experience {
     // while Contact's first frame (or the splash) is on screen, so Agros has
     // no first-use model decode or shader-compile hitch.
     if (this.currentPage() === 'contact') {
-      void this.ensureContactTypographyStageInitialized()
-      void this.ensureContactHaloStageInitialized()
+      void this._stages.ensureContactTypographyStageInitialized()
+      void this._stages.ensureContactHaloStageInitialized()
       // `ensureContactCyprusStageInitialized()` owns the prewarm after its
       // request/identity guard. Do not attach a second continuation here: a
       // stale entry-route promise could otherwise prewarm a newer stage.
-      void this.ensureContactCyprusStageInitialized()
+      void this._stages.ensureContactCyprusStageInitialized()
     }
     // The /manifesto ink wash follows the same entry-route contract: the
     // initial deep-link fires jlz:route-change before this subscription
     // exists, so the entry route must ensure its own lazy stage here.
-    if (this.currentPage() === 'manifesto') void this.ensureManifestoInkStageInitialized()
+    if (this.currentPage() === 'manifesto') void this._stages.ensureManifestoInkStageInitialized()
     if (!this.isLifecycleCurrent(token)) return
     // Phase 8 slice 9: the Lab object's lazy creation moved out of
     // World.syncRouteVisuals() to this same boundary (created once on the first
     // /lab visit; the entry route triggers it here, the UI route handler
     // triggers it on navigation). It is a static object — never disposed per
     // route leave, only on final destroy.
-    if (this.currentPage() === 'lab') void this.ensureLabGamepad()
+    if (this.currentPage() === 'lab') void this._stages.ensureLabGamepad()
     // Phase 8 slice 10: the World's TresJS primitive slot goes away with the
     // legacy World — the coordinator's sections enter the Tres scene directly
     // (init() adds them); every route-owned lazy stage reaches the scene
@@ -596,72 +556,6 @@ export class Experience {
     )
     this._carouselInitPromise = initPromise
     return this._carouselInitPromise
-  }
-
-  /**
-   * Lazy-stage lifecycle delegates — the implementation (six slot triples,
-   * contracts and the Cyprus section flip) lives in StageRegistry.ts; these
-   * one-line publics keep the ExperienceUI host port and the buildWorld
-   * entry-route pre-inits unchanged.
-   */
-
-  /** Lazily create rich `/works` media only on that route, never on first paint. */
-  public ensureWorksPlaneStageInitialized(): Promise<void> {
-    return this._stages.ensureWorksPlaneStageInitialized()
-  }
-
-  /** Dispose the /works case-plane stage when leaving /works (frees ~40-50 MB
-   *  of GPU textures + TSL materials); lazily re-created on the next visit. */
-  public disposeWorksPlaneStage(): void {
-    this._stages.disposeWorksPlaneStage()
-  }
-
-  /** Lazily create the Contact greeting so FontLoader/TextGeometry stay out
-   * of the shared initial scene graph. */
-  public ensureContactTypographyStageInitialized(): Promise<void> {
-    return this._stages.ensureContactTypographyStageInitialized()
-  }
-
-  public disposeContactTypographyStage(): void {
-    this._stages.disposeContactTypographyStage()
-  }
-
-  /** Lazily load the Contact ink halo so the TSL graph stays out of the
-   * shared initial scene graph. */
-  public ensureContactHaloStageInitialized(): Promise<void> {
-    return this._stages.ensureContactHaloStageInitialized()
-  }
-
-  public disposeContactHaloStage(): void {
-    this._stages.disposeContactHaloStage()
-  }
-
-  /** Lazily load the /manifesto ink wash (same contract as the contact halo). */
-  public ensureManifestoInkStageInitialized(): Promise<void> {
-    return this._stages.ensureManifestoInkStageInitialized()
-  }
-
-  public disposeManifestoInkStage(): void {
-    this._stages.disposeManifestoInkStage()
-  }
-
-  /** Lazily load the Contact location asset instead of keeping it in the home scene. */
-  public ensureContactCyprusStageInitialized(): Promise<void> {
-    return this._stages.ensureContactCyprusStageInitialized()
-  }
-
-  public disposeContactCyprusStage(): void {
-    this._stages.disposeContactCyprusStage()
-  }
-
-  /** Frame 03 replaces the shared cube with the Cyprus asset. */
-  public setContactCyprusStageSection(index: number): void {
-    this._stages.setContactCyprusStageSection(index)
-  }
-
-  /** Lazily create the Lab experiment object on its first /lab visit. */
-  public ensureLabGamepad(): Promise<void> {
-    return this._stages.ensureLabGamepad()
   }
 
   async init() {
@@ -778,7 +672,7 @@ export class Experience {
     this._environment.apply()
 
     // Phase 7 slice 4: the former UI features (CinematicNav, UIMenu,
-    // overlay, Works portfolio, UI-facing window handlers) are created and
+    // overlay, project controls, UI-facing window handlers) are created and
     // wired by ExperienceUI at this legacy timing (after world + env).
     this.features.init()
 
@@ -846,8 +740,8 @@ export class Experience {
       configId: 'sec_intro',
       index: 1,
     })
-    // Always build portfolio — single-page, always needs works slider
-    void this.features.ensurePortfolio()
+    // Always prepare project controls — single-page, always needs the Works slider.
+    void this.features.ensureProjectControls()
     this.camera.instance.position.set(0, 5, 10)
     this.camera.instance.lookAt(0, 0, 0)
     this.camera.instance.updateProjectionMatrix()
@@ -1034,9 +928,9 @@ export class Experience {
     const carousel = this.features.getCarousel()
     this._bakuCarouselActive = carousel?.isAnimating ?? false
     const carouselActive = this._bakuCarouselActive
-    const worksPlaneActive = this.worksPlaneStage?.isAnimating ?? false
-    const contactCyprusActive = this.contactCyprusStage?.isAnimating ?? false
-    const contactHaloActive = this.contactHaloStage?.isAnimating ?? false
+    const worksPlaneActive = this._stages.worksPlaneStage?.isAnimating ?? false
+    const contactCyprusActive = this._stages.contactCyprusStage?.isAnimating ?? false
+    const contactHaloActive = this._stages.contactHaloStage?.isAnimating ?? false
     const drawTrailActive = this.drawTrail?.isAnimating ?? false
     const baku = this.baku
     const openerActive = baku?.isOpenerActive ?? false
@@ -1132,10 +1026,10 @@ export class Experience {
     this.coordinator.setCamera(this.camera.instance)
     // Phase 8 slice 7: the /works stage camera moved out of World.setCamera —
     // forwarded directly (the stage is lazy; null until /works is reached).
-    this.worksPlaneStage?.setCamera(this.camera.instance)
+    this._stages.worksPlaneStage?.setCamera(this.camera.instance)
     // Phase 8 slice 8: the Contact stage cameras moved out of World.setCamera
     // (Experience owns both lazy stages).
-    this.contactCyprusStage?.setCamera(this.camera.instance)
+    this._stages.contactCyprusStage?.setCamera(this.camera.instance)
 
     // Dispatch section-change on EVERY section index change (not just context).
     // This triggers NoiseText title animation for the new section + cube face rotation.
@@ -1214,8 +1108,8 @@ export class Experience {
     // (above, in the activity snapshot) — was a race condition where stale
     // value caused carousel.update() to never run, morph stalled at ~0.35.
     // Sync FullscreenOverlay (DOM UI layer) — fullscreen opens on card click.
-    if (this.overlay && showGallery && !this._portfolioInitialized) {
-      this._portfolioInitialized = true
+    if (this.overlay && showGallery && !this._projectOverlayPreloaded) {
+      this._projectOverlayPreloaded = true
       // Preload the first project into the overlay (hidden until card click).
       // Uses preload() NOT open() — open() calls UIkit.modal().show() which
       // adds the uk-open class (making the overlay visible). preload() only
@@ -1401,7 +1295,7 @@ export class Experience {
     this._environment?.disposeCurrent()
   }
 
-  // (ensurePortfolio / getCarousel / onProjectSelect removed — Phase 7
+  // (ensureProjectControls / getCarousel / onProjectSelect removed — Phase 7
   //  slice 4: owned by ExperienceUI. The BakuCarousel card click is the SOLE
   //  entry point for the fullscreen FullscreenOverlay, as before.)
 }

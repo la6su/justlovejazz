@@ -1,8 +1,48 @@
 # Open work
 
 Only unfinished outcomes. The user's task takes priority; the declarative
-transition continues slice by slice (see Engineering 4). Implement one useful
-slice at a time and remove completed items.
+transition continues slice by slice (see the architecture plan below).
+Implement one useful slice at a time and remove completed items.
+
+## Portfolio architecture and production plan (2026-09-28)
+
+Audit baseline: `main` @ `9a16a957`. The project already uses Vue 3, TresJS 5,
+Cientos, one persistent `TresCanvas`, a custom Three `WebGPURenderer`, TSL
+materials, a demand-driven Tres loop, lazy route stages and an actual-backend
+policy. A wholesale Vue rewrite or a second renderer would duplicate owners.
+The TvT example is an inspiration for scene authoring, not a drop-in runtime:
+evaluate individual components against TSL, disposal and lazy-delivery rules
+in `docs/ARCHITECTURE.md`. Existing tests are extensive; remove a test only
+when its behavior is deleted or another test demonstrably covers the same
+contract. Keep this queue as the single plan and retire completed slices.
+
+### Active architecture work
+
+1. **Continue lifecycle simplification.** Review the remaining `Experience`
+   responsibilities around boot coordination, carousel initialization and
+   renderer recovery. Extract an owner only when it reduces the public surface
+   and preserves route, teardown and recovery ordering.
+2. **Evaluate remaining scene construction.** For each row in the migration
+   ledger in [Architecture](docs/ARCHITECTURE.md#tvt-tres-adoption-boundary),
+   trace construction, update, resource and disposal ownership. Move geometry
+   into Tres components when that removes an imperative construction owner;
+   retain TSL uniforms, pooled resources and async GLTF ownership where needed.
+3. **Review static delivery and stale contracts.** Check source reachability
+   from Vite and SSG entries, generated inputs, metadata/canonical URLs and
+   documentation claims. Remove obsolete tests and compatibility code only
+   after verifying the currently installed package imports.
+4. **Release inputs.** Resolve the media, proof, contact provider and target
+   host decisions under Product / input needed below. The 16.35 MB
+   `coming-soon.mp4` is a labelled placeholder; optimize its approved
+   replacement with a poster and measured encoding budget.
+
+### User-deferred final gates
+
+The full Bun pipeline (`build`, `check:stdlib`, `budget`, documentation gate),
+serial Playwright Chromium, physical native WebGPU, automatic WebGL fallback,
+device-loss recovery on a real browser/driver and desktop/mobile visual QA in
+EN/RU with reduced motion are explicitly postponed. They remain required
+release evidence; unit tests and a direct Vite build do not close them.
 
 ## Brand implementation
 
@@ -26,78 +66,22 @@ factual claims until approved proof arrives.
    Polish entry, hover/press, loading, exit and return; keep mobile composition
    and settled render demand intentional.
 
-## Engineering
+## Delivery evidence
 
-Reconciled with the 2026-09-17 audit against main @ f155b188: the CI gate and
-the builder compatibility residue are closed in code (CI already runs
-`type-check:vue` + `test:serial`; the admin save endpoint is strictly
-`{ slug, document }` with no legacy `page.json` wrap), so those queue items are
-retired. `scripts/bundle-breakdown.ts` now selects the shared vendor exactly
-(`scripts/build-assets.ts` excludes the Contact addon chunks), depends on
-`source-map-js` directly and writes run-unique reports. Remaining:
-
-1. **Three delivery review.** The breakdown data is current (see the
-   2026-09-26 reports under `docs/evidence/bundle-breakdown/`): the shared
-   chunk is pure three.js again (the three-stdlib modules moved into the lazy
-   `vendor-lab-controls` chunk, 37.5 kB gzip) and every budget holds. What
-   remains is the judgment call on startup/backend/idle behavior, which needs
-   the live/soak evidence below. Keep existing budgets unless a change has a
-   measured rationale within the task scope.
-2. **Evidence report regeneration.** The live/soak reports now record the
-   evidence protocol's revision/dirty state, command and browser identity
-   (shared `scripts/evidence-meta.ts`, bundle-tool convention; per-run
-   backend identity stays the `data-engine` attribute plus the captured
-   host-ready log). Bundle breakdowns are regenerated on every delivery
-   slice (`bun scripts/bundle-breakdown.ts`, one build, one report per
-   vendor chunk). Remaining: regenerate each live/soak report on its
-   supported server.
-3. **Two-branch delivery workflow (user-deferred).** The remote `dev` branch
-   is a 2026-07-28 relic whose commits are superseded by the migration; the
-   user wants `dev` as the integration branch (scoped PRs land there, then the
-   user verifies in a real browser before `dev` → `main`). When picked up:
-   back up the relic with a tag, reset `dev` to `main`, add `dev` to the CI
-   trigger in `.github/workflows/lighthouse.yml`, and update the Git delivery
-   wording in [DEVELOPMENT](docs/DEVELOPMENT.md) (§ Git delivery) and the
-   release skill (`skills/justlovejazz-release/SKILL.md` — the "PR against
-   `main`" rule is the one that changes).
-
-## Audit cleanup (2026-09-17)
-
-The 2026-09-17 post-transition audit found no dead files, duplicate GPU
-owners or untyped event paths; the bounded slices it listed (dead i18n keys,
-stale owner comments, the dead `Renderer.update` parameter) shipped in #216.
-The `sections/` residue closed 2026-09-27: `PageId` moved into
-`core/routeManifest.ts` (its true owner — the manifest is the path + page
-source of truth) and the directory is gone. The god-class split closed
-2026-09-27 on both sides (Inspections 14–15): Experience (StageRegistry,
-ShowreelController, SceneEnvironment, FpsTracker) and SceneCoordinator
-(SectionStateMachine, SceneTransformPass, SceneFramePass over the shared
-`sceneOwners` bag) are honest single-concern owners behind the unchanged
-public surfaces; the intentionally-unextracted remainder
-(`_needsRender`/`_activitySnapshot` writers, settle policy, carousel
-triangle) is recorded in Inspection 15. The last deferred item is closed:
-
-1. **Lazy lifecycle consistency (closed 2026-09-25).** The Lab gamepad now
-   runs through the shared `ensureLazyStage`/`disposeLazyStage` flow — its
-   hand-rolled promise memoization, request counter and teardown lines are
-   gone. The BakuCarousel init intentionally stays hand-rolled (decision
-   recorded on `Experience.ensureCarouselInitialized`): the instance is
-   created and disposed by the SectionGroups owner, LazyStage's failure path
-   would null the live scene-graph reference, and a home-only owner that is
-   never disposed per route does not fit the stage contract — converting it
-   would add the second abstraction layer this item was gated against.
-
-The declarative transition closed 2026-09-27 on both boundaries
-(Inspections 17–18): the six route-owned lazy stages mount through
-`SceneStagePorts`, and the three boot-static owners
-(`SplashCube` / `ParticleBurst` / `DrawTrail`) had their scene-graph nodes
-moved into declarative `app/scene/` components whose nodes the behavior
-controllers adopt — `Experience.buildWorld` has no runtime `scene.add` left.
-The one remaining imperative scene-graph insertion is the works section group
-the factory creates (its BakuCarousel/JunniParticles wiring is the documented
-exception inside SectionGroups). The TvT reference was audited under the
-"adoption is audited, not assumed" rule (Inspection 17): nothing adopted
-wholesale.
+1. **Three delivery review.** Keep the current chunk and budget policy unless
+   a measured result justifies changing it. Regenerate bundle breakdown and
+   live/soak evidence on a supported browser/server before release; record
+   the actual backend, startup, active-frame p95, idle zero-draw behaviour,
+   teardown trend and recovery result.
+   The current local Vite rebuild is aligned with source (no stale
+   `WorksPortfolio`/five-root runtime remains in `dist/`); measured gzip is
+   295.7 kB for shared Three, 53.0 kB for UIkit and 2.1 kB for splash startup,
+   all within the existing budgets. The full Bun pipeline still needs to run
+   in the release environment because it also regenerates blog, builder and
+   sitemap inputs.
+2. **Integration branch (user-deferred).** If the user elects to restore the
+   `dev` workflow, back up its obsolete history, align it with `main`, add it
+   to CI, and update the release instructions in the same delivery.
 
 ## Product / input needed
 

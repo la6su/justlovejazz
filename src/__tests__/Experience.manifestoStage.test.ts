@@ -57,9 +57,9 @@ function makeDestroyableExperience(scene: THREE.Scene): ReturnType<typeof seedEx
 describe('Experience Manifesto ink lazy owner', () => {
   it('retires a pending import during root teardown before it can construct or attach', async () => {
     const scene = new THREE.Scene()
-    const { exp: experience, slots } = makeDestroyableExperience(scene)
+    const { exp: experience, slots, registry } = makeDestroyableExperience(scene)
 
-    const pending = experience.ensureManifestoInkStageInitialized()
+    const pending = registry.ensureManifestoInkStageInitialized()
     experience.destroy()
     manifestoModule.resolve({ ManifestoInkStage: DeferredManifestoInkStage })
     await pending

@@ -1,9 +1,8 @@
-// src/Experience/Scene/WorksSection.ts — the imperatively-created Works
-// section group (slot 3, the cube back face).
+// src/Experience/Scene/WorksSection.ts — the Works section contents
+// (slot 3, the cube back face).
 //
-// The only section group created imperatively: its creator owns the live
-// BakuCarousel + JunniParticles. Every other slot adopts its declarative
-// root from SectionGroupRoots.vue.
+// The Tres root is declarative. This creator attaches the live BakuCarousel
+// and JunniParticles to that root; SectionGroups owns their disposal.
 
 import * as THREE from 'three'
 import { JunniParticles } from '../World/JunniParticles'
@@ -11,14 +10,12 @@ import { BakuCarousel } from '../World/BakuCarousel'
 import type { PageId } from '../../core/routeManifest'
 import type { StorySide } from '../../core/storyState'
 
-/** Create the Works section group around the baku. */
-export function createWorksSection(
+/** Attach the Works content to its declarative scene root. */
+export function attachWorksSection(
+  g: THREE.Group,
   page: () => PageId = () => 'home',
   storySide: () => StorySide = () => 'center',
 ): THREE.Group {
-  const g = new THREE.Group()
-  g.name = 'works'
-
   // Shared sprite sheet texture (6 frames, 768×128 — junni pattern.jpg).
   // Loaded by this creator so the group is the explicit texture owner:
   // multiple SectionGroups instances must never overwrite a module-level

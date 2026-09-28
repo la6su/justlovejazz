@@ -4,9 +4,8 @@
 // manifesto ink) used to repeat the same ~30-line ensure/dispose flow inside
 // Experience: request counter, promise memoization, stale-guard, attach,
 // post-init wiring, failure containment with an exact per-stage release
-// order. This module owns that flow once, over the flat owner fields each
-// stage already keeps on Experience (the layout is pinned by the stage
-// lifecycle tests that seed it directly, so the state stays where it is).
+// order. This module owns that flow once over the owner-backed slots in
+// StageRegistry. The route-specific contracts stay with that registry.
 //
 // The per-stage variation is expressed as a contract:
 //   create   — construct directly or after a dynamic import
@@ -18,9 +17,7 @@
 
 import type { Object3D } from 'three'
 
-/** Function-backed owner state over the flat fields each lazy stage keeps on
- *  Experience. Arrow functions keep the Experience `this` lexical, so the
- *  wiring needs no `this` aliasing. */
+/** Function-backed view over the state held by one lazy-stage slot. */
 export interface LazyStageOwner<T> {
   getStage: () => T | null
   setStage: (stage: T | null) => void
@@ -89,7 +86,7 @@ export interface LazyStageContract<T extends Object3D> {
   /** Attach the instance to the scene; Tres-backed mounts may be awaitable. */
   attach: (stage: T) => void | Promise<void>
   /** Optional awaitable init/load after the instance is attached. */
-  load?: (stage: T) => Promise<unknown>
+  load?: (stage: T, isCurrent: () => boolean) => Promise<unknown>
   /** Route wiring after the stale guard passes. */
   configure: (stage: T) => void
   /** Release resources in the exact per-stage order (dispose ↔ detach). */
@@ -144,66 +141,62 @@ export function ensureLazyStage<T extends Object3D>(contract: LazyStageContract<
     contract.configure(stage)
   }
 
-  const created = contract.create(() => request === owner.getRequest())
-
-  if (created instanceof Promise) {
-    // The assigned instance must survive into the rejection handler so a
-    // failing load still releases exactly the stage that was attached.
-    let createdStage: T | null = null
-    const settled = created
-      .then(async (stage) => {
-        if (!stage) return null
-        if (request !== owner.getRequest()) {
-          // Disposed while the module/asset was loading: discard the late
-          // construction instead of joining the scene.
-          contract.release(stage)
-          return null
+  // Calling attach before the first await preserves Works' eager mount.
+  // The same guard now applies to synchronous and imported stages: a Tres
+  // mount may finish after route leave and must not start asset loading.
+  const attachAndLoad = (stage: T): Promise<T> => {
+    owner.setStage(stage)
+    try {
+      const attached = contract.attach(stage)
+      const loadIfCurrent = (): Promise<unknown> | undefined => {
+        if (request === owner.getRequest() && owner.getStage() === stage) {
+          return contract.load?.(
+            stage,
+            () => request === owner.getRequest() && owner.getStage() === stage,
+          )
         }
-        createdStage = stage
-        owner.setStage(stage)
-        await contract.attach(stage)
-        // An awaited Tres mount can complete after route leave or root
-        // teardown. Do not start asset/GPU work for a retired owner.
-        if (request !== owner.getRequest() || owner.getStage() !== stage) return stage
-        if (contract.load) await contract.load(stage)
-        return stage
-      })
-      .then(
-        (stage) => {
-          if (!stage) return
-          try {
-            settle(stage)
-          } catch (error) {
-            fail(error, stage)
-          }
-        },
-        (error: unknown) => fail(error, createdStage),
-      )
-    owner.setPromise(settled)
-    return settled
+      }
+      // A synchronous attach starts its load immediately, as Works did
+      // before consolidation; an async Tres mount checks the request again.
+      const loaded = attached instanceof Promise ? attached.then(loadIfCurrent) : loadIfCurrent()
+      return Promise.resolve(loaded).then(() => stage)
+    } catch (error) {
+      return Promise.reject(error)
+    }
   }
 
-  // Synchronous creation: the instance joins the scene before the first
-  // await, matching the eager-attach contract of the works stage.
-  const stage = created
-  if (!stage) return Promise.resolve()
-  owner.setStage(stage)
-  const attached = contract.attach(stage)
-  const settled = (
-    attached instanceof Promise
-      ? attached.then(() => (contract.load ? contract.load(stage) : undefined))
-      : contract.load
-        ? Promise.resolve(contract.load(stage))
-        : Promise.resolve()
-  ).then(
-    () => {
+  let created: T | null | Promise<T | null>
+  try {
+    created = contract.create(() => request === owner.getRequest())
+  } catch (error) {
+    fail(error, null)
+    return Promise.resolve()
+  }
+
+  let activeStage: T | null = null
+  const mount = (stage: T | null): Promise<T | null> => {
+    if (!stage) return Promise.resolve(null)
+    if (request !== owner.getRequest()) {
+      contract.release(stage)
+      return Promise.resolve(null)
+    }
+    activeStage = stage
+    return attachAndLoad(stage)
+  }
+  const pending = created instanceof Promise ? created.then(mount) : mount(created)
+  const settled = pending.then(
+    (stage) => {
+      if (!stage) {
+        if (request === owner.getRequest()) owner.setPromise(null)
+        return
+      }
       try {
         settle(stage)
       } catch (error) {
         fail(error, stage)
       }
     },
-    (error: unknown) => fail(error, stage),
+    (error: unknown) => fail(error, activeStage),
   )
   owner.setPromise(settled)
   return settled
