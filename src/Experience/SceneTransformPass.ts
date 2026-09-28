@@ -45,6 +45,8 @@ export class SceneTransformPass {
   // updateTransform (~360 array allocs/sec at 60 fps). Ranges are immutable
   // after init(), so they are built once.
   private _rangesCache: [number, number][] | null = null
+  private readonly _meshCache = new WeakMap<THREE.Group, THREE.Mesh[]>()
+  private readonly _opacityCache = new WeakMap<THREE.Material, { base: number; lastFade: number }>()
 
   // ── GC-free object pool for per-frame transforms (avoids allocs/frame)
   private _poolPos = new THREE.Vector3()
@@ -207,7 +209,8 @@ export class SceneTransformPass {
 
     // ── Scene group visibility with opacity fade (junni switchVisibility pattern)
     // From group fades out as t→1, to group fades in. Both visible during
-    // transition. NON-DESTRUCTIVE: cache baseOpacity in userData, apply fade
+    // transition. NON-DESTRUCTIVE: cache base opacity in the pass-owned state,
+    // then apply the transition fade
     // multiplicatively. Keep factory opacity values as the base and apply the
     // transition fade multiplicatively.
     const groups = this._ctx.owners.sectionGroups()?.groups ?? []
@@ -230,36 +233,28 @@ export class SceneTransformPass {
       if (shouldShow) {
         g.visible = fade > 0.001
         // A-006: Use cached mesh list instead of traverse every frame.
-        // Cache stored in group.userData._meshCache (lazy-init).
-        let meshCache = g.userData._meshCache as THREE.Mesh[] | undefined
+        let meshCache = this._meshCache.get(g)
         if (!meshCache) {
           meshCache = []
           g.traverse((obj) => {
             if (obj instanceof THREE.Mesh) {
               const mat = obj.material
               if (!Array.isArray(mat) && 'opacity' in mat) {
-                const m = mat as THREE.Material & {
-                  opacity: number
-                  userData: { baseOpacity?: number; lastFade?: number }
-                }
-                if (m.userData.baseOpacity === undefined) {
-                  m.userData.baseOpacity = m.opacity
-                }
-                m.userData.lastFade = undefined
+                const material = mat as THREE.Material & { opacity: number }
+                this._opacityCache.set(material, { base: material.opacity, lastFade: Number.NaN })
                 meshCache!.push(obj)
               }
             }
           })
-          g.userData._meshCache = meshCache
+          this._meshCache.set(g, meshCache)
         }
         for (const mesh of meshCache) {
-          const m = mesh.material as THREE.Material & {
-            opacity: number
-            userData: { baseOpacity?: number; lastFade?: number }
-          }
-          if (m.userData.lastFade !== fade) {
-            m.opacity = (m.userData.baseOpacity ?? 1) * fade
-            m.userData.lastFade = fade
+          const m = mesh.material as THREE.Material & { opacity: number }
+          const state = this._opacityCache.get(m) ?? { base: m.opacity, lastFade: Number.NaN }
+          this._opacityCache.set(m, state)
+          if (state.lastFade !== fade) {
+            m.opacity = state.base * fade
+            state.lastFade = fade
           }
         }
 
