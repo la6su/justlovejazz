@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import * as THREE from 'three'
 import { SectionGroups } from '../Experience/Scene/SectionGroups'
 import { JunniParticles } from '../Experience/World/JunniParticles'
+import { sectionGroupAttachmentsOf, setSectionGroupAttachments } from '../Experience/sceneOwners'
 
 describe('SectionGroups lifecycle', () => {
   it('attaches Works contents to its declarative root and leaves the root with Tres', () => {
@@ -16,12 +17,13 @@ describe('SectionGroups lifecycle', () => {
     const worksRoot = roots[3]!
 
     expect(owner.at(3)).toBe(worksRoot)
-    expect(worksRoot.userData.carousel).toBeTruthy()
-    expect(worksRoot.userData.particles).toBeTruthy()
+    expect(sectionGroupAttachmentsOf(worksRoot)?.carousel).toBeTruthy()
+    expect(sectionGroupAttachmentsOf(worksRoot)?.particles).toBeTruthy()
+    const particles = sectionGroupAttachmentsOf(worksRoot)?.particles
     owner.dispose()
 
     expect(worksRoot.parent).toBe(scene)
-    expect(worksRoot.userData.particles.parent).toBeNull()
+    expect(particles?.parent).toBeNull()
   })
 
   it('adopts declarative empty roots without removing them on owner disposal', () => {
@@ -67,7 +69,7 @@ describe('SectionGroups lifecycle', () => {
     const owner = new SectionGroups(scene, 0)
     const group = new THREE.Group()
     const particles = new JunniParticles({ count: 4 })
-    group.userData.particles = particles
+    setSectionGroupAttachments(group, { particles })
     group.add(particles)
     scene.add(group)
     owner.groups.push(group)

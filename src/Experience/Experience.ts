@@ -1172,7 +1172,7 @@ export class Experience {
 
     // ── Auto-reduce particle count when FPS is sustained low ──
     // One-way: once reduced, never auto-restore (GPU spike would re-trigger).
-    // Iterates all scene groups, finds JunniParticles via userData.particles,
+    // Iterates all scene groups, finds JunniParticles via the typed attachment,
     // halves their count. DevPanel shows the reduction (low fps ⚠ indicator).
     if (this._fpsTracker.lowFps && !this._particleReductionApplied && this.coordinator) {
       this._particleReductionApplied = true

@@ -9,6 +9,7 @@ import { JunniParticles } from '../World/JunniParticles'
 import { BakuCarousel } from '../World/BakuCarousel'
 import type { PageId } from '../../core/routeManifest'
 import type { StorySide } from '../../core/storyState'
+import { sectionGroupAttachmentsOf, setSectionGroupAttachments } from '../sceneOwners'
 
 /** Attach the Works content to its declarative scene root. */
 export function attachWorksSection(
@@ -28,7 +29,7 @@ export function attachWorksSection(
   particleTexture.colorSpace = THREE.SRGBColorSpace
   particleTexture.minFilter = THREE.LinearFilter
   particleTexture.generateMipmaps = false
-  g.userData.ownedTextures = [particleTexture]
+  const ownedTextures = [particleTexture]
 
   // BakuCarousel — the project stream resolves from depth around the baku.
   // Once revealed (morphT > 0.5) the stream can be scrolled/dragged,
@@ -36,7 +37,7 @@ export function attachWorksSection(
   const carousel = new BakuCarousel(page, storySide)
   carousel.userData.keepVisible = true
   g.add(carousel)
-  g.userData.carousel = carousel
+  setSectionGroupAttachments(g, { carousel, ownedTextures })
 
   // JunniParticles — exact junni Section3 params:
   //   num=100, range=[7,8,7], size=0.2 (PlaneGeometry base), speed=1.0
@@ -53,7 +54,10 @@ export function attachWorksSection(
   })
   particles.userData.keepVisible = true
   g.add(particles)
-  g.userData.particles = particles
+  setSectionGroupAttachments(g, {
+    ...sectionGroupAttachmentsOf(g),
+    particles,
+  })
 
   return g
 }

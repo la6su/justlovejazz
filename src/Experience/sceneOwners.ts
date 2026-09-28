@@ -21,7 +21,30 @@ import type { ManifestoInkStage } from './World/ManifestoInkStage'
 import type { LabExperimentObject } from './Lab/manifest'
 import type { ServicesStage } from './World/ServicesStage'
 import type { JunniParticles } from './World/JunniParticles'
-import type { Group } from 'three'
+import type { Group, Texture } from 'three'
+
+export interface SectionGroupAttachments {
+  particles?: JunniParticles
+  carousel?: BakuCarousel
+  ownedTextures?: Texture[]
+}
+
+const SECTION_ATTACHMENTS = new WeakMap<Group, SectionGroupAttachments>()
+
+export function setSectionGroupAttachments(
+  group: Group,
+  attachments: SectionGroupAttachments,
+): void {
+  SECTION_ATTACHMENTS.set(group, attachments)
+}
+
+export function sectionGroupAttachmentsOf(group: Group): SectionGroupAttachments | undefined {
+  return SECTION_ATTACHMENTS.get(group)
+}
+
+export function clearSectionGroupAttachments(group: Group): void {
+  SECTION_ATTACHMENTS.delete(group)
+}
 
 export interface SceneCoordinatorOwners {
   ground: () => GroundPlane | null
@@ -41,18 +64,14 @@ export interface SceneCoordinatorOwners {
 }
 
 /**
- * The informal group ↔ particles contract written by WorksSection
- * (`g.userData.particles = particles`) — one typed read for every consumer
- * (the frame pass, the coordinator's visibility gates, the Experience theme
- * and low-fps sweeps). SectionGroups' disposal sweep deliberately keeps its
- * own structural `Object3D & { dispose? }` read: it must not assume the
- * concrete class while releasing resources.
+ * The typed group attachment contract written by WorksSection — one read for
+ * every consumer (the frame pass, visibility gates, theme and low-fps sweeps).
  */
 export function particlesOf(group: Group): JunniParticles | undefined {
-  return group.userData.particles as JunniParticles | undefined
+  return sectionGroupAttachmentsOf(group)?.particles
 }
 
 /** Typed read for the Works root's carousel attachment. */
 export function carouselOf(group: Group | undefined): BakuCarousel | undefined {
-  return group?.userData.carousel as BakuCarousel | undefined
+  return group ? sectionGroupAttachmentsOf(group)?.carousel : undefined
 }
