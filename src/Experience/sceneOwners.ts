@@ -51,3 +51,8 @@ export interface SceneCoordinatorOwners {
 export function particlesOf(group: Group): JunniParticles | undefined {
   return group.userData.particles as JunniParticles | undefined
 }
+
+/** Typed read for the Works root's carousel attachment. */
+export function carouselOf(group: Group | undefined): BakuCarousel | undefined {
+  return group?.userData.carousel as BakuCarousel | undefined
+}

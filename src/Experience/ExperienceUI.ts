@@ -2,7 +2,7 @@
 //
 // `Experience` split: bootstrap (init + readiness), scene coordination
 // (per-frame world/camera/post) and the FORMER UI FEATURES — the cinematic
-// navigation shell, the menu, the fullscreen overlay, the Works portfolio
+// navigation shell, the menu, the fullscreen overlay, project controls
 // and the UI-facing window event handlers. This class owns those features
 // (creation, wiring, disposal) and reaches the scene through the narrow
 // `ExperienceUIHost` port: no DOM scene knowledge, no renderer access.
@@ -16,10 +16,10 @@ import { UIMenu } from '../UI/UIMenu'
 import { FullscreenOverlay } from '../UI/FullscreenOverlay'
 import type { UIManager } from '../UI/UIManager'
 import type { SceneCoordinator } from './SceneCoordinator'
+import type { StageRegistry } from './StageRegistry'
 import type { PageId } from '../core/routeManifest'
 import { getSoundMuted } from '../core/SfxSystem'
 import type { SfxSystem } from '../core/SfxSystem'
-import { createWorksPortfolio, type WorksPortfolio } from './WorksPortfolio'
 import { WORKS_SLOT_INDEX, WORLD_SLOT_COUNT } from '../core/worldSlots'
 import { eventBus } from '../core/EventBus'
 import { isCurrentRouteContinuation } from '../core/routeContinuation'
@@ -43,21 +43,8 @@ export interface ExperienceUIHost {
   reducedMotion: () => boolean
   /** Phase 8 slice 6: the Experience-owned BakuCarousel init (idempotent). */
   ensureCarouselInitialized: () => Promise<void>
-  /** Phase 8 slice 7: the Experience-owned lazy /works stage lifecycle. */
-  ensureWorksPlaneStageInitialized: () => Promise<void>
-  disposeWorksPlaneStage: () => void
-  ensureContactTypographyStageInitialized: () => Promise<void>
-  ensureContactCyprusStageInitialized: () => Promise<void>
-  ensureContactHaloStageInitialized: () => Promise<void>
-  /** The Experience-owned lazy /manifesto ink-wash stage lifecycle. */
-  ensureManifestoInkStageInitialized: () => Promise<void>
-  disposeManifestoInkStage: () => void
-  disposeContactTypographyStage: () => void
-  disposeContactCyprusStage: () => void
-  disposeContactHaloStage: () => void
-  setContactCyprusStageSection: (index: number) => void
-  /** Phase 8 slice 9: the Experience-owned lazy Lab object lifecycle. */
-  ensureLabGamepad: () => Promise<void>
+  /** The one owner of route stages, read only after Experience initializes. */
+  stages: () => StageRegistry
 }
 
 export class ExperienceUI {
@@ -65,15 +52,16 @@ export class ExperienceUI {
   storyNav: CinematicNav | null = null
   /** The compact console menu. */
   uiMenu: UIMenu | null = null
-  /** Works portfolio (public for DevPanel access). */
-  portfolio: WorksPortfolio | null = null
+  /** True after the static project data and overlay are ready to use. */
+  private projectUiReady = false
   /** The fullscreen overlay (UIManager may own one; adopt or create). */
   overlay: FullscreenOverlay | null = null
   private ownsOverlay = false
   private activeProjectIndex = 0
-  private _portfolioPromise: Promise<void> | null = null
-  private _portfolioReadyRaf: number | null = null
-  private _portfolioReadyResolve: (() => void) | null = null
+  private _projectControlsPromise: Promise<void> | null = null
+  private _projectControlsReadyRaf: number | null = null
+  private _projectControlsReadyResolve: (() => void) | null = null
+  private _unwireCarousel: (() => void) | null = null
 
   private readonly _unsubs: Array<() => void> = []
   private _worksPlaneTapHandler: ((e: PointerEvent) => void) | null = null
@@ -158,7 +146,7 @@ export class ExperienceUI {
         if (typeof idx !== 'number') return
         const routeGeneration = this._routeGeneration
         const page = this.host.page()
-        void this.ensurePortfolio().then(() => {
+        void this.ensureProjectControls().then(() => {
           if (!this._routeContinuationIsCurrent(routeGeneration, page)) return
           this.onProjectSelect(idx)
         })
@@ -168,19 +156,7 @@ export class ExperienceUI {
     this._unsubs.push(
       eventBus.on('jlz:project-navigate', ({ direction }) => {
         if (!this.overlay?.isOpen) return
-        const carousel = this.getCarousel()
-        if (direction < 0) {
-          carousel?.prev()
-          if (!carousel) this.portfolio?.prev()
-        } else {
-          carousel?.next()
-          if (!carousel) this.portfolio?.next()
-        }
-        this.onProjectSelect(this.activeProjectIndex + direction)
-        // Project navigation changes the carousel target while the demand-driven
-        // renderer may already be settled. Wake it explicitly so the target is
-        // advanced and the overlay/scene stay visually synchronized.
-        this.host.raise('nav')
+        this.navigateProject(direction)
       }),
     )
 
@@ -204,11 +180,12 @@ export class ExperienceUI {
           await coordinator.refreshRouteConfig()
           if (!continuationIsCurrent()) return
           coordinator.syncRouteVisuals()
+          const stages = this.host.stages()
           if (newPage === 'home') {
             void this.host.ensureCarouselInitialized()
           }
           if (newPage === 'works') {
-            void this.host.ensureWorksPlaneStageInitialized().then(() => {
+            void stages.ensureWorksPlaneStageInitialized().then(() => {
               if (!continuationIsCurrent()) return
               this.host.coordinator().setWorksPlaneStageSection(0)
               this.host.raise('nav')
@@ -216,39 +193,45 @@ export class ExperienceUI {
           } else {
             // Works owns eight decoded 1440×810 textures. Keeping an inactive
             // stage alive makes that GPU allocation look like a navigation leak.
-            this.host.disposeWorksPlaneStage()
+            stages.disposeWorksPlaneStage()
           }
           if (newPage === 'contact') {
-            this.host.setContactCyprusStageSection(0)
+            stages.setContactCyprusStageSection(0)
             coordinator.setContactSceneSection(0)
             void Promise.all([
-              this.host.ensureContactTypographyStageInitialized(),
-              this.host.ensureContactCyprusStageInitialized(),
-              this.host.ensureContactHaloStageInitialized(),
+              stages.ensureContactTypographyStageInitialized(),
+              stages.ensureContactCyprusStageInitialized(),
+              stages.ensureContactHaloStageInitialized(),
             ]).then(() => {
               if (!continuationIsCurrent()) return
               this.host.raise('nav')
             })
           } else {
-            this.host.disposeContactTypographyStage()
-            this.host.disposeContactCyprusStage()
-            this.host.disposeContactHaloStage()
+            stages.disposeContactTypographyStage()
+            stages.disposeContactCyprusStage()
+            stages.disposeContactHaloStage()
             coordinator.setContactSceneSection(0)
           }
           if (newPage === 'manifesto') {
-            void this.host.ensureManifestoInkStageInitialized().then(() => {
+            void stages.ensureManifestoInkStageInitialized().then(() => {
               if (!continuationIsCurrent()) return
               this.host.raise('nav')
             })
           } else {
-            this.host.disposeManifestoInkStage()
+            stages.disposeManifestoInkStage()
           }
           // Phase 8 slice 9: the Lab object's lazy creation moved to Experience
           // (created once on the first /lab visit; never disposed per route leave —
           // the coordinator's `syncRouteVisuals` already hides it off-route).
-          if (newPage === 'lab') void this.host.ensureLabGamepad()
+          if (newPage === 'lab') void stages.ensureLabGamepad()
           this.host.raise('nav')
-        })()
+        })().catch((error: unknown) => {
+          // Route work is fire-and-forget by design, but it still needs a
+          // terminal rejection boundary. Ignore failures from retired routes;
+          // report only errors that belong to the live route continuation.
+          if (!continuationIsCurrent()) return
+          console.error('[ExperienceUI] route reconciliation failed:', error)
+        })
       }),
     )
 
@@ -272,7 +255,7 @@ export class ExperienceUI {
           // DOM sections: 0=Lab overlay, 1-4=project pairs, 5=Nav overlay.
           coordinator.setWorksPlaneStageSection(stageIndex)
         } else if (page === 'contact') {
-          this.host.setContactCyprusStageSection(stageIndex)
+          this.host.stages().setContactCyprusStageSection(stageIndex)
           coordinator.setContactSceneSection(stageIndex)
         } else {
           return
@@ -297,7 +280,7 @@ export class ExperienceUI {
       // open the overlay with the unified cinematic reveal (no 3D handoff).
       const routeGeneration = this._routeGeneration
       const page = this.host.page()
-      void this.ensurePortfolio().then(() => {
+      void this.ensureProjectControls().then(() => {
         if (!this._routeContinuationIsCurrent(routeGeneration, page)) return
         const stage = this.host.coordinator().worksPlaneStage
         if (!stage) return
@@ -336,77 +319,73 @@ export class ExperienceUI {
     if (coordinator.particleBurst?.isActive) this.host.raise('dirty')
   }
 
-  ensurePortfolio(): Promise<void> {
-    if (this.portfolio || this._destroyed) return Promise.resolve()
-    if (this._portfolioPromise) return this._portfolioPromise
-    const initialization = this.initializePortfolio().catch((error: unknown) => {
-      this.portfolio?.dispose()
-      this.portfolio = null
+  ensureProjectControls(): Promise<void> {
+    if (this.projectUiReady || this._destroyed) return Promise.resolve()
+    if (this._projectControlsPromise) return this._projectControlsPromise
+    const initialization = this.initializeProjectControls().catch((error: unknown) => {
+      this.projectUiReady = false
       if (this.ownsOverlay) this.overlay?.dispose()
       this.overlay = null
       this.ownsOverlay = false
       if (import.meta.env.DEV) {
-        console.error('[ExperienceUI] portfolio init failed:', error)
+        console.error('[ExperienceUI] project controls init failed:', error)
       }
     })
     const tracked = initialization.finally(() => {
-      if (this._portfolioPromise === tracked) this._portfolioPromise = null
+      if (this._projectControlsPromise === tracked) this._projectControlsPromise = null
     })
-    this._portfolioPromise = tracked
+    this._projectControlsPromise = tracked
     return tracked
   }
 
-  private async initializePortfolio(): Promise<void> {
-    if (this.portfolio || this._destroyed) return
+  private async initializeProjectControls(): Promise<void> {
+    if (this.projectUiReady || this._destroyed) return
     const generation = this._routeGeneration
-    // Always build portfolio — single-page experience
+    // Always prepare project controls — single-page experience.
     // The scene must be initialised (sections attached to the Tres scene)
-    // before the portfolio raycast can run against the 3D planes.
+    // before the Works raycast can run against the 3D planes.
     const coordinator = this.host.coordinator()
     const ready = () => coordinator.sections.length > 0
     if (!ready()) {
       // Wait one frame for the scene init to finish, then retry.
       await new Promise<void>((resolve) => {
-        this._portfolioReadyResolve = resolve
-        this._portfolioReadyRaf = requestAnimationFrame(() => {
-          this._portfolioReadyRaf = null
-          this._portfolioReadyResolve = null
+        this._projectControlsReadyResolve = resolve
+        this._projectControlsReadyRaf = requestAnimationFrame(() => {
+          this._projectControlsReadyRaf = null
+          this._projectControlsReadyResolve = null
           resolve()
         })
       })
       if (this._destroyed || generation !== this._routeGeneration) return
-      if (!this.portfolio && !ready()) return
+      if (!this.projectUiReady && !ready()) return
     }
 
     // Re-check after the readiness wait — page may have changed while the
     // scene was becoming available. Projects are already part of the static
     // scene graph through the carousel and Works stage, so a dynamic import
     // here cannot create a separate chunk.
-    if (this._destroyed || generation !== this._routeGeneration || this.portfolio) return
-
-    this.portfolio = createWorksPortfolio(PROJECTS, (idx) => {
-      this.onProjectSelect(idx)
-    })
+    if (this._destroyed || generation !== this._routeGeneration || this.projectUiReady) return
 
     // FullscreenOverlay is normally created by UIManager. Project navigation
     // is routed through `jlz:project-navigate` so arrows and keyboard use the
-    // same owner even if the overlay was created before this async portfolio.
+    // same owner even if the overlay was created before these controls resolve.
     if (!this.overlay) {
       const shared = this.host.ui().overlay
       this.overlay = shared ?? new FullscreenOverlay()
       this.ownsOverlay = !shared
     }
 
-    // Wire BakuCarousel card click → open fullscreen overlay.
-    // All opens use the unified DOM cinematic reveal (no 3D plane handoff).
-    const carousel = this.getCarousel()
-    if (carousel && !carousel.userData.clickWired) {
-      carousel.userData.clickWired = true
+    // The home carousel exists even on a content deep link. Wire it once
+    // regardless of the active route, and release the callback with this UI
+    // owner so a later Experience can adopt the same scene object safely.
+    const carousel = coordinator.carousel
+    if (carousel) {
       carousel.setCamera(this.host.camera().instance)
-      carousel.onCardClick((idx) => {
+      this._unwireCarousel = carousel.onCardClick((idx) => {
         this.onProjectSelect(idx)
       })
     }
+    this.projectUiReady = true
   }
 
   /** Frame access to the BakuCarousel (index 3 in the 6-section layout; the
@@ -414,16 +393,29 @@ export class ExperienceUI {
    *  inside the frame decision because it may have started morphing this
    *  frame. */
   public getCarousel(): import('./World/BakuCarousel').BakuCarousel | null {
-    // BakuCarousel only exists on home page — content pages don't init it
+    // The carousel exists in the persistent scene, but only participates in
+    // project navigation on home.
     if (this.host.page() !== 'home') return null
     // The reference lives on SceneCoordinator's typed owner boundary.
     return this.host.coordinator()?.carousel ?? null
   }
 
+  /** Select the adjacent project from the one canonical active index. */
+  public navigateProject(direction: -1 | 1): void {
+    if (!this.projectUiReady) return
+    const carousel = this.getCarousel()
+    if (direction < 0) carousel?.prev()
+    else carousel?.next()
+    this.onProjectSelect(this.activeProjectIndex + direction)
+    // Project navigation changes the carousel target while the demand-driven
+    // renderer may already be settled. Wake it explicitly so the target is
+    // advanced and the overlay/scene stay visually synchronized.
+    this.host.raise('nav')
+  }
+
   onProjectSelect(idx: number, preload: boolean = false): void {
-    if (!this.portfolio || !this.overlay) return
-    const projs = this.portfolio.projects
-    if (!Array.isArray(projs) || projs.length === 0) return
+    if (!this.projectUiReady || !this.overlay || PROJECTS.length === 0) return
+    const projs = PROJECTS
     const safeIdx = ((idx % projs.length) + projs.length) % projs.length
     this.activeProjectIndex = safeIdx
     const project = projs[safeIdx]
@@ -432,21 +424,12 @@ export class ExperienceUI {
     // Open/preload fullscreen overlay with project info + poster.
     // All opens (showreel, slider, /works) use the unified DOM cinematic
     // reveal — no origin='plane' 3D handoff.
-    const p = project as {
-      title?: string
-      category?: string
-      description?: string
-      tags?: string[]
-      textureUrl?: string
-      detailTextureUrl?: string
-      year?: string
-    }
     const opts = {
-      poster: p.textureUrl,
-      title: p.title,
-      category: `${p.year ?? ''} · ${p.category ?? ''}`,
-      description: p.description,
-      tags: p.tags,
+      poster: project.textureUrl,
+      title: project.title,
+      category: `${project.year ?? ''} · ${project.category ?? ''}`,
+      description: project.description,
+      tags: project.tags,
       counter: `${safeIdx + 1} / ${projs.length}`,
       hasPrev: true,
       hasNext: true,
@@ -463,20 +446,21 @@ export class ExperienceUI {
     if (this._destroyed) return
     this._destroyed = true
     this._routeGeneration++
-    if (this._portfolioReadyRaf !== null) {
-      cancelAnimationFrame(this._portfolioReadyRaf)
-      this._portfolioReadyRaf = null
+    if (this._projectControlsReadyRaf !== null) {
+      cancelAnimationFrame(this._projectControlsReadyRaf)
+      this._projectControlsReadyRaf = null
     }
-    this._portfolioReadyResolve?.()
-    this._portfolioReadyResolve = null
+    this._projectControlsReadyResolve?.()
+    this._projectControlsReadyResolve = null
     for (const unsub of this._unsubs) unsub()
     this._unsubs.length = 0
     if (this._worksPlaneTapHandler) {
       window.removeEventListener('pointerup', this._worksPlaneTapHandler)
       this._worksPlaneTapHandler = null
     }
-    this.portfolio?.dispose()
-    this.portfolio = null
+    this.projectUiReady = false
+    this._unwireCarousel?.()
+    this._unwireCarousel = null
     if (this.ownsOverlay) this.overlay?.dispose()
     this.overlay = null
     this.ownsOverlay = false

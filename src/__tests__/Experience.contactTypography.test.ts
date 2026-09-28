@@ -6,7 +6,7 @@ import { seedExperience } from './experienceSeed'
 
 describe('Experience contact typography lazy owner', () => {
   it('contains initialization failure and permits a later retry', async () => {
-    const { exp, slots } = seedExperience({
+    const { slots, registry } = seedExperience({
       scene: new THREE.Scene(),
       _contactIsLight: false,
       currentPage: () => 'contact',
@@ -19,12 +19,12 @@ describe('Experience contact typography lazy owner', () => {
     const disposeSpy = vi.spyOn(ContactTypographyStage.prototype, 'dispose')
 
     try {
-      await expect(exp.ensureContactTypographyStageInitialized()).resolves.toBeUndefined()
+      await expect(registry.ensureContactTypographyStageInitialized()).resolves.toBeUndefined()
       expect(slots.contactTypography.getStage()).toBeNull()
       expect(slots.contactTypography.owner.getPromise()).toBeNull()
       expect(disposeSpy).toHaveBeenCalledTimes(1)
 
-      await exp.ensureContactTypographyStageInitialized()
+      await registry.ensureContactTypographyStageInitialized()
       expect(slots.contactTypography.getStage()).toBeInstanceOf(ContactTypographyStage)
       expect(setActiveSpy).toHaveBeenCalledTimes(2)
     } finally {
@@ -35,19 +35,19 @@ describe('Experience contact typography lazy owner', () => {
 
   it('creates the stage on demand and disposes it from the scene', async () => {
     const scene = new THREE.Scene()
-    const { exp, slots } = seedExperience({
+    const { slots, registry } = seedExperience({
       scene,
       _contactIsLight: false,
     })
     const disposeSpy = vi.spyOn(ContactTypographyStage.prototype, 'dispose')
 
     try {
-      await exp.ensureContactTypographyStageInitialized()
+      await registry.ensureContactTypographyStageInitialized()
       const stage = slots.contactTypography.getStage() as ContactTypographyStage
       expect(stage).toBeInstanceOf(ContactTypographyStage)
       expect(stage.parent).toBe(scene)
 
-      exp.disposeContactTypographyStage()
+      registry.disposeContactTypographyStage()
       expect(stage.parent).toBeNull()
       expect(disposeSpy).toHaveBeenCalledTimes(1)
     } finally {
@@ -58,7 +58,7 @@ describe('Experience contact typography lazy owner', () => {
 
 describe('Experience contact Cyprus lazy owner', () => {
   it('prewarms exactly once inside the guarded lazy owner', async () => {
-    const { exp } = seedExperience({
+    const { registry } = seedExperience({
       scene: new THREE.Scene(),
       _contactCyprusActive: false,
       currentPage: () => 'contact',
@@ -68,10 +68,10 @@ describe('Experience contact Cyprus lazy owner', () => {
     const prewarmSpy = vi.spyOn(ContactCyprusStage.prototype, 'prewarm')
 
     try {
-      await exp.ensureContactCyprusStageInitialized()
+      await registry.ensureContactCyprusStageInitialized()
       expect(prewarmSpy).toHaveBeenCalledTimes(1)
     } finally {
-      exp.disposeContactCyprusStage()
+      registry.disposeContactCyprusStage()
       loadSpy.mockRestore()
       prewarmSpy.mockRestore()
     }
@@ -79,7 +79,7 @@ describe('Experience contact Cyprus lazy owner', () => {
 
   it('does not let a stale section callback activate a newer stage', async () => {
     const syncRouteVisuals = vi.fn()
-    const { exp, slots } = seedExperience({
+    const { slots, registry } = seedExperience({
       scene: new THREE.Scene(),
       _contactCyprusActive: false,
       currentPage: () => 'contact',
@@ -99,11 +99,11 @@ describe('Experience contact Cyprus lazy owner', () => {
     const setActiveSpy = vi.spyOn(ContactCyprusStage.prototype, 'setActive')
 
     try {
-      exp.setContactCyprusStageSection(2)
+      registry.setContactCyprusStageSection(2)
       await vi.dynamicImportSettled()
-      exp.disposeContactCyprusStage()
+      registry.disposeContactCyprusStage()
 
-      exp.setContactCyprusStageSection(2)
+      registry.setContactCyprusStageSection(2)
       await vi.dynamicImportSettled()
       setActiveSpy.mockClear()
       syncRouteVisuals.mockClear()
@@ -121,14 +121,14 @@ describe('Experience contact Cyprus lazy owner', () => {
       expect(setActiveSpy).toHaveBeenCalledTimes(1)
       expect(syncRouteVisuals).toHaveBeenCalledTimes(1)
     } finally {
-      exp.disposeContactCyprusStage()
+      registry.disposeContactCyprusStage()
       loadSpy.mockRestore()
       setActiveSpy.mockRestore()
     }
   })
 
   it('invalidates a pending load when the owner is disposed', async () => {
-    const { exp, slots } = seedExperience({
+    const { slots, registry } = seedExperience({
       scene: new THREE.Scene(),
       _contactCyprusActive: false,
       currentPage: () => 'contact',
@@ -142,10 +142,10 @@ describe('Experience contact Cyprus lazy owner', () => {
     const disposeSpy = vi.spyOn(ContactCyprusStage.prototype, 'dispose')
 
     try {
-      const loading = exp.ensureContactCyprusStageInitialized()
+      const loading = registry.ensureContactCyprusStageInitialized()
       await vi.dynamicImportSettled()
       expect(slots.contactCyprus.getStage()).not.toBeNull()
-      exp.disposeContactCyprusStage()
+      registry.disposeContactCyprusStage()
       resolveLoad()
       await loading
 
@@ -159,7 +159,7 @@ describe('Experience contact Cyprus lazy owner', () => {
   })
 
   it('cleans up a failed load without creating an unhandled rejection', async () => {
-    const { exp, slots } = seedExperience({
+    const { slots, registry } = seedExperience({
       scene: new THREE.Scene(),
       _contactCyprusActive: false,
       currentPage: () => 'contact',
@@ -171,7 +171,7 @@ describe('Experience contact Cyprus lazy owner', () => {
     const disposeSpy = vi.spyOn(ContactCyprusStage.prototype, 'dispose')
 
     try {
-      await expect(exp.ensureContactCyprusStageInitialized()).resolves.toBeUndefined()
+      await expect(registry.ensureContactCyprusStageInitialized()).resolves.toBeUndefined()
       expect(slots.contactCyprus.getStage()).toBeNull()
       expect(slots.contactCyprus.owner.getPromise()).toBeNull()
       expect(disposeSpy).toHaveBeenCalledTimes(1)

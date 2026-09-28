@@ -20,27 +20,30 @@ const createHost = (sections: unknown[], carousel: unknown = null): ExperienceUI
     raise: vi.fn(),
     reducedMotion: () => false,
     ensureCarouselInitialized: vi.fn(async () => undefined),
-    ensureWorksPlaneStageInitialized: vi.fn(async () => undefined),
-    disposeWorksPlaneStage: vi.fn(),
-    ensureContactTypographyStageInitialized: vi.fn(async () => undefined),
-    ensureContactCyprusStageInitialized: vi.fn(async () => undefined),
-    ensureContactHaloStageInitialized: vi.fn(async () => undefined),
-    ensureManifestoInkStageInitialized: vi.fn(async () => undefined),
-    disposeManifestoInkStage: vi.fn(),
-    disposeContactTypographyStage: vi.fn(),
-    disposeContactCyprusStage: vi.fn(),
-    disposeContactHaloStage: vi.fn(),
-    setContactCyprusStageSection: vi.fn(),
-    ensureLabGamepad: vi.fn(async () => undefined),
+    stages: () =>
+      ({
+        ensureWorksPlaneStageInitialized: vi.fn(async () => undefined),
+        disposeWorksPlaneStage: vi.fn(),
+        ensureContactTypographyStageInitialized: vi.fn(async () => undefined),
+        ensureContactCyprusStageInitialized: vi.fn(async () => undefined),
+        ensureContactHaloStageInitialized: vi.fn(async () => undefined),
+        ensureManifestoInkStageInitialized: vi.fn(async () => undefined),
+        disposeManifestoInkStage: vi.fn(),
+        disposeContactTypographyStage: vi.fn(),
+        disposeContactCyprusStage: vi.fn(),
+        disposeContactHaloStage: vi.fn(),
+        setContactCyprusStageSection: vi.fn(),
+        ensureLabGamepad: vi.fn(async () => undefined),
+      }) as never,
   }
 }
 
-describe('ExperienceUI portfolio lifecycle', () => {
+describe('ExperienceUI project controls lifecycle', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
   })
 
-  it('does not create portfolio resources after destroy during deferred scene readiness', async () => {
+  it('does not create project controls after destroy during deferred scene readiness', async () => {
     const callbacks: FrameRequestCallback[] = []
     vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
       callbacks.push(callback)
@@ -50,7 +53,7 @@ describe('ExperienceUI portfolio lifecycle', () => {
     const sections: unknown[] = []
     const host = createHost(sections)
     const experienceUI = new ExperienceUI(host)
-    const pending = experienceUI.ensurePortfolio()
+    const pending = experienceUI.ensureProjectControls()
 
     experienceUI.destroy()
     expect(cancelAnimationFrame).toHaveBeenCalledWith(1)
@@ -58,34 +61,22 @@ describe('ExperienceUI portfolio lifecycle', () => {
     callbacks[0]!(0)
     await pending
 
-    expect(experienceUI.portfolio).toBeNull()
     expect(experienceUI.overlay).toBeNull()
   })
 
-  it('creates the portfolio once when the scene is already ready', async () => {
+  it('creates project controls once when the scene is already ready', async () => {
     const experienceUI = new ExperienceUI(createHost([{}]))
 
-    await experienceUI.ensurePortfolio()
-    await experienceUI.ensurePortfolio()
+    await experienceUI.ensureProjectControls()
+    const overlay = experienceUI.overlay
+    await experienceUI.ensureProjectControls()
 
-    expect(experienceUI.portfolio).not.toBeNull()
-    expect(experienceUI.overlay).not.toBeNull()
-  })
-
-  it('disposes the portfolio owner before releasing it', async () => {
-    const experienceUI = new ExperienceUI(createHost([{}]))
-    await experienceUI.ensurePortfolio()
-    const portfolio = experienceUI.portfolio!
-    const dispose = vi.spyOn(portfolio, 'dispose')
-
+    expect(overlay).not.toBeNull()
+    expect(experienceUI.overlay).toBe(overlay)
     experienceUI.destroy()
-
-    expect(dispose).toHaveBeenCalledOnce()
-    expect(portfolio.projects).toHaveLength(0)
-    expect(experienceUI.portfolio).toBeNull()
   })
 
-  it('coalesces concurrent portfolio initialization requests', async () => {
+  it('coalesces concurrent project-control initialization requests', async () => {
     const callbacks: FrameRequestCallback[] = []
     vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
       callbacks.push(callback)
@@ -93,24 +84,24 @@ describe('ExperienceUI portfolio lifecycle', () => {
     })
     const sections: unknown[] = []
     const experienceUI = new ExperienceUI(createHost(sections))
-    const first = experienceUI.ensurePortfolio()
-    const second = experienceUI.ensurePortfolio()
+    const first = experienceUI.ensureProjectControls()
+    const second = experienceUI.ensureProjectControls()
 
     expect(first).toBe(second)
     callbacks[0]!(0)
     await first
 
-    expect(experienceUI.portfolio).toBeNull()
+    expect(experienceUI.overlay).toBeNull()
     sections.push({})
-    await experienceUI.ensurePortfolio()
-    expect(experienceUI.portfolio).not.toBeNull()
+    await experienceUI.ensureProjectControls()
+    expect(experienceUI.overlay).not.toBeNull()
   })
 
-  it('wakes the render demand after fullscreen project navigation', () => {
+  it('wakes the render demand after fullscreen project navigation', async () => {
     const prev = vi.fn()
     const next = vi.fn()
     const raise = vi.fn()
-    const carousel = { prev, next }
+    const carousel = { prev, next, setCamera: vi.fn(), onCardClick: vi.fn(() => vi.fn()) }
     const host = {
       ...createHost([{}], carousel),
       raise,
@@ -118,8 +109,8 @@ describe('ExperienceUI portfolio lifecycle', () => {
     }
     const experienceUI = new ExperienceUI(host)
     experienceUI.init()
+    await experienceUI.ensureProjectControls()
     experienceUI.overlay = { isOpen: true } as never
-    experienceUI.portfolio = { projects: [{}], dispose: vi.fn() } as never
     const select = vi.spyOn(experienceUI, 'onProjectSelect').mockImplementation(() => undefined)
 
     eventBus.emit('jlz:project-navigate', { direction: 1 })
@@ -128,6 +119,29 @@ describe('ExperienceUI portfolio lifecycle', () => {
     expect(select).toHaveBeenCalledWith(1)
     expect(raise).toHaveBeenCalledWith('nav')
     experienceUI.destroy()
+  })
+
+  it('wires the home carousel after direct content entry and releases its callback', async () => {
+    const unwire = vi.fn()
+    const carousel = {
+      setCamera: vi.fn(),
+      onCardClick: vi.fn(() => unwire),
+    }
+    const host = {
+      ...createHost([{}], carousel),
+      page: () => 'works' as const,
+    }
+    const first = new ExperienceUI(host)
+    await first.ensureProjectControls()
+
+    expect(carousel.onCardClick).toHaveBeenCalledOnce()
+    first.destroy()
+    expect(unwire).toHaveBeenCalledOnce()
+
+    const second = new ExperienceUI(host)
+    await second.ensureProjectControls()
+    expect(carousel.onCardClick).toHaveBeenCalledTimes(2)
+    second.destroy()
   })
 
   it('refreshes page-specific scene config before route owner reconciliation', async () => {
@@ -163,6 +177,34 @@ describe('ExperienceUI portfolio lifecycle', () => {
     experienceUI.destroy()
   })
 
+  it('contains a live route reconciliation failure without an unhandled rejection', async () => {
+    const error = new Error('fixture route refresh failure')
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    let page: PageId = 'home'
+    const host = {
+      ...createHost([{}]),
+      page: () => page,
+      sfx: () => ({ setMuted: vi.fn() }) as never,
+      coordinator: () =>
+        ({
+          sections: [{}],
+          refreshRouteConfig: vi.fn().mockRejectedValue(error),
+          syncRouteVisuals: vi.fn(),
+        }) as never,
+    }
+    const experienceUI = new ExperienceUI(host)
+    experienceUI.init()
+
+    page = 'works'
+    eventBus.emit('jlz:route-change', { page })
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(errorSpy).toHaveBeenCalledWith('[ExperienceUI] route reconciliation failed:', error)
+    errorSpy.mockRestore()
+    experienceUI.destroy()
+  })
+
   it('routes visual Works taps through the stage owner and wakes its pulse', async () => {
     const raise = vi.fn()
     const openProject = vi.fn((_index: number, open: (index: number) => void) => {
@@ -179,7 +221,7 @@ describe('ExperienceUI portfolio lifecycle', () => {
     }
     const experienceUI = new ExperienceUI(host)
     experienceUI.init()
-    experienceUI.portfolio = { projects: [{}], dispose: vi.fn() } as never
+    await experienceUI.ensureProjectControls()
     experienceUI.overlay = { isOpen: false, open: vi.fn() } as never
 
     document.body.dispatchEvent(

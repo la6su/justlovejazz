@@ -35,7 +35,7 @@ these layers; scene state must not be inferred from DOM datasets.
 | Route state and deferred navigation | `core/routePage.ts`, `core/routeContinuation.ts`                                                                                                                                                                                                                                                                                                                                      |
 | Locale and route metadata           | `core/i18n.ts`, `core/pageMeta.ts`, `core/pageMetaData.ts`                                                                                                                                                                                                                                                                                                                            |
 | Blog and sitemap                    | `core/blogPages.ts`, `blogContent.ts`, `blogMeta.ts`, `sitemap.ts`, `sitemapEntries.ts`; `content/blog/` at repository root                                                                                                                                                                                                                                                           |
-| Project data and case resolution    | `Data/Projects.ts`, `Data/CaseStudies.ts`, `core/caseStudies.ts`, `core/worksExperience.ts`                                                                                                                                                                                                                                                                                           |
+| Project data and case resolution    | `Data/Projects.ts`, `Data/CaseStudies.ts`, `core/caseStudies.ts`; `core/worksExperience.ts` owns only authored room presentation and the short-lived typed route-intent port                                                                                                                                                                                                          |
 | Theme, sound and motion             | `core/ThemeManager.ts`, `brandTokens.ts`, `SfxSystem.ts`, `motionPolicy.ts`                                                                                                                                                                                                                                                                                                           |
 | Typed app events                    | `core/EventBus.ts` (`AppEvents`); `window.__jlzEmit` for non-module producers                                                                                                                                                                                                                                                                                                         |
 | Semantic route lifecycle / UIkit    | `app/useJlzPage.ts`, `app/menuLifecycle.ts`, `UI/UIMenu.ts`                                                                                                                                                                                                                                                                                                                           |
@@ -50,6 +50,58 @@ these layers; scene state must not be inferred from DOM datasets.
 
 The table maps boundaries, not every implementation detail. Owner-specific
 regressions belong in `src/__tests__/`, not a second prose inventory.
+
+### TvT/Tres adoption boundary
+
+TvT's examples are the reference for scene authoring, not a requirement to
+replace the application's renderer policy. The project intentionally adopts
+the framework-native parts that reduce ownership:
+
+| TvT/Tres concept                              | Project decision                                                                       | Reason                                                                                                                                                                |
+| --------------------------------------------- | -------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `TresCanvas` as the scene root                | Adopted: one persistent `TresCanvas` in `SceneHost`                                    | Vue owns mount/unmount and route changes do not recreate the GPU surface.                                                                                             |
+| Declarative `Tres*` nodes and `primitive`     | Adopted for camera, lights, roots, boot-static geometry and lazy stage attachment      | These nodes have clear Vue lifecycle ownership; controllers borrow them and do not dispose them.                                                                      |
+| `useLoop()` / Tres loop                       | Adopted as the only RAF host through the typed `SceneLoopPort`                         | The scheduler still owns bounded demand windows and the render pipeline must account for exactly one presented frame.                                                 |
+| Component-local animation state               | Selectively retained in controllers                                                    | TSL uniforms, pooled geometry and cross-route transitions need stable imperative owners; moving them into wrappers would add duplicate disposal and async boundaries. |
+| Cientos raster helpers and loaders            | Not adopted where they require classic WebGL materials or global loading-manager state | They would conflict with the unified WebGPU/TSL path or with ref-counted lazy resources.                                                                              |
+| TvT/Fes application shell and plugin registry | Not adopted                                                                            | This portfolio has a smaller static route/content surface; adding that framework layer would duplicate Vue Router, typed route contracts and SSG tooling.             |
+
+Any future migration must remove an existing owner or boundary and preserve the
+TSL/backend/lifecycle contracts; adding a declarative wrapper by itself is not
+an architectural improvement.
+
+Current imperative-stage decisions:
+
+| Stage                                                        | Keep imperative core? | Declarative surface                                      | Blocking concern                                                                         |
+| ------------------------------------------------------------ | --------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `ServicesStage`                                              | Yes                   | Geometry already rendered by `ServicesStageGeometry.vue` | Shared NodeMaterials and controller state have one owner.                                |
+| `WorksInstallation`                                          | Yes                   | Full mesh topology in `WorksInstallation.vue`            | Controller owns material state and adopts Vue-created nodes.                             |
+| `ContactTypographyStage`                                     | Yes                   | `<primitive>` attachment                                 | `WireframeTypography` owns generated geometry/material batches.                          |
+| `PointerInkStage` / `ContactHaloStage` / `ManifestoInkStage` | Yes                   | `<primitive>` attachment                                 | Shared geometry ref-counting and TSL uniforms are the actual resource boundary.          |
+| `ContactCyprusStage`                                         | Yes                   | `<primitive>` attachment                                 | Async GLTF/DRACO loading and late-result disposal cannot be moved to a passive template. |
+| `WorksPlaneStage`                                            | Yes                   | `<primitive>` attachment                                 | Texture cache, card pooling and route generation are cross-route responsibilities.       |
+
+This is the current migration ledger. A row may move toward a more declarative
+surface only after its blocking concern has a typed Vue lifecycle equivalent.
+
+### Lifecycle ownership matrix
+
+Every row has one construction owner and one terminal disposal owner. A
+controller may borrow a Vue-owned node, but it must not dispose that node.
+
+| Resource                          | Construction / mount owner               | Frame or event owner                   | Async boundary                     | Terminal disposal                                                 |
+| --------------------------------- | ---------------------------------------- | -------------------------------------- | ---------------------------------- | ----------------------------------------------------------------- |
+| Canvas + Tres renderer            | `app/SceneHost.vue` / Tres factory       | Tres loop + `Experience` pipeline      | `sceneHost` readiness generation   | SceneHost unmount; `Renderer` is idempotent for recovery ordering |
+| Scene camera and six stable roots | `app/scene/*.vue`                        | `Experience` / coordinator controllers | `readySlot`                        | Vue host unmount                                                  |
+| Boot-static GPU behavior          | Vue node owner + `Experience` controller | `SceneFramePass`                       | host readiness                     | controller releases created resources; Vue releases nodes         |
+| Route lazy stages                 | `StageRegistry` + `LazyStage`            | `SceneFramePass`                       | request id + stage ports           | stage contract `release`, then host unmount                       |
+| Case textures                     | `World/caseTexture.ts` refcount cache    | carousel / works stage                 | load generation + expected texture | last ref release or cold-cache sweep                              |
+| Post graph                        | `Experience/Renderer.ts`                 | `Renderer.update()`                    | recovery generation                | pipeline disposal before renderer disposal                        |
+| DOM navigation and overlay        | `ExperienceUI` / UI owners               | typed `EventBus` handlers              | route generation                   | `ExperienceUI.destroy()`                                          |
+| Environment PMREM                 | `SceneEnvironment`                       | theme/recovery handlers                | replacement ownership              | `disposeCurrent()` after scene owners stop                        |
+
+An ownership change is incomplete until its row, lifecycle test and teardown
+order are updated together.
 
 ## Routes and world slots
 
@@ -77,11 +129,12 @@ Slot 0's Contact role is intentional; `/lab` is a separate route.
 ## Renderer and scheduling
 
 `SceneHost` owns the scene canvas and supplies the custom `WebGPURenderer`
-factory. Inspect the initialized backend: a confirmed software WebGPU adapter
-causes same-class recreation with `forceWebGL: true`; unknown adapter metadata
-stays unknown. No classic renderer is constructed. SceneHost and Renderer use
-consistent DPR caps; device recovery replaces both the Tres context instance
-and the host's live-renderer reference.
+factory. Three automatically selects its `WebGLBackend` when native WebGPU is
+unavailable. Inspect the initialized backend: a confirmed software WebGPU
+adapter causes same-class recreation with `forceWebGL: true`; unknown adapter
+metadata stays unknown. No classic renderer is constructed. SceneHost and
+Renderer use consistent DPR caps; device recovery replaces both the Tres
+context instance and the host's live-renderer reference.
 
 Non-low WebGPU uses the TSL post graph. WebGLBackend directly renders the
 node-material scene, without that post graph; its draw path temporarily clears
@@ -105,6 +158,10 @@ releases demand synchronously, including live preference changes. Visible
 continuous effects may keep demand active. State-only updates must not
 advance animation clocks without a presented frame.
 
+Contact typography settles its glyph transforms during activation when reduced
+motion is enabled and reports no continuous demand in that mode. Its preference
+is a typed controller field, not `Object3D.userData` state.
+
 Declarative scene nodes report themselves through `app/readySlot.ts` slots
 (live value + one-shot promise); `onReady` awaits them and resolves the
 bridge.
@@ -115,7 +172,7 @@ the loop and emits `jlz:webgl-failed`.
 
 ## Scene resources and teardown
 
-- Camera, lights, ground and section roots are declarative nodes adopted by
+- Camera, lights, ground and all six section roots are declarative nodes adopted by
   controllers. Borrowed nodes/materials must not acquire a second disposer.
 - `app/scene/EnvSphereOwner.vue` and `ServicesStageOwner.vue` own terminal
   disposal of those classes. Services geometry and the EnvSky leaf are
@@ -129,6 +186,9 @@ the loop and emits `jlz:webgl-failed`.
   not imply declarative geometry.
 - `LazyStage` guards requests before construction, attachment and loading.
   Route exit invalidates pending work; late results release their resources.
+  Works uses the same attach phase as the other route stages: its Tres mount
+  completes before `init()` starts, and its installation attaches only while
+  the request still owns the stage.
   Shared textures and planes release through their refcount owners.
 - `Experience.destroy()` closes runtime-owned listeners, timers, stages,
   scheduler and environment. Vue-owned stages finish at host unmount.
@@ -181,11 +241,13 @@ controllers stay imperative by design. Budget values and checks live in [Develop
 Vue owns copy, focus, accessibility and route DOM; the scene canvas is
 `aria-hidden`. UIkit lifecycle bindings initialize and dispose with their owner.
 Typed route/preference/story ports feed both DOM controllers and scene code.
+`ExperienceUI` owns the carousel click callback and releases it at teardown;
+the persistent Three object carries no UI binding flag in `userData`.
 
 `WorksPlaneStage` and `WorksInstallation` present the active work;
 `UI/FullscreenOverlay.ts` owns fullscreen presentation and Escape.
 `Experience/ShowreelController.ts` owns the showreel render mode — the lazy
-`Experience/World/ShowreelTheater.ts` swaps a private video-quad scene
-at the shared render call; it loads the film on first open. `ShowreelConsole`
-provides DOM controls over typed events. The shared case/showreel contract is part
-of the spatial-transition slice in [NEXT](../NEXT.md).
+`Experience/World/ShowreelTheater.ts` swaps a private video-quad scene at the
+shared render call; it loads the film on first open. `ShowreelConsole` provides
+DOM controls over typed events. The shared case/showreel contract is part of
+the spatial-transition slice in [NEXT](../NEXT.md).

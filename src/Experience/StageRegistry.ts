@@ -1,13 +1,9 @@
 // src/Experience/StageRegistry.ts — the route-owned lazy-stage registry.
 //
-// The six route-owned lazy stages (works plane, contact typography/halo/
-// cyprus, manifesto ink, lab object) used to live as six slot fields, six
-// private getters, six contracts and thirteen lifecycle publics on
-// Experience. This owner consolidates them: the slot state stays in
-// LazyStageSlot closures, the per-stage variation stays in the contracts,
-// and Experience reads stages through the registry's getters and publics
-// (its own methods are one-line delegates, so the ExperienceUI host port
-// and the SceneCoordinator owner getters keep their shapes).
+// Six route-owned stages (works plane, contact typography/halo/cyprus,
+// manifesto ink, lab object) share LazyStage's lifecycle. The registry holds
+// their slots and route-specific contracts. Experience and ExperienceUI use
+// this owner directly through the UI host's typed getter.
 //
 // Every stage mounts through the declarative host ports (SceneStagePorts) —
 // no runtime `scene.add`. The polarity cache (contactIsLight / cyprusActive)
@@ -91,11 +87,10 @@ export class StageRegistry {
       label: 'WorksPlaneStage',
       owner: this.slots.worksPlane.owner,
       create: () => new WorksPlaneStage(),
-      // SceneHost/Vue owns attachment, like every route-owned lazy stage.
-      attach: () => undefined,
-      load: async (stage) => {
-        await this._ctx.host().works.mountStage(stage)
+      attach: (stage) => this._ctx.host().works.mountStage(stage),
+      load: async (stage, isCurrent) => {
         await stage.init()
+        if (!isCurrent()) return
         const installation = stage.installationOwner
         if (installation) await this._ctx.host().works.mountInstallation(stage, installation)
       },

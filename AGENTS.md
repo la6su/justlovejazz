@@ -25,8 +25,10 @@ metaphor, not a music theme; [BRAND](docs/BRAND.md) owns the direction.
 
 - One scene canvas, `WebGPURenderer` and demand-loop owner. Actual backend
   controls capabilities; WebGL has no WebGPU post parity.
-- Vue owns semantic DOM; GPU resources have one disposal owner. Guard async
-  results against teardown. Reduced motion settles transitions synchronously.
+- Vue owns semantic DOM and all six stable section roots; behavior controllers
+  attach dynamic children to those roots and retain their GPU disposal owner.
+  Guard async results against teardown. Reduced motion settles transitions
+  synchronously.
 - Inline splash stays outside the initial Vue/Tres/Three/UIkit graph.
 - Scene state uses typed event/route/preference ports, not DOM datasets.
 

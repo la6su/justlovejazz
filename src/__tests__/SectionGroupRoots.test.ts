@@ -9,7 +9,7 @@ describe('SectionGroupRoots declarative Tres spike', () => {
   })
   afterEach(() => document.body.replaceChildren())
 
-  it('emits five stable roots and releases them with the subtree', async () => {
+  it('emits six stable roots and releases them with the subtree', async () => {
     let groups: Group[] = []
     const { scene, unmount } = await mountSceneCanvas(SectionGroupRoots, {
       onReady: (value: Group[]) => (groups = value),
@@ -19,6 +19,7 @@ describe('SectionGroupRoots declarative Tres spike', () => {
       'section-lab',
       'section-intro',
       'section-about',
+      'section-works',
       'section-contact',
       'section-menu',
     ])

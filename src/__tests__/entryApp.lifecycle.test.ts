@@ -138,6 +138,18 @@ describe('entry-app splash reveal lifecycle', () => {
     expect(lang.querySelector('span')?.textContent).toBe('RU')
     expect(lang.getAttribute('aria-pressed')).toBe('true')
     expect(localStorage.getItem('jlz:lang')).toBe('RU')
+
+    // Re-running bootstrap wiring on the same shell must not add a second
+    // listener whose closure toggles the state back immediately.
+    initSplashToggles()
+    lang.click()
+    expect(lang.querySelector('span')?.textContent).toBe('EN')
+    expect(localStorage.getItem('jlz:lang')).toBe('EN')
+  })
+
+  it('ignores incomplete language-toggle markup', () => {
+    document.body.innerHTML = '<button id="cfg-lang" type="button"></button>'
+    expect(() => initSplashToggles()).not.toThrow()
   })
 
   it('tolerates a missing splash toggle without throwing', () => {

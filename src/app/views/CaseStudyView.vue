@@ -61,12 +61,14 @@ const open = (): void => eventBus.emit('jlz:open-project', { idx: projectIndex.v
 
 // Set intent before useJlzPage publishes route readiness. Reused detail routes
 // re-publish after their DOM changes so the cinematic track is rebuilt once.
-setWorksCaseProject(projectIndex.value >= 0 ? projectIndex.value : null)
+let releaseCaseIntent = setWorksCaseProject(projectIndex.value >= 0 ? projectIndex.value : null)
+onBeforeUnmount(() => releaseCaseIntent())
 useJlzPage('works', () => rootEl.value)
 watch(
   projectId,
   () => {
-    setWorksCaseProject(projectIndex.value >= 0 ? projectIndex.value : null)
+    releaseCaseIntent()
+    releaseCaseIntent = setWorksCaseProject(projectIndex.value >= 0 ? projectIndex.value : null)
     eventBus.emit('jlz:route-change', { page: 'works' })
   },
   { flush: 'post' },

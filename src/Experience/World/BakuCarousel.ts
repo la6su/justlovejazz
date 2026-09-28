@@ -165,9 +165,12 @@ export class BakuCarousel extends THREE.Group {
   }
 
   /** Set callback for card click (index = which card was tapped). */
-  onCardClick(cb: (index: number) => void): void {
-    if (this._disposed) return
+  onCardClick(cb: (index: number) => void): () => void {
+    if (this._disposed) return () => undefined
     this._onCardClick = cb
+    return () => {
+      if (this._onCardClick === cb) this._onCardClick = null
+    }
   }
 
   async init(): Promise<void> {

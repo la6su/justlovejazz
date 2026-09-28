@@ -4,6 +4,26 @@ import { SectionGroups } from '../Experience/Scene/SectionGroups'
 import { JunniParticles } from '../Experience/World/JunniParticles'
 
 describe('SectionGroups lifecycle', () => {
+  it('attaches Works contents to its declarative root and leaves the root with Tres', () => {
+    const scene = new THREE.Scene()
+    const roots = Array.from({ length: 6 }, (_, index) => {
+      const root = new THREE.Group()
+      root.name = `section-${index}`
+      scene.add(root)
+      return root
+    })
+    const owner = new SectionGroups(scene, 6, undefined, undefined, roots)
+    const worksRoot = roots[3]!
+
+    expect(owner.at(3)).toBe(worksRoot)
+    expect(worksRoot.userData.carousel).toBeTruthy()
+    expect(worksRoot.userData.particles).toBeTruthy()
+    owner.dispose()
+
+    expect(worksRoot.parent).toBe(scene)
+    expect(worksRoot.userData.particles.parent).toBeNull()
+  })
+
   it('adopts declarative empty roots without removing them on owner disposal', () => {
     const scene = new THREE.Scene()
     const roots = [0, 1, 2, 3, 4].map((index) => {

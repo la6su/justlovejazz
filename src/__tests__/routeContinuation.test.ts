@@ -11,7 +11,7 @@ describe('isCurrentRouteContinuation', () => {
     expect(isCurrentRouteContinuation(2, 2, 'works', 'contact')).toBe(false)
   })
 
-  it('blocks both async portfolio continuation shapes after a route change', async () => {
+  it('blocks both async project-control continuation shapes after a route change', async () => {
     let generation = 2
     let page: 'works' | 'contact' = 'works'
     const selectFromCard = vi.fn()

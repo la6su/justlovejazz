@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onBeforeUnmount } from 'vue'
 import { RouterLink } from 'vue-router'
 import { PROJECTS } from '../../Data/Projects'
 import { CASE_STUDY_BY_PROJECT } from '../../Data/CaseStudies'
@@ -10,7 +10,8 @@ import ContactFooter from './ContactFooter.vue'
 import NavMenu from './NavMenu.vue'
 
 const rootEl = ref<HTMLElement | null>(null)
-setWorksCaseProject(null)
+const releaseCaseIntent = setWorksCaseProject(null)
+onBeforeUnmount(releaseCaseIntent)
 useJlzPage('works', () => rootEl.value)
 const number = (value: number): string => String(value).padStart(2, '0')
 const open = (idx: number): void => eventBus.emit('jlz:open-project', { idx })

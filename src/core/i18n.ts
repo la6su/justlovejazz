@@ -36,7 +36,8 @@ export type Lang = 'EN' | 'RU'
 const STORAGE_KEY = 'jlz:lang'
 
 // ── Translation dictionaries ──
-const TRANSLATIONS: Record<Lang, Record<string, string>> = {
+/** Complete EN/RU content data. Exported for the parity regression check. */
+export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
   EN: {
     // Splash
 
@@ -410,12 +411,16 @@ let currentLang: Lang = 'EN'
 
 /** Initialize i18n — load saved language, apply translations. */
 export function initI18n(): void {
+  let saved: string | null = null
   try {
-    const saved = localStorage.getItem(STORAGE_KEY)
-    if (saved === 'RU') currentLang = 'RU'
+    saved = localStorage.getItem(STORAGE_KEY)
   } catch {
     /* ignore */
   }
+  // Initialization is a complete state load, not a conditional mutation.
+  // Resetting to EN for an absent/invalid value keeps repeated boot/HMR
+  // deterministic instead of leaking a previous module-scoped RU value.
+  currentLang = saved === 'RU' ? 'RU' : 'EN'
   applyTranslations()
 }
 

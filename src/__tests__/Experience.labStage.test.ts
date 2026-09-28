@@ -25,6 +25,7 @@ describe('Experience lab object lifecycle', () => {
   let exp: Experience
   let coordinator: SceneCoordinator
   let slots: ReturnType<typeof seedExperience>['slots']
+  let registry: ReturnType<typeof seedExperience>['registry']
   let manifestSpy: ReturnType<typeof vi.spyOn>
 
   /** The ensured Lab object as the coordinator's owners bag sees it. */
@@ -40,6 +41,7 @@ describe('Experience lab object lifecycle', () => {
     })
     const { exp, slots: registrySlots } = seeded
     slots = registrySlots
+    registry = seeded.registry
     const owners: SceneCoordinatorOwners = {
       ground: () => null,
       sectionGroups: () => null,
@@ -86,7 +88,7 @@ describe('Experience lab object lifecycle', () => {
     mockExperiment(object)
 
     document.body.dataset.page = 'lab'
-    await exp.ensureLabGamepad()
+    await registry.ensureLabGamepad()
 
     // The registry slot feeds the coordinator's owners bag with the object.
     expect(slotStage()).toBe(object)
@@ -103,7 +105,7 @@ describe('Experience lab object lifecycle', () => {
 
     // Idempotent: a second visit does not re-create the object.
     document.body.dataset.page = 'lab'
-    await exp.ensureLabGamepad()
+    await registry.ensureLabGamepad()
     expect(slotStage()).toBe(object)
   })
 
@@ -111,7 +113,7 @@ describe('Experience lab object lifecycle', () => {
     vi.spyOn(manifest, 'getLabExperiment').mockReturnValue(undefined)
 
     document.body.dataset.page = 'lab'
-    await exp.ensureLabGamepad()
+    await registry.ensureLabGamepad()
 
     expect(slotStage()).toBeNull()
     expect(exp.scene.children).toHaveLength(0)
@@ -131,11 +133,11 @@ describe('Experience lab object lifecycle', () => {
       },
     } as never)
 
-    await expect(exp.ensureLabGamepad()).resolves.toBeUndefined()
+    await expect(registry.ensureLabGamepad()).resolves.toBeUndefined()
     expect(slotStage()).toBeNull()
     expect(exp.scene.children).not.toContain(object)
 
-    await exp.ensureLabGamepad()
+    await registry.ensureLabGamepad()
     expect(slotStage()).toBe(object)
     expect(attempts).toBe(2)
   })
@@ -154,7 +156,7 @@ describe('Experience lab object lifecycle', () => {
     const object = Object.assign(new THREE.Group(), {
       dispose: vi.fn(),
     }) as unknown as LabExperimentObject
-    const loadPromise = exp.ensureLabGamepad()
+    const loadPromise = registry.ensureLabGamepad()
 
     ;(exp as unknown as { _stages: { disposeLabGamepad: () => void } })._stages.disposeLabGamepad()
     resolveLoad(object)
