@@ -273,7 +273,7 @@ export class SceneTransformPass {
         const sceneObjects = cfg?.scene?.objects
         if (sceneObjects && i === 4) {
           const visible = sceneObjects.wireframeText !== false && fade > 0.01
-          this._ctx.owners.contactTypographyStage?.()?.setActive(visible && fade > 0.5)
+          this._ctx.owners.contactTypographyStage()?.setActive(visible && fade > 0.5)
         }
       } else {
         g.visible = false

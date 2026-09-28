@@ -41,7 +41,10 @@ describe('SceneCoordinator reduced-motion particle parity', () => {
       worksPlaneStage: () => null,
       contactTypographyStage: () => null,
       contactCyprusStage: () => null,
+      contactHaloStage: () => null,
+      manifestoInkStage: () => null,
       labGamepad: () => null,
+      servicesStage: () => null,
     }
     const coordinator = new SceneCoordinator(new THREE.Scene(), owners, () => 'home')
     coordinator.setReducedMotion(matches)
@@ -65,7 +68,10 @@ describe('SceneCoordinator reduced-motion particle parity', () => {
       worksPlaneStage: () => null,
       contactTypographyStage: () => null,
       contactCyprusStage: () => null,
+      contactHaloStage: () => null,
+      manifestoInkStage: () => null,
       labGamepad: () => null,
+      servicesStage: () => null,
     }
     const coordinator = new SceneCoordinator(new THREE.Scene(), owners, () => 'contact')
     disposers.push(() => coordinator.dispose())
@@ -121,7 +127,10 @@ describe('SceneCoordinator reduced-motion particle parity', () => {
       contactTypographyStage: () =>
         ({ update: typographyUpdate }) as unknown as ContactTypographyStage,
       contactCyprusStage: () => ({ update: cyprusUpdate }) as unknown as ContactCyprusStage,
+      contactHaloStage: () => null,
+      manifestoInkStage: () => null,
       labGamepad: () => null,
+      servicesStage: () => null,
     }
     const coordinator = new SceneCoordinator(new THREE.Scene(), owners, () => 'works')
     disposers.push(() => coordinator.dispose())
@@ -148,7 +157,10 @@ describe('SceneCoordinator reduced-motion particle parity', () => {
       worksPlaneStage: () => null,
       contactTypographyStage: () => null,
       contactCyprusStage: () => null,
+      contactHaloStage: () => null,
+      manifestoInkStage: () => null,
       labGamepad: () => null,
+      servicesStage: () => null,
     }
     const coordinator = new SceneCoordinator(new THREE.Scene(), owners, () => 'home')
     disposers.push(() => coordinator.dispose())
@@ -180,7 +192,10 @@ describe('SceneCoordinator reduced-motion particle parity', () => {
         ({ setActive: worksSetActive, update: worksUpdate }) as unknown as WorksPlaneStage,
       contactTypographyStage: () => null,
       contactCyprusStage: cyprusReader,
+      contactHaloStage: () => null,
+      manifestoInkStage: () => null,
       labGamepad: () => null,
+      servicesStage: () => null,
     }
     const coordinator = new SceneCoordinator(new THREE.Scene(), owners, pageReader)
     disposers.push(() => coordinator.dispose())

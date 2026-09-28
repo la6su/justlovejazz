@@ -91,7 +91,7 @@ export class SceneFramePass {
       worksStage.setActive(page === 'works', this.worksPlaneStageSection)
       worksStage.update(deltaTime)
     }
-    const servicesStage = this._ctx.owners.servicesStage?.()
+    const servicesStage = this._ctx.owners.servicesStage()
     if (servicesStage) {
       servicesStage.visible = page === 'services'
       if (servicesStage.visible && this._camera instanceof THREE.PerspectiveCamera) {
@@ -103,9 +103,9 @@ export class SceneFramePass {
         )
       }
     }
-    this._ctx.owners.contactTypographyStage?.()?.update(deltaTime)
-    this._ctx.owners.contactHaloStage?.()?.update(deltaTime)
-    this._ctx.owners.manifestoInkStage?.()?.update(deltaTime)
+    this._ctx.owners.contactTypographyStage()?.update(deltaTime)
+    this._ctx.owners.contactHaloStage()?.update(deltaTime)
+    this._ctx.owners.manifestoInkStage()?.update(deltaTime)
     const contactCyprusStage = this._ctx.owners.contactCyprusStage()
     contactCyprusStage?.update(deltaTime)
     // Lab object: authored idle motion advances only on rendered frames; the

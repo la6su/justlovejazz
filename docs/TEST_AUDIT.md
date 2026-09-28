@@ -35,6 +35,11 @@ and passes `page`/`currentPage` directly to the test `StageRegistry`. It no
 longer depends on invoking `Experience`'s inherited private route adapter on a
 constructor-bypass instance.
 
+`SceneCoordinatorOwners` now requires every production owner getter; nullable
+stage results describe lifecycle state, while a missing getter is a wiring
+error. The coordinator snapshots each route-stage owner once when checking
+ambient motion instead of invoking the same getter twice.
+
 The following suspect patterns remain intentionally under review:
 
 | Area                                     | Why it remains                                                                      | Evidence required before changing it                                                     |

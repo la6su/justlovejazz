@@ -33,8 +33,12 @@ describe('SceneCoordinator route visuals (Phase 8 slice 10: the gate left `World
       drawTrail: () => null,
       carousel: () => null,
       worksPlaneStage: () => null,
+      contactTypographyStage: () => null,
       contactCyprusStage: () => null,
+      contactHaloStage: () => null,
+      manifestoInkStage: () => null,
       labGamepad: () => null,
+      servicesStage: () => null,
     }
   }
 
@@ -117,8 +121,12 @@ describe('SceneCoordinator route visuals (Phase 8 slice 10: the gate left `World
       drawTrail: () => null,
       carousel: carouselReader,
       worksPlaneStage: () => null,
+      contactTypographyStage: () => null,
       contactCyprusStage: () => null,
+      contactHaloStage: () => null,
+      manifestoInkStage: () => null,
       labGamepad: () => null,
+      servicesStage: () => null,
     }
     const isolated = new SceneCoordinator(new THREE.Scene(), owners, pageReader)
     await isolated.init()
@@ -177,8 +185,12 @@ describe('SceneCoordinator route visuals (Phase 8 slice 10: the gate left `World
       drawTrail: () => null,
       carousel: () => null,
       worksPlaneStage: () => null,
+      contactTypographyStage: () => null,
       contactCyprusStage: () => null,
+      contactHaloStage: () => null,
+      manifestoInkStage: () => null,
       labGamepad: () => null,
+      servicesStage: () => null,
     }
     const isolated = new SceneCoordinator(new THREE.Scene(), owners, () => 'home')
     await isolated.init()

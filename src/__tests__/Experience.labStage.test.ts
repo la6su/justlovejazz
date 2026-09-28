@@ -51,8 +51,12 @@ describe('Experience lab object lifecycle', () => {
       drawTrail: () => null,
       carousel: () => null,
       worksPlaneStage: () => null,
+      contactTypographyStage: () => null,
       contactCyprusStage: () => null,
+      contactHaloStage: () => null,
+      manifestoInkStage: () => null,
       labGamepad: () => slots.labGamepad.getStage() as LabExperimentObject | null,
+      servicesStage: () => null,
     }
     coordinator = new SceneCoordinator(
       scene,
