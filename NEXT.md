@@ -38,6 +38,9 @@ contract. Keep this queue as the single plan and retire completed slices.
    host decisions under Product / input needed below. The 16.35 MB
    `coming-soon.mp4` is a labelled placeholder; optimize its approved
    replacement with a poster and measured encoding budget.
+5. **Continue the test audit by owner.** Use [Test audit](docs/TEST_AUDIT.md)
+   to review one coherent subsystem at a time. Require owner-boundary evidence
+   before removing private-field or source-inspection tests.
 
 ### User-deferred final gates
 
