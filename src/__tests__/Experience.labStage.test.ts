@@ -158,7 +158,7 @@ describe('Experience lab object lifecycle', () => {
     }) as unknown as LabExperimentObject
     const loadPromise = registry.ensureLabGamepad()
 
-    ;(exp as unknown as { _stages: { disposeLabGamepad: () => void } })._stages.disposeLabGamepad()
+    registry.disposeLabGamepad()
     resolveLoad(object)
     await loadPromise
 
