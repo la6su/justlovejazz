@@ -224,8 +224,7 @@ export class BakuCarousel extends THREE.Group {
           textureUrl: url,
           projectIndex: i % PROJECTS.length,
         })
-        // Retain cards through SectionGroups' geometry-hiding step; it hides
-        // ordinary meshes while preserving objects registered as visible.
+        // Keep cards visible through SectionGroups' geometry-hiding step.
         keepSceneObjectVisible(plane)
         stagedCards.push(plane)
         this.add(plane)
