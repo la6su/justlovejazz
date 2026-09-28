@@ -12,7 +12,7 @@ import { seedExperience } from './experienceSeed'
 // Phase 8 slice 7: the /works case-plane stage lifecycle (lazy creation +
 // disposal) moved from World to Experience. Phase 8 slice 10: the `World`
 // class leaves production — the stage is read through the SceneCoordinator's
-// `worksPlaneStage` owner getter (Experience owns the field, the coordinator
+// `worksPlaneStage` slot getter (Experience owns the field, the coordinator
 // reads it). These methods are self-contained (they only touch the stage
 // reference, the request guard, the scene + camera), so the test drives them
 // on an Experience instance created without its heavy constructor (renderer
