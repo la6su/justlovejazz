@@ -55,12 +55,12 @@ export interface SceneCoordinatorOwners {
   drawTrail: () => DrawTrail | null
   carousel: () => BakuCarousel | null
   worksPlaneStage: () => WorksPlaneStage | null
-  contactTypographyStage?: () => ContactTypographyStage | null
+  contactTypographyStage: () => ContactTypographyStage | null
   contactCyprusStage: () => ContactCyprusStage | null
-  contactHaloStage?: () => ContactHaloStage | null
-  manifestoInkStage?: () => ManifestoInkStage | null
+  contactHaloStage: () => ContactHaloStage | null
+  manifestoInkStage: () => ManifestoInkStage | null
   labGamepad: () => LabExperimentObject | null
-  servicesStage?: () => ServicesStage | null
+  servicesStage: () => ServicesStage | null
 }
 
 /**

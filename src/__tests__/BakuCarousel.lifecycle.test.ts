@@ -11,6 +11,17 @@ vi.mock('../Experience/World/caseTexture', () => mocks)
 import { BakuCarousel } from '../Experience/World/BakuCarousel'
 import type { StorySide } from '../core/storyState'
 
+async function createActiveCarousel(storySide?: () => StorySide): Promise<BakuCarousel> {
+  mocks.loadCaseTexture.mockImplementation(async () => new THREE.Texture())
+  const carousel = new BakuCarousel(() => 'home', storySide)
+  await carousel.init()
+  carousel.setActive(true)
+  for (let frame = 0; frame < 20 && carousel.isAnimating; frame++) {
+    carousel.update(0.1)
+  }
+  return carousel
+}
+
 describe('BakuCarousel texture lifecycle', () => {
   beforeEach(() => {
     mocks.loadCaseTexture.mockReset()
@@ -96,7 +107,6 @@ describe('BakuCarousel texture lifecycle', () => {
     const card = {
       visible: true,
       isAnimating: false,
-      userData: {},
       position: new THREE.Vector3(),
       rotation: new THREE.Euler(),
       scale: new THREE.Vector3(1, 1, 1),
@@ -130,28 +140,31 @@ describe('BakuCarousel texture lifecycle', () => {
   })
 
   it('uses the typed story side for the menu input guard', async () => {
-    mocks.loadCaseTexture.mockImplementation(async () => new THREE.Texture())
     let side: StorySide = 'menu'
-    const carousel = new BakuCarousel(
-      () => 'home',
-      () => side,
-    )
-    await carousel.init()
-    carousel.setActive(true)
-    Object.assign(carousel as unknown as Record<string, unknown>, { _morphT: 1 })
+    const carousel = await createActiveCarousel(() => side)
+    const wake = vi.fn()
+    carousel.onActivity = wake
 
     // The UI projection can disagree; scene input must follow the typed owner port.
     document.body.dataset.cinematicSheet = 'center'
     document.body.dispatchEvent(
-      new MouseEvent('pointerdown', { bubbles: true, clientX: 0, clientY: 0 }),
+      new PointerEvent('pointerdown', { bubbles: true, clientX: 1000, clientY: 0 }),
     )
-    expect((carousel as unknown as { isDown: boolean }).isDown).toBe(false)
+    document.body.dispatchEvent(
+      new PointerEvent('pointermove', { bubbles: true, clientX: 0, clientY: 0 }),
+    )
+    expect(wake).not.toHaveBeenCalled()
+    expect(carousel.getTargetCardIndex()).toBe(carousel.getFrontCardIndex())
 
     side = 'center'
     document.body.dispatchEvent(
-      new MouseEvent('pointerdown', { bubbles: true, clientX: 0, clientY: 0 }),
+      new PointerEvent('pointerdown', { bubbles: true, clientX: 1000, clientY: 0 }),
     )
-    expect((carousel as unknown as { isDown: boolean }).isDown).toBe(true)
+    document.body.dispatchEvent(
+      new PointerEvent('pointermove', { bubbles: true, clientX: 0, clientY: 0 }),
+    )
+    expect(wake).toHaveBeenCalled()
+    expect(carousel.getTargetCardIndex()).not.toBe(carousel.getFrontCardIndex())
 
     carousel.dispose()
     delete document.body.dataset.cinematicSheet
@@ -170,80 +183,79 @@ describe('BakuCarousel texture lifecycle', () => {
     expect(velocityAt120Hz).toBeCloseTo(velocityAt60Hz, 12)
   })
 
-  it('settles morph, scroll and drag state when reduced motion is enabled', () => {
+  it('settles the visible morph and scroll position when reduced motion is enabled', () => {
     const carousel = new BakuCarousel()
-    const state = carousel as unknown as {
-      _morphT: number
-      _morphTarget: number
-      scroll: { current: number; target: number }
-      velocity: number
-      isDown: boolean
-    }
-    state._morphTarget = 1
-    state._morphT = 0.42
-    state.scroll.target = 0.75
-    state.scroll.current = 0.2
-    state.velocity = 0.4
-    state.isDown = true
+    carousel.setActive(true)
+    carousel.next()
+    const targetIndex = carousel.getTargetCardIndex()
+    expect(carousel.isAnimating).toBe(true)
 
     carousel.setReducedMotion(true)
 
-    expect(state._morphT).toBe(1)
-    expect(state.scroll.current).toBe(0.75)
-    expect(state.velocity).toBe(0)
-    expect(state.isDown).toBe(false)
+    expect(carousel.getFrontCardIndex()).toBe(targetIndex)
     expect(carousel.isAnimating).toBe(false)
     carousel.dispose()
   })
 
-  it('clears callback, camera, input owners and motion state on dispose', () => {
-    const carousel = new BakuCarousel()
-    carousel.setCamera(new THREE.PerspectiveCamera())
-    carousel.onCardClick(vi.fn())
-    carousel.setActive(true)
-    Object.assign(carousel as unknown as Record<string, unknown>, {
-      pointerDownHandler: vi.fn(),
-      pointerMoveHandler: vi.fn(),
-      pointerUpHandler: vi.fn(),
-      controlClickHandler: vi.fn(),
-      isDown: true,
-      dragMoved: true,
-      velocity: 0.4,
-    })
-    carousel.dispose()
-    const state = carousel as unknown as Record<string, unknown>
-    expect(state._camera).toBeNull()
-    expect(state._onCardClick).toBeNull()
-    expect(state.pointerDownHandler).toBeNull()
-    expect(state.pointerMoveHandler).toBeNull()
-    expect(state.pointerUpHandler).toBeNull()
-    expect(state.controlClickHandler).toBeNull()
-    expect(state.snapTimer).toBeNull()
-    expect(state.isDown).toBe(false)
-    expect(state.velocity).toBe(0)
-    expect(state._active).toBe(false)
-    expect(state._morphTarget).toBe(0)
-    expect(state._morphT).toBe(0)
-    expect(() => carousel.dispose()).not.toThrow()
+  it('unregisters the window input handlers it installed on dispose', async () => {
+    const eventTypes = new Set([
+      'pointerdown',
+      'pointermove',
+      'pointerup',
+      'pointercancel',
+      'click',
+    ])
+    const add = vi.spyOn(window, 'addEventListener')
+    const remove = vi.spyOn(window, 'removeEventListener')
+    const carousel = await createActiveCarousel()
+    try {
+      const registrations = add.mock.calls.filter(([type]) => eventTypes.has(type))
+
+      expect(registrations.map(([type]) => type)).toEqual(expect.arrayContaining([...eventTypes]))
+
+      carousel.dispose()
+
+      for (const [type, listener] of registrations) {
+        expect(remove).toHaveBeenCalledWith(type, listener)
+      }
+      expect(carousel.isActive).toBe(false)
+      expect(carousel.isAnimating).toBe(false)
+    } finally {
+      carousel.dispose()
+      add.mockRestore()
+      remove.mockRestore()
+    }
   })
 
-  it('does not let a retired UI owner remove a newer click callback', () => {
+  it('keeps a newer click callback when a retired UI owner releases its handler', async () => {
+    mocks.loadCaseTexture.mockImplementation(async () => new THREE.Texture())
     const carousel = new BakuCarousel()
     const first = vi.fn()
     const second = vi.fn()
     const releaseFirst = carousel.onCardClick(first)
-    const releaseSecond = carousel.onCardClick(second)
+    carousel.onCardClick(second)
 
     releaseFirst()
-    expect((carousel as unknown as { _onCardClick: unknown })._onCardClick).toBe(second)
-    releaseSecond()
-    expect((carousel as unknown as { _onCardClick: unknown })._onCardClick).toBeNull()
+    await carousel.init()
+    carousel.setActive(true)
+    for (let frame = 0; frame < 20 && carousel.isAnimating; frame++) {
+      carousel.update(0.1)
+    }
+
+    document.body.dispatchEvent(
+      new PointerEvent('pointerdown', { bubbles: true, clientX: 0, clientY: 0 }),
+    )
+    document.body.dispatchEvent(
+      new PointerEvent('pointerup', { bubbles: true, clientX: 0, clientY: 0 }),
+    )
+
+    expect(first).not.toHaveBeenCalled()
+    expect(second).toHaveBeenCalledOnce()
     carousel.dispose()
   })
 
   it('ignores late public calls after terminal teardown', () => {
     const carousel = new BakuCarousel()
-    const state = carousel as unknown as { scroll: { target: number }; _morphTarget: number }
 
     carousel.dispose()
     carousel.dispose()
@@ -254,30 +266,25 @@ describe('BakuCarousel texture lifecycle', () => {
     carousel.prev()
     carousel.update(1 / 60)
 
-    expect(state.scroll.target).toBe(0)
-    expect(state._morphTarget).toBe(0)
+    expect(carousel.getTargetCardIndex()).toBe(carousel.getFrontCardIndex())
     expect(carousel.isActive).toBe(false)
     expect(carousel.isAnimating).toBe(false)
   })
 
   it('wakes the shared loop when pointer drag changes carousel state', async () => {
-    mocks.loadCaseTexture.mockImplementation(async () => new THREE.Texture())
-    const carousel = new BakuCarousel()
-    await carousel.init()
-    carousel.setActive(true)
-    Object.assign(carousel as unknown as Record<string, unknown>, { _morphT: 1 })
+    const carousel = await createActiveCarousel()
     const wake = vi.fn()
     carousel.onActivity = wake
 
     document.body.dispatchEvent(
-      new PointerEvent('pointerdown', { bubbles: true, clientX: 100, clientY: 100 }),
+      new PointerEvent('pointerdown', { bubbles: true, clientX: 1000, clientY: 100 }),
     )
     document.body.dispatchEvent(
-      new PointerEvent('pointermove', { bubbles: true, clientX: 80, clientY: 100 }),
+      new PointerEvent('pointermove', { bubbles: true, clientX: 0, clientY: 100 }),
     )
 
     expect(wake).toHaveBeenCalled()
-    expect((carousel as unknown as { scroll: { target: number } }).scroll.target).not.toBe(0)
+    expect(carousel.getTargetCardIndex()).not.toBe(carousel.getFrontCardIndex())
     carousel.dispose()
   })
 
@@ -288,7 +295,6 @@ describe('BakuCarousel texture lifecycle', () => {
     carousel.next()
 
     expect(wake).toHaveBeenCalledOnce()
-    expect((carousel as unknown as { scroll: { target: number } }).scroll.target).toBe(-1)
     carousel.dispose()
   })
 })

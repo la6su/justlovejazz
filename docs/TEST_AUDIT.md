@@ -24,14 +24,30 @@ delivery tests. One high-confidence duplicate was removed: the standalone
 renderer recovery, and resource disposal were retained because they exercise
 ordering and ownership boundaries.
 
+The `BakuCarousel` pass replaced private callback, morph, scroll, and input-state
+assertions with public route/input behavior and real window-listener teardown
+checks. Remaining private fixtures in this suite are retained for frame-rate,
+idle-card, and settled-layout invariants that have no simpler independent
+observable.
+
+The `experienceSeed` harness now has a closed `ExperienceSeed` key contract,
+and passes `page`/`currentPage` directly to the test `StageRegistry`. It no
+longer depends on invoking `Experience`'s inherited private route adapter on a
+constructor-bypass instance.
+
+`SceneCoordinatorOwners` now requires every production owner getter; nullable
+stage results describe lifecycle state, while a missing getter is a wiring
+error. The coordinator snapshots each route-stage owner once when checking
+ambient motion instead of invoking the same getter twice.
+
 The following suspect patterns remain intentionally under review:
 
-| Area                                     | Why it remains                                                             | Evidence required before changing it                                   |
-| ---------------------------------------- | -------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| Private-field lifecycle tests            | They verify teardown/recovery ordering not exposed by a stable public API. | An owner-boundary test that fails on the same regression.              |
-| `routeLayoutOwnership` source inspection | It guards CSS ownership and prevents a duplicate layout owner.             | An equivalent static-delivery or rendered-layout contract.             |
-| `sceneHost.__resetSceneHostForTests`     | It resets the one-shot host bridge between isolated tests.                 | A redesigned bridge lifecycle; otherwise tests become order-dependent. |
-| `experienceSeed` fixture bag             | It is a shared harness contract, not production state.                     | A typed harness API in one coherent change.                            |
+| Area                                     | Why it remains                                                                      | Evidence required before changing it                                                     |
+| ---------------------------------------- | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Private-field lifecycle tests            | They verify teardown/recovery ordering not exposed by a stable public API.          | An owner-boundary test that fails on the same regression.                                |
+| `routeLayoutOwnership` source inspection | It guards CSS ownership and prevents a duplicate layout owner.                      | An equivalent static-delivery or rendered-layout contract.                               |
+| `sceneHost.__resetSceneHostForTests`     | It resets the one-shot host bridge between isolated tests.                          | A redesigned bridge lifecycle; otherwise tests become order-dependent.                   |
+| `experienceSeed` fixture values          | Keys are closed and slot names are typed; owner doubles still use `unknown` values. | Type a value only when a reusable owner contract emerges; avoid a second mock framework. |
 
 Future passes should audit one coherent subsystem at a time and record the
 replacement evidence here. Avoid mechanical deletion and avoid wrappers that

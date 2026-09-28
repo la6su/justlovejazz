@@ -14,6 +14,7 @@ import { Experience } from '../Experience/Experience'
 import { StageRegistry } from '../Experience/StageRegistry'
 import type { SceneStagePorts } from '../app/sceneHost'
 import type { LazyStageSlot } from '../Experience/LazyStage'
+import type { PageId } from '../core/routeManifest'
 
 /** The six route-owned lazy-stage slot names (StageRegistry.slots keys). */
 export type LazyStageSlotName =
@@ -81,11 +82,57 @@ export interface SeededExperience {
   slots: Record<LazyStageSlotName, LazyStageSlot<unknown>>
 }
 
+/** Explicit constructor-bypass fields used by Experience lifecycle tests.
+ *  Keep keys closed so misspelled or obsolete fixture fields fail typecheck;
+ *  owner doubles stay unknown because each test supplies only its exercised
+ *  structural surface. */
+export interface ExperienceSeed {
+  _cancelBreath?: unknown
+  _contactCyprusActive?: boolean
+  _contactIsLight?: boolean
+  _destroyed?: boolean
+  _environment?: unknown
+  _host?: unknown
+  _lifecycleGeneration?: number
+  _mouseTrailRafId?: unknown
+  _mouseTrailRafPending?: boolean
+  _onMouseMoveForTrail?: unknown
+  _raiseRenderDemand?: unknown
+  _readinessGate?: unknown
+  _reducedMotion?: boolean
+  _scheduler?: unknown
+  _showreel?: unknown
+  baku?: unknown
+  camera?: unknown
+  contactCyprusStage?: unknown
+  contactTypographyStage?: unknown
+  contentReveal?: unknown
+  coordinator?: unknown
+  currentPage?: () => PageId
+  cursor?: unknown
+  devPanel?: unknown
+  drawTrail?: unknown
+  envSphere?: unknown
+  features?: unknown
+  ground?: unknown
+  labGamepad?: unknown
+  lights?: unknown
+  page?: () => PageId
+  particleBurst?: unknown
+  renderer?: unknown
+  scene?: THREE.Scene
+  sectionGroups?: unknown
+  servicesStage?: unknown
+  sfx?: unknown
+  sizes?: unknown
+  worksPlaneStage?: unknown
+}
+
 /** Bare Experience harness for lifecycle-method tests. */
-export function seedExperience(bag: Record<string, unknown> = {}): SeededExperience {
+export function seedExperience(seed: ExperienceSeed = {}): SeededExperience {
   const slotValues: Record<string, unknown> = {}
   const rest: Record<string, unknown> = {}
-  for (const [key, value] of Object.entries(bag)) {
+  for (const [key, value] of Object.entries(seed)) {
     const slotName = stageSlotName(key)
     if (slotName) slotValues[key] = value
     else rest[key] = value
@@ -103,9 +150,10 @@ export function seedExperience(bag: Record<string, unknown> = {}): SeededExperie
   }
   const scene = (rest.scene as THREE.Scene | undefined) ?? new THREE.Scene()
   const registry = new StageRegistry({
-    // The bag may override currentPage with a field (shadowing the prototype
-    // method) — the property read resolves the override first.
-    currentPage: () => (typeof seeded.currentPage === 'function' ? seeded.currentPage() : 'home'),
+    // Use the route input directly. Calling the constructor-bypass instance's
+    // inherited currentPage method here would couple the registry fixture to
+    // Experience's private adapter and its constructor-owned `page` field.
+    currentPage: () => seed.currentPage?.() ?? seed.page?.() ?? 'home',
     camera: () => seeded.camera ?? { instance: new THREE.PerspectiveCamera() },
     host: () =>
       (seeded._host as { stages?: SceneStagePorts } | undefined)?.stages ?? makeEmptyPorts(scene),

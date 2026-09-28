@@ -56,8 +56,12 @@ describe('SceneCoordinator scroll state machine contract', () => {
       drawTrail: () => null,
       carousel: () => null,
       worksPlaneStage: () => null,
+      contactTypographyStage: () => null,
       contactCyprusStage: () => null,
+      contactHaloStage: () => null,
+      manifestoInkStage: () => null,
       labGamepad: () => null,
+      servicesStage: () => null,
     }
     coordinator = new SceneCoordinator(scene, owners, () => 'home')
     await coordinator.init()

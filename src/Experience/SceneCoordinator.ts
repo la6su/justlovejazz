@@ -74,13 +74,13 @@ export class SceneCoordinator {
     return this.owners.worksPlaneStage()
   }
   public get contactTypographyStage(): ContactTypographyStage | null {
-    return this.owners.contactTypographyStage?.() ?? null
+    return this.owners.contactTypographyStage()
   }
   public get contactHaloStage(): ContactHaloStage | null {
-    return this.owners.contactHaloStage?.() ?? null
+    return this.owners.contactHaloStage()
   }
   public get manifestoInkStage(): ManifestoInkStage | null {
-    return this.owners.manifestoInkStage?.() ?? null
+    return this.owners.manifestoInkStage()
   }
 
   constructor(scene: THREE.Scene, owners: SceneCoordinatorOwners, page: () => PageId) {
@@ -245,12 +245,14 @@ export class SceneCoordinator {
     if (this.isReducedMotion) return false
     if (this.owners.envSphere()?.isAnimating) return true
     if (this.owners.baku()?.isAmbientlyAnimated) return true
-    if (this.contactTypographyStage?.visible && this.contactTypographyStage.isAnimating) return true
-    if (this.contactHaloStage?.visible && this.contactHaloStage.isAnimating) return true
+    const contactTypographyStage = this.contactTypographyStage
+    if (contactTypographyStage?.visible && contactTypographyStage.isAnimating) return true
+    const contactHaloStage = this.contactHaloStage
+    if (contactHaloStage?.visible && contactHaloStage.isAnimating) return true
     const manifestoInkStage = this.manifestoInkStage
     if (manifestoInkStage?.visible && manifestoInkStage.isAnimating) return true
-    if (this.owners.servicesStage?.()?.visible && this.owners.servicesStage?.()?.isAnimating)
-      return true
+    const servicesStage = this.owners.servicesStage()
+    if (servicesStage?.visible && servicesStage.isAnimating) return true
     // The Lab object's authored hover clock is an intentional primary object
     // motion (mirrors the typography stage), not decoration.
     const labGamepad = this.owners.labGamepad()

@@ -64,8 +64,12 @@ describe('Experience works stage lifecycle', () => {
       drawTrail: () => null,
       carousel: () => null,
       worksPlaneStage: () => slots.worksPlane.getStage() as WorksPlaneStage | null,
+      contactTypographyStage: () => null,
       contactCyprusStage: () => null,
+      contactHaloStage: () => null,
+      manifestoInkStage: () => null,
       labGamepad: () => null,
+      servicesStage: () => null,
     }
     coordinator = new SceneCoordinator(scene, owners, () => getCurrentPage() as PageId)
     exp.coordinator = coordinator

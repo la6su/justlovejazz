@@ -56,8 +56,12 @@ describe('SceneCoordinator updateTransform easing contract', () => {
       drawTrail: () => null,
       carousel: () => null,
       worksPlaneStage: () => null,
+      contactTypographyStage: () => null,
       contactCyprusStage: () => null,
+      contactHaloStage: () => null,
+      manifestoInkStage: () => null,
       labGamepad: () => null,
+      servicesStage: () => null,
     }
     coordinator = new SceneCoordinator(new THREE.Scene(), owners, () => 'home')
     await coordinator.init()
