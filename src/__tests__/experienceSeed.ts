@@ -59,11 +59,17 @@ function makeEmptyPorts(scene: THREE.Scene): SceneStagePorts {
 }
 
 /** Fixture property names that seed a registry slot. */
-const SLOT_KEY_TO_NAME: Record<string, LazyStageSlotName> = {
+const SLOT_KEY_TO_NAME = {
   worksPlaneStage: 'worksPlane',
   contactTypographyStage: 'contactTypography',
   contactCyprusStage: 'contactCyprus',
   labGamepad: 'labGamepad',
+} as const satisfies Record<string, LazyStageSlotName>
+
+type StageSeedKey = keyof typeof SLOT_KEY_TO_NAME
+
+function stageSlotName(key: string): LazyStageSlotName | undefined {
+  return key in SLOT_KEY_TO_NAME ? SLOT_KEY_TO_NAME[key as StageSeedKey] : undefined
 }
 
 export interface SeededExperience {
@@ -80,7 +86,7 @@ export function seedExperience(bag: Record<string, unknown> = {}): SeededExperie
   const slotValues: Record<string, unknown> = {}
   const rest: Record<string, unknown> = {}
   for (const [key, value] of Object.entries(bag)) {
-    const slotName = SLOT_KEY_TO_NAME[key]
+    const slotName = stageSlotName(key)
     if (slotName) slotValues[key] = value
     else rest[key] = value
   }
@@ -113,8 +119,9 @@ export function seedExperience(bag: Record<string, unknown> = {}): SeededExperie
   })
   seeded._stages = registry
   for (const [key, value] of Object.entries(slotValues)) {
-    if (value != null) {
-      ;(registry.slots[SLOT_KEY_TO_NAME[key]!] as LazyStageSlot<unknown>).setStage(value)
+    const slotName = stageSlotName(key)
+    if (value != null && slotName) {
+      ;(registry.slots[slotName] as LazyStageSlot<unknown>).setStage(value)
     }
   }
   return {
