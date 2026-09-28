@@ -9,6 +9,7 @@ import * as THREE from 'three'
 import { PROJECTS } from '../../Data/Projects'
 import { CasePlane, CLOTH_PARAMS } from './CasePlane'
 import { loadCaseTexture, releaseCaseTexture } from './caseTexture'
+import { setWorksCardMetadata, worksCardMetadataOf } from './cardMetadata'
 import { prefersReducedMotion } from '../../core/motionPolicy'
 
 import { WORKS_ROOMS, getWorksCaseProject } from '../../core/worksExperience'
@@ -88,7 +89,7 @@ export class WorksPlaneStage extends THREE.Group {
     const cardCount = this.cards.length
     for (let index = 0; index < cardCount; index += 1) {
       const card = this.cards[index]!
-      const projectIndex = card.userData.projectIndex as number
+      const projectIndex = worksCardMetadataOf(card)?.projectIndex ?? -1
       const targetReveal = activeProject === projectIndex ? 1 : 0
       this._reveal.set(card, targetReveal)
       card.setReveal(targetReveal)
@@ -104,7 +105,7 @@ export class WorksPlaneStage extends THREE.Group {
     const activeProject = this.activeProject
     for (let index = 0; index < this.cards.length; index += 1) {
       const card = this.cards[index]!
-      const projectIndex = card.userData.projectIndex as number
+      const projectIndex = worksCardMetadataOf(card)?.projectIndex ?? -1
       const shouldBeVisible = activeProject === projectIndex
       const reveal = this._reveal.get(card) ?? 0
       // Include departing cards and their cloth pulses: hidden cards still
@@ -150,8 +151,10 @@ export class WorksPlaneStage extends THREE.Group {
       textures.forEach((texture, index) => {
         const plane = new CasePlane(texture)
         plane.setReducedMotion(this._reducedMotion)
-        plane.userData.projectIndex = index
-        plane.userData.texUrl = PROJECTS[index]!.textureUrl
+        setWorksCardMetadata(plane, {
+          projectIndex: index,
+          textureUrl: PROJECTS[index]!.textureUrl,
+        })
         plane.setReveal(0)
         stagedCards.push(plane)
         this._reveal.set(plane, 0)
@@ -248,7 +251,7 @@ export class WorksPlaneStage extends THREE.Group {
     )
     const hit = hits[0]?.object as CasePlane | undefined
     if (!hit) return -1
-    return hit.userData.projectIndex as number
+    return worksCardMetadataOf(hit)?.projectIndex ?? -1
   }
 
   update(dt: number): void {
@@ -281,7 +284,7 @@ export class WorksPlaneStage extends THREE.Group {
     }
     for (let index = 0; index < this.cards.length; index += 1) {
       const card = this.cards[index]!
-      const projectIndex = card.userData.projectIndex as number
+      const projectIndex = worksCardMetadataOf(card)?.projectIndex ?? -1
       const isVisible = activeProject === projectIndex
       const targetReveal = isVisible ? 1 : 0
       const reveal = this._reveal.get(card) ?? 0
@@ -366,7 +369,7 @@ export class WorksPlaneStage extends THREE.Group {
     this._active = false
     this._camera = null
     this.cards.forEach((card) => {
-      const url = card.userData.texUrl as string | undefined
+      const url = worksCardMetadataOf(card)?.textureUrl
       if (url) releaseCaseTexture(url, card.texture ?? undefined)
       card.dispose()
     })

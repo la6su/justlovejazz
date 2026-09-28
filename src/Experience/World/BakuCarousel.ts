@@ -24,6 +24,7 @@ import type { StorySide } from '../../core/storyState'
 import { eventBus } from '../../core/EventBus'
 import { prefersReducedMotion } from '../../core/motionPolicy'
 import { smoothstep01 } from '../../Utils/easing'
+import { carouselCardMetadataOf, setCarouselCardMetadata } from './cardMetadata'
 import { keepSceneObjectVisible } from '../sceneRuntimeState'
 // PlaneTransition removed — unified animation uses direct overlay open.
 
@@ -218,10 +219,11 @@ export class BakuCarousel extends THREE.Group {
         const plane = new CasePlane(tex)
         plane.setReducedMotion(this._reducedMotion)
         plane.scale.setScalar(CARD_SCALE)
-        plane.userData.texIdx = i
-        plane.userData.texUrl = url
-        // cardIndex = which PROJECT (0..3) — used by onCardClick → onProjectSelect
-        plane.userData.cardIndex = i % PROJECTS.length
+        setCarouselCardMetadata(plane, {
+          textureIndex: i,
+          textureUrl: url,
+          projectIndex: i % PROJECTS.length,
+        })
         // keepVisible = true so the SectionGroups owner's geometry-hiding step
         // doesn't hide the carousel cards (it hides all non-Points, non-keepVisible meshes)
         keepSceneObjectVisible(plane)
@@ -345,7 +347,8 @@ export class BakuCarousel extends THREE.Group {
     const intersects = this._raycaster.intersectObjects(hitTargets, false)
     if (intersects.length > 0) {
       const hit = intersects[0]!.object as THREE.Mesh
-      const idx = hit.userData.cardIndex as number
+      const idx = carouselCardMetadataOf(hit)?.projectIndex ?? -1
+      if (idx < 0) return
       // Unified cloth wobble pulse — same as WorksPlaneStage.openProject()
       const hitCard = hit as CasePlane
       hitCard.pulse(CLOTH_PARAMS.pulseAmount)
@@ -512,7 +515,7 @@ export class BakuCarousel extends THREE.Group {
     // once; the cache disposes the GPU texture when the last consumer drops.
     const releasedUrls = new Set<string>()
     for (const card of this.cards) {
-      const url = card.userData.texUrl as string | undefined
+      const url = carouselCardMetadataOf(card)?.textureUrl
       if (url && !releasedUrls.has(url)) {
         releaseCaseTexture(url, card.texture ?? undefined)
         releasedUrls.add(url)
